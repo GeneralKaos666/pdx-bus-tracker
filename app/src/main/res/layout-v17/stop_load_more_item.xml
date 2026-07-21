@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/AppTheme.Card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+    <RelativeLayout
+        android:id="@+id/stop_load_more_layout"
+        android:layout_width="match_parent"
+        android:layout_height="75sp">
+        <include
+            android:id="@+id/stop_icon"
+            layout="@layout/circle_layout"/>
+        <TextView
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:ellipsize="marquee"
+            android:gravity="start|center_vertical"
+            android:id="@+id/stop_route_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@+id/stop_icon"/>
+    </RelativeLayout>
+    <ProgressBar
+        android:id="@+id/stop_listview_load_more_progress_bar"
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"/>
+</com.google.android.material.card.MaterialCardView>

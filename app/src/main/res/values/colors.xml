@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TriMet brand colors -->
+    <color name="trimet_blue">#FF0079C1</color>
+    <color name="trimet_blue_dark">#FF005A91</color>
+    <color name="trimet_orange">#FFFF7F00</color>
+
+    <!-- Line circle colors -->
+    <color name="circle_red">#FFE60000</color>
+    <color name="circle_blue">#FF0000FF</color>
+    <color name="circle_yellow">#FFFFDC00</color>
+    <color name="circle_ns">#FF00A300</color>
+    <color name="circle_a">#FF000000</color>
+    <color name="circle_b">#FF000000</color>
+    <color name="circle_green">#FF00A300</color>
+    <color name="circle_default">#FF888888</color>
+    <color name="circle_orange">#FFFF7F00</color>
+
+    <!-- Navigation item tint -->
+    <color name="navigation_item_color">#FFFFFF</color>
+
+    <!-- Common colors -->
+    <color name="white">#FFFFFF</color>
+</resources>
