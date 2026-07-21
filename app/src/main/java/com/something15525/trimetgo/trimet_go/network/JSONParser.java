@@ -5,9 +5,9 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.IOException;
+import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -18,42 +18,38 @@ public class JSONParser {
     private static final OkHttpClient httpClient = new OkHttpClient.Builder()
             .followRedirects(true)
             .followSslRedirects(true)
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .callTimeout(20, TimeUnit.SECONDS)
             .build();
-
-    private static JSONObject cachedJson = null;
-
-    private static String lastResponseBody = "";
 
     private final String tag = JSONParser.class.getSimpleName();
 
     public JSONObject fetch(String str) throws Exception {
+        URI uri = URI.create(str);
+        String scheme = uri.getScheme();
+        if (scheme == null || !"https".equalsIgnoreCase(scheme)) {
+            throw new IllegalArgumentException("Only HTTPS endpoints are allowed.");
+        }
+
         Request request = new Request.Builder()
                 .url(str)
+                .addHeader("Accept", "application/json")
                 .build();
         try (Response response = httpClient.newCall(request).execute()) {
-            try (InputStream inputStream = response.body().byteStream()) {
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, "iso-8859-1"), 8);
-                StringBuilder sb = new StringBuilder();
-                while (true) {
-                    String line = bufferedReader.readLine();
-                    if (line == null) {
-                        break;
-                    }
-                    sb.append(line).append("\n");
-                }
-                lastResponseBody = sb.toString();
-                try {
-                    cachedJson = new JSONObject(lastResponseBody);
-                } catch (JSONException e2) {
-                    Log.e(this.tag, "Error parsing data " + e2.toString());
-                }
-                return cachedJson;
-            } catch (Exception e3) {
-                Log.e(this.tag, "Error reading stream " + e3.getMessage());
-                throw e3;
+            if (!response.isSuccessful()) {
+                throw new IOException("Unsuccessful response code: " + response.code());
             }
+            if (response.body() == null) {
+                throw new IOException("Response body is null.");
+            }
+            String responseBody = response.body().string();
+            if (responseBody.trim().isEmpty()) {
+                throw new JSONException("Response body is empty.");
+            }
+            return new JSONObject(responseBody);
         } catch (Exception e4) {
-            Log.e(this.tag, e4.getMessage());
+            Log.e(this.tag, "Failed to fetch JSON", e4);
             throw e4;
         }
     }

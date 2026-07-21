@@ -21,7 +21,11 @@ public abstract class GetQRArrivalDataAsync extends AsyncTask<String, Void, Stop
         Stop stop = new Stop();
         if (ConnectionUtils.isOnline(this.f4725a)) {
             try {
-                JSONObject jSONObject = new JSONParser().fetch(strArr[0]).getJSONObject("resultSet");
+                JSONObject fetchedJson = new JSONParser().fetch(strArr[0]);
+                if (fetchedJson == null || !fetchedJson.has("resultSet")) {
+                    return stop;
+                }
+                JSONObject jSONObject = fetchedJson.getJSONObject("resultSet");
                 if (jSONObject.has("location")) {
                     JSONObject jSONObject2 = jSONObject.getJSONArray("location").getJSONObject(0);
                     stop.setLatitude(jSONObject2.getDouble("lat"));

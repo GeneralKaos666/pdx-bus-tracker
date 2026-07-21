@@ -1,0 +1,35 @@
+name: Android CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-lint-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TRIMET_API_KEY: ${{ secrets.TRIMET_API_KEY }}
+      PARSE_APP_ID: ${{ secrets.PARSE_APP_ID }}
+      PARSE_SERVER_URL: ${{ secrets.PARSE_SERVER_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build, lint and unit test
+        run: ./gradlew clean test lint assembleDebug --stacktrace

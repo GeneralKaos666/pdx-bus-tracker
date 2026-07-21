@@ -20,10 +20,12 @@ import com.something15525.trimetgo.trimet_go.util.Constants2;
 import com.something15525.trimetgo.trimet_go.data.model.Stop;
 import com.something15525.trimetgo.trimet_go.util.ArrivalUtils;
 import com.something15525.trimetgo.trimet_go.util.ConnectionUtils;
+import com.something15525.trimetgo.trimet_go.util.SecurityUtils;
 import java.io.IOException;
 import java.net.URI;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.Response;
 import java.util.concurrent.TimeUnit;
 
 public class QRLoadingActivity extends AppCompatActivity {
@@ -78,29 +80,47 @@ public class QRLoadingActivity extends AppCompatActivity {
 
         @Override // java.lang.Thread, java.lang.Runnable
         public void run() {
+            if (!SecurityUtils.isValidHttpsUri(this.f4775b) || !SecurityUtils.isAllowedQrHost(this.f4775b.getHost())) {
+                Log.e(QRLoadingActivity.f4773e, "Rejected QR URI due to invalid scheme or host.");
+                QRLoadingActivity.this.f();
+                return;
+            }
+            if (!SecurityUtils.hasConfiguredTrimetApiKey()) {
+                Log.e(QRLoadingActivity.f4773e, "TriMet API key is not configured.");
+                QRLoadingActivity.this.f();
+                return;
+            }
             try {
                 OkHttpClient client = new OkHttpClient.Builder()
                         .followRedirects(true)
+                        .followSslRedirects(true)
                         .connectTimeout(10, TimeUnit.SECONDS)
                         .readTimeout(10, TimeUnit.SECONDS)
                         .build();
                 Request request = new Request.Builder()
                         .url(this.f4775b.toURL())
                         .build();
-                String[] strArrSplit = client.newCall(request).execute()
-                        .request().url().encodedPath().split("/");
-                if (strArrSplit.length > 0) {
-                    String strSubstring = strArrSplit[strArrSplit.length - 1];
-                    while (strSubstring.startsWith("0") && strSubstring.length() > 0) {
-                        strSubstring = strSubstring.substring(1, strSubstring.length());
+                try (Response response = client.newCall(request).execute()) {
+                    if (!response.isSuccessful()) {
+                        throw new IOException("Unexpected code " + response.code());
                     }
-                    try {
-                        Integer.parseInt(strSubstring);
-                        new QRArrivalLoader(QRLoadingActivity.this).execute(QRLoadingActivity.this.getString(R.string.base_arrival_url) + "/appID/" + Constants2.TRIMET_API_KEY + "/locIDs/" + strSubstring);
-                    } catch (NumberFormatException e2) {
-                        Log.e(QRLoadingActivity.f4773e, "Unable to parse locId: ", e2);
+                    okhttp3.HttpUrl finalUrl = response.request().url();
+                    if (!"https".equalsIgnoreCase(finalUrl.scheme()) || !SecurityUtils.isAllowedQrHost(finalUrl.host())) {
+                        Log.e(QRLoadingActivity.f4773e, "Rejected redirected QR URL host or scheme.");
                         QRLoadingActivity.this.f();
+                        return;
                     }
+                    String stopId = SecurityUtils.extractStopIdFromPath(finalUrl.encodedPath());
+                    if (stopId == null) {
+                        Log.e(QRLoadingActivity.f4773e, "Unable to parse locId from redirected URL.");
+                        QRLoadingActivity.this.f();
+                        return;
+                    }
+                    new QRArrivalLoader(QRLoadingActivity.this).execute(
+                            QRLoadingActivity.this.getString(R.string.base_arrival_url) +
+                                    "/appID/" + Constants2.getTrimetApiKey() +
+                                    "/locIDs/" + stopId
+                    );
                 }
             } catch (IOException | IllegalStateException e3) {
                 Log.e(QRLoadingActivity.f4773e, "Error performing redirect request: ", e3);

@@ -1,6 +1,7 @@
 package com.something15525.trimetgo.trimet_go.ui
 
 import android.content.Context
+import android.util.Log
 import com.something15525.trimetgo.trimet_go.data.model.Direction
 import com.something15525.trimetgo.trimet_go.data.model.Route
 import com.something15525.trimetgo.trimet_go.data.model.Stop
@@ -12,6 +13,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 object TransitApi {
+    private const val TAG = "TransitApi"
     private val parser = JSONParser()
 
     suspend fun fetchRoutes(context: Context, url: String): List<Route>? = withContext(Dispatchers.IO) {
@@ -34,7 +36,7 @@ object TransitApi {
             }
             routes
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to fetch routes", e)
             null
         }
     }
@@ -66,7 +68,7 @@ object TransitApi {
             }
             dirs
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to fetch directions", e)
             null
         }
     }
@@ -117,7 +119,7 @@ object TransitApi {
             }
             stops
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to fetch stops", e)
             null
         }
     }

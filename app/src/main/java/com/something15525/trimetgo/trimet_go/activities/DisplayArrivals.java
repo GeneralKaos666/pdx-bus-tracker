@@ -7,10 +7,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.graphics.Color;
+import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -31,6 +33,7 @@ import com.something15525.trimetgo.trimet_go.data.model.Detour;
 import com.something15525.trimetgo.trimet_go.data.model.Stop;
 import com.something15525.trimetgo.trimet_go.util.Constants2;
 import com.something15525.trimetgo.trimet_go.util.DateUtils;
+import com.something15525.trimetgo.trimet_go.util.SecurityUtils;
 import com.something15525.trimetgo.trimet_go.util.TicketingUtils;
 import com.something15525.trimetgo.trimet_go.fragments.ServiceAlertDialogFragment;
 import com.something15525.trimetgo.trimet_go.widget.FixedSwipeRefreshLayout;
@@ -223,7 +226,11 @@ public class DisplayArrivals extends AppCompatActivity {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         linearLayoutManager.setOrientation(RecyclerView.VERTICAL);
         this.mArrivalRecyclerView.setLayoutManager(linearLayoutManager);
-        g();
+        if (!g()) {
+            Toast.makeText(this, R.string.server_unavailable_text, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
         ActionBar actionBarC = getSupportActionBar();
         if (actionBarC != null) {
             actionBarC.setDisplayHomeAsUpEnabled(true);
@@ -232,7 +239,12 @@ public class DisplayArrivals extends AppCompatActivity {
             actionBarC.setSubtitle(this.f4744f);
         }
         this.serviceAlertsButton.setOnClickListener(new AlertClickListener());
-        this.j = getString(R.string.base_arrival_url) + "/appID/" + Constants2.TRIMET_API_KEY + "/locIDs/" + this.g;
+        if (!SecurityUtils.hasConfiguredTrimetApiKey()) {
+            Toast.makeText(this, R.string.server_unavailable_text, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        this.j = getString(R.string.base_arrival_url) + "/appID/" + Constants2.getTrimetApiKey() + "/locIDs/" + this.g;
         a(true);
     }
 
@@ -287,18 +299,10 @@ public class DisplayArrivals extends AppCompatActivity {
         }
     }
 
-    private void g() {
+    private boolean g() {
         Bundle extras = getIntent().getExtras();
         if (extras == null) {
-            this.f4743e = null;
-            this.h = null;
-            this.s = 0.0d;
-            this.t = 0.0d;
-            this.i = null;
-            this.g = 0;
-            this.f4744f = null;
-            this.k = -1;
-            return;
+            return false;
         }
         this.f4743e = extras.getString("EXTRA_STOP_DESCRIPTION");
         this.h = extras.getString("EXTRA_STOP_ROUTE_DIRECTION_DESCRIPTION");
@@ -306,11 +310,26 @@ public class DisplayArrivals extends AppCompatActivity {
         this.t = extras.getDouble("EXTRA_STOP_LONGITUDE");
         this.i = extras.getString("EXTRA_STOP_TRANSIT_TYPE");
         this.g = extras.getInt("EXTRA_STOP_LOC_ID");
+        if (this.f4743e != null) {
+            this.f4743e = this.f4743e.trim();
+        }
+        if (this.h != null) {
+            this.h = this.h.trim();
+        }
+        if (this.g <= 0 || TextUtils.isEmpty(this.f4743e) || TextUtils.isEmpty(this.h)) {
+            return false;
+        }
         this.f4744f = getString(R.string.stop) + " " + this.g + " - " + this.h;
         this.k = extras.getInt("EXTRA_STOP_ROUTE_TO_SHOW", -1);
+        return true;
     }
 
         public void a(boolean z) {
+        if (this.j == null || this.j.trim().isEmpty()) {
+            this.mSwipeRefreshLayout.setRefreshing(false);
+            Snackbar.make(this.rootView, R.string.server_unavailable_text, Snackbar.LENGTH_LONG).show();
+            return;
+        }
         this.mSwipeRefreshLayout.setRefreshing(true);
         new ArrivalLoader(this, z).execute(this.j);
     }

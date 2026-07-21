@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -25,6 +26,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import com.google.android.material.snackbar.Snackbar;
 
 import com.something15525.trimetgo.trimet_go.R;
 import com.something15525.trimetgo.trimet_go.data.local.DatabaseHelper;
@@ -34,15 +36,20 @@ import com.something15525.trimetgo.trimet_go.network.JSONParser;
 import com.something15525.trimetgo.trimet_go.util.ArrivalUtils;
 import com.something15525.trimetgo.trimet_go.util.ConnectionUtils;
 import com.something15525.trimetgo.trimet_go.util.Constants2;
+import com.something15525.trimetgo.trimet_go.util.SecurityUtils;
 
 import org.json.JSONException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 public class SearchStops extends AppCompatActivity {
+    private static final String TAG = SearchStops.class.getSimpleName();
+    private static final int MAX_RESULTS = 250;
 
     private Toolbar actionBarToolbar;
     private Activity f4759f;
@@ -155,8 +162,8 @@ public class SearchStops extends AppCompatActivity {
             return;
         }
 
-        final String query = intent.getStringExtra("query");
-        if (query == null || query.trim().isEmpty()) {
+        final String query = SecurityUtils.sanitizeSearchQuery(intent.getStringExtra("query"));
+        if (query == null) {
             this.mProgressBar.setVisibility(View.GONE);
             this.mNoResultsTextView.setVisibility(View.VISIBLE);
             return;
@@ -171,7 +178,7 @@ public class SearchStops extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                final ArrayList<Stop> results = doSearch(query.trim());
+                final ArrayList<Stop> results = doSearch(query);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -183,6 +190,9 @@ public class SearchStops extends AppCompatActivity {
                         } else {
                             mStopResultsListView.setAdapter(new StopSearchAdapter(results));
                             mStopResultsListView.setVisibility(View.VISIBLE);
+                            if (results.size() >= MAX_RESULTS) {
+                                Snackbar.make(rootView, getString(R.string.search_results_limited_text, Integer.valueOf(MAX_RESULTS)), Snackbar.LENGTH_LONG).show();
+                            }
                         }
                     }
                 });
@@ -216,22 +226,31 @@ public class SearchStops extends AppCompatActivity {
                 } else if (queryId != null && stop.getLocId() == queryId) {
                     results.add(stop);
                 }
+                if (results.size() >= MAX_RESULTS) {
+                    break;
+                }
             }
             return results;
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "Stop search failed", e);
             return null;
         }
     }
 
     private void loadAllStops() throws Exception {
+        if (!SecurityUtils.hasConfiguredTrimetApiKey()) {
+            Log.e(TAG, "TriMet API key is missing.");
+            allStopsCache = null;
+            return;
+        }
         String url = getString(R.string.base_route_url) +
-                "/dir/true/stops/true/appID/" + Constants2.TRIMET_API_KEY;
+                "/dir/true/stops/true/appID/" + Constants2.getTrimetApiKey();
         JSONObject json = jsonParser.fetch(url);
         if (json == null) return;
 
         JSONArray routes = json.getJSONObject("resultSet").getJSONArray("route");
         allStopsCache = new ArrayList<>();
+        Set<Integer> seenLocIds = new HashSet<>();
 
         for (int i = 0; i < routes.length(); i++) {
             JSONObject routeObj = routes.getJSONObject(i);
@@ -250,16 +269,9 @@ public class SearchStops extends AppCompatActivity {
                 for (int k = 0; k < stops.length(); k++) {
                     JSONObject stopObj = stops.getJSONObject(k);
                     int locid = stopObj.optInt("locid", 0);
-
-                    // Deduplicate by stop ID
-                    boolean found = false;
-                    for (Stop existing : allStopsCache) {
-                        if (existing.getLocId() == locid) {
-                            found = true;
-                            break;
-                        }
+                    if (locid <= 0 || seenLocIds.contains(locid)) {
+                        continue;
                     }
-                    if (found) continue;
 
                     Stop stop = new Stop();
                     stop.setDesc(stopObj.optString("desc", ""));
@@ -277,6 +289,7 @@ public class SearchStops extends AppCompatActivity {
                     stop.computeTransitType();
 
                     allStopsCache.add(stop);
+                    seenLocIds.add(locid);
                 }
             }
         }

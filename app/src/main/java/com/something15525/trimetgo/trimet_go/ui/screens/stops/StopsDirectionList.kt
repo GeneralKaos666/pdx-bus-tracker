@@ -39,11 +39,18 @@ fun StopsDirectionList(
     val context = LocalContext.current
     var directions by remember { mutableStateOf<List<Direction>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var isMissingApiKey by remember { mutableStateOf(false) }
 
     LaunchedEffect(routeId) {
-        val url = context.getString(com.something15525.trimetgo.trimet_go.R.string.base_route_url) +
-                "/appID/" + Constants2.TRIMET_API_KEY + "/route/$routeId/dir/true"
-        directions = TransitApi.fetchDirections(context, url)
+        val key = Constants2.getTrimetApiKey()
+        if (key.isBlank()) {
+            isMissingApiKey = true
+            directions = null
+        } else {
+            val url = context.getString(com.something15525.trimetgo.trimet_go.R.string.base_route_url) +
+                    "/appID/$key/route/$routeId/dir/true"
+            directions = TransitApi.fetchDirections(context, url)
+        }
         isLoading = false
     }
 
@@ -56,7 +63,8 @@ fun StopsDirectionList(
         if (safeDirections == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "Unable to load directions.\nCheck your connection.",
+                    text = if (isMissingApiKey) "API key not configured.\nPlease check app settings."
+                           else "Unable to load directions.\nCheck your connection.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

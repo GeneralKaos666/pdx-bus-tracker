@@ -4,6 +4,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
+import androidx.preference.PreferenceManager
 import com.something15525.trimetgo.trimet_go.R
 import com.something15525.trimetgo.trimet_go.data.model.Stop
 import com.something15525.trimetgo.trimet_go.util.ArrivalUtils
@@ -31,7 +32,7 @@ object ComposeBridge {
             TriMetGoTheme {
                 StopsScreen(
                     onNavigateToArrivals = { stop, routeId ->
-                        val prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(fragment.requireContext())
+                        val prefs = PreferenceManager.getDefaultSharedPreferences(fragment.requireContext())
                         val onlySelectedRoute = prefs.getBoolean("pref_key_only_show_route_selected", true)
                         fragment.startActivity(ArrivalUtils.a(fragment.requireActivity(), stop, true, if (onlySelectedRoute) routeId else -1))
                     }
