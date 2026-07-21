@@ -1,20 +1,28 @@
 package com.something15525.trimetgo.trimet_go.util;
 
 import android.content.Context;
-import com.parse.ParseException;
+import com.something15525.trimetgo.trimet_go.BuildConfig;
 import com.something15525.trimetgo.trimet_go.R;
 
 public class Constants2 {
 
-        public static String f4889a = "AIzaSyDmbTHKuf8jfoE6BMPkbW6udRv_wyAJnzo";
-
-        public static String f4891c = "drGnMLdbtm2cIEqljH0eI3CqT0iv2IN7x0ILPKmB";
-
-        public static String f4892d = "http://trimet-go-search.somex.app/parse/";
-
         public static int f4893e = 75;
 
-    public static String TRIMET_API_KEY = "C7558610143A7E383B6843D0A";
+    public static String getTrimetApiKey() {
+        return BuildConfig.TRIMET_API_KEY == null ? "" : BuildConfig.TRIMET_API_KEY.trim();
+    }
+
+    public static boolean hasTrimetApiKey() {
+        return !getTrimetApiKey().isEmpty();
+    }
+
+    public static String getParseAppId() {
+        return BuildConfig.PARSE_APP_ID == null ? "" : BuildConfig.PARSE_APP_ID.trim();
+    }
+
+    public static String getParseServerUrl() {
+        return BuildConfig.PARSE_SERVER_URL == null ? "" : BuildConfig.PARSE_SERVER_URL.trim();
+    }
 
         static /* synthetic */ class SwitchMaps {
 
@@ -67,8 +75,8 @@ public class Constants2 {
         NS(193),
         A(194),
         B(195),
-        GREEN(ParseException.USERNAME_MISSING),
-        WES(ParseException.EMAIL_TAKEN),
+        GREEN(200),
+        WES(203),
         ORANGE(290);
 
                 private final int f4899b;

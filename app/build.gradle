@@ -7,6 +7,15 @@ plugins {
     // id 'com.google.firebase.crashlytics'
 }
 
+def quoteForBuildConfig = { String value ->
+    def safe = (value ?: "").replace("\\", "\\\\").replace("\"", "\\\"")
+    return "\"${safe}\""
+}
+
+def trimetApiKey = (project.findProperty("TRIMET_API_KEY") ?: System.getenv("TRIMET_API_KEY") ?: "").toString()
+def parseAppId = (project.findProperty("PARSE_APP_ID") ?: System.getenv("PARSE_APP_ID") ?: "").toString()
+def parseServerUrl = (project.findProperty("PARSE_SERVER_URL") ?: System.getenv("PARSE_SERVER_URL") ?: "").toString()
+
 android {
     namespace "com.something15525.trimetgo.trimet_go"
     compileSdk 35
@@ -21,6 +30,10 @@ android {
         archivesBaseName = "TriMetGo-${versionName}"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "TRIMET_API_KEY", quoteForBuildConfig(trimetApiKey)
+        buildConfigField "String", "PARSE_APP_ID", quoteForBuildConfig(parseAppId)
+        buildConfigField "String", "PARSE_SERVER_URL", quoteForBuildConfig(parseServerUrl)
     }
 
     signingConfigs {
@@ -59,7 +72,7 @@ android {
     }
 
     lint {
-        abortOnError false
+        abortOnError true
     }
 
     packaging {

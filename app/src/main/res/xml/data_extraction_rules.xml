@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" path="TriMet_Go.db"/>
+        <exclude domain="database" path="TriMet_Go.db-journal"/>
+        <exclude domain="database" path="TriMet_Go.db-wal"/>
+        <exclude domain="database" path="TriMet_Go.db-shm"/>
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="TriMet_Go.db"/>
+        <exclude domain="database" path="TriMet_Go.db-journal"/>
+        <exclude domain="database" path="TriMet_Go.db-wal"/>
+        <exclude domain="database" path="TriMet_Go.db-shm"/>
+    </device-transfer>
+</data-extraction-rules>

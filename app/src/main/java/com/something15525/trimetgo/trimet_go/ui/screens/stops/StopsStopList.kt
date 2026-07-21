@@ -36,9 +36,14 @@ fun StopsStopList(
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(routeId, directionId) {
-        val url = context.getString(com.something15525.trimetgo.trimet_go.R.string.base_route_url) +
-                "/appID/" + Constants2.TRIMET_API_KEY + "/route/$routeId/dir/$directionId/stops/true"
-        stops = TransitApi.fetchStops(context, url)
+        val key = Constants2.getTrimetApiKey()
+        stops = if (key.isBlank()) {
+            null
+        } else {
+            val url = context.getString(com.something15525.trimetgo.trimet_go.R.string.base_route_url) +
+                    "/appID/$key/route/$routeId/dir/$directionId/stops/true"
+            TransitApi.fetchStops(context, url)
+        }
         isLoading = false
     }
 

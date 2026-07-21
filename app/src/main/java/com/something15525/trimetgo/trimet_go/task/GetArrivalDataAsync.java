@@ -28,7 +28,12 @@ public abstract class GetArrivalDataAsync extends AsyncTask<String, Void, Arriva
         if (ConnectionUtils.isOnline(this.f4721a)) {
             try {
                 boolean z = false;
-                JSONObject jSONObject = new JSONParser().fetch(strArr[0]).getJSONObject("resultSet");
+                JSONObject fetchedJson = new JSONParser().fetch(strArr[0]);
+                if (fetchedJson == null || !fetchedJson.has("resultSet")) {
+                    arrivalsResult.setQueryError(true);
+                    return arrivalsResult;
+                }
+                JSONObject jSONObject = fetchedJson.getJSONObject("resultSet");
                 ArrayList<Detour> arrayList = new ArrayList<>();
                 try {
                     JSONArray jSONArray = jSONObject.getJSONArray("detour");

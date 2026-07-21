@@ -13,8 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
+    private static final String DB_NAME = "TriMet_Go.db";
+    private static final int DB_VERSION = 6;
+
     public DatabaseHelper(Context context) {
-        super(context, "TriMet_Go.db", (SQLiteDatabase.CursorFactory) null, 5);
+        super(context, DB_NAME, (SQLiteDatabase.CursorFactory) null, DB_VERSION);
     }
 
     public List<Stop> getFavorites() {
@@ -61,50 +64,50 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override // android.database.sqlite.SQLiteOpenHelper
     public void onCreate(SQLiteDatabase sQLiteDatabase) {
-        sQLiteDatabase.execSQL("CREATE TABLE favorites(id INTEGER PRIMARY KEY,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER,longitude REAL,latitude REAL)");
-        sQLiteDatabase.execSQL("CREATE TABLE recent_stops(id INTEGER PRIMARY KEY,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER,longitude REAL,latitude REAL)");
+        sQLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS favorites(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL)");
+        sQLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS recent_stops(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL)");
+        sQLiteDatabase.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_favorites_loc_id ON favorites(loc_id)");
+        sQLiteDatabase.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_recent_stops_loc_id ON recent_stops(loc_id)");
     }
 
     @Override // android.database.sqlite.SQLiteOpenHelper
     public void onUpgrade(SQLiteDatabase sQLiteDatabase, int i, int i2) {
-        if (i2 == 1) {
-            sQLiteDatabase.execSQL("CREATE TABLE favorites(id INTEGER PRIMARY KEY,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER,longitude REAL,latitude REAL)");
-        }
         if (i < 2) {
-            sQLiteDatabase.execSQL("CREATE TABLE recent_stops(id INTEGER PRIMARY KEY,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER,longitude REAL,latitude REAL)");
-            i = 2;
-        }
-        if (i < 3 && i2 != 5) {
-            sQLiteDatabase.execSQL("CREATE TABLE search_data(id INTEGER PRIMARY KEY,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER,longitude REAL,latitude REAL)");
+            sQLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS recent_stops(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER,longitude REAL,latitude REAL)");
         }
         if (i < 4) {
-            sQLiteDatabase.execSQL("ALTER TABLE favorites ADD COLUMN longitude REAL");
-            sQLiteDatabase.execSQL("ALTER TABLE recent_stops ADD COLUMN longitude REAL");
-            if (i2 != 5) {
-                sQLiteDatabase.execSQL("ALTER TABLE search_data ADD COLUMN longitude REAL");
+            try {
+                sQLiteDatabase.execSQL("ALTER TABLE favorites ADD COLUMN longitude REAL");
+            } catch (Exception ignored) {
             }
-            sQLiteDatabase.execSQL("ALTER TABLE favorites ADD COLUMN latitude REAL");
-            sQLiteDatabase.execSQL("ALTER TABLE recent_stops ADD COLUMN latitude REAL");
-            if (i2 != 5) {
-                sQLiteDatabase.execSQL("ALTER TABLE search_data ADD COLUMN latitude REAL");
+            try {
+                sQLiteDatabase.execSQL("ALTER TABLE recent_stops ADD COLUMN longitude REAL");
+            } catch (Exception ignored2) {
+            }
+            try {
+                sQLiteDatabase.execSQL("ALTER TABLE favorites ADD COLUMN latitude REAL");
+            } catch (Exception ignored3) {
+            }
+            try {
+                sQLiteDatabase.execSQL("ALTER TABLE recent_stops ADD COLUMN latitude REAL");
+            } catch (Exception ignored4) {
             }
         }
         if (i < 5) {
             sQLiteDatabase.execSQL("DROP TABLE IF EXISTS search_data");
         }
+        if (i < 6) {
+            sQLiteDatabase.execSQL("DELETE FROM favorites WHERE rowid NOT IN (SELECT MIN(rowid) FROM favorites GROUP BY loc_id)");
+            sQLiteDatabase.execSQL("DELETE FROM recent_stops WHERE rowid NOT IN (SELECT MIN(rowid) FROM recent_stops GROUP BY loc_id)");
+            sQLiteDatabase.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_favorites_loc_id ON favorites(loc_id)");
+            sQLiteDatabase.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_recent_stops_loc_id ON recent_stops(loc_id)");
+        }
     }
 
     public void addFavorite(Stop stop, View view) {
         SQLiteDatabase writableDatabase = getWritableDatabase();
-        Cursor cursorRawQuery = writableDatabase.rawQuery("SELECT loc_id FROM favorites", null);
-        boolean z = false;
-        if (cursorRawQuery.moveToFirst()) {
-            do {
-                if (cursorRawQuery.getInt(cursorRawQuery.getColumnIndexOrThrow("loc_id")) == stop.getLocId()) {
-                    z = true;
-                }
-            } while (cursorRawQuery.moveToNext());
-        }
+        Cursor cursorRawQuery = writableDatabase.query("favorites", new String[]{"loc_id"}, "loc_id = ?", new String[]{String.valueOf(stop.getLocId())}, null, null, null);
+        boolean z = cursorRawQuery.moveToFirst();
         cursorRawQuery.close();
         if (!z) {
             ContentValues contentValues = new ContentValues();
@@ -114,7 +117,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             contentValues.put("transit_type", stop.getTransitType());
             contentValues.put("longitude", Double.valueOf(stop.getLongitude()));
             contentValues.put("latitude", Double.valueOf(stop.getLatitude()));
-            writableDatabase.insert("favorites", null, contentValues);
+            writableDatabase.insertWithOnConflict("favorites", null, contentValues, SQLiteDatabase.CONFLICT_IGNORE);
             Snackbar.make(view, R.string.favorite_added_text, -1).show();
         } else {
             Snackbar.make(view, R.string.favorite_exists_text, -1).show();
@@ -123,22 +126,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public boolean isFavorite(int i) {
-        Cursor cursorRawQuery = getWritableDatabase().rawQuery("SELECT loc_id FROM favorites", null);
-        boolean z = false;
-        if (cursorRawQuery.moveToFirst()) {
-            do {
-                if (cursorRawQuery.getInt(cursorRawQuery.getColumnIndexOrThrow("loc_id")) == i) {
-                    z = true;
-                }
-            } while (cursorRawQuery.moveToNext());
-        }
+        SQLiteDatabase readableDatabase = getReadableDatabase();
+        Cursor cursorRawQuery = readableDatabase.query("favorites", new String[]{"loc_id"}, "loc_id = ?", new String[]{String.valueOf(i)}, null, null, null);
+        boolean z = cursorRawQuery.moveToFirst();
         cursorRawQuery.close();
+        readableDatabase.close();
         return z;
     }
 
     public void removeFavorite(int i, View view) {
         SQLiteDatabase writableDatabase = getWritableDatabase();
-        if (writableDatabase.delete("favorites", "loc_id = " + i, null) > 0) {
+        if (writableDatabase.delete("favorites", "loc_id = ?", new String[]{String.valueOf(i)}) > 0) {
             Snackbar.make(view, R.string.favorite_deleted_text, -1).show();
         } else {
             Snackbar.make(view, R.string.favorite_does_not_exist_text, -1).show();
@@ -147,31 +145,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public void addRecentStop(Stop stop) {
-        int position;
         SQLiteDatabase writableDatabase = getWritableDatabase();
-        Cursor cursorRawQuery = writableDatabase.rawQuery("SELECT loc_id FROM recent_stops", null);
-        boolean z = false;
-        if (cursorRawQuery.moveToFirst()) {
-            position = 0;
-            do {
-                if (cursorRawQuery.getInt(cursorRawQuery.getColumnIndexOrThrow("loc_id")) == stop.getLocId()) {
-                    position = cursorRawQuery.getPosition();
-                    z = true;
-                }
-            } while (cursorRawQuery.moveToNext());
-        } else {
-            position = 0;
-        }
-        if (!z) {
-            if (cursorRawQuery.getCount() >= 20) {
-                cursorRawQuery.moveToFirst();
-                writableDatabase.delete("recent_stops", "loc_id = " + Integer.toString(cursorRawQuery.getInt(cursorRawQuery.getColumnIndexOrThrow("loc_id"))), null);
-            }
-        } else {
-            cursorRawQuery.moveToPosition(position);
-            writableDatabase.delete("recent_stops", "loc_id = " + Integer.toString(cursorRawQuery.getInt(cursorRawQuery.getColumnIndexOrThrow("loc_id"))), null);
-        }
-        cursorRawQuery.close();
+        writableDatabase.delete("recent_stops", "loc_id = ?", new String[]{String.valueOf(stop.getLocId())});
         ContentValues contentValues = new ContentValues();
         contentValues.put("desc", stop.getDesc());
         contentValues.put("dir_desc", stop.getDirDesc());
@@ -179,7 +154,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         contentValues.put("transit_type", stop.getTransitType());
         contentValues.put("longitude", Double.valueOf(stop.getLongitude()));
         contentValues.put("latitude", Double.valueOf(stop.getLatitude()));
-        writableDatabase.insert("recent_stops", null, contentValues);
+        writableDatabase.insertWithOnConflict("recent_stops", null, contentValues, SQLiteDatabase.CONFLICT_REPLACE);
+        Cursor countCursor = writableDatabase.rawQuery("SELECT COUNT(*) FROM recent_stops", null);
+        if (countCursor.moveToFirst() && countCursor.getInt(0) > 20) {
+            writableDatabase.execSQL("DELETE FROM recent_stops WHERE id IN (SELECT id FROM recent_stops ORDER BY id ASC LIMIT ?)", new Object[]{countCursor.getInt(0) - 20});
+        }
+        countCursor.close();
         writableDatabase.close();
     }
 }

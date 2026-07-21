@@ -41,9 +41,14 @@ fun StopsDirectionList(
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(routeId) {
-        val url = context.getString(com.something15525.trimetgo.trimet_go.R.string.base_route_url) +
-                "/appID/" + Constants2.TRIMET_API_KEY + "/route/$routeId/dir/true"
-        directions = TransitApi.fetchDirections(context, url)
+        val key = Constants2.getTrimetApiKey()
+        directions = if (key.isBlank()) {
+            null
+        } else {
+            val url = context.getString(com.something15525.trimetgo.trimet_go.R.string.base_route_url) +
+                    "/appID/$key/route/$routeId/dir/true"
+            TransitApi.fetchDirections(context, url)
+        }
         isLoading = false
     }
 
