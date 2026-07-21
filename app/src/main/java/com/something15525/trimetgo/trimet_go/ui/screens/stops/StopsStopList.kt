@@ -34,15 +34,17 @@ fun StopsStopList(
     val context = LocalContext.current
     var stops by remember { mutableStateOf<List<Stop>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var isMissingApiKey by remember { mutableStateOf(false) }
 
     LaunchedEffect(routeId, directionId) {
         val key = Constants2.getTrimetApiKey()
-        stops = if (key.isBlank()) {
-            null
+        if (key.isBlank()) {
+            isMissingApiKey = true
+            stops = null
         } else {
             val url = context.getString(com.something15525.trimetgo.trimet_go.R.string.base_route_url) +
                     "/appID/$key/route/$routeId/dir/$directionId/stops/true"
-            TransitApi.fetchStops(context, url)
+            stops = TransitApi.fetchStops(context, url)
         }
         isLoading = false
     }
@@ -56,7 +58,8 @@ fun StopsStopList(
         if (safeStops == null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "Unable to load stops.\nCheck your connection.",
+                    text = if (isMissingApiKey) "API key not configured.\nPlease check app settings."
+                           else "Unable to load stops.\nCheck your connection.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

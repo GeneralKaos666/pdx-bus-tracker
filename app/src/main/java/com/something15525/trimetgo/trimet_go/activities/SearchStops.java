@@ -191,7 +191,7 @@ public class SearchStops extends AppCompatActivity {
                             mStopResultsListView.setAdapter(new StopSearchAdapter(results));
                             mStopResultsListView.setVisibility(View.VISIBLE);
                             if (results.size() >= MAX_RESULTS) {
-                                Snackbar.make(rootView, getString(R.string.search_results_limited_text, Integer.valueOf(MAX_RESULTS)), -2).show();
+                                Snackbar.make(rootView, getString(R.string.search_results_limited_text, Integer.valueOf(MAX_RESULTS)), Snackbar.LENGTH_LONG).show();
                             }
                         }
                     }

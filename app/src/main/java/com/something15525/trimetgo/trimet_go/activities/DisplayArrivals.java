@@ -12,6 +12,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -226,7 +227,7 @@ public class DisplayArrivals extends AppCompatActivity {
         linearLayoutManager.setOrientation(RecyclerView.VERTICAL);
         this.mArrivalRecyclerView.setLayoutManager(linearLayoutManager);
         if (!g()) {
-            Snackbar.make(this.rootView, R.string.server_unavailable_text, -1).show();
+            Toast.makeText(this, R.string.server_unavailable_text, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -239,7 +240,7 @@ public class DisplayArrivals extends AppCompatActivity {
         }
         this.serviceAlertsButton.setOnClickListener(new AlertClickListener());
         if (!SecurityUtils.hasConfiguredTrimetApiKey()) {
-            Snackbar.make(this.rootView, R.string.server_unavailable_text, -1).show();
+            Toast.makeText(this, R.string.server_unavailable_text, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -326,7 +327,7 @@ public class DisplayArrivals extends AppCompatActivity {
         public void a(boolean z) {
         if (this.j == null || this.j.trim().isEmpty()) {
             this.mSwipeRefreshLayout.setRefreshing(false);
-            Snackbar.make(this.rootView, R.string.server_unavailable_text, -2).show();
+            Snackbar.make(this.rootView, R.string.server_unavailable_text, Snackbar.LENGTH_LONG).show();
             return;
         }
         this.mSwipeRefreshLayout.setRefreshing(true);

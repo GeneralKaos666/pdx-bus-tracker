@@ -41,4 +41,9 @@ public class SecurityUtilsTest {
         assertNull(SecurityUtils.extractStopIdFromPath("/stops/not-a-number"));
         assertNull(SecurityUtils.extractStopIdFromPath("/stops/0"));
     }
+
+    @Test
+    public void extractStopIdFromPath_handlesTrailingSlash() {
+        assertEquals("1234", SecurityUtils.extractStopIdFromPath("/stops/01234/"));
+    }
 }

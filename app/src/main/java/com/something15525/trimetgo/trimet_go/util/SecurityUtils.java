@@ -60,10 +60,15 @@ public final class SecurityUtils {
         if (pathSegments.length == 0) {
             return null;
         }
-        String candidate = pathSegments[pathSegments.length - 1];
-        if (candidate == null || candidate.isEmpty()) {
+        // Skip empty trailing segments (e.g. from paths ending with '/')
+        int lastIndex = pathSegments.length - 1;
+        while (lastIndex >= 0 && pathSegments[lastIndex].isEmpty()) {
+            lastIndex--;
+        }
+        if (lastIndex < 0) {
             return null;
         }
+        String candidate = pathSegments[lastIndex];
         boolean allZeroes = true;
         for (int i = 0; i < candidate.length(); i++) {
             if (candidate.charAt(i) != '0') {
