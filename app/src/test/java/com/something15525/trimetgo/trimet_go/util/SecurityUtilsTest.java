@@ -38,6 +38,7 @@ public class SecurityUtilsTest {
     @Test
     public void extractStopIdFromPath_extractsValidNumericId() {
         assertEquals("1234", SecurityUtils.extractStopIdFromPath("/stops/01234"));
+        assertEquals("1234", SecurityUtils.extractStopIdFromPath("/stops/01234/"));
         assertNull(SecurityUtils.extractStopIdFromPath("/stops/not-a-number"));
         assertNull(SecurityUtils.extractStopIdFromPath("/stops/0"));
     }
