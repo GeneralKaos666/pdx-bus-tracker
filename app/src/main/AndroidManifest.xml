@@ -53,7 +53,7 @@
             android:name="com.something15525.trimetgo.trimet_go.activities.DisplayArrivals"/>
         <activity
             android:label="@string/searchable_stops_name"
-            android:exported="false"
+            android:exported="true"
             android:name="com.something15525.trimetgo.trimet_go.activities.SearchStops">
             <intent-filter>
                 <action android:name="android.intent.action.SEARCH"/>

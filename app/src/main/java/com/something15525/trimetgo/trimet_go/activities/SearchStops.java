@@ -26,6 +26,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import com.google.android.material.snackbar.Snackbar;
 
 import com.something15525.trimetgo.trimet_go.R;
 import com.something15525.trimetgo.trimet_go.data.local.DatabaseHelper;
@@ -189,6 +190,9 @@ public class SearchStops extends AppCompatActivity {
                         } else {
                             mStopResultsListView.setAdapter(new StopSearchAdapter(results));
                             mStopResultsListView.setVisibility(View.VISIBLE);
+                            if (results.size() >= MAX_RESULTS) {
+                                Snackbar.make(rootView, getString(R.string.search_results_limited_text, Integer.valueOf(MAX_RESULTS)), -2).show();
+                            }
                         }
                     }
                 });

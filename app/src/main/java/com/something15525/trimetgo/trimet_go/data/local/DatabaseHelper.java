@@ -130,7 +130,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursorRawQuery = readableDatabase.query("favorites", new String[]{"loc_id"}, "loc_id = ?", new String[]{String.valueOf(i)}, null, null, null);
         boolean z = cursorRawQuery.moveToFirst();
         cursorRawQuery.close();
-        readableDatabase.close();
         return z;
     }
 
@@ -157,7 +156,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         writableDatabase.insertWithOnConflict("recent_stops", null, contentValues, SQLiteDatabase.CONFLICT_REPLACE);
         Cursor countCursor = writableDatabase.rawQuery("SELECT COUNT(*) FROM recent_stops", null);
         if (countCursor.moveToFirst() && countCursor.getInt(0) > 20) {
-            writableDatabase.execSQL("DELETE FROM recent_stops WHERE id IN (SELECT id FROM recent_stops ORDER BY id ASC LIMIT ?)", new Object[]{countCursor.getInt(0) - 20});
+            writableDatabase.execSQL("DELETE FROM recent_stops WHERE id NOT IN (SELECT id FROM recent_stops ORDER BY id DESC LIMIT 20)");
         }
         countCursor.close();
         writableDatabase.close();

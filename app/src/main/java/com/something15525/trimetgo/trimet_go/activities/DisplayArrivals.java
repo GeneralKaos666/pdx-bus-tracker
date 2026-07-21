@@ -240,6 +240,7 @@ public class DisplayArrivals extends AppCompatActivity {
         this.serviceAlertsButton.setOnClickListener(new AlertClickListener());
         if (!SecurityUtils.hasConfiguredTrimetApiKey()) {
             Snackbar.make(this.rootView, R.string.server_unavailable_text, -1).show();
+            finish();
             return;
         }
         this.j = getString(R.string.base_arrival_url) + "/appID/" + Constants2.getTrimetApiKey() + "/locIDs/" + this.g;

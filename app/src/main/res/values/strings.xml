@@ -988,6 +988,7 @@
     <string name="server_unavailable_text">Server could not be contacted.\nPlease try again later.</string>
     <string name="server_unavailable_title">Server is unavailable</string>
     <string name="settings">Settings</string>
+    <string name="search_results_limited_text">Showing first %1$d results.</string>
     <string name="show_other_arrivals_button_text">Show other arrivals</string>
     <string name="status_bar_notification_info_overflow">999+</string>
     <string name="stop">Stop</string>

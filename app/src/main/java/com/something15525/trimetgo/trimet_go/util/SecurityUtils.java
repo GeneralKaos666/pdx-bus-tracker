@@ -64,6 +64,16 @@ public final class SecurityUtils {
         if (candidate == null || candidate.isEmpty()) {
             return null;
         }
+        boolean allZeroes = true;
+        for (int i = 0; i < candidate.length(); i++) {
+            if (candidate.charAt(i) != '0') {
+                allZeroes = false;
+                break;
+            }
+        }
+        if (allZeroes) {
+            return null;
+        }
         while (candidate.startsWith("0") && candidate.length() > 1) {
             candidate = candidate.substring(1);
         }
@@ -75,6 +85,6 @@ public final class SecurityUtils {
                 return null;
             }
         }
-        return "0".equals(candidate) ? null : candidate;
+        return candidate;
     }
 }
