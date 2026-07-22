@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.network.JSONParser
+import com.trimettransit.tracker.util.ConnectionUtils
 import com.trimettransit.tracker.util.Constants2
 import com.trimettransit.tracker.util.SecurityUtils
 import kotlinx.coroutines.Dispatchers
@@ -67,7 +68,12 @@ fun QRLoadingScreen(
     LaunchedEffect(qrUri) {
         state = QRLoadingState.Loading
         try {
-            val uri = URI(qrUri)
+            if (!ConnectionUtils.isOnline(context)) {
+                state = QRLoadingState.Offline
+                return@LaunchedEffect
+            }
+
+            val uri = URI.create(qrUri)
             if (!SecurityUtils.isValidHttpsUri(uri) || !SecurityUtils.isAllowedQrHost(uri.host)) {
                 state = QRLoadingState.Error
                 errorMessage = "Invalid QR code link."
@@ -116,6 +122,10 @@ fun QRLoadingScreen(
                 return@LaunchedEffect
             }
             onStopResolved(stopIdInt)
+        } catch (e: IllegalArgumentException) {
+            Log.e(TAG, "Malformed QR URI", e)
+            state = QRLoadingState.Error
+            errorMessage = "Invalid QR code."
         } catch (e: SecurityException) {
             Log.e(TAG, "Security check failed", e)
             state = QRLoadingState.Error

@@ -10,7 +10,6 @@ import com.trimettransit.tracker.util.ConnectionUtils
 import com.trimettransit.tracker.util.Constants2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.trimettransit.tracker.BuildConfig
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.data.model.Arrival
 import com.trimettransit.tracker.data.model.ArrivalsResult
@@ -142,11 +141,12 @@ object TransitApi {
             Log.w(TAG, "TriMet API key not configured")
             return@withContext null
         }
+        val apiKey = Constants2.getTrimetApiKey()
         try {
             val baseUrl = context.getString(R.string.base_arrival_url)
             val url = buildString {
                 append(baseUrl)
-                append("/appID/").append(BuildConfig.TRIMET_API_KEY)
+                append("/appID/").append(apiKey)
                 append("/locIDs/").append(locIds.joinToString(","))
                 if (showPosition) append("/showPosition/true")
                 append("/minutes/").append(minutes)
@@ -253,11 +253,16 @@ object TransitApi {
         showStale: Boolean = false
     ): List<VehiclePosition>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
+        if (!Constants2.hasTrimetApiKey()) {
+            Log.w(TAG, "TriMet API key not configured")
+            return@withContext null
+        }
+        val apiKey = Constants2.getTrimetApiKey()
         try {
             val baseUrl = context.getString(R.string.base_vehicles_url)
             val url = buildString {
                 append(baseUrl)
-                append("/appID/").append(BuildConfig.TRIMET_API_KEY)
+                append("/appID/").append(apiKey)
                 if (routes != null && routes.isNotEmpty()) {
                     append("/routes/").append(routes.joinToString(","))
                 }
@@ -329,11 +334,16 @@ object TransitApi {
         showRoutes: Boolean = true
     ): List<Stop>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
+        if (!Constants2.hasTrimetApiKey()) {
+            Log.w(TAG, "TriMet API key not configured")
+            return@withContext null
+        }
+        val apiKey = Constants2.getTrimetApiKey()
         try {
             val baseUrl = context.getString(R.string.base_stop_location_v2_url)
             val url = buildString {
                 append(baseUrl)
-                append("/appID/").append(BuildConfig.TRIMET_API_KEY)
+                append("/appID/").append(apiKey)
                 append("/ll/").append(ll)
                 if (feet != null) append("/feet/").append(feet)
                 if (meters != null) append("/meters/").append(meters)
@@ -388,11 +398,16 @@ object TransitApi {
         systemWideOnly: Boolean = false
     ): List<Detour>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
+        if (!Constants2.hasTrimetApiKey()) {
+            Log.w(TAG, "TriMet API key not configured")
+            return@withContext null
+        }
+        val apiKey = Constants2.getTrimetApiKey()
         try {
             val baseUrl = context.getString(R.string.base_alerts_url)
             val url = buildString {
                 append(baseUrl)
-                append("/appID/").append(BuildConfig.TRIMET_API_KEY)
+                append("/appID/").append(apiKey)
                 if (routeIds != null && routeIds.isNotEmpty()) {
                     append("/routes/").append(routeIds.joinToString(","))
                 }
