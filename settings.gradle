@@ -1,4 +1,4 @@
-rootProject.name = 'TriMet Go'
+rootProject.name = 'TriMet Bus Tracker'
 include 'app'
 
 dependencyResolutionManagement {

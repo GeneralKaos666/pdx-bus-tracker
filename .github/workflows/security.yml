@@ -40,8 +40,6 @@ jobs:
       - name: Build
         env:
           TRIMET_API_KEY: ${{ secrets.TRIMET_API_KEY }}
-          PARSE_APP_ID: ${{ secrets.PARSE_APP_ID }}
-          PARSE_SERVER_URL: ${{ secrets.PARSE_SERVER_URL }}
         run: |
           chmod +x ./gradlew
           ./gradlew clean assembleDebug --stacktrace

@@ -27,10 +27,6 @@
 -dontwarn okio.**
 
 # Keep the app's R class
--keep class com.something15525.trimetgo.trimet_go.R { *; }
-
-# Keep model classes (serialized from JSON)
--keep class com.something15525.trimetgo.trimet_go.d.** { *; }
 
 # Keep obfuscated referenced classes
--keep class com.something15525.trimetgo.trimet_go.** { *; }
+-keep class com.trimettransit.tracker.** { *; }
