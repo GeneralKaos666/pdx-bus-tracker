@@ -22,8 +22,6 @@
         android:icon="@drawable/ic_launcher"
         android:name="com.trimettransit.tracker.TrimetTransitTracker"
         android:allowBackup="false"
-        android:fullBackupContent="@xml/backup_rules"
-        android:dataExtractionRules="@xml/data_extraction_rules"
         android:usesCleartextTraffic="false"
         android:supportsRtl="true"
         android:networkSecurityConfig="@xml/network_security_config"

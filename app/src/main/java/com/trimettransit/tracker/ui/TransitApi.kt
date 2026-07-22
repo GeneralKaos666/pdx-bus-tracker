@@ -137,11 +137,11 @@ object TransitApi {
         maxArrivals: Int = 2
     ): ArrivalsResult? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
-        if (!Constants2.hasTrimetApiKey()) {
+        val apiKey = Constants2.getTrimetApiKey()
+        if (apiKey.isBlank()) {
             Log.w(TAG, "TriMet API key not configured")
             return@withContext null
         }
-        val apiKey = Constants2.getTrimetApiKey()
         try {
             val baseUrl = context.getString(R.string.base_arrival_url)
             val url = buildString {
@@ -253,11 +253,11 @@ object TransitApi {
         showStale: Boolean = false
     ): List<VehiclePosition>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
-        if (!Constants2.hasTrimetApiKey()) {
+        val apiKey = Constants2.getTrimetApiKey()
+        if (apiKey.isBlank()) {
             Log.w(TAG, "TriMet API key not configured")
             return@withContext null
         }
-        val apiKey = Constants2.getTrimetApiKey()
         try {
             val baseUrl = context.getString(R.string.base_vehicles_url)
             val url = buildString {
@@ -334,11 +334,11 @@ object TransitApi {
         showRoutes: Boolean = true
     ): List<Stop>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
-        if (!Constants2.hasTrimetApiKey()) {
+        val apiKey = Constants2.getTrimetApiKey()
+        if (apiKey.isBlank()) {
             Log.w(TAG, "TriMet API key not configured")
             return@withContext null
         }
-        val apiKey = Constants2.getTrimetApiKey()
         try {
             val baseUrl = context.getString(R.string.base_stop_location_v2_url)
             val url = buildString {
@@ -398,11 +398,11 @@ object TransitApi {
         systemWideOnly: Boolean = false
     ): List<Detour>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
-        if (!Constants2.hasTrimetApiKey()) {
+        val apiKey = Constants2.getTrimetApiKey()
+        if (apiKey.isBlank()) {
             Log.w(TAG, "TriMet API key not configured")
             return@withContext null
         }
-        val apiKey = Constants2.getTrimetApiKey()
         try {
             val baseUrl = context.getString(R.string.base_alerts_url)
             val url = buildString {
