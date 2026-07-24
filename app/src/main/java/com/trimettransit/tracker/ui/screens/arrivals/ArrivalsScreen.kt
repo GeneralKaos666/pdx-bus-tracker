@@ -2,17 +2,16 @@ package com.trimettransit.tracker.ui.screens.arrivals
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,21 +20,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.pullToRefresh
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,11 +47,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.R
@@ -58,6 +58,9 @@ import com.trimettransit.tracker.data.model.Arrival
 import com.trimettransit.tracker.data.model.Detour
 import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.ui.TransitApi
+import com.trimettransit.tracker.ui.screens.components.EmptyState
+import com.trimettransit.tracker.ui.screens.components.ErrorState
+import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.transitColor
 import com.trimettransit.tracker.ui.screens.components.transitInitial
 import com.trimettransit.tracker.util.DateUtils
@@ -79,10 +82,10 @@ fun ArrivalsScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
     var isFavorite by remember { mutableStateOf(false) }
+    var alertsExpanded by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    val pullToRefreshState = rememberPullToRefreshState()
+    val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-
     val locId = stopId.toIntOrNull() ?: 0
 
     LaunchedEffect(stopId) {
@@ -126,6 +129,7 @@ fun ArrivalsScreen(
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stopName.ifBlank { "Stop #$stopId" }) },
@@ -136,12 +140,17 @@ fun ArrivalsScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        toggleFavorite(context, locId, stopName, isFavorite) { isFavorite = !isFavorite }
+                        coroutineScope.launch {
+                            val msg = toggleFavorite(context, locId, stopName, isFavorite)
+                            isFavorite = !isFavorite
+                            snackbarHostState.showSnackbar(msg)
+                        }
                     }) {
                         Icon(
                             if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                             contentDescription = if (isFavorite) "Remove favorite" else "Add favorite",
-                            tint = if (isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onPrimaryContainer
+                            tint = if (isFavorite) MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                     IconButton(onClick = { loadArrivals() }) {
@@ -158,60 +167,25 @@ fun ArrivalsScreen(
             )
         }
     ) { padding ->
-        Box(
+        PullToRefreshBox(
+            isRefreshing = isLoading,
+            onRefresh = { loadArrivals() },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .pullToRefresh(
-                    isRefreshing = isLoading,
-                    state = pullToRefreshState,
-                    onRefresh = { loadArrivals() }
-                )
-        ) {
+        )
+        {
             when {
                 isLoading && arrivals.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    LoadingState()
                 }
 
                 isError && arrivals.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Unable to load arrivals.\nPull to retry.",
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    ErrorState(message = "Unable to load arrivals.\nPull to retry.")
                 }
 
                 arrivals.isEmpty() && !isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Default.Info,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "No upcoming arrivals.",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    EmptyState(message = "No upcoming arrivals.")
                 }
 
                 else -> {
@@ -226,20 +200,41 @@ fun ArrivalsScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = MaterialTheme.shapes.small
                                 ) {
-                                    Column(modifier = Modifier.padding(12.dp)) {
-                                        Text(
-                                            text = "Service Alerts (${detours.size})",
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onErrorContainer
-                                        )
-                                        detours.forEach { detour ->
+                                    Column {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { alertsExpanded = !alertsExpanded }
+                                                .padding(horizontal = 12.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
                                             Text(
-                                                text = detour.desc,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                text = "Alerts (${detours.size})",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.SemiBold,
                                                 color = MaterialTheme.colorScheme.onErrorContainer,
-                                                modifier = Modifier.padding(top = 4.dp)
+                                                modifier = Modifier.weight(1f)
                                             )
+                                            Icon(
+                                                imageVector = if (alertsExpanded) Icons.Default.KeyboardArrowUp
+                                                    else Icons.Default.KeyboardArrowDown,
+                                                contentDescription = if (alertsExpanded) "Collapse alerts"
+                                                    else "Expand alerts",
+                                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        AnimatedVisibility(visible = alertsExpanded) {
+                                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                                detours.forEach { detour ->
+                                                    Text(
+                                                        text = detour.desc ?: "",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                                        modifier = Modifier.padding(bottom = 4.dp)
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -293,7 +288,7 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     text = initial,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.surface,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -333,24 +328,23 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
     }
 }
 
-private fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean, onToggle: () -> Unit) {
-    try {
+private fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean): String {
+    return try {
         val db = DatabaseHelper(context.applicationContext)
         if (currentlyFavorite) {
             val writableDb = db.writableDatabase
             writableDb.delete("favorites", "loc_id = ?", arrayOf(locId.toString()))
             writableDb.close()
-            Toast.makeText(context, R.string.favorite_deleted_text, Toast.LENGTH_SHORT).show()
+            context.getString(R.string.favorite_deleted_text)
         } else {
             val stop = Stop()
             stop.setDesc(stopName)
             stop.setLocId(locId)
             db.addFavorite(stop, null)
-            Toast.makeText(context, R.string.favorite_added_text, Toast.LENGTH_SHORT).show()
+            context.getString(R.string.favorite_added_text)
         }
-        onToggle()
     } catch (e: Exception) {
         Log.e(TAG, "Failed to toggle favorite", e)
-        Toast.makeText(context, "Failed to update favorite", Toast.LENGTH_SHORT).show()
+        "Failed to update favorite"
     }
 }

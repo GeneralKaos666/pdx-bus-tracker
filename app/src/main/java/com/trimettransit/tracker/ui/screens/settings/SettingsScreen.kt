@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
@@ -42,17 +41,10 @@ fun SettingsScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .verticalScroll(rememberScrollState())
     ) {
         // Theme section
-        Text(
-            text = "Theme",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
-        )
+        SectionHeader(title = "Theme")
 
         SettingsRadioOption(
             label = "System default",
@@ -82,16 +74,10 @@ fun SettingsScreen() {
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         // Route filter section
-        Text(
-            text = "Arrivals",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
-        )
+        SectionHeader(title = "Arrivals")
 
         SettingsSwitchOption(
-            label = "Only show selected route\u2019s arrivals",
+            label = "Only show selected route's arrivals",
             checked = onlyShowSelectedRoute,
             onCheckedChange = {
                 onlyShowSelectedRoute = it
@@ -102,13 +88,7 @@ fun SettingsScreen() {
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         // About section
-        Text(
-            text = "About",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
-        )
+        SectionHeader(title = "About")
 
         Text(
             text = "TriMet Go",
@@ -124,6 +104,17 @@ fun SettingsScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
     }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
+    )
 }
 
 @Composable

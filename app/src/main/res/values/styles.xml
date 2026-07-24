@@ -24,29 +24,6 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
-    
-    <style name="AppTheme.Toolbar" parent="AppTheme">
-        <item name="actionMenuTextColor">@color/white</item>
-    </style>
 
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar">
-    </style>
-
-    <style name="AppTheme.CollapsedHeaderTitleStyle" parent="AppTheme">
-        <item name="android:textColor">@color/white</item>
-        <item name="android:textSize">18sp</item>
-    </style>
-
-    <style name="AppTheme.ExpandedHeaderTitleStyle" parent="AppTheme">
-        <item name="android:textColor">@color/white</item>
-        <item name="android:textSize">24sp</item>
-    </style>
-
-    <style name="AppTheme.Card" parent="Widget.Material3.CardView.Filled">
-        <item name="cardCornerRadius">12dp</item>
-        <item name="cardElevation">2dp</item>
-        <item name="strokeWidth">0dp</item>
-        <item name="contentPadding">12dp</item>
-    </style>
 </resources>

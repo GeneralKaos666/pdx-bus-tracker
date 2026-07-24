@@ -31,16 +31,16 @@
             android:name="com.trimettransit.tracker.activities.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:configChanges="screenSize|orientation">
+            android:configChanges="screenSize|orientation"
+            android:enableOnBackInvokedCallback="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
         <activity
-            android:name="com.trimettransit.tracker.activities.qr_scanning.QRLoadingActivity"/>
-        <activity
             android:label="@string/activity_qr_scanning_title"
-            android:name="com.trimettransit.tracker.activities.qr_scanning.QRScanningActivity"/>
+            android:name="com.trimettransit.tracker.activities.qr_scanning.QRCameraActivity"
+            android:configChanges="screenSize|orientation|screenLayout|keyboardHidden" />
     </application>
 </manifest>

@@ -10,14 +10,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +39,9 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.data.model.VehiclePosition
 import com.trimettransit.tracker.ui.TransitApi
+import com.trimettransit.tracker.ui.screens.components.EmptyState
+import com.trimettransit.tracker.ui.screens.components.ErrorState
+import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.transitColor
 import kotlinx.coroutines.launch
 
@@ -80,7 +81,6 @@ fun VehiclePositionsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .padding(16.dp)
     ) {
         Text(
@@ -117,62 +117,30 @@ fun VehiclePositionsScreen(
         // Content
         when {
             isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Loading vehicles...")
-                    }
-                }
+                LoadingState(message = "Loading vehicles...")
             }
             errorMessage != null && vehicles == null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = errorMessage ?: "Unknown error",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
+                ErrorState(message = errorMessage ?: "Unknown error")
             }
             vehicles != null -> {
-                if (vehicles!!.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (hasLoaded) "No vehicles found for this route" else "Enter a route and tap Load",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                val safeVehicles = vehicles!!
+                if (safeVehicles.isEmpty()) {
+                    EmptyState(
+                        message = if (hasLoaded) "No vehicles found for this route"
+                                  else "Enter a route and tap Load"
+                    )
                 } else {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(vehicles!!) { vehicle ->
+                        items(safeVehicles, key = { it.vehicleID }) { vehicle ->
                             VehicleListItem(vehicle = vehicle)
                         }
                     }
                 }
             }
             !hasLoaded -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Enter a route number and tap Load",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                EmptyState(message = "Enter a route number and tap Load")
             }
         }
     }
@@ -182,11 +150,11 @@ fun VehiclePositionsScreen(
 private fun VehicleListItem(vehicle: VehiclePosition) {
     val delaySeconds = vehicle.delay
     val delayColor = when {
-        delaySeconds > 300 -> Color(0xFFD32F2F)  // Red: > 5 min
-        delaySeconds > 60 -> Color(0xFFFBC02D)   // Yellow: > 1 min
-        delaySeconds < -300 -> Color(0xFFD32F2F)  // Red: > 5 min late
-        delaySeconds < -60 -> Color(0xFFFBC02D)   // Yellow: > 1 min late
-        else -> Color(0xFF388E3C)                 // Green: on time
+        delaySeconds > 300 -> MaterialTheme.colorScheme.error           // > 5 min early
+        delaySeconds > 60 -> Color(0xFFFBC02D)                          // > 1 min early
+        delaySeconds < -300 -> MaterialTheme.colorScheme.error          // > 5 min late
+        delaySeconds < -60 -> Color(0xFFFBC02D)                         // > 1 min late
+        else -> MaterialTheme.colorScheme.primary                       // on time
     }
 
     val delayText = when {
@@ -237,7 +205,7 @@ private fun VehicleListItem(vehicle: VehiclePosition) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = vehicle.type,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.surface,
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.labelMedium
                             )

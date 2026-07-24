@@ -14,10 +14,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -37,6 +35,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.ui.TransitApi
+import com.trimettransit.tracker.ui.screens.components.EmptyState
+import com.trimettransit.tracker.ui.screens.components.ErrorState
+import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.StopListItem
 import kotlinx.coroutines.launch
 
@@ -63,7 +64,7 @@ fun NearbyStopsScreen(
     ) { granted ->
         locationPermissionGranted = granted
         if (granted) {
-            loadNearbyStops(context, coroutineScope, isLoading, { isLoading = it }, { stops = it }, { errorMessage = it }, { hasLoaded = true })
+            loadNearbyStops(context, coroutineScope, stops, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
         } else {
             errorMessage = "Location permission is required to find nearby stops"
         }
@@ -71,7 +72,7 @@ fun NearbyStopsScreen(
 
     fun loadIfPermissionGranted() {
         if (locationPermissionGranted) {
-            loadNearbyStops(context, coroutineScope, isLoading, { isLoading = it }, { stops = it }, { errorMessage = it }, { hasLoaded = true })
+            loadNearbyStops(context, coroutineScope, stops, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
         } else {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
@@ -80,14 +81,13 @@ fun NearbyStopsScreen(
     // Auto-load on first composition if permission already granted
     LaunchedEffect(locationPermissionGranted) {
         if (locationPermissionGranted && !hasLoaded) {
-            loadNearbyStops(context, coroutineScope, isLoading, { isLoading = it }, { stops = it }, { errorMessage = it }, { hasLoaded = true })
+            loadNearbyStops(context, coroutineScope, stops, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
         }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .padding(16.dp)
     ) {
         Text(
@@ -109,16 +109,7 @@ fun NearbyStopsScreen(
 
         when {
             isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("Finding nearby stops...")
-                    }
-                }
+                LoadingState(message = "Finding nearby stops...")
             }
             errorMessage != null && stops == null -> {
                 Box(
@@ -143,22 +134,17 @@ fun NearbyStopsScreen(
                 }
             }
             stops != null -> {
-                if (stops!!.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (hasLoaded) "No stops found nearby" else "Tap Refresh to find nearby stops",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                val safeStops = stops!!
+                if (safeStops.isEmpty()) {
+                    EmptyState(
+                        message = if (hasLoaded) "No stops found nearby"
+                                  else "Tap Refresh to find nearby stops"
+                    )
                 } else {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        items(stops!!) { stop ->
+                        items(safeStops, key = { it.locId }) { stop ->
                             StopListItem(
                                 stop = stop,
                                 onClick = { onNavigateToArrivals(stop, -1) }
@@ -168,18 +154,9 @@ fun NearbyStopsScreen(
                 }
             }
             !hasLoaded -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Tap Refresh to find nearby stops using your current location",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(32.dp)
-                    )
-                }
+                EmptyState(
+                    message = "Tap Refresh to find nearby stops using your current location"
+                )
             }
         }
     }
@@ -188,13 +165,13 @@ fun NearbyStopsScreen(
 private fun loadNearbyStops(
     context: Context,
     coroutineScope: kotlinx.coroutines.CoroutineScope,
-    currentLoading: Boolean,
-    setLoading: (Boolean) -> Unit,
+    currentStops: List<Stop>?,
     setStops: (List<Stop>?) -> Unit,
+    setLoading: (Boolean) -> Unit,
     setError: (String?) -> Unit,
     setHasLoaded: () -> Unit
 ) {
-    if (currentLoading) return
+    if (currentStops != null && currentStops.isEmpty().not()) return  // already loaded
     setLoading(true)
     setError(null)
     setHasLoaded()

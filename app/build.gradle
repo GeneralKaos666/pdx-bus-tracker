@@ -1,6 +1,6 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.plugin.compose' version '2.2.10'
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
 
 def quoteForBuildConfig = { String value ->
@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId 'com.trimettransit.tracker'
-        minSdk 24
+        minSdk 31
         targetSdk 35
         versionCode 100
         versionName "3.0.0"
@@ -89,12 +89,9 @@ dependencies {
     // Preference/Settings
     implementation 'androidx.preference:preference:1.2.1'
 
-    // Google Play Services
-    implementation 'com.google.android.gms:play-services-vision:20.1.3'
-    implementation 'com.google.android.gms:play-services-basement:18.4.0'
-
     // Networking
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
     implementation 'com.squareup.okio:okio:3.9.1'
     // Image loading
     implementation 'com.squareup.picasso:picasso:2.8'
@@ -104,6 +101,15 @@ dependencies {
 
     // Event Bus
     implementation 'org.greenrobot:eventbus:3.3.1'
+
+    // CameraX
+    def camerax_version = "1.4.1"
+    implementation "androidx.camera:camera-camera2:${camerax_version}"
+    implementation "androidx.camera:camera-lifecycle:${camerax_version}"
+    implementation "androidx.camera:camera-view:${camerax_version}"
+
+    // ML Kit barcode scanning (bundled, no Play Services dependency)
+    implementation 'com.google.mlkit:barcode-scanning:17.3.0'
     // Testing
     testImplementation 'junit:junit:4.13.2'
 }

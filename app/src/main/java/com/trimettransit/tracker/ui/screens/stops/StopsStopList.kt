@@ -1,28 +1,26 @@
 package com.trimettransit.tracker.ui.screens.stops
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.data.model.Stop
-import com.trimettransit.tracker.util.Constants2
 import com.trimettransit.tracker.ui.TransitApi
+import com.trimettransit.tracker.ui.screens.components.LoadingState
+import com.trimettransit.tracker.ui.screens.components.ErrorState
+import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.StopListItem
+import com.trimettransit.tracker.util.Constants2
 
 @Composable
 fun StopsStopList(
@@ -50,39 +48,31 @@ fun StopsStopList(
     }
 
     if (isLoading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
+        LoadingState()
     } else {
         val safeStops = stops
-        if (safeStops == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = if (isMissingApiKey) "API key not configured.\nPlease check app settings."
-                           else "Unable to load stops.\nCheck your connection.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+        when {
+            safeStops == null -> {
+                ErrorState(
+                    message = if (isMissingApiKey) "API key not configured.\nPlease check app settings."
+                               else "Unable to load stops.\nCheck your connection."
                 )
             }
-        } else if (safeStops.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = "No stops available.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            safeStops.isEmpty() -> {
+                EmptyState(message = "No stops available.")
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                items(safeStops, key = { it.locId }) { stop ->
-                    StopListItem(
-                        stop = stop,
-                        onClick = { onStopSelected(stop) }
-                    )
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(safeStops, key = { it.locId }) { stop ->
+                        StopListItem(
+                            stop = stop,
+                            onClick = { onStopSelected(stop) }
+                        )
+                    }
                 }
             }
         }
