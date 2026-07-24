@@ -51,6 +51,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.data.local.DatabaseHelper
@@ -292,6 +293,16 @@ fun ArrivalsScreen(
     }
 }
 
+private fun formatDelay(arrival: Arrival): String? {
+    if (arrival.status != "estimated" || arrival.estimatedMillis == 0L || arrival.scheduledMillis == 0L) return null
+    val delayMin = ((arrival.estimatedMillis - arrival.scheduledMillis) / 60000).toInt()
+    return when {
+        delayMin > 1 -> "${delayMin} min late"
+        delayMin < -1 -> "${-delayMin} min early"
+        else -> "On time"
+    }
+}
+
 @Composable
 private fun StopMapCard(
     lat: Double,
@@ -420,20 +431,34 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
             )
         }
 
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = relativeText,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = if (isEstimated) FontWeight.Bold else FontWeight.Normal,
-                color = if (isEstimated) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface
-            )
-            if (!isEstimated) {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = color
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
                 Text(
-                    text = "scheduled",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = relativeText,
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = if (isEstimated) FontWeight.Bold else FontWeight.Normal
                 )
+                val delayText = formatDelay(arrival)
+                if (delayText != null) {
+                    Text(
+                        text = delayText,
+                        color = Color.White.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                } else if (!isEstimated) {
+                    Text(
+                        text = "scheduled",
+                        color = Color.White.copy(alpha = 0.7f),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
     }
