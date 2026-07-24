@@ -57,7 +57,11 @@ fun StopListItem(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = transitInitial(stop.transitType),
+                        text = when {
+                            stop.routeNum > 0 -> stop.routeNum.toString()
+                            !stop.transitType.isNullOrBlank() -> transitInitial(stop.transitType)
+                            else -> stop.locId.toString()
+                        },
                         color = MaterialTheme.colorScheme.surface,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold

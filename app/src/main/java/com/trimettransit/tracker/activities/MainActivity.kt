@@ -63,6 +63,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.activities.qr_scanning.QRCameraActivity
+import com.trimettransit.tracker.data.local.DatabaseHelper
+import kotlinx.coroutines.Dispatchers
 import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.ui.screens.DrawerActions
 import com.trimettransit.tracker.ui.screens.DrawerContent
@@ -146,8 +148,13 @@ private fun MainAppContent(incomingQrUri: String? = null) {
     val currentRoute = currentBackStackEntry?.destination?.route ?: ""
     val isRootScreen = currentRoute in setOf("home", "stops", "settings", "search", "nearby_stops", "vehicle_positions")
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var homeRefreshKey by remember { mutableStateOf(0) }
 
     fun navigateToArrivals(stop: Stop, routeId: Int) {
+        scope.launch(Dispatchers.IO) {
+            DatabaseHelper(context.applicationContext).addRecentStop(stop)
+        }
+        homeRefreshKey++
         navController.navigate(
             "arrivals/${stop.locId}?stopName=${URLEncoder.encode(stop.desc ?: "", "UTF-8")}&routeId=$routeId"
         )
@@ -238,6 +245,7 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                     popExitTransition = { navPopExit }
                 ) {
                     HomeScreen(
+                        refreshKey = homeRefreshKey,
                         onNavigateToArrivals = { stop: Stop ->
                             navigateToArrivals(stop, -1)
                         }

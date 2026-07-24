@@ -14,7 +14,7 @@ import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DB_NAME = "TriMet_Go.db";
-    private static final int DB_VERSION = 6;
+    private static final int DB_VERSION = 7;
 
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, (SQLiteDatabase.CursorFactory) null, DB_VERSION);
@@ -34,6 +34,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     stop.setLocId(cursorRawQuery.getInt(cursorRawQuery.getColumnIndexOrThrow("loc_id")));
                     stop.setLongitude(cursorRawQuery.getDouble(cursorRawQuery.getColumnIndexOrThrow("longitude")));
                     stop.setLatitude(cursorRawQuery.getDouble(cursorRawQuery.getColumnIndexOrThrow("latitude")));
+                    stop.setRouteNum(cursorRawQuery.getInt(cursorRawQuery.getColumnIndexOrThrow("route_num")));
                     arrayList.add(stop);
                 } while (cursorRawQuery.moveToNext());
             }
@@ -58,6 +59,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     stop.setLocId(cursorRawQuery.getInt(cursorRawQuery.getColumnIndexOrThrow("loc_id")));
                     stop.setLongitude(cursorRawQuery.getDouble(cursorRawQuery.getColumnIndexOrThrow("longitude")));
                     stop.setLatitude(cursorRawQuery.getDouble(cursorRawQuery.getColumnIndexOrThrow("latitude")));
+                    stop.setRouteNum(cursorRawQuery.getInt(cursorRawQuery.getColumnIndexOrThrow("route_num")));
                     arrayList.add(0, stop);
                 } while (cursorRawQuery.moveToNext());
             }
@@ -70,8 +72,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override // android.database.sqlite.SQLiteOpenHelper
     public void onCreate(SQLiteDatabase sQLiteDatabase) {
-        sQLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS favorites(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL)");
-        sQLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS recent_stops(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL)");
+        sQLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS favorites(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER)");
+        sQLiteDatabase.execSQL("CREATE TABLE IF NOT EXISTS recent_stops(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER)");
         sQLiteDatabase.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_favorites_loc_id ON favorites(loc_id)");
         sQLiteDatabase.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_recent_stops_loc_id ON recent_stops(loc_id)");
     }
@@ -108,6 +110,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             sQLiteDatabase.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_favorites_loc_id ON favorites(loc_id)");
             sQLiteDatabase.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_recent_stops_loc_id ON recent_stops(loc_id)");
         }
+        if (i < 7) {
+            try {
+                sQLiteDatabase.execSQL("ALTER TABLE favorites ADD COLUMN route_num INTEGER DEFAULT 0");
+            } catch (Exception ignored) {
+            }
+            try {
+                sQLiteDatabase.execSQL("ALTER TABLE recent_stops ADD COLUMN route_num INTEGER DEFAULT 0");
+            } catch (Exception ignored2) {
+            }
+        }
     }
 
     public void addFavorite(Stop stop, View view) {
@@ -122,6 +134,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 contentValues.put("transit_type", stop.getTransitType());
                 contentValues.put("longitude", Double.valueOf(stop.getLongitude()));
                 contentValues.put("latitude", Double.valueOf(stop.getLatitude()));
+                contentValues.put("route_num", Integer.valueOf(stop.getRouteNum()));
                 writableDatabase.insertWithOnConflict("favorites", null, contentValues, SQLiteDatabase.CONFLICT_IGNORE);
                 if (view != null) {
                     Snackbar.make(view, R.string.favorite_added_text, -1).show();
@@ -161,6 +174,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         contentValues.put("transit_type", stop.getTransitType());
         contentValues.put("longitude", Double.valueOf(stop.getLongitude()));
         contentValues.put("latitude", Double.valueOf(stop.getLatitude()));
+        contentValues.put("route_num", Integer.valueOf(stop.getRouteNum()));
         writableDatabase.insertWithOnConflict("recent_stops", null, contentValues, SQLiteDatabase.CONFLICT_REPLACE);
         try (Cursor countCursor = writableDatabase.rawQuery("SELECT COUNT(*) FROM recent_stops", null)) {
             if (countCursor.moveToFirst() && countCursor.getInt(0) > 20) {

@@ -254,6 +254,7 @@ private object TransitApi {
         for (ri in 0 until routeArr.length()) {
             val routeObj = routeArr.getJSONObject(ri)
             val dirArr = routeObj.optJSONArray("dir") ?: continue
+            val routeNum = routeObj.optInt("route", 0)
             for (di in 0 until dirArr.length()) {
                 val dirObj = dirArr.getJSONObject(di)
                 val stopArr = dirObj.optJSONArray("stop") ?: continue
@@ -269,6 +270,7 @@ private object TransitApi {
                     stop.setDirDesc(if (stopDir == "") dirDesc else stopDir)
                     stop.setLatitude(obj.optDouble("lat", 0.0))
                     stop.setLongitude(obj.optDouble("lng", 0.0))
+                    stop.setRouteNum(routeNum)
 
                     stops.add(stop)
                 }

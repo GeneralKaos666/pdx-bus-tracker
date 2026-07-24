@@ -10,9 +10,9 @@ public class Stop {
     private double latitude;
     private double longitude;
     private String transitType;
+    private int routeNum;
     private int locId;
     private List<Route> routes;
-
     public Stop() {
     }
 
@@ -95,6 +95,14 @@ public class Stop {
 
     public void setLocId(int locId) {
         this.locId = locId;
+    }
+
+    public int getRouteNum() {
+        return this.routeNum;
+    }
+
+    public void setRouteNum(int routeNum) {
+        this.routeNum = routeNum;
     }
 
     public void addRoute(Route route) {

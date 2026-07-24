@@ -16,6 +16,7 @@ import com.trimettransit.tracker.ui.screens.components.AnimatedTabRow
 
 @Composable
 fun HomeScreen(
+    refreshKey: Int = 0,
     onNavigateToArrivals: (Stop) -> Unit
 ) {
     val context = LocalContext.current
@@ -29,8 +30,7 @@ fun HomeScreen(
         favorites = db.favorites
         isLoadingFavorites = false
     }
-
-    LaunchedEffect(Unit) {
+    LaunchedEffect(refreshKey) {
         val db = DatabaseHelper(context)
         recentStops = db.recentStops
         isLoadingRecent = false
