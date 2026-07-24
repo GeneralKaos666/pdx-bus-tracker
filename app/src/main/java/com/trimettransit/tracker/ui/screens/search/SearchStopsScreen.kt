@@ -51,7 +51,7 @@ import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.transitColor
 import com.trimettransit.tracker.ui.screens.components.transitInitial
 import com.trimettransit.tracker.util.ConnectionUtils
-import com.trimettransit.tracker.util.Constants2
+import com.trimettransit.tracker.util.ApiKeys
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Locale
@@ -231,13 +231,13 @@ private fun searchStops(allStops: List<Stop>, query: String): List<Stop> {
 
 private fun loadAllStops(context: Context): List<Stop>? {
     return try {
-        val key = Constants2.getTrimetApiKey()
+        val key = ApiKeys.getTrimetApiKey()
         if (key.isBlank()) return null
 
         if (!ConnectionUtils.isOnline(context)) return null
 
         val url = context.getString(R.string.base_route_url) + "/appID/$key/dir/true/stops/true"
-        val json = JSONParser().fetch(url) ?: return null
+        val json = JSONParser.fetch(url) ?: return null
         TransitApi.parseRouteConfigStops(json)
     } catch (e: Exception) {
         Log.e(TAG, "loadAllStops failed", e)

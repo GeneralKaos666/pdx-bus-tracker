@@ -25,10 +25,7 @@ data class Stop(
     }
 
     fun addRoute(route: Route) {
-        if (routes != null) {
-            routes!!.add(route)
-        } else {
-            routes = mutableListOf(route)
-        }
+        val list = routes ?: mutableListOf<Route>().also { routes = it }
+        list.add(route)
     }
 }

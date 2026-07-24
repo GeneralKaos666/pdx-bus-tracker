@@ -14,7 +14,7 @@ object SecurityUtils {
     private const val MAX_STOP_ID_LENGTH = 8
 
     @JvmStatic
-    fun hasConfiguredTrimetApiKey(): Boolean = Constants2.hasTrimetApiKey()
+    fun hasConfiguredTrimetApiKey(): Boolean = ApiKeys.hasTrimetApiKey()
 
     @JvmStatic
     fun sanitizeSearchQuery(query: String?): String? {

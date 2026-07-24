@@ -2,7 +2,7 @@ package com.trimettransit.tracker.util
 
 import com.trimettransit.tracker.BuildConfig
 
-object Constants2 {
+object ApiKeys {
     @JvmStatic
     fun getTrimetApiKey(): String {
         return BuildConfig.TRIMET_API_KEY?.trim() ?: ""

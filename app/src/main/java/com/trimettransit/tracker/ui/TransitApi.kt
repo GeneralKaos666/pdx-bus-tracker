@@ -7,7 +7,7 @@ import com.trimettransit.tracker.data.model.Route
 import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.network.JSONParser
 import com.trimettransit.tracker.util.ConnectionUtils
-import com.trimettransit.tracker.util.Constants2
+import com.trimettransit.tracker.util.ApiKeys
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.trimettransit.tracker.R
@@ -19,7 +19,21 @@ import com.trimettransit.tracker.data.model.VehiclePosition
 
 object TransitApi {
     private const val TAG = "TransitApi"
-    private val parser = JSONParser()
+    private val parser = JSONParser
+
+private fun Route.applyRouteType(type: String, desc: String) {
+    when {
+        type == "R" && desc.contains("WES") -> isWes = true
+        type == "R" && desc.contains("MAX") -> isMax = true
+        type == "B" -> isBus = true
+    }
+}
+
+private fun Route.applyStreetcarType(desc: String, type: String) {
+    if (desc.contains("Portland Streetcar") && type == "R") {
+        isStreetcar = true
+    }
+}
 
     suspend fun fetchRoutes(context: Context, url: String): List<Route>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
@@ -32,8 +46,8 @@ object TransitApi {
                 val route = Route().apply {
                     desc = obj.getString("desc")
                     routeId = obj.getInt("route")
-                    setType(obj.getString("type"), obj.getString("desc"))
-                    setStreetcarType(desc, obj.getString("type"))
+                    applyRouteType(obj.getString("type"), obj.getString("desc"))
+                    applyStreetcarType(desc, obj.getString("type"))
                 }
                 if (route.desc != "Portland Aerial Tram") {
                     routes.add(route)
@@ -58,8 +72,8 @@ object TransitApi {
             val route = Route().apply {
                 desc = routeDesc
                 this.routeId = routeId
-                setType(routeType, routeDesc)
-                setStreetcarType(routeDesc, routeType)
+                applyRouteType(routeType, routeDesc)
+                applyStreetcarType(routeDesc, routeType)
             }
             val arr = routeObj.getJSONArray("dir")
             for (i in 0 until arr.length()) {
@@ -100,8 +114,8 @@ object TransitApi {
             val route = Route().apply {
                 desc = routeDesc
                 this.routeId = routeId
-                setType(routeType, routeDesc)
-                setStreetcarType(routeDesc, routeType)
+                applyRouteType(routeType, routeDesc)
+                applyStreetcarType(routeDesc, routeType)
             }
             val stops = mutableListOf<Stop>()
             for (i in 0 until stopArr.length()) {
@@ -137,7 +151,7 @@ object TransitApi {
         maxArrivals: Int = 2
     ): ArrivalsResult? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = Constants2.getTrimetApiKey()
+        val apiKey = ApiKeys.getTrimetApiKey()
         if (apiKey.isBlank()) {
             Log.w(TAG, "TriMet API key not configured")
             return@withContext null
@@ -253,7 +267,7 @@ object TransitApi {
         showStale: Boolean = false
     ): List<VehiclePosition>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = Constants2.getTrimetApiKey()
+        val apiKey = ApiKeys.getTrimetApiKey()
         if (apiKey.isBlank()) {
             Log.w(TAG, "TriMet API key not configured")
             return@withContext null
@@ -334,7 +348,7 @@ object TransitApi {
         showRoutes: Boolean = true
     ): List<Stop>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = Constants2.getTrimetApiKey()
+        val apiKey = ApiKeys.getTrimetApiKey()
         if (apiKey.isBlank()) {
             Log.w(TAG, "TriMet API key not configured")
             return@withContext null
@@ -374,8 +388,8 @@ object TransitApi {
                                 desc = routeObj.optString("desc", "")
                                 routeId = routeObj.optInt("route", 0)
                                 val type = routeObj.optString("type", "")
-                                setType(type, desc)
-                                setStreetcarType(desc, type)
+                                applyRouteType(type, desc)
+                                applyStreetcarType(desc, type)
                             }
                             addRoute(route)
                         }
@@ -393,7 +407,7 @@ object TransitApi {
 
     suspend fun fetchStopById(context: Context, locId: Int): Stop? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = Constants2.getTrimetApiKey()
+        val apiKey = ApiKeys.getTrimetApiKey()
         if (apiKey.isBlank()) return@withContext null
         try {
             val baseUrl = context.getString(R.string.base_stop_location_v2_url)
@@ -423,7 +437,7 @@ object TransitApi {
         systemWideOnly: Boolean = false
     ): List<Detour>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = Constants2.getTrimetApiKey()
+        val apiKey = ApiKeys.getTrimetApiKey()
         if (apiKey.isBlank()) {
             Log.w(TAG, "TriMet API key not configured")
             return@withContext null

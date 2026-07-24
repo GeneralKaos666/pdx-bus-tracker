@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.network.JSONParser
 import com.trimettransit.tracker.util.ConnectionUtils
-import com.trimettransit.tracker.util.Constants2
+import com.trimettransit.tracker.util.ApiKeys
 import com.trimettransit.tracker.util.SecurityUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -110,9 +110,9 @@ fun QRLoadingScreen(
             }
 
             // Verify stop exists via arrivals API
-            val arrivalsUrl = "${context.getString(R.string.base_arrival_url)}/appID/${Constants2.getTrimetApiKey()}/locIDs/$stopId/arrivals/1"
+            val arrivalsUrl = "${context.getString(R.string.base_arrival_url)}/appID/${ApiKeys.getTrimetApiKey()}/locIDs/$stopId/arrivals/1"
             withContext(Dispatchers.IO) {
-                JSONParser().fetch(arrivalsUrl)
+                JSONParser.fetch(arrivalsUrl)
             }
 
             val stopIdInt = stopId.toIntOrNull()

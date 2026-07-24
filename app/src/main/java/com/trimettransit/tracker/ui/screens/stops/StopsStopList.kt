@@ -20,7 +20,7 @@ import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.StopListItem
-import com.trimettransit.tracker.util.Constants2
+import com.trimettransit.tracker.util.ApiKeys
 
 @Composable
 fun StopsStopList(
@@ -35,7 +35,7 @@ fun StopsStopList(
     var isMissingApiKey by remember { mutableStateOf(false) }
 
     LaunchedEffect(routeId, directionId) {
-        val key = Constants2.getTrimetApiKey()
+        val key = ApiKeys.getTrimetApiKey()
         if (key.isBlank()) {
             isMissingApiKey = true
             stops = null
