@@ -61,9 +61,10 @@ import com.trimettransit.tracker.ui.TransitApi
 import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
+import com.trimettransit.tracker.util.formatDateTime
+import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.ui.screens.components.transitColor
 import com.trimettransit.tracker.ui.screens.components.transitInitial
-import com.trimettransit.tracker.util.DateUtils
 import kotlinx.coroutines.launch
 
 private const val TAG = "ArrivalsScreen"
@@ -269,8 +270,8 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
         arrival.scheduled
     }
 
-    val formattedTime = if (displayTime != null) DateUtils.a(displayTime, context) else ""
-    val minutesAway = if (displayTime != null) DateUtils.b(displayTime) else 0L
+    val formattedTime = if (displayTime != null) formatDateTime(displayTime, context) else ""
+    val minutesAway = if (displayTime != null) minutesUntil(displayTime) else 0L
     val relativeText = if (minutesAway <= 0) "Due" else "${minutesAway} min"
     val isEstimated = arrival.status == "estimated"
 
@@ -338,8 +339,8 @@ private fun toggleFavorite(context: Context, locId: Int, stopName: String, curre
             context.getString(R.string.favorite_deleted_text)
         } else {
             val stop = Stop()
-            stop.setDesc(stopName)
-            stop.setLocId(locId)
+            stop.desc = stopName
+            stop.locId = locId
             db.addFavorite(stop, null)
             context.getString(R.string.favorite_added_text)
         }

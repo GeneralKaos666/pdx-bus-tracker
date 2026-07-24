@@ -264,13 +264,13 @@ private object TransitApi {
                     val locId = obj.optInt("locid", 0)
                     if (!seen.add(locId)) continue
                     val stop = Stop()
-                    stop.setLocId(locId)
-                    stop.setDesc(obj.optString("desc", ""))
+                    stop.locId = locId
+                    stop.desc = obj.optString("desc", "")
                     val stopDir = obj.optString("dir", "")
-                    stop.setDirDesc(if (stopDir == "") dirDesc else stopDir)
-                    stop.setLatitude(obj.optDouble("lat", 0.0))
-                    stop.setLongitude(obj.optDouble("lng", 0.0))
-                    stop.setRouteNum(routeNum)
+                    stop.dirDesc = if (stopDir == "") dirDesc else stopDir
+                    stop.latitude = obj.optDouble("lat", 0.0)
+                    stop.longitude = obj.optDouble("lng", 0.0)
+                    stop.routeNum = routeNum
 
                     stops.add(stop)
                 }

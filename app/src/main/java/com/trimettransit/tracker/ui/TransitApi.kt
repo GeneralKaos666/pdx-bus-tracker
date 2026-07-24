@@ -187,7 +187,7 @@ object TransitApi {
 
             val result = ArrivalsResult().apply {
                 arrivals = arrivalList
-                setQueryError(false)
+                isQueryError = false
             }
 
             // Parse block positions if requested
@@ -208,7 +208,7 @@ object TransitApi {
                             routeNumber = obj.optInt("routeNumber", 0)
                             direction = obj.optInt("direction", 0)
                             tripID = obj.optString("tripID", "")
-                            setNewTrip(obj.optBoolean("newTrip", false))
+                            isNewTrip = obj.optBoolean("newTrip", false)
                         }
                         blockPositions.add(bp)
                     }
@@ -227,7 +227,7 @@ object TransitApi {
                         desc = obj.optString("desc", "")
                         val routesArr = obj.optJSONArray("routes")
                         if (routesArr != null) {
-                            routes = IntArray(routesArr.length()) { k -> routesArr.optInt(k, 0) }
+                            routes = List(routesArr.length()) { k -> routesArr.optInt(k, 0) }
                         }
                     }
                     detourList.add(detour)
@@ -297,7 +297,7 @@ object TransitApi {
                     routeNumber = obj.optInt("routeNumber", 0)
                     direction = obj.optInt("direction", 0)
                     tripID = obj.optString("tripID", "")
-                    setNewTrip(obj.optBoolean("newTrip", false))
+                            isNewTrip = obj.optBoolean("newTrip", false)
                     delay = obj.optInt("delay", 0)
                     signMessage = obj.optString("signMessage", "")
                     signMessageLong = obj.optString("signMessageLong", "")
@@ -309,11 +309,11 @@ object TransitApi {
                     locationInScheduleDay = obj.optInt("locationInScheduleDay", 0)
                     time = obj.optLong("time", 0)
                     expires = obj.optLong("expires", 0)
-                    setInCongestion(obj.optBoolean("inCongestion", false))
+                            isInCongestion = obj.optBoolean("inCongestion", false)
                     loadPercentage = obj.optInt("loadPercentage", 0)
                     garage = obj.optString("garage", "")
                     extrablockID = obj.optString("extrablockID", "")
-                    setOffRoute(obj.optBoolean("offRoute", false))
+                            isOffRoute = obj.optBoolean("offRoute", false)
                 }
                 vehicles.add(vp)
             }
@@ -429,7 +429,7 @@ object TransitApi {
                     desc = obj.optString("desc", "")
                     val routesArr = obj.optJSONArray("routes")
                     if (routesArr != null) {
-                        routes = IntArray(routesArr.length()) { k -> routesArr.optInt(k, 0) }
+                        routes = List(routesArr.length()) { k -> routesArr.optInt(k, 0) }
                     }
                 }
                 detours.add(detour)
