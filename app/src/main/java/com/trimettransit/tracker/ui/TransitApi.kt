@@ -391,6 +391,31 @@ object TransitApi {
         }
     }
 
+    suspend fun fetchStopById(context: Context, locId: Int): Stop? = withContext(Dispatchers.IO) {
+        if (!ConnectionUtils.isOnline(context)) return@withContext null
+        val apiKey = Constants2.getTrimetApiKey()
+        if (apiKey.isBlank()) return@withContext null
+        try {
+            val baseUrl = context.getString(R.string.base_stop_location_v2_url)
+            val url = "$baseUrl/appID/$apiKey/locIds/$locId"
+            val json = parser.fetch(url) ?: return@withContext null
+            val resultSet = json.getJSONObject("resultSet")
+            val locationArr = resultSet.optJSONArray("location")
+            if (locationArr == null || locationArr.length() == 0) return@withContext null
+            val obj = locationArr.getJSONObject(0)
+            Stop().apply {
+                desc = obj.optString("desc", "")
+                dirDesc = obj.optString("dir", "")
+                this.locId = obj.optInt("locid", 0)
+                latitude = obj.optDouble("lat", 0.0)
+                longitude = obj.optDouble("lng", 0.0)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to fetch stop by ID", e)
+            null
+        }
+    }
+
     suspend fun fetchAlerts(
         context: Context,
         routeIds: List<Int>? = null,

@@ -156,7 +156,7 @@ private fun MainAppContent(incomingQrUri: String? = null) {
         }
         homeRefreshKey++
         navController.navigate(
-            "arrivals/${stop.locId}?stopName=${URLEncoder.encode(stop.desc ?: "", "UTF-8")}&routeId=$routeId"
+            "arrivals/${stop.locId}?stopName=${URLEncoder.encode(stop.desc ?: "", "UTF-8")}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
         )
     }
 
@@ -313,11 +313,13 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                     )
                 }
                 composable(
-                    route = "arrivals/{stopId}?stopName={stopName}&routeId={routeId}",
+                    route = "arrivals/{stopId}?stopName={stopName}&routeId={routeId}&lat={lat}&lng={lng}",
                     arguments = listOf(
                         navArgument("stopId") { type = NavType.StringType },
                         navArgument("stopName") { type = NavType.StringType; defaultValue = "" },
-                        navArgument("routeId") { type = NavType.IntType; defaultValue = -1 }
+                        navArgument("routeId") { type = NavType.IntType; defaultValue = -1 },
+                        navArgument("lat") { type = NavType.StringType; defaultValue = "" },
+                        navArgument("lng") { type = NavType.StringType; defaultValue = "" },
                     ),
                     enterTransition = { navEnter },
                     exitTransition = { navExit },
@@ -328,6 +330,8 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                         stopId = backStackEntry.arguments?.getString("stopId") ?: "",
                         stopName = backStackEntry.arguments?.getString("stopName") ?: "",
                         routeId = backStackEntry.arguments?.getInt("routeId") ?: -1,
+                        latitude = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0,
+                        longitude = backStackEntry.arguments?.getString("lng")?.toDoubleOrNull() ?: 0.0,
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }

@@ -66,6 +66,19 @@ import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.ui.screens.components.transitColor
 import com.trimettransit.tracker.ui.screens.components.transitInitial
 import kotlinx.coroutines.launch
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.viewinterop.AndroidView
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 
 private const val TAG = "ArrivalsScreen"
 
@@ -75,6 +88,8 @@ fun ArrivalsScreen(
     stopId: String,
     stopName: String,
     routeId: Int,
+    latitude: Double = 0.0,
+    longitude: Double = 0.0,
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -88,10 +103,25 @@ fun ArrivalsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val locId = stopId.toIntOrNull() ?: 0
+    var stopLat by remember { mutableStateOf(latitude) }
+    var stopLng by remember { mutableStateOf(longitude) }
+    var isLoadingStop by remember { mutableStateOf(false) }
+    val hasValidCoords = !isLoadingStop && stopLat != 0.0 && stopLng != 0.0
 
     LaunchedEffect(stopId) {
         if (locId > 0) {
             isFavorite = DatabaseHelper(context.applicationContext).isFavorite(locId)
+        }
+    }
+
+    LaunchedEffect(locId) {
+        if (stopLat == 0.0 && stopLng == 0.0 && locId > 0) {
+            isLoadingStop = true
+            TransitApi.fetchStopById(context, locId)?.let { stop ->
+                stopLat = stop.latitude
+                stopLng = stop.longitude
+            }
+            isLoadingStop = false
         }
     }
 
@@ -194,6 +224,15 @@ fun ArrivalsScreen(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
+                        if (hasValidCoords) {
+                            item(key = "map") {
+                                StopMapCard(
+                                    lat = stopLat,
+                                    lng = stopLng,
+                                    stopName = stopName
+                                )
+                            }
+                        }
                         if (detours.isNotEmpty()) {
                             item {
                                 Surface(
@@ -249,6 +288,77 @@ fun ArrivalsScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun StopMapCard(
+    lat: Double,
+    lng: Double,
+    stopName: String,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val mapView = remember {
+        Configuration.getInstance().userAgentValue = context.packageName
+        MapView(context).apply {
+            setTileSource(TileSourceFactory.MAPNIK)
+            setMultiTouchControls(true)
+            isTilesScaledToDpi = true
+            controller.setZoom(16.0)
+            controller.setCenter(GeoPoint(lat, lng))
+            val marker = Marker(this)
+            marker.position = GeoPoint(lat, lng)
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            marker.title = stopName
+            overlays.add(marker)
+            invalidate()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        mapView.onResume()
+        onDispose {
+            mapView.onPause()
+            mapView.onDetach()
+        }
+    }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.LocationOn,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = stopName.ifBlank { "Stop Location" },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            AndroidView(
+                factory = { mapView },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+            )
         }
     }
 }
