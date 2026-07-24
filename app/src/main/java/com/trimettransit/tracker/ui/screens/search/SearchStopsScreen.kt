@@ -269,7 +269,7 @@ private object TransitApi {
                     val stopDir = obj.optString("dir", "")
                     stop.dirDesc = if (stopDir == "") dirDesc else stopDir
                     stop.latitude = obj.optDouble("lat", 0.0)
-                    stop.longitude = obj.optDouble("lng", 0.0)
+                    stop.longitude = obj.optDouble("lon", 0.0)
                     stop.routeNum = routeNum
 
                     stops.add(stop)

@@ -50,6 +50,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -80,16 +82,40 @@ import com.trimettransit.tracker.ui.theme.TriMetGoTheme
 import java.net.URLEncoder
 
 private val AnimatedContentTransitionScope<*>.navEnter: EnterTransition
-    get() = slideInHorizontally(initialOffsetX = { it }) + fadeIn(initialAlpha = 0.3f)
+    get() = slideInHorizontally(
+        initialOffsetX = { it },
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+    ) + fadeIn(
+        initialAlpha = 0.7f,
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+    )
 
 private val AnimatedContentTransitionScope<*>.navExit: ExitTransition
-    get() = slideOutHorizontally(targetOffsetX = { -it }) + fadeOut(targetAlpha = 0.3f)
+    get() = slideOutHorizontally(
+        targetOffsetX = { -it },
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+    ) + fadeOut(
+        targetAlpha = 0.7f,
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+    )
 
 private val AnimatedContentTransitionScope<*>.navPopEnter: EnterTransition
-    get() = slideInHorizontally(initialOffsetX = { -it }) + fadeIn(initialAlpha = 0.3f)
+    get() = slideInHorizontally(
+        initialOffsetX = { -it },
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+    ) + fadeIn(
+        initialAlpha = 0.7f,
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+    )
 
 private val AnimatedContentTransitionScope<*>.navPopExit: ExitTransition
-    get() = slideOutHorizontally(targetOffsetX = { it }) + fadeOut(targetAlpha = 0.3f)
+    get() = slideOutHorizontally(
+        targetOffsetX = { it },
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+    ) + fadeOut(
+        targetAlpha = 0.7f,
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+    )
 
 class MainActivity : ComponentActivity() {
     private var pendingQrUri: String? = null

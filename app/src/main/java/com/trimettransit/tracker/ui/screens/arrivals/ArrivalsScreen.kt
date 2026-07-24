@@ -116,7 +116,7 @@ fun ArrivalsScreen(
     }
 
     LaunchedEffect(locId) {
-        if (stopLat == 0.0 && stopLng == 0.0 && locId > 0) {
+        if ((stopLat == 0.0 || stopLng == 0.0) && locId > 0) {
             isLoadingStop = true
             TransitApi.fetchStopById(context, locId)?.let { stop ->
                 stopLat = stop.latitude
