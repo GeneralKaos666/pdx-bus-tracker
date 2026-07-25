@@ -10,15 +10,15 @@ def quoteForBuildConfig = { String value ->
 
 def trimetApiKey = (project.findProperty("TRIMET_API_KEY") ?: System.getenv("TRIMET_API_KEY") ?: "").toString()
 android {
-    namespace "com.trimettransit.tracker"
-    compileSdk 35
+    namespace = "com.trimettransit.tracker"
+    compileSdk 37
 
     defaultConfig {
         applicationId 'com.trimettransit.tracker'
         minSdk 31
-        targetSdk 35
+        targetSdk 37
         versionCode 100
-        versionName "3.0.1"
+        versionName "3.5.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -36,7 +36,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            signingConfig = signingConfigs.release
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -52,12 +52,13 @@ android {
     }
 
     buildFeatures {
-        viewBinding true
-        buildConfig true
+        viewBinding = true
+        buildConfig = true
     }
 
     lint {
-        abortOnError true
+        abortOnError = true
+        baseline = file("lint-baseline.xml")
     }
 
     packaging {

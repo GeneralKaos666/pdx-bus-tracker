@@ -17,10 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -28,15 +24,9 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,7 +37,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,6 +47,7 @@ import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.data.model.Arrival
 import com.trimettransit.tracker.data.model.Detour
 import com.trimettransit.tracker.data.model.Stop
+import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.TransitApi
 import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
@@ -67,7 +57,6 @@ import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.ui.screens.components.transitColor
 import com.trimettransit.tracker.ui.screens.components.transitInitial
 import kotlinx.coroutines.launch
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.LocationOn
@@ -75,7 +64,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.viewinterop.AndroidView
-import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -91,27 +79,25 @@ fun ArrivalsScreen(
     routeId: Int,
     latitude: Double = 0.0,
     longitude: Double = 0.0,
-    onNavigateBack: () -> Unit
-) {
+)
+{
     val context = LocalContext.current
     var arrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
     var detours by remember { mutableStateOf<List<Detour>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
-    var isFavorite by remember { mutableStateOf(false) }
     var alertsExpanded by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val locId = stopId.toIntOrNull() ?: 0
     var stopLat by remember { mutableStateOf(latitude) }
     var stopLng by remember { mutableStateOf(longitude) }
     var isLoadingStop by remember { mutableStateOf(false) }
     val hasValidCoords = !isLoadingStop && stopLat != 0.0 && stopLng != 0.0
 
+    // Read initial favorite state from DB
     LaunchedEffect(stopId) {
         if (locId > 0) {
-            isFavorite = DatabaseHelper(context.applicationContext).isFavorite(locId)
+            NavState.arrivalsIsFavorite = DatabaseHelper(context.applicationContext).isFavorite(locId)
         }
     }
 
@@ -159,133 +145,102 @@ fun ArrivalsScreen(
         loadArrivals()
     }
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text(stopName.ifBlank { "Stop #$stopId" }) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        coroutineScope.launch {
-                            val msg = toggleFavorite(context, locId, stopName, isFavorite)
-                            isFavorite = !isFavorite
-                            snackbarHostState.showSnackbar(msg)
-                        }
-                    }) {
-                        Icon(
-                            if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                            contentDescription = if (isFavorite) "Remove favorite" else "Add favorite",
-                            tint = if (isFavorite) MaterialTheme.colorScheme.error
-                                    else MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    IconButton(onClick = { loadArrivals() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                    }
-                },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
+    // Populate NavState for outer scaffold's top bar
+    LaunchedEffect(Unit) {
+        NavState.arrivalsStopName = stopName.ifBlank { "Stop #$stopId" }
+    }
+
+    DisposableEffect(Unit) {
+        // Must use a stable lambda — loadArrivals is a local fun, always the same behavior
+        NavState.arrivalsOnRefresh = { loadArrivals() }
+        onDispose {
+            NavState.clearArrivals()
         }
-    ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = isLoading,
-            onRefresh = { loadArrivals() },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        )
-        {
-            when {
-                isLoading && arrivals.isEmpty() -> {
-                    LoadingState()
-                }
+    }
 
-                isError && arrivals.isEmpty() -> {
-                    ErrorState(message = "Unable to load arrivals.\nPull to retry.")
-                }
+    PullToRefreshBox(
+        isRefreshing = isLoading,
+        onRefresh = { loadArrivals() },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        when {
+            isLoading && arrivals.isEmpty() -> {
+                LoadingState()
+            }
 
-                arrivals.isEmpty() && !isLoading -> {
-                    EmptyState(message = "No upcoming arrivals.")
-                }
+            isError && arrivals.isEmpty() -> {
+                ErrorState(message = "Unable to load arrivals.\nPull to retry.")
+            }
 
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(0.dp)
-                    ) {
-                        if (hasValidCoords) {
-                            item(key = "map") {
-                                StopMapCard(
-                                    lat = stopLat,
-                                    lng = stopLng,
-                                    stopName = stopName
-                                )
-                            }
+            arrivals.isEmpty() && !isLoading -> {
+                EmptyState(message = "No upcoming arrivals.")
+            }
+
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    if (hasValidCoords) {
+                        item(key = "map") {
+                            StopMapCard(
+                                lat = stopLat,
+                                lng = stopLng,
+                                stopName = stopName
+                            )
                         }
-                        if (detours.isNotEmpty()) {
-                            item {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.errorContainer,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Column {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable { alertsExpanded = !alertsExpanded }
-                                                .padding(horizontal = 12.dp, vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = "Alerts (${detours.size})",
-                                                style = MaterialTheme.typography.labelMedium,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                            Icon(
-                                                imageVector = if (alertsExpanded) Icons.Default.KeyboardArrowUp
-                                                    else Icons.Default.KeyboardArrowDown,
-                                                contentDescription = if (alertsExpanded) "Collapse alerts"
-                                                    else "Expand alerts",
-                                                tint = MaterialTheme.colorScheme.onErrorContainer,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                        AnimatedVisibility(visible = alertsExpanded) {
-                                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                                                detours.forEach { detour ->
-                                                    Text(
-                                                        text = detour.desc ?: "",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onErrorContainer,
-                                                        modifier = Modifier.padding(bottom = 4.dp)
-                                                    )
-                                                }
+                    }
+                    if (detours.isNotEmpty()) {
+                        item {
+                            Surface(
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                Column {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { alertsExpanded = !alertsExpanded }
+                                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Alerts (${detours.size})",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onErrorContainer,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Icon(
+                                            imageVector = if (alertsExpanded) Icons.Default.KeyboardArrowUp
+                                                else Icons.Default.KeyboardArrowDown,
+                                            contentDescription = if (alertsExpanded) "Collapse alerts"
+                                                else "Expand alerts",
+                                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    AnimatedVisibility(visible = alertsExpanded) {
+                                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                            detours.forEach { detour ->
+                                                Text(
+                                                    text = detour.desc ?: "",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                                    modifier = Modifier.padding(bottom = 4.dp)
+                                                )
                                             }
                                         }
                                     }
                                 }
                             }
                         }
+                    }
 
-                        items(arrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }) { arrival ->
-                            ArrivalItem(arrival = arrival, context = context)
-                            HorizontalDivider()
-                        }
+                    items(arrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }) { arrival ->
+                        ArrivalItem(arrival = arrival, context = context)
+                        HorizontalDivider()
                     }
                 }
             }
@@ -310,37 +265,16 @@ private fun StopMapCard(
     stopName: String,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val mapView = remember {
-        Configuration.getInstance().userAgentValue = context.packageName
-        MapView(context).apply {
-            setTileSource(TileSourceFactory.MAPNIK)
-            setMultiTouchControls(true)
-            isTilesScaledToDpi = true
-            controller.setZoom(16.0)
-            controller.setCenter(GeoPoint(lat, lng))
-            val marker = Marker(this)
-            marker.position = GeoPoint(lat, lng)
-            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-            marker.title = stopName
-            overlays.add(marker)
-            invalidate()
-        }
-    }
-
-    DisposableEffect(Unit) {
-        mapView.onResume()
-        onDispose {
-            mapView.onPause()
-            mapView.onDetach()
-        }
-    }
+    var mapView by remember { mutableStateOf<MapView?>(null) }
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp),
         shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
@@ -365,11 +299,36 @@ private fun StopMapCard(
                 )
             }
             AndroidView(
-                factory = { mapView },
+                factory = { ctx ->
+                    MapView(ctx).apply {
+                        setTileSource(TileSourceFactory.MAPNIK)
+                        setMultiTouchControls(true)
+                        isTilesScaledToDpi = true
+                        controller.setZoom(16.0)
+                        controller.setCenter(GeoPoint(lat, lng))
+                        val marker = Marker(this).apply {
+                            position = GeoPoint(lat, lng)
+                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                            title = stopName
+                        }
+                        overlays.add(marker)
+                        mapView = this
+                    }
+                },
+                update = { view ->
+                    view.onResume()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
             )
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            mapView?.onPause()
+            mapView?.onDetach()
         }
     }
 }
@@ -382,7 +341,7 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
         arrival.routeId in 1..99 -> "B"
         else -> ""
     }
-    val color = transitColor(type)
+    val color = transitColor(type, MaterialTheme.colorScheme)
     val initial = transitInitial(type)
 
     val displayTime = if (arrival.status == "estimated" && arrival.estimated != null) {
@@ -464,7 +423,7 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
     }
 }
 
-private fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean): String {
+internal fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean): String {
     return try {
         val db = DatabaseHelper(context.applicationContext)
         if (currentlyFavorite) {

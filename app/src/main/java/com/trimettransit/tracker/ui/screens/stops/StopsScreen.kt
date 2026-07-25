@@ -28,9 +28,11 @@ fun StopsScreen(
 
     LaunchedEffect(initialRouteConsumed) {
         if (!initialRouteConsumed) {
-            val preselected = NavState.consumeRouteSelection()
-            if (preselected != null) {
-                selectedRoute = preselected
+            val route = NavState.consumeRouteSelection()
+            val direction = NavState.consumeDirectionSelection()
+            if (route != null) {
+                selectedRoute = route
+                if (direction != null) selectedDirection = direction
                 initialRouteConsumed = true
             }
         }
@@ -77,6 +79,8 @@ fun StopsScreen(
                         directionId = direction.dir,
                         directionDesc = direction.desc ?: "",
                         onStopSelected = { stop ->
+                            NavState.savedRoute = route
+                            NavState.savedDirection = direction
                             onNavigateToArrivals(stop, route.routeId)
                         }
                     )

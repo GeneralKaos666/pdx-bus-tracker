@@ -50,7 +50,7 @@ fun StopListItem(
             Surface(
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape,
-                color = transitColor(stop.transitType)
+                color = transitColor(stop.transitType, MaterialTheme.colorScheme)
             ) {
                 Box(
                     contentAlignment = Alignment.Center,

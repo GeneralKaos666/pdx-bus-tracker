@@ -118,7 +118,7 @@ private fun RouteListItem(
             Surface(
                 modifier = Modifier.size(44.dp),
                 shape = CircleShape,
-                color = transitColor(route.typeLetter)
+                color = transitColor(route.typeLetter, MaterialTheme.colorScheme)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(

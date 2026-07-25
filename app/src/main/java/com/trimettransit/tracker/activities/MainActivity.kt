@@ -21,6 +21,14 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import com.trimettransit.tracker.ui.NavState
+import com.trimettransit.tracker.ui.screens.arrivals.toggleFavorite
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -175,6 +183,7 @@ private fun MainAppContent(incomingQrUri: String? = null) {
     val isRootScreen = currentRoute in setOf("home", "stops", "settings", "search", "nearby_stops", "vehicle_positions")
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var homeRefreshKey by remember { mutableStateOf(0) }
+    val outerSnackbarHostState = remember { SnackbarHostState() }
 
     fun navigateToArrivals(stop: Stop, routeId: Int) {
         scope.launch(Dispatchers.IO) {
@@ -250,26 +259,64 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     )
+                } else if (currentRoute.startsWith("arrivals/")) {
+                    TopAppBar(
+                        title = { Text(NavState.arrivalsStopName.ifBlank { "Stop" }) },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = {
+                                val entry = currentBackStackEntry
+                                val locId = entry?.arguments?.getString("stopId")?.toIntOrNull() ?: 0
+                                val stopName = entry?.arguments?.getString("stopName") ?: ""
+                                scope.launch {
+                                    val msg = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite)
+                                    NavState.arrivalsIsFavorite = !NavState.arrivalsIsFavorite
+                                    outerSnackbarHostState.showSnackbar(msg)
+                                }
+                            }) {
+                                Icon(
+                                    if (NavState.arrivalsIsFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                    contentDescription = if (NavState.arrivalsIsFavorite) "Remove favorite" else "Add favorite",
+                                    tint = if (NavState.arrivalsIsFavorite) MaterialTheme.colorScheme.error
+                                            else MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            IconButton(onClick = { NavState.arrivalsOnRefresh?.invoke() }) {
+                                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
                 }
             },
+            snackbarHost = { SnackbarHost(outerSnackbarHostState) },
             floatingActionButton = {
-                FloatingActionButton(onClick = { showFabMenu = true }) {
-                    Icon(Icons.Default.Add, contentDescription = "Open menu")
+                if (!currentRoute.startsWith("arrivals/")) {
+                    FloatingActionButton(onClick = { showFabMenu = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Open menu")
+                    }
                 }
             }
         ) { padding ->
             NavHost(
                 navController = navController,
                 startDestination = "home",
-                modifier = Modifier.padding(padding)
+                modifier = Modifier.padding(padding),
+                enterTransition = { navEnter },
+                exitTransition = { navExit },
+                popEnterTransition = { navPopEnter },
+                popExitTransition = { navPopExit }
             ) {
-                composable(
-                    "home",
-                    enterTransition = { navEnter },
-                    exitTransition = { navExit },
-                    popEnterTransition = { navPopEnter },
-                    popExitTransition = { navPopExit }
-                ) {
+                composable("home") {
                     HomeScreen(
                         refreshKey = homeRefreshKey,
                         onNavigateToArrivals = { stop: Stop ->
@@ -277,61 +324,31 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                         }
                     )
                 }
-                composable(
-                    "stops",
-                    enterTransition = { navEnter },
-                    exitTransition = { navExit },
-                    popEnterTransition = { navPopEnter },
-                    popExitTransition = { navPopExit }
-                ) {
+                composable("stops") {
                     StopsScreen(
                         onNavigateToArrivals = { stop: Stop, routeId: Int ->
                             navigateToArrivals(stop, routeId)
                         }
                     )
                 }
-                composable(
-                    "settings",
-                    enterTransition = { navEnter },
-                    exitTransition = { navExit },
-                    popEnterTransition = { navPopEnter },
-                    popExitTransition = { navPopExit }
-                ) {
+                composable("settings") {
                     SettingsScreen()
                 }
-                composable(
-                    "search",
-                    enterTransition = { navEnter },
-                    exitTransition = { navExit },
-                    popEnterTransition = { navPopEnter },
-                    popExitTransition = { navPopExit }
-                ) {
+                composable("search") {
                     SearchStopsScreen(
                         onNavigateToArrivals = { stop: Stop, _: Int ->
                             navigateToArrivals(stop, -1)
                         }
                     )
                 }
-                composable(
-                    "nearby_stops",
-                    enterTransition = { navEnter },
-                    exitTransition = { navExit },
-                    popEnterTransition = { navPopEnter },
-                    popExitTransition = { navPopExit }
-                ) {
+                composable("nearby_stops") {
                     NearbyStopsScreen(
                         onNavigateToArrivals = { stop: Stop, routeId: Int ->
                             navigateToArrivals(stop, routeId)
                         }
                     )
                 }
-                composable(
-                    "vehicle_positions",
-                    enterTransition = { navEnter },
-                    exitTransition = { navExit },
-                    popEnterTransition = { navPopEnter },
-                    popExitTransition = { navPopExit }
-                ) {
+                composable("vehicle_positions") {
                     VehiclePositionsScreen(
                         onNavigateToArrivals = { stop: Stop, routeId: Int ->
                             navigateToArrivals(stop, routeId)
@@ -345,12 +362,8 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                         navArgument("stopName") { type = NavType.StringType; defaultValue = "" },
                         navArgument("routeId") { type = NavType.IntType; defaultValue = -1 },
                         navArgument("lat") { type = NavType.StringType; defaultValue = "" },
-                        navArgument("lng") { type = NavType.StringType; defaultValue = "" },
-                    ),
-                    enterTransition = { navEnter },
-                    exitTransition = { navExit },
-                    popEnterTransition = { navPopEnter },
-                    popExitTransition = { navPopExit }
+                        navArgument("lng") { type = NavType.StringType; defaultValue = "" }
+                    )
                 ) { backStackEntry ->
                     ArrivalsScreen(
                         stopId = backStackEntry.arguments?.getString("stopId") ?: "",
@@ -358,18 +371,13 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                         routeId = backStackEntry.arguments?.getInt("routeId") ?: -1,
                         latitude = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0,
                         longitude = backStackEntry.arguments?.getString("lng")?.toDoubleOrNull() ?: 0.0,
-                        onNavigateBack = { navController.popBackStack() }
                     )
                 }
                 composable(
                     route = "qr_loading/{qrUri}",
                     arguments = listOf(
                         navArgument("qrUri") { type = NavType.StringType }
-                    ),
-                    enterTransition = { navEnter },
-                    exitTransition = { navExit },
-                    popEnterTransition = { navPopEnter },
-                    popExitTransition = { navPopExit }
+                    )
                 ) { backStackEntry ->
                     val qrUri = backStackEntry.arguments?.getString("qrUri") ?: return@composable
                     QRLoadingScreen(

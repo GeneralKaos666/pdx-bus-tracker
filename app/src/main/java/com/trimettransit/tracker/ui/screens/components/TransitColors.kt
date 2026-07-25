@@ -1,14 +1,15 @@
 package com.trimettransit.tracker.ui.screens.components
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 
-/** Returns a transit-type color (Bus/Streetcar = blue, MAX = orange, WES = gray). */
-fun transitColor(type: String?): Color = when (type) {
-    "B", "T" -> Color(0xFF0070C0)
-    "R" -> Color(0xFFE87722)
-    "M" -> Color(0xFF008542)
-    "W" -> Color(0xFF414141)
-    else -> Color(0xFF0070C0)
+/** Returns a transit-type color derived from the M3 color scheme. */
+fun transitColor(type: String?, scheme: ColorScheme): Color = when (type) {
+    "B", "T" -> scheme.primary          // Bus, Streetcar
+    "R" -> scheme.tertiary               // MAX light rail
+    "M" -> scheme.secondary              // WES commuter rail
+    "W" -> scheme.outline                // WES (alt)
+    else -> scheme.primary
 }
 
 /** Returns a one-letter label for a transit type. */

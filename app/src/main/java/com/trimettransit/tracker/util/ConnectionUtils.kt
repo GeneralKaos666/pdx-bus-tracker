@@ -6,7 +6,6 @@ import android.net.NetworkCapabilities
 
 object ConnectionUtils {
     fun isOnline(context: Context): Boolean {
-        if (context == null) return false
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
         val activeNetwork = cm.activeNetwork ?: return false
         val caps = cm.getNetworkCapabilities(activeNetwork) ?: return false

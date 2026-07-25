@@ -31,7 +31,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -151,9 +150,9 @@ private fun VehicleListItem(vehicle: VehiclePosition) {
     val delaySeconds = vehicle.delay
     val delayColor = when {
         delaySeconds > 300 -> MaterialTheme.colorScheme.error           // > 5 min early
-        delaySeconds > 60 -> Color(0xFFFBC02D)                          // > 1 min early
+        delaySeconds > 60 -> MaterialTheme.colorScheme.tertiary          // > 1 min early
         delaySeconds < -300 -> MaterialTheme.colorScheme.error          // > 5 min late
-        delaySeconds < -60 -> Color(0xFFFBC02D)                         // > 1 min late
+        delaySeconds < -60 -> MaterialTheme.colorScheme.tertiary         // > 1 min late
         else -> MaterialTheme.colorScheme.primary                       // on time
     }
 
@@ -200,7 +199,7 @@ private fun VehicleListItem(vehicle: VehiclePosition) {
                     Surface(
                         modifier = Modifier.size(36.dp),
                         shape = CircleShape,
-                        color = transitColor(vehicle.type)
+                        color = transitColor(vehicle.type, MaterialTheme.colorScheme)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
