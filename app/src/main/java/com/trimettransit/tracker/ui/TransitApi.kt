@@ -130,7 +130,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                     }
                     locId = obj.optInt("locid", 0)
                     latitude = obj.optDouble("lat", 0.0)
-                    longitude = obj.optDouble("lon", 0.0)
+                    longitude = if (obj.has("lng")) obj.getDouble("lng") else obj.optDouble("lon", 0.0)
                     addRoute(route)
                     computeTransitType()
                 }

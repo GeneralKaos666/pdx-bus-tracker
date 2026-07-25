@@ -109,6 +109,9 @@ fun ArrivalsScreen(
                 stopLng = stop.longitude
             }
             isLoadingStop = false
+            if (stopLat == 0.0 || stopLng == 0.0) {
+                Log.w(TAG, "Stop #$locId has zero coordinates after fallback — map hidden")
+            }
         }
     }
 
@@ -423,7 +426,7 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
     }
 }
 
-internal fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean): String {
+internal fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean, routeId: Int = -1): String {
     return try {
         val db = DatabaseHelper(context.applicationContext)
         if (currentlyFavorite) {
@@ -435,6 +438,7 @@ internal fun toggleFavorite(context: Context, locId: Int, stopName: String, curr
             val stop = Stop()
             stop.desc = stopName
             stop.locId = locId
+            if (routeId > 0) stop.routeNum = routeId
             db.addFavorite(stop, null)
             context.getString(R.string.favorite_added_text)
         }

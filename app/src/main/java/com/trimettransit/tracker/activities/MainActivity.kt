@@ -186,6 +186,7 @@ private fun MainAppContent(incomingQrUri: String? = null) {
     val outerSnackbarHostState = remember { SnackbarHostState() }
 
     fun navigateToArrivals(stop: Stop, routeId: Int) {
+        if (routeId > 0) stop.routeNum = routeId
         scope.launch(Dispatchers.IO) {
             DatabaseHelper(context.applicationContext).addRecentStop(stop)
         }
@@ -273,7 +274,8 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                                 val locId = entry?.arguments?.getString("stopId")?.toIntOrNull() ?: 0
                                 val stopName = entry?.arguments?.getString("stopName") ?: ""
                                 scope.launch {
-                                    val msg = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite)
+                                    val routeId = entry?.arguments?.getInt("routeId") ?: -1
+                                    val msg = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite, routeId)
                                     NavState.arrivalsIsFavorite = !NavState.arrivalsIsFavorite
                                     outerSnackbarHostState.showSnackbar(msg)
                                 }
@@ -320,7 +322,7 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                     HomeScreen(
                         refreshKey = homeRefreshKey,
                         onNavigateToArrivals = { stop: Stop ->
-                            navigateToArrivals(stop, -1)
+                            navigateToArrivals(stop, stop.routeNum)
                         }
                     )
                 }
@@ -337,7 +339,7 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                 composable("search") {
                     SearchStopsScreen(
                         onNavigateToArrivals = { stop: Stop, _: Int ->
-                            navigateToArrivals(stop, -1)
+                            navigateToArrivals(stop, stop.routeNum)
                         }
                     )
                 }
