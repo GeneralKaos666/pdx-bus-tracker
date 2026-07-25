@@ -24,9 +24,7 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 
 ## Screenshots
 
-<!-- Add screenshots here. Show the home screen, arrivals view, and route browser. -->
-
-## Architecture
+***
 
 ## Building
 
