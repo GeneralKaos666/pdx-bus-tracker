@@ -39,6 +39,8 @@ import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.StopListItem
+import com.trimettransit.tracker.ui.screens.components.rememberOnResume
+
 import kotlinx.coroutines.launch
 
 @Composable
@@ -82,6 +84,14 @@ fun NearbyStopsScreen(
     LaunchedEffect(locationPermissionGranted) {
         if (locationPermissionGranted && !hasLoaded) {
             loadNearbyStops(context, coroutineScope, stops, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
+        }
+    }
+
+    // Re-fetch on app re-entry
+    rememberOnResume {
+        if (hasLoaded) {
+            stops = null
+            loadIfPermissionGranted()
         }
     }
 

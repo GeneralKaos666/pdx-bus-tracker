@@ -13,10 +13,13 @@ import androidx.compose.ui.platform.LocalContext
 import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.ui.screens.components.AnimatedTabRow
+import com.trimettransit.tracker.ui.screens.components.rememberOnResume
+
 
 @Composable
 fun HomeScreen(
     refreshKey: Int = 0,
+    pagerScrollEnabled: Boolean = true,
     onNavigateToArrivals: (Stop) -> Unit
 ) {
     val context = LocalContext.current
@@ -36,12 +39,22 @@ fun HomeScreen(
         isLoadingRecent = false
     }
 
+    // Auto-refresh both tabs on app re-entry
+    rememberOnResume {
+        val db = DatabaseHelper(context)
+        favorites = db.favorites
+        isLoadingFavorites = false
+        recentStops = db.recentStops
+        isLoadingRecent = false
+    }
+
     val tabs = listOf("Favorites", "Recent")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
 
     AnimatedTabRow(
         tabs = tabs,
         pagerState = pagerState,
+        userScrollEnabled = pagerScrollEnabled,
         modifier = Modifier.fillMaxSize()
     ) { page ->
         when (page) {

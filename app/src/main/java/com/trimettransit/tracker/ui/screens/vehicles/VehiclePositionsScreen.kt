@@ -42,6 +42,8 @@ import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.transitColor
+import com.trimettransit.tracker.ui.screens.components.rememberOnResume
+
 import kotlinx.coroutines.launch
 
 @Composable
@@ -74,6 +76,13 @@ fun VehiclePositionsScreen(
             if (result != null && result.isEmpty()) {
                 errorMessage = "No vehicles found for this route"
             }
+        }
+    }
+
+    // Re-fetch on app re-entry
+    rememberOnResume {
+        if (hasLoaded) {
+            loadVehicles()
         }
     }
 

@@ -55,6 +55,7 @@ import com.trimettransit.tracker.ui.TransitApi
 import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
+import com.trimettransit.tracker.ui.screens.components.rememberOnResume
 import com.trimettransit.tracker.util.formatDateTime
 import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.ui.screens.components.transitColor
@@ -157,9 +158,8 @@ fun ArrivalsScreen(
         }
     }
 
-    LaunchedEffect(stopId) {
-        loadArrivals()
-    }
+    // Re-fetch arrivals on app re-entry (and initial composition via lifecycle observer)
+    rememberOnResume { loadArrivals() }
     val totalRouteCount = unfilteredArrivals.map { it.routeId }.distinct().size
     val visibleCount = minOf(arrivals.size, 5)
     val showExpandButton = totalRouteCount > 1 && unfilteredArrivals.size > visibleCount

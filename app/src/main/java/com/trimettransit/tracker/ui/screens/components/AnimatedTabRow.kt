@@ -27,6 +27,7 @@ fun AnimatedTabRow(
     tabs: List<String>,
     pagerState: PagerState,
     modifier: Modifier = Modifier,
+    userScrollEnabled: Boolean = true,
     content: @Composable (page: Int) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -63,6 +64,7 @@ fun AnimatedTabRow(
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
+            userScrollEnabled = userScrollEnabled,
             beyondViewportPageCount = 1
         ) { page ->
             content(page)

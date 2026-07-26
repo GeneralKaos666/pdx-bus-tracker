@@ -368,6 +368,7 @@ private fun MainAppContent(incomingQrUri: String? = null) {
             ) {
                 composable("home") {
                     HomeScreen(
+                        pagerScrollEnabled = drawerState.currentValue != DrawerValue.Closed,
                         refreshKey = homeRefreshKey,
                         onNavigateToArrivals = { stop: Stop ->
                             navigateToArrivals(stop, stop.routeNum)
@@ -376,6 +377,7 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                 }
                 composable("stops") {
                     StopsScreen(
+                        pagerScrollEnabled = drawerState.currentValue != DrawerValue.Closed,
                         onNavigateToArrivals = { stop: Stop, routeId: Int ->
                             navigateToArrivals(stop, routeId)
                         }
