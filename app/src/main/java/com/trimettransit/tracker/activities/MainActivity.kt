@@ -275,7 +275,7 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                                 val stopName = entry?.arguments?.getString("stopName") ?: ""
                                 scope.launch {
                                     val routeId = entry?.arguments?.getInt("routeId") ?: -1
-                                    val msg = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite, routeId)
+                                    val msg = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite, routeId, NavState.arrivalsLat, NavState.arrivalsLng)
                                     NavState.arrivalsIsFavorite = !NavState.arrivalsIsFavorite
                                     outerSnackbarHostState.showSnackbar(msg)
                                 }

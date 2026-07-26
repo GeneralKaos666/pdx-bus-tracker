@@ -135,6 +135,13 @@ fun ArrivalsScreen(
                     allArrivals
                 }
                 detours = result.detours?.toList() ?: emptyList()
+                // Resolve stop coordinates from arrivals response if not yet known
+                if (stopLat == 0.0 || stopLng == 0.0) {
+                    if (result.stopLat != 0.0 && result.stopLng != 0.0) {
+                        stopLat = result.stopLat
+                        stopLng = result.stopLng
+                    }
+                }
                 isError = false
             } else {
                 arrivals = emptyList()
@@ -159,6 +166,11 @@ fun ArrivalsScreen(
         onDispose {
             NavState.clearArrivals()
         }
+    }
+    // Bridge resolved coordinates to outer scaffold for favorite persistence
+    LaunchedEffect(stopLat, stopLng) {
+        NavState.arrivalsLat = stopLat
+        NavState.arrivalsLng = stopLng
     }
 
     PullToRefreshBox(
@@ -426,7 +438,7 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
     }
 }
 
-internal fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean, routeId: Int = -1): String {
+internal fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean, routeId: Int = -1, lat: Double = 0.0, lng: Double = 0.0): String {
     return try {
         val db = DatabaseHelper(context.applicationContext)
         if (currentlyFavorite) {
@@ -438,6 +450,8 @@ internal fun toggleFavorite(context: Context, locId: Int, stopName: String, curr
             val stop = Stop()
             stop.desc = stopName
             stop.locId = locId
+            stop.latitude = lat
+            stop.longitude = lng
             if (routeId > 0) stop.routeNum = routeId
             db.addFavorite(stop, null)
             context.getString(R.string.favorite_added_text)

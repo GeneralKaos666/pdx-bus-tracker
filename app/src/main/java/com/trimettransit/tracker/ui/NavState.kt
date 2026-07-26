@@ -25,11 +25,15 @@ object NavState {
     // Arrivals bridge — written by ArrivalsScreen, read by outer scaffold top bar
     var arrivalsStopName by mutableStateOf("")
     var arrivalsIsFavorite by mutableStateOf(false)
+    var arrivalsLat by mutableStateOf(0.0)
+    var arrivalsLng by mutableStateOf(0.0)
     var arrivalsOnRefresh: (() -> Unit)? = null
 
     fun clearArrivals() {
         arrivalsStopName = ""
         arrivalsIsFavorite = false
         arrivalsOnRefresh = null
+        arrivalsLat = 0.0
+        arrivalsLng = 0.0
     }
 }

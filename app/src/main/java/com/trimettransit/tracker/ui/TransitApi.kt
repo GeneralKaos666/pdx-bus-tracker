@@ -249,6 +249,14 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                 result.detours = detourList
             }
 
+            // Parse location elements for stop coordinates
+            val locationArr = resultSet.optJSONArray("location")
+            if (locationArr != null && locationArr.length() > 0) {
+                val loc = locationArr.getJSONObject(0)
+                result.stopLat = loc.optDouble("lat", 0.0)
+                result.stopLng = loc.optDouble("lng", 0.0)
+            }
+
             result
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch arrivals", e)
