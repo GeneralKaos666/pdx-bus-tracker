@@ -3,6 +3,7 @@ package com.trimettransit.tracker.ui.screens.arrivals
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -18,11 +19,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -200,7 +203,8 @@ fun ArrivalsScreen(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (hasValidCoords) {
                         item(key = "map") {
@@ -233,24 +237,36 @@ fun ArrivalsScreen(
                                             color = MaterialTheme.colorScheme.onErrorContainer,
                                             modifier = Modifier.weight(1f)
                                         )
+                                        val alertsArrowRotation by animateFloatAsState(
+                                            targetValue = if (alertsExpanded) 180f else 0f,
+                                            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+                                        )
                                         Icon(
-                                            imageVector = if (alertsExpanded) Icons.Default.KeyboardArrowUp
-                                                else Icons.Default.KeyboardArrowDown,
+                                            imageVector = Icons.Default.KeyboardArrowDown,
                                             contentDescription = if (alertsExpanded) "Collapse alerts"
                                                 else "Expand alerts",
                                             tint = MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.size(18.dp)
+                                            modifier = Modifier
+                                                .size(18.dp)
+                                                .rotate(alertsArrowRotation)
                                         )
                                     }
                                     AnimatedVisibility(visible = alertsExpanded) {
                                         Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                                             detours.forEach { detour ->
-                                                Text(
-                                                    text = detour.desc ?: "",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                                    modifier = Modifier.padding(bottom = 4.dp)
-                                                )
+                                                Row(modifier = Modifier.padding(bottom = 4.dp)) {
+                                                    Text(
+                                                        text = "\u2022",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                                        modifier = Modifier.padding(end = 8.dp)
+                                                    )
+                                                    Text(
+                                                        text = detour.desc ?: "",
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -260,10 +276,8 @@ fun ArrivalsScreen(
                     }
 
                     val visibleArrivals = if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
-
                     items(visibleArrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }) { arrival ->
                         ArrivalItem(arrival = arrival, context = context)
-                        HorizontalDivider()
                     }
 
                     if (showExpandButton) {
@@ -287,12 +301,16 @@ fun ArrivalsScreen(
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.weight(1f)
                                     )
+                                    val showAllArrowRotation by animateFloatAsState(
+                                        targetValue = if (showAllArrivals) 180f else 0f,
+                                        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+                                    )
                                     Icon(
-                                        imageVector = if (showAllArrivals) Icons.Default.KeyboardArrowUp
-                                            else Icons.Default.KeyboardArrowDown,
+                                        imageVector = Icons.Default.KeyboardArrowDown,
                                         contentDescription = if (showAllArrivals) "Collapse arrivals"
                                             else "Expand arrivals",
-                                        tint = MaterialTheme.colorScheme.primary
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.rotate(showAllArrowRotation)
                                     )
                                 }
                             }
@@ -411,68 +429,96 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
     val relativeText = if (minutesAway <= 0) "Due" else "${minutesAway} min"
     val isEstimated = arrival.status == "estimated"
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.elevatedCardColors(),
+        elevation = CardDefaults.elevatedCardElevation()
     ) {
-        Surface(
-            modifier = Modifier.size(44.dp),
-            shape = CircleShape,
-            color = color
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(contentAlignment = Alignment.Center) {
+            Surface(
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                color = color
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = initial,
+                        color = MaterialTheme.colorScheme.surface,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = initial,
-                    color = MaterialTheme.colorScheme.surface,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
+                    text = arrival.shortSign,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = formattedTime,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = arrival.shortSign,
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Text(
-                text = formattedTime,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = color
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = color
             ) {
-                Text(
-                    text = relativeText,
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = if (isEstimated) FontWeight.Bold else FontWeight.Normal
-                )
-                val delayText = formatDelay(arrival)
-                if (delayText != null) {
-                    Text(
-                        text = delayText,
-                        color = Color.White.copy(alpha = 0.7f),
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                } else if (!isEstimated) {
-                    Text(
-                        text = "scheduled",
-                        color = Color.White.copy(alpha = 0.7f),
-                        style = MaterialTheme.typography.labelSmall
-                    )
+                if (arrival.dropOffOnly) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = context.getString(R.string.arrival_dropoff_only),
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (arrival.reason.isNotEmpty()) {
+                            Text(
+                                text = arrival.reason,
+                                color = Color.White.copy(alpha = 0.7f),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = relativeText,
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = if (isEstimated) FontWeight.Bold else FontWeight.Normal
+                        )
+                        val delayText = formatDelay(arrival)
+                        if (delayText != null) {
+                            Text(
+                                text = delayText,
+                                color = Color.White.copy(alpha = 0.7f),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        } else if (!isEstimated) {
+                            Text(
+                                text = "scheduled",
+                                color = Color.White.copy(alpha = 0.7f),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
                 }
             }
         }

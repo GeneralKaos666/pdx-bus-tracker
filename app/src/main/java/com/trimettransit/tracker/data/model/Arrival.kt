@@ -10,6 +10,8 @@ data class Arrival(
     var detours: MutableList<Detour>? = null,
     var routeId: Int = 0,
     var status: String = "",
+    var dropOffOnly: Boolean = false,
+    var reason: String = "",
     var tripID: String = "",
     var blockID: Int = 0,
     var vehicleID: Int = 0,

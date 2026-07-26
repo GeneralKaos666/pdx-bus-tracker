@@ -179,6 +179,8 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                         shortSign = obj.optString("shortSign", "")
                         routeId = obj.optInt("route", 0)
                         status = obj.optString("status", "")
+                        dropOffOnly = obj.optBoolean("dropOffOnly", false)
+                        reason = obj.optString("reason", "")
                         tripID = obj.optString("tripID", "")
                         blockID = obj.optInt("blockID", 0)
                         vehicleID = obj.optInt("vehicleID", 0)

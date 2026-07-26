@@ -31,14 +31,13 @@ import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.screens.arrivals.toggleFavorite
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
@@ -60,6 +59,11 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -179,9 +183,9 @@ private fun MainAppContent(incomingQrUri: String? = null) {
     val context = LocalContext.current
     var showFabMenu by remember { mutableStateOf(false) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val refreshRotation = remember { Animatable(0f) }
     val currentRoute = currentBackStackEntry?.destination?.route ?: ""
     val isRootScreen = currentRoute in setOf("home", "stops", "settings", "search", "nearby_stops", "vehicle_positions")
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var homeRefreshKey by remember { mutableStateOf(0) }
     val outerSnackbarHostState = remember { SnackbarHostState() }
 
@@ -280,15 +284,28 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                                     outerSnackbarHostState.showSnackbar(msg)
                                 }
                             }) {
-                                Icon(
-                                    if (NavState.arrivalsIsFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                    contentDescription = if (NavState.arrivalsIsFavorite) "Remove favorite" else "Add favorite",
-                                    tint = if (NavState.arrivalsIsFavorite) MaterialTheme.colorScheme.error
-                                            else MaterialTheme.colorScheme.onPrimaryContainer
-                                )
+                                AnimatedContent(
+                                    targetState = NavState.arrivalsIsFavorite,
+                                    transitionSpec = { fadeIn(tween(durationMillis = 300, easing = FastOutSlowInEasing)) togetherWith fadeOut(tween(durationMillis = 300, easing = FastOutSlowInEasing)) },
+                                    label = "favoriteIcon"
+                                ) { isFav ->
+                                    Icon(
+                                        imageVector = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                        contentDescription = if (isFav) "Remove favorite" else "Add favorite",
+                                        tint = if (isFav) MaterialTheme.colorScheme.error
+                                                else MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
                             }
-                            IconButton(onClick = { NavState.arrivalsOnRefresh?.invoke() }) {
-                                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                            IconButton(onClick = {
+                                scope.launch { refreshRotation.animateTo(refreshRotation.value + 360f, tween(durationMillis = 350, easing = FastOutSlowInEasing)) }
+                                NavState.arrivalsOnRefresh?.invoke()
+                            }) {
+                                Icon(
+                                    Icons.Default.Refresh,
+                                    contentDescription = "Refresh",
+                                    modifier = Modifier.rotate(refreshRotation.value)
+                                )
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -303,8 +320,39 @@ private fun MainAppContent(incomingQrUri: String? = null) {
             snackbarHost = { SnackbarHost(outerSnackbarHostState) },
             floatingActionButton = {
                 if (!currentRoute.startsWith("arrivals/")) {
-                    FloatingActionButton(onClick = { showFabMenu = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Open menu")
+                    Box {
+                        val fabRotation by animateFloatAsState(
+                            targetValue = if (showFabMenu) 45f else 0f,
+                            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+                        )
+                        FloatingActionButton(onClick = { showFabMenu = !showFabMenu }) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = if (showFabMenu) "Close menu" else "Open menu",
+                                modifier = Modifier.rotate(fabRotation)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showFabMenu,
+                            onDismissRequest = { showFabMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Search stops") },
+                                onClick = {
+                                    showFabMenu = false
+                                    navController.navigate("search")
+                                },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Scan QR code") },
+                                onClick = {
+                                    showFabMenu = false
+                                    context.startActivity(Intent(context, QRCameraActivity::class.java))
+                                },
+                                leadingIcon = { Icon(Icons.Default.QrCodeScanner, contentDescription = null) }
+                            )
+                        }
                     }
                 }
             }
@@ -396,66 +444,5 @@ private fun MainAppContent(incomingQrUri: String? = null) {
         }
     }
 
-    // ModalBottomSheet for FAB menu
-    if (showFabMenu) {
-        ModalBottomSheet(
-            onDismissRequest = { showFabMenu = false },
-            sheetState = sheetState
-        ) {
-            Column(modifier = Modifier.padding(bottom = 32.dp)) {
-                // Sheet title
-                Text(
-                    text = "Quick Actions",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp))
-
-                // Search stops
-                FABMenuItem(
-                    icon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    label = "Search stops",
-                    onClick = {
-                        showFabMenu = false
-                        navController.navigate("search")
-                    }
-                )
-
-                // Scan QR
-                FABMenuItem(
-                    icon = { Icon(Icons.Default.QrCodeScanner, contentDescription = null) },
-                    label = "Scan QR code",
-                    onClick = {
-                        showFabMenu = false
-                        context.startActivity(Intent(context, QRCameraActivity::class.java))
-                    }
-                )
-            }
-        }
-    }
 }
 
-@Composable
-private fun FABMenuItem(
-    icon: @Composable () -> Unit,
-    label: String,
-    onClick: () -> Unit
-) {
-    androidx.compose.foundation.layout.Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(modifier = Modifier.padding(end = 16.dp)) {
-            icon()
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}

@@ -10,8 +10,12 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import kotlinx.coroutines.launch
 
 /**
@@ -39,13 +43,17 @@ fun AnimatedTabRow(
                     selected = pagerState.currentPage == index,
                     onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
                     text = {
+                        val tabColor by animateColorAsState(
+                            targetValue = if (pagerState.currentPage == index)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+                        )
                         Text(
                             text = title,
                             style = MaterialTheme.typography.labelLarge,
-                            color = if (pagerState.currentPage == index)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            color = tabColor
                         )
                     }
                 )
