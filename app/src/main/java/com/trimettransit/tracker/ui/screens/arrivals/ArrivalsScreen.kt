@@ -87,6 +87,8 @@ fun ArrivalsScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
     var alertsExpanded by remember { mutableStateOf(false) }
+    var showAllArrivals by remember { mutableStateOf(false) }
+    var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
     val locId = stopId.toIntOrNull() ?: 0
     var stopLat by remember { mutableStateOf(latitude) }
@@ -123,10 +125,11 @@ fun ArrivalsScreen(
                 locIds = listOf(locId),
                 showPosition = false,
                 minutes = 30,
-                maxArrivals = 4
+                maxArrivals = 15
             )
             if (result != null && !result.isQueryError) {
                 val allArrivals = result.arrivals?.toList() ?: emptyList()
+                unfilteredArrivals = allArrivals
                 val prefs = PreferenceManager.getDefaultSharedPreferences(context)
                 val onlySelectedRoute = prefs.getBoolean("pref_key_only_show_route_selected", true)
                 arrivals = if (onlySelectedRoute && routeId > 0) {
@@ -154,6 +157,9 @@ fun ArrivalsScreen(
     LaunchedEffect(stopId) {
         loadArrivals()
     }
+    val totalRouteCount = unfilteredArrivals.map { it.routeId }.distinct().size
+    val visibleCount = minOf(arrivals.size, 5)
+    val showExpandButton = totalRouteCount > 1 && unfilteredArrivals.size > visibleCount
 
     // Populate NavState for outer scaffold's top bar
     LaunchedEffect(Unit) {
@@ -253,9 +259,44 @@ fun ArrivalsScreen(
                         }
                     }
 
-                    items(arrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }) { arrival ->
+                    val visibleArrivals = if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
+
+                    items(visibleArrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }) { arrival ->
                         ArrivalItem(arrival = arrival, context = context)
                         HorizontalDivider()
+                    }
+
+                    if (showExpandButton) {
+                        item {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.surfaceContainerLow
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { showAllArrivals = !showAllArrivals }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (showAllArrivals) "Show fewer"
+                                            else "Show all arrivals (${unfilteredArrivals.size - visibleCount} more)",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Icon(
+                                        imageVector = if (showAllArrivals) Icons.Default.KeyboardArrowUp
+                                            else Icons.Default.KeyboardArrowDown,
+                                        contentDescription = if (showAllArrivals) "Collapse arrivals"
+                                            else "Expand arrivals",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
