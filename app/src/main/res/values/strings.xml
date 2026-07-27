@@ -13,6 +13,7 @@
     <string name="favorite_does_not_exist_text">Favorite does not exist.</string>
     <string name="favorite_exists_text">Favorite already exists.</string>
     <string name="arrival_dropoff_only">Dropoff Only</string>
+    <string name="arrival_cancelled">Cancelled</string>
     <string name="stop_bidirectional_text">Bidirectional</string>
     <string-array name="days_of_week">
         <item>Monday</item>

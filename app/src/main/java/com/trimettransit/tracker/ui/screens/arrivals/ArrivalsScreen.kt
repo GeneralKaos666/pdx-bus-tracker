@@ -479,7 +479,26 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
                 shape = RoundedCornerShape(8.dp),
                 color = color
             ) {
-                if (arrival.dropOffOnly) {
+                if (arrival.status == "canceled") {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = context.getString(R.string.arrival_cancelled),
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (arrival.reason.isNotEmpty()) {
+                            Text(
+                                text = arrival.reason,
+                                color = Color.White.copy(alpha = 0.7f),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                } else if (arrival.dropOffOnly) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
