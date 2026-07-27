@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -46,22 +47,29 @@ fun StopListItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val colorScheme = MaterialTheme.colorScheme
+            val transitTypeColor = remember(stop.transitType, colorScheme) {
+                transitColor(stop.transitType, colorScheme)
+            }
+            val transitLabel = remember(stop.routeNum, stop.transitType, stop.locId) {
+                when {
+                    stop.routeNum > 0 -> stop.routeNum.toString()
+                    !stop.transitType.isNullOrBlank() -> transitInitial(stop.transitType)
+                    else -> stop.locId.toString()
+                }
+            }
             // Transit type indicator
             Surface(
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape,
-                color = transitColor(stop.transitType, MaterialTheme.colorScheme)
+                color = transitTypeColor
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = when {
-                            stop.routeNum > 0 -> stop.routeNum.toString()
-                            !stop.transitType.isNullOrBlank() -> transitInitial(stop.transitType)
-                            else -> stop.locId.toString()
-                        },
+                        text = transitLabel,
                         color = MaterialTheme.colorScheme.surface,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold

@@ -139,6 +139,7 @@ fun VehiclePositionsScreen(
                     )
                 } else {
                     LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(safeVehicles, key = { it.vehicleID }) { vehicle ->
@@ -157,30 +158,37 @@ fun VehiclePositionsScreen(
 @Composable
 private fun VehicleListItem(vehicle: VehiclePosition) {
     val delaySeconds = vehicle.delay
-    val delayColor = when {
-        delaySeconds > 300 -> MaterialTheme.colorScheme.error           // > 5 min early
-        delaySeconds > 60 -> MaterialTheme.colorScheme.tertiary          // > 1 min early
-        delaySeconds < -300 -> MaterialTheme.colorScheme.error          // > 5 min late
-        delaySeconds < -60 -> MaterialTheme.colorScheme.tertiary         // > 1 min late
-        else -> MaterialTheme.colorScheme.primary                       // on time
+    val colorScheme = MaterialTheme.colorScheme
+    val delayColor = remember(delaySeconds, colorScheme) {
+        when {
+            delaySeconds > 300 -> colorScheme.error
+            delaySeconds > 60 -> colorScheme.tertiary
+            delaySeconds < -300 -> colorScheme.error
+            delaySeconds < -60 -> colorScheme.tertiary
+            else -> colorScheme.primary
+        }
     }
 
-    val delayText = when {
-        delaySeconds > 0 -> "${delaySeconds / 60} min early"
-        delaySeconds < 0 -> "${(-delaySeconds) / 60} min late"
-        else -> "On time"
+    val delayText = remember(delaySeconds) {
+        when {
+            delaySeconds > 0 -> "${delaySeconds / 60} min early"
+            delaySeconds < 0 -> "${(-delaySeconds) / 60} min late"
+            else -> "On time"
+        }
     }
 
-    val bearingText = when {
-        vehicle.bearing in 337.5f..360f || vehicle.bearing in 0f..22.5f -> "N"
-        vehicle.bearing in 22.5f..67.5f -> "NE"
-        vehicle.bearing in 67.5f..112.5f -> "E"
-        vehicle.bearing in 112.5f..157.5f -> "SE"
-        vehicle.bearing in 157.5f..202.5f -> "S"
-        vehicle.bearing in 202.5f..247.5f -> "SW"
-        vehicle.bearing in 247.5f..292.5f -> "W"
-        vehicle.bearing in 292.5f..337.5f -> "NW"
-        else -> "--"
+    val bearingText = remember(vehicle.bearing) {
+        when {
+            vehicle.bearing in 337.5f..360f || vehicle.bearing in 0f..22.5f -> "N"
+            vehicle.bearing in 22.5f..67.5f -> "NE"
+            vehicle.bearing in 67.5f..112.5f -> "E"
+            vehicle.bearing in 112.5f..157.5f -> "SE"
+            vehicle.bearing in 157.5f..202.5f -> "S"
+            vehicle.bearing in 202.5f..247.5f -> "SW"
+            vehicle.bearing in 247.5f..292.5f -> "W"
+            vehicle.bearing in 292.5f..337.5f -> "NW"
+            else -> "--"
+        }
     }
 
     Card(
@@ -204,11 +212,14 @@ private fun VehicleListItem(vehicle: VehiclePosition) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                val vehicleColor = remember(vehicle.type, colorScheme) {
+                    transitColor(vehicle.type, colorScheme)
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         modifier = Modifier.size(36.dp),
                         shape = CircleShape,
-                        color = transitColor(vehicle.type, MaterialTheme.colorScheme)
+                        color = vehicleColor
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(

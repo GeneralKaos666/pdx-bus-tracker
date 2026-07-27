@@ -170,15 +170,22 @@ private fun StopSearchItem(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val colorScheme = MaterialTheme.colorScheme
+        val typeColor = remember(stop.transitType, colorScheme) {
+            transitColor(stop.transitType, colorScheme)
+        }
+        val initial = remember(stop.transitType) {
+            transitInitial(stop.transitType)
+        }
         // Transit type indicator
         Surface(
             modifier = Modifier.size(40.dp),
             shape = CircleShape,
-            color = transitColor(stop.transitType, MaterialTheme.colorScheme)
+            color = typeColor
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
-                    text = transitInitial(stop.transitType),
+                    text = initial,
                     color = MaterialTheme.colorScheme.surface,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold

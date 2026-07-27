@@ -115,10 +115,14 @@ private fun RouteListItem(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val colorScheme = MaterialTheme.colorScheme
+            val typeColor = remember(route.typeLetter, colorScheme) {
+                transitColor(route.typeLetter, colorScheme)
+            }
             Surface(
                 modifier = Modifier.size(44.dp),
                 shape = CircleShape,
-                color = transitColor(route.typeLetter, MaterialTheme.colorScheme)
+                color = typeColor
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(

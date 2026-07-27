@@ -152,6 +152,7 @@ fun NearbyStopsScreen(
                     )
                 } else {
                     LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(safeStops, key = { it.locId }) { stop ->

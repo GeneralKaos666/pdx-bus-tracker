@@ -207,7 +207,7 @@ fun ArrivalsScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (hasValidCoords) {
-                        item(key = "map") {
+                        item(key = "map", contentType = "map") {
                             StopMapCard(
                                 lat = stopLat,
                                 lng = stopLng,
@@ -216,7 +216,7 @@ fun ArrivalsScreen(
                         }
                     }
                     if (detours.isNotEmpty()) {
-                        item {
+                        item(key = "detours", contentType = "detours") {
                             Surface(
                                 color = MaterialTheme.colorScheme.errorContainer,
                                 modifier = Modifier.fillMaxWidth(),
@@ -276,12 +276,12 @@ fun ArrivalsScreen(
                     }
 
                     val visibleArrivals = if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
-                    items(visibleArrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }) { arrival ->
+                    items(visibleArrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }, contentType = { "arrival" }) { arrival ->
                         ArrivalItem(arrival = arrival, context = context)
                     }
 
                     if (showExpandButton) {
-                        item {
+                        item(key = "showAll", contentType = "showAll") {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = MaterialTheme.shapes.small,
@@ -415,8 +415,13 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
         arrival.routeId in 1..99 -> "B"
         else -> ""
     }
-    val color = transitColor(type, MaterialTheme.colorScheme)
-    val initial = transitInitial(type)
+    val scheme = MaterialTheme.colorScheme
+    val color = remember(type, scheme) {
+        transitColor(type, scheme)
+    }
+    val initial = remember(type) {
+        transitInitial(type)
+    }
 
     val displayTime = if (arrival.status == "estimated" && arrival.estimated != null) {
         arrival.estimated
