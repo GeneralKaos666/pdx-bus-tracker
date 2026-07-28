@@ -1,11 +1,5 @@
 # TriMet Bus Tracker
 
-![minSdk](https://img.shields.io/badge/minSdk-31-brightgreen)
-![Kotlin](https://img.shields.io/badge/language-Kotlin-purple)
-![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4)
-![AGP](https://img.shields.io/badge/AGP-9.1.1-orange)
-![License](https://img.shields.io/badge/license-MIT-green)
-
 Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Rail, Streetcar, and WES Commuter Rail.
 
 *TriMet and TransitTracker are registered trademarks of TriMet. All rights reserved.*
