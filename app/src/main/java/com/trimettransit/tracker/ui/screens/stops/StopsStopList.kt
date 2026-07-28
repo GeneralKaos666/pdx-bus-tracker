@@ -21,6 +21,7 @@ import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.StopListItem
 import com.trimettransit.tracker.util.ApiKeys
+import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
 
 @Composable
 fun StopsStopList(
@@ -62,15 +63,18 @@ fun StopsStopList(
                 EmptyState(message = "No stops available.")
             }
             else -> {
+                val smoothFling = rememberSmoothFlingBehavior()
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
+                    flingBehavior = smoothFling,
                     contentPadding = PaddingValues(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(safeStops, key = { it.locId }) { stop ->
+                    items(safeStops, key = { it.locId }, contentType = { "stop" }) { stop ->
                         StopListItem(
                             stop = stop,
-                            onClick = { onStopSelected(stop) }
+                            onClick = { onStopSelected(stop) },
+                            modifier = Modifier.animateItem()
                         )
                     }
                 }

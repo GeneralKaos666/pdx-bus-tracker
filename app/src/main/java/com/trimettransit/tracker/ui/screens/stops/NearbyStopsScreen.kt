@@ -40,6 +40,7 @@ import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.StopListItem
 import com.trimettransit.tracker.ui.screens.components.rememberOnResume
+import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
 
 import kotlinx.coroutines.launch
 
@@ -151,14 +152,17 @@ fun NearbyStopsScreen(
                                   else "Tap Refresh to find nearby stops"
                     )
                 } else {
+                    val smoothFling = rememberSmoothFlingBehavior()
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
+                        flingBehavior = smoothFling,
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        items(safeStops, key = { it.locId }) { stop ->
+                        items(safeStops, key = { it.locId }, contentType = { "stop" }) { stop ->
                             StopListItem(
                                 stop = stop,
-                                onClick = { onNavigateToArrivals(stop, -1) }
+                                onClick = { onNavigateToArrivals(stop, -1) },
+                                modifier = Modifier.animateItem()
                             )
                         }
                     }

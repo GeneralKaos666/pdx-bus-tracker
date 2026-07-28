@@ -50,6 +50,7 @@ import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.transitColor
 import com.trimettransit.tracker.ui.screens.components.transitInitial
+import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.util.ConnectionUtils
 import com.trimettransit.tracker.util.ApiKeys
 import kotlinx.coroutines.Dispatchers
@@ -144,11 +145,16 @@ fun SearchStopsScreen(
                 }
 
                 else -> {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(results, key = { it.locId }) { stop ->
+                    val smoothFling = rememberSmoothFlingBehavior()
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        flingBehavior = smoothFling
+                    ) {
+                        items(results, key = { it.locId }, contentType = { "stopSearch" }) { stop ->
                             StopSearchItem(
                                 stop = stop,
-                                onClick = { onNavigateToArrivals(stop, -1) }
+                                onClick = { onNavigateToArrivals(stop, -1) },
+                                modifier = Modifier.animateItem()
                             )
                         }
                     }
@@ -161,10 +167,11 @@ fun SearchStopsScreen(
 @Composable
 private fun StopSearchItem(
     stop: Stop,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),

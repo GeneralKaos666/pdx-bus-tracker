@@ -52,6 +52,7 @@ import com.trimettransit.tracker.data.model.Detour
 import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.TransitApi
+import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
@@ -176,6 +177,8 @@ fun ArrivalsScreen(
             NavState.clearArrivals()
         }
     }
+    val smoothFling = rememberSmoothFlingBehavior()
+
     // Bridge resolved coordinates to outer scaffold for favorite persistence
     LaunchedEffect(stopLat, stopLng) {
         NavState.arrivalsLat = stopLat
@@ -201,21 +204,21 @@ fun ArrivalsScreen(
             }
 
             else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                Column {
                     if (hasValidCoords) {
-                        item(key = "map", contentType = "map") {
-                            StopMapCard(
-                                lat = stopLat,
-                                lng = stopLng,
-                                stopName = stopName
-                            )
-                        }
+                        StopMapCard(
+                            lat = stopLat,
+                            lng = stopLng,
+                            stopName = stopName
+                        )
                     }
-                    if (detours.isNotEmpty()) {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f).fillMaxSize(),
+                        flingBehavior = smoothFling,
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (detours.isNotEmpty()) {
                         item(key = "detours", contentType = "detours") {
                             Surface(
                                 color = MaterialTheme.colorScheme.errorContainer,
@@ -277,7 +280,11 @@ fun ArrivalsScreen(
 
                     val visibleArrivals = if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
                     items(visibleArrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }, contentType = { "arrival" }) { arrival ->
-                        ArrivalItem(arrival = arrival, context = context)
+                        ArrivalItem(
+                            arrival = arrival,
+                            context = context,
+                            modifier = Modifier.animateItem()
+                        )
                     }
 
                     if (showExpandButton) {
@@ -320,6 +327,7 @@ fun ArrivalsScreen(
             }
         }
     }
+}
 }
 
 private fun formatDelay(arrival: Arrival): String? {
@@ -408,7 +416,11 @@ private fun StopMapCard(
 }
 
 @Composable
-private fun ArrivalItem(arrival: Arrival, context: Context) {
+private fun ArrivalItem(
+    arrival: Arrival,
+    context: Context,
+    modifier: Modifier = Modifier
+) {
     val type = when {
         arrival.routeId == 200 -> "M"
         arrival.routeId == 100 || arrival.routeId == 90 -> "R"
@@ -435,7 +447,7 @@ private fun ArrivalItem(arrival: Arrival, context: Context) {
     val isEstimated = arrival.status == "estimated"
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.elevatedCardColors(),
         elevation = CardDefaults.elevatedCardElevation()

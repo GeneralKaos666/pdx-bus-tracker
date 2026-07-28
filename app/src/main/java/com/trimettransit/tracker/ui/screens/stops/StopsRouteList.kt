@@ -38,6 +38,7 @@ import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.transitColor
 import com.trimettransit.tracker.util.ApiKeys
+import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
 
 @Composable
 fun StopsRouteList(
@@ -76,15 +77,18 @@ fun StopsRouteList(
                 EmptyState(message = "No routes available.")
             }
             else -> {
+                val smoothFling = rememberSmoothFlingBehavior()
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
+                    flingBehavior = smoothFling,
                     contentPadding = PaddingValues(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(safeRoutes, key = { it.routeId }) { route ->
+                    items(safeRoutes, key = { it.routeId }, contentType = { "route" }) { route ->
                         RouteListItem(
                             route = route,
-                            onClick = { onRouteSelected(route) }
+                            onClick = { onRouteSelected(route) },
+                            modifier = Modifier.animateItem()
                         )
                     }
                 }
@@ -96,11 +100,12 @@ fun StopsRouteList(
 @Composable
 private fun RouteListItem(
     route: Route,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = MaterialTheme.shapes.medium,

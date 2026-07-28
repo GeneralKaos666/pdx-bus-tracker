@@ -26,6 +26,7 @@ import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.util.ApiKeys
+import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
 import androidx.compose.material3.MaterialTheme
 
 @Composable
@@ -67,15 +68,18 @@ fun StopsDirectionList(
                 EmptyState(message = "No directions available.")
             }
             else -> {
+                val smoothFling = rememberSmoothFlingBehavior()
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
+                    flingBehavior = smoothFling,
                     contentPadding = PaddingValues(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(safeDirections, key = { it.dir }) { direction ->
+                    items(safeDirections, key = { it.dir }, contentType = { "direction" }) { direction ->
                         Card(
                             onClick = { onDirectionSelected(direction) },
                             modifier = Modifier
+                                .animateItem()
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 4.dp),
                             colors = CardDefaults.cardColors(

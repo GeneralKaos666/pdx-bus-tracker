@@ -43,6 +43,7 @@ import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.transitColor
 import com.trimettransit.tracker.ui.screens.components.rememberOnResume
+import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
 
 import kotlinx.coroutines.launch
 
@@ -138,12 +139,17 @@ fun VehiclePositionsScreen(
                                   else "Enter a route and tap Load"
                     )
                 } else {
+                    val smoothFling = rememberSmoothFlingBehavior()
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
+                        flingBehavior = smoothFling,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(safeVehicles, key = { it.vehicleID }) { vehicle ->
-                            VehicleListItem(vehicle = vehicle)
+                        items(safeVehicles, key = { it.vehicleID }, contentType = { "vehicle" }) { vehicle ->
+                            VehicleListItem(
+                                vehicle = vehicle,
+                                modifier = Modifier.animateItem()
+                            )
                         }
                     }
                 }
@@ -156,7 +162,10 @@ fun VehiclePositionsScreen(
 }
 
 @Composable
-private fun VehicleListItem(vehicle: VehiclePosition) {
+private fun VehicleListItem(
+    vehicle: VehiclePosition,
+    modifier: Modifier = Modifier
+) {
     val delaySeconds = vehicle.delay
     val colorScheme = MaterialTheme.colorScheme
     val delayColor = remember(delaySeconds, colorScheme) {
@@ -192,7 +201,7 @@ private fun VehicleListItem(vehicle: VehiclePosition) {
     }
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 4.dp),
         shape = MaterialTheme.shapes.medium,
