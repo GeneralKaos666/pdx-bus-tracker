@@ -49,7 +49,9 @@ import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.transitColor
-import com.trimettransit.tracker.ui.screens.components.transitInitial
+import com.trimettransit.tracker.ui.screens.components.transitIconResource
+import com.trimettransit.tracker.ui.screens.components.transitTypeLabel
+import androidx.compose.ui.res.painterResource
 import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.util.ConnectionUtils
 import com.trimettransit.tracker.util.ApiKeys
@@ -181,9 +183,6 @@ private fun StopSearchItem(
         val typeColor = remember(stop.transitType, colorScheme) {
             transitColor(stop.transitType, colorScheme)
         }
-        val initial = remember(stop.transitType) {
-            transitInitial(stop.transitType)
-        }
         // Transit type indicator
         Surface(
             modifier = Modifier.size(40.dp),
@@ -191,11 +190,11 @@ private fun StopSearchItem(
             color = typeColor
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = initial,
-                    color = MaterialTheme.colorScheme.surface,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
+                Icon(
+                    painter = painterResource(id = transitIconResource(stop.transitType)),
+                    contentDescription = transitTypeLabel(stop.transitType),
+                    tint = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }

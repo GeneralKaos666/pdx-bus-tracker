@@ -60,7 +60,9 @@ import com.trimettransit.tracker.ui.screens.components.rememberOnResume
 import com.trimettransit.tracker.util.formatDateTime
 import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.ui.screens.components.transitColor
-import com.trimettransit.tracker.ui.screens.components.transitInitial
+import com.trimettransit.tracker.ui.screens.components.transitIconResource
+import com.trimettransit.tracker.ui.screens.components.transitTypeLabel
+import androidx.compose.ui.res.painterResource
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -93,6 +95,7 @@ fun ArrivalsScreen(
     var isError by remember { mutableStateOf(false) }
     var alertsExpanded by remember { mutableStateOf(false) }
     var showAllArrivals by remember { mutableStateOf(false) }
+    var mapExpanded by remember { mutableStateOf(true) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
     val locId = stopId.toIntOrNull() ?: 0
@@ -206,11 +209,54 @@ fun ArrivalsScreen(
             else -> {
                 Column {
                     if (hasValidCoords) {
-                        StopMapCard(
-                            lat = stopLat,
-                            lng = stopLng,
-                            stopName = stopName
-                        )
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                                .clickable { mapExpanded = !mapExpanded },
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            tonalElevation = 2.dp
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = stopName.ifBlank { "Stop Location" },
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                val mapArrowRotation by animateFloatAsState(
+                                    targetValue = if (mapExpanded) 180f else 0f,
+                                    animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                    contentDescription = if (mapExpanded) "Collapse map" else "Expand map",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.rotate(mapArrowRotation)
+                                )
+                            }
+                        }
+                        AnimatedVisibility(visible = mapExpanded) {
+                            StopMapCard(
+                                lat = stopLat,
+                                lng = stopLng,
+                                stopName = stopName,
+                                showHeader = false
+                            )
+                        }
                     }
                     LazyColumn(
                         modifier = Modifier.weight(1f).fillMaxSize(),
@@ -345,7 +391,8 @@ private fun StopMapCard(
     lat: Double,
     lng: Double,
     stopName: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showHeader: Boolean = true
 ) {
     var mapView by remember { mutableStateOf<MapView?>(null) }
 
@@ -360,25 +407,27 @@ private fun StopMapCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Default.LocationOn,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = stopName.ifBlank { "Stop Location" },
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+            if (showHeader) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = stopName.ifBlank { "Stop Location" },
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
             AndroidView(
                 factory = { ctx ->
@@ -431,10 +480,6 @@ private fun ArrivalItem(
     val color = remember(type, scheme) {
         transitColor(type, scheme)
     }
-    val initial = remember(type) {
-        transitInitial(type)
-    }
-
     val displayTime = if (arrival.status == "estimated" && arrival.estimated != null) {
         arrival.estimated
     } else {
@@ -464,11 +509,11 @@ private fun ArrivalItem(
                 color = color
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = initial,
-                        color = MaterialTheme.colorScheme.surface,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
+                    Icon(
+                        painter = painterResource(id = transitIconResource(type)),
+                        contentDescription = transitTypeLabel(type),
+                        tint = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }

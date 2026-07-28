@@ -111,7 +111,7 @@ private fun Color.saturated(factor: Float): Color {
 }
 
 private fun androidx.compose.material3.ColorScheme.withVibrantColors(): androidx.compose.material3.ColorScheme {
-    val factor = 1.35f
+    val factor = 1.0f
     return copy(
         primary = primary.saturated(factor),
         primaryContainer = primaryContainer.saturated(factor),

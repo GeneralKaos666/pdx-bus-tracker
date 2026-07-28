@@ -8,13 +8,10 @@ import kotlinx.coroutines.launch
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.SideEffect
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -31,10 +28,10 @@ import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.screens.arrivals.toggleFavorite
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -51,6 +48,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
@@ -67,8 +67,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -320,7 +320,82 @@ private fun MainAppContent(incomingQrUri: String? = null) {
             snackbarHost = { SnackbarHost(outerSnackbarHostState) },
             floatingActionButton = {
                 if (!currentRoute.startsWith("arrivals/")) {
-                    Box {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        AnimatedVisibility(
+                            visible = showFabMenu,
+                            enter = fadeIn() + slideInVertically { it / 2 },
+                            exit = fadeOut() + slideOutVertically { it / 2 }
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                            ) {
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shadowElevation = 4.dp,
+                                    tonalElevation = 2.dp,
+                                    modifier = Modifier
+                                        .padding(end = 12.dp)
+                                        .clearAndSetSemantics { }
+                                ) {
+                                    Text(
+                                        "Scan QR code",
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                SmallFloatingActionButton(
+                                    onClick = {
+                                        showFabMenu = false
+                                        context.startActivity(Intent(context, QRCameraActivity::class.java))
+                                    }
+                                ) {
+                                    Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR code")
+                                }
+                            }
+                        }
+
+                        AnimatedVisibility(
+                            visible = showFabMenu,
+                            enter = fadeIn() + slideInVertically { it / 2 },
+                            exit = fadeOut() + slideOutVertically { it / 2 }
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                            ) {
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shadowElevation = 4.dp,
+                                    tonalElevation = 2.dp,
+                                    modifier = Modifier
+                                        .padding(end = 12.dp)
+                                        .clearAndSetSemantics { }
+                                ) {
+                                    Text(
+                                        "Search stops",
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                SmallFloatingActionButton(
+                                    onClick = {
+                                        showFabMenu = false
+                                        navController.navigate("search")
+                                    }
+                                ) {
+                                    Icon(Icons.Default.Search, contentDescription = "Search stops")
+                                }
+                            }
+                        }
+
                         val fabRotation by animateFloatAsState(
                             targetValue = if (showFabMenu) 45f else 0f,
                             animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
@@ -330,27 +405,6 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                                 Icons.Default.Add,
                                 contentDescription = if (showFabMenu) "Close menu" else "Open menu",
                                 modifier = Modifier.rotate(fabRotation)
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = showFabMenu,
-                            onDismissRequest = { showFabMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Search stops") },
-                                onClick = {
-                                    showFabMenu = false
-                                    navController.navigate("search")
-                                },
-                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Scan QR code") },
-                                onClick = {
-                                    showFabMenu = false
-                                    context.startActivity(Intent(context, QRCameraActivity::class.java))
-                                },
-                                leadingIcon = { Icon(Icons.Default.QrCodeScanner, contentDescription = null) }
                             )
                         }
                     }

@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.painterResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -51,13 +53,6 @@ fun StopListItem(
             val transitTypeColor = remember(stop.transitType, colorScheme) {
                 transitColor(stop.transitType, colorScheme)
             }
-            val transitLabel = remember(stop.routeNum, stop.transitType, stop.locId) {
-                when {
-                    stop.routeNum > 0 -> stop.routeNum.toString()
-                    !stop.transitType.isNullOrBlank() -> transitInitial(stop.transitType)
-                    else -> stop.locId.toString()
-                }
-            }
             // Transit type indicator
             Surface(
                 modifier = Modifier.size(40.dp),
@@ -68,12 +63,26 @@ fun StopListItem(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = transitLabel,
-                        color = MaterialTheme.colorScheme.surface,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    when {
+                        stop.routeNum > 0 -> Text(
+                            text = stop.routeNum.toString(),
+                            color = MaterialTheme.colorScheme.surface,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        !stop.transitType.isNullOrBlank() -> Icon(
+                            painter = painterResource(id = transitIconResource(stop.transitType)),
+                            contentDescription = transitTypeLabel(stop.transitType),
+                            tint = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        else -> Text(
+                            text = stop.locId.toString(),
+                            color = MaterialTheme.colorScheme.surface,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 

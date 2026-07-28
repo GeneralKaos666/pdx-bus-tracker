@@ -40,11 +40,11 @@ fun StopsScreen(
     }
 
     // Auto-advance pager when route/direction is selected
-    LaunchedEffect(selectedRoute) {
-        if (selectedRoute != null) pagerState.animateScrollToPage(1)
-    }
-    LaunchedEffect(selectedDirection) {
-        if (selectedDirection != null) pagerState.animateScrollToPage(2)
+    LaunchedEffect(selectedRoute, selectedDirection) {
+        when {
+            selectedDirection != null -> pagerState.animateScrollToPage(2)
+            selectedRoute != null -> pagerState.animateScrollToPage(1)
+        }
     }
 
     AnimatedTabRow(

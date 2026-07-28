@@ -20,8 +20,10 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.painterResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,6 +44,8 @@ import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.transitColor
+import com.trimettransit.tracker.ui.screens.components.transitIconResource
+import com.trimettransit.tracker.ui.screens.components.transitTypeLabel
 import com.trimettransit.tracker.ui.screens.components.rememberOnResume
 import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
 
@@ -231,11 +235,11 @@ private fun VehicleListItem(
                         color = vehicleColor
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = vehicle.type,
-                                color = MaterialTheme.colorScheme.surface,
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.labelMedium
+                            Icon(
+                                painter = painterResource(id = transitIconResource(vehicle.type)),
+                                contentDescription = transitTypeLabel(vehicle.type),
+                                tint = MaterialTheme.colorScheme.surface,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
