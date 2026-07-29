@@ -443,6 +443,10 @@ private fun StopMapCard(
                             title = stopName
                         }
                         overlays.add(marker)
+                        // Consume single-finger touches at View level to prevent
+                        // propagation to Compose parent gesture handlers
+                        // (pull-to-refresh, nav drawer). Multi-touch zoom unaffected.
+                        setOnTouchListener { _, event -> event.pointerCount < 2 }
                         mapView = this
                     }
                 },
