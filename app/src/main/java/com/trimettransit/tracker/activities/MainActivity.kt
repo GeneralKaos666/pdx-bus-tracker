@@ -22,6 +22,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import com.trimettransit.tracker.ui.NavState
@@ -156,7 +158,7 @@ class MainActivity : ComponentActivity() {
                         activity.window, activity.window.decorView
                     ).isAppearanceLightNavigationBars = !isDark
                 }
-                MainAppContent(incomingQrUri = pendingQrUri)
+                MainAppContent(incomingQrUri = pendingQrUri, isDark = isDark)
             }
         }
     }
@@ -176,7 +178,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MainAppContent(incomingQrUri: String? = null) {
+private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -317,7 +319,27 @@ private fun MainAppContent(incomingQrUri: String? = null) {
                     )
                 }
             },
-            snackbarHost = { SnackbarHost(outerSnackbarHostState) },
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = outerSnackbarHostState,
+                    modifier = Modifier.padding(bottom = 64.dp),
+                    snackbar = { data ->
+                        Snackbar(
+                            snackbarData = data,
+                            containerColor = if (isDark) {
+                                MaterialTheme.colorScheme.surfaceContainerHigh
+                            } else {
+                                SnackbarDefaults.color
+                            },
+                            contentColor = if (isDark) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                SnackbarDefaults.contentColor
+                            }
+                        )
+                    }
+                )
+            },
             floatingActionButton = {
                 if (!currentRoute.startsWith("arrivals/")) {
                     Column(
