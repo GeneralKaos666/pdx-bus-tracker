@@ -25,15 +25,13 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.R
@@ -98,7 +95,7 @@ fun ArrivalsScreen(
     var detours by remember { mutableStateOf<List<Detour>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
-    var showAlertsDialog by remember { mutableStateOf(false) }
+    var showAlertsSheet by remember { mutableStateOf(false) }
     var showAllArrivals by remember { mutableStateOf(false) }
     var mapExpanded by remember { mutableStateOf(true) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
@@ -318,78 +315,79 @@ fun ArrivalsScreen(
                         }
                     }
                 }
-                }
 
                 if (detours.isNotEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.errorContainer
                     ) {
-                        IconButton(
-                            onClick = { showAlertsDialog = true },
-                            modifier = Modifier.size(48.dp),
-                            colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showAlertsSheet = true }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "\u26A0\uFE0F",
-                                fontSize = 20.sp
+                                text = "Alerts (${detours.size})",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Show alerts",
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
-                        Text(
-                            text = "Alert",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
                     }
+                }
                 }
             }
         }
     }
 }
 
-    if (showAlertsDialog) {
-        AlertDialog(
-            onDismissRequest = { showAlertsDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "\u26A0\uFE0F", fontSize = 20.sp)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Alerts (${detours.size})")
-                }
-            },
-            text = {
-                Column {
-                    detours.forEach { detour ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Text(
-                                text = "\u2022",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
-                            Text(
-                                text = detour.desc ?: "",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+    if (showAlertsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showAlertsSheet = false },
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer
+        ) {
+            Column(
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp)
+            ) {
+                Text(
+                    text = "Alerts (${detours.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                detours.forEach { detour ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = "\u2022",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(
+                            text = detour.desc ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showAlertsDialog = false }) {
-                    Text("Dismiss")
-                }
             }
-        )
+        }
     }
 }
 
