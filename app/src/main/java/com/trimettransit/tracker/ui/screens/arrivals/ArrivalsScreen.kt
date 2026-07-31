@@ -30,6 +30,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.R
@@ -93,7 +98,7 @@ fun ArrivalsScreen(
     var detours by remember { mutableStateOf<List<Detour>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
-    var alertsExpanded by remember { mutableStateOf(false) }
+    var showAlertsDialog by remember { mutableStateOf(false) }
     var showAllArrivals by remember { mutableStateOf(false) }
     var mapExpanded by remember { mutableStateOf(true) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
@@ -207,7 +212,8 @@ fun ArrivalsScreen(
             }
 
             else -> {
-                Column {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Column {
                     if (hasValidCoords) {
                         Surface(
                             modifier = Modifier
@@ -264,65 +270,7 @@ fun ArrivalsScreen(
                         contentPadding = PaddingValues(horizontal = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        if (detours.isNotEmpty()) {
-                        item(key = "detours", contentType = "detours") {
-                            Surface(
-                                color = MaterialTheme.colorScheme.errorContainer,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = MaterialTheme.shapes.small
-                            ) {
-                                Column {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable { alertsExpanded = !alertsExpanded }
-                                            .padding(horizontal = 12.dp, vertical = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "Alerts (${detours.size})",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        val alertsArrowRotation by animateFloatAsState(
-                                            targetValue = if (alertsExpanded) 180f else 0f,
-                                            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
-                                        )
-                                        Icon(
-                                            imageVector = Icons.Default.KeyboardArrowDown,
-                                            contentDescription = if (alertsExpanded) "Collapse alerts"
-                                                else "Expand alerts",
-                                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                                            modifier = Modifier
-                                                .size(18.dp)
-                                                .rotate(alertsArrowRotation)
-                                        )
-                                    }
-                                    AnimatedVisibility(visible = alertsExpanded) {
-                                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                                            detours.forEach { detour ->
-                                                Row(modifier = Modifier.padding(bottom = 4.dp)) {
-                                                    Text(
-                                                        text = "\u2022",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onErrorContainer,
-                                                        modifier = Modifier.padding(end = 8.dp)
-                                                    )
-                                                    Text(
-                                                        text = detour.desc ?: "",
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        color = MaterialTheme.colorScheme.onErrorContainer
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+
 
                     val visibleArrivals = if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
                     items(visibleArrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }, contentType = { "arrival" }) { arrival ->
@@ -370,10 +318,79 @@ fun ArrivalsScreen(
                         }
                     }
                 }
+                }
+
+                if (detours.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        IconButton(
+                            onClick = { showAlertsDialog = true },
+                            modifier = Modifier.size(48.dp),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        ) {
+                            Text(
+                                text = "\u26A0\uFE0F",
+                                fontSize = 20.sp
+                            )
+                        }
+                        Text(
+                            text = "Alert",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             }
         }
     }
 }
+
+    if (showAlertsDialog) {
+        AlertDialog(
+            onDismissRequest = { showAlertsDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "\u26A0\uFE0F", fontSize = 20.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Alerts (${detours.size})")
+                }
+            },
+            text = {
+                Column {
+                    detours.forEach { detour ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = "\u2022",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text(
+                                text = detour.desc ?: "",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAlertsDialog = false }) {
+                    Text("Dismiss")
+                }
+            }
+        )
+    }
 }
 
 private fun formatDelay(arrival: Arrival): String? {
