@@ -22,7 +22,7 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 
 ## Building
 
-1. **Prerequisites:** JDK 17 and Android SDK platform 37.
+1. **Prerequisites:** JDK 21 and Android SDK platform 37.
 2. **Get an API key:** Register for a free key at [developer.trimet.org](https://developer.trimet.org/appid/registration/).
 3. **Set the key:**
    ```sh
