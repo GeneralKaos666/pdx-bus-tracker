@@ -31,7 +31,8 @@
             android:name="com.trimettransit.tracker.activities.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:configChanges="screenSize|orientation"
+            android:configChanges="screenSize|orientation|screenLayout|smallestScreenSize"
+            android:supportsPictureInPicture="true"
             android:enableOnBackInvokedCallback="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

@@ -53,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.preference.PreferenceManager
@@ -65,6 +66,7 @@ import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.TransitApi
 import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
+import com.trimettransit.tracker.ui.screens.components.rememberIsInPipMode
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.trimettransit.tracker.ui.screens.components.ContentEntrance
@@ -282,6 +284,26 @@ fun ArrivalsScreen(
         }
     }
     val smoothFling = rememberSmoothFlingBehavior()
+
+    val inPip = rememberIsInPipMode()
+
+    // PiP: keep the countdown live; drop the map card and alerts sheet
+    // (they cannot render usefully in the small window).
+    LaunchedEffect(inPip) {
+        if (inPip) {
+            trackingKey = null
+            showAlertsSheet = false
+            while (true) {
+                delay(POSITION_REFRESH_MS)
+                loadArrivals()
+            }
+        }
+    }
+
+    if (inPip) {
+        PipCountdownContent(arrivals = arrivals, stopName = stopName)
+        return
+    }
 
     // Bridge resolved coordinates to outer scaffold for favorite persistence
     LaunchedEffect(stopLat, stopLng) {
@@ -894,6 +916,93 @@ internal suspend fun toggleFavorite(context: Context, locId: Int, stopName: Stri
         } catch (e: Exception) {
             Log.e(TAG, "Failed to toggle favorite", e)
             "Failed to update favorite"
+        }
+    }
+}
+
+@Composable
+private fun PipCountdownContent(
+    arrivals: List<Arrival>,
+    stopName: String,
+    modifier: Modifier = Modifier
+) {
+    val scheme = MaterialTheme.colorScheme
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(scheme.surface)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+    ) {
+        Text(
+            text = stopName.ifBlank { "Stop" },
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Spacer(Modifier.height(8.dp))
+        if (arrivals.isEmpty()) {
+            Text(
+                text = "No upcoming arrivals",
+                style = MaterialTheme.typography.bodyMedium,
+                color = scheme.onSurfaceVariant
+            )
+        } else {
+            arrivals.take(5).forEach { arrival ->
+                val type = routeTypeLetter(arrival.routeId)
+                val color = transitColor(type, scheme)
+                val displayTime = if (arrival.status == "estimated" && arrival.estimated != null) {
+                    arrival.estimated
+                } else {
+                    arrival.scheduled
+                }
+                val minutesAway = if (displayTime != null) minutesUntil(displayTime) else 0L
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(26.dp),
+                        shape = CircleShape,
+                        color = color
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                painter = painterResource(id = transitIconResource(type)),
+                                contentDescription = null,
+                                tint = scheme.surface,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = arrival.shortSign,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    if (arrival.status == "canceled") {
+                        Text(
+                            text = "Canceled",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = scheme.error
+                        )
+                    } else {
+                        Text(
+                            text = if (minutesAway <= 0) "Due" else "${minutesAway} min",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = color
+                        )
+                    }
+                }
+            }
         }
     }
 }

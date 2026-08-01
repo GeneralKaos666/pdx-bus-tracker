@@ -1,7 +1,9 @@
 package com.trimettransit.tracker.activities
 
+import android.app.PictureInPictureParams
 import android.content.Intent
 import android.os.Bundle
+import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import kotlinx.coroutines.launch
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.PictureInPictureAlt
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDefaults
 import androidx.compose.material3.SnackbarHost
@@ -49,7 +52,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import com.trimettransit.tracker.ui.screens.components.findActivity
 import com.trimettransit.tracker.ui.screens.components.pressScale
+import com.trimettransit.tracker.ui.screens.components.rememberIsInPipMode
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
@@ -182,6 +187,8 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val inPip = rememberIsInPipMode()
+    val pipActivity = LocalContext.current.findActivity()
     val context = LocalContext.current
     var showFabMenu by remember { mutableStateOf(false) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -210,6 +217,7 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        gesturesEnabled = !inPip,
         drawerContent = {
             DrawerContent(actions = DrawerActions(
                 selectedItem = currentRoute,
@@ -271,7 +279,7 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     )
-                } else if (currentRoute.startsWith("arrivals/")) {
+                } else if (currentRoute.startsWith("arrivals/") && !inPip) {
                     TopAppBar(
                         title = { Text(NavState.arrivalsStopName.ifBlank { "Stop" }) },
                         navigationIcon = {
@@ -285,6 +293,23 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                             }
                         },
                         actions = {
+                            val pipSource = remember { MutableInteractionSource() }
+                            IconButton(
+                                onClick = {
+                                    val params = PictureInPictureParams.Builder()
+                                        .setAspectRatio(Rational(2, 3))
+                                        .build()
+                                    pipActivity.enterPictureInPictureMode(params)
+                                },
+                                interactionSource = pipSource,
+                                modifier = Modifier.pressScale(pipSource)
+                            ) {
+                                Icon(
+                                    Icons.Outlined.PictureInPictureAlt,
+                                    contentDescription = "Mini window",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                             val favSource = remember { MutableInteractionSource() }
                             IconButton(
                                 onClick = {
