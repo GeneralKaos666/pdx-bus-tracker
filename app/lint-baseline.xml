@@ -178,17 +178,6 @@
     </issue>
 
     <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.osmdroid:osmdroid-android than 6.1.18 is available: 6.1.20"
-        errorLine1="    implementation &apos;org.osmdroid:osmdroid-android:6.1.18&apos;"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="build.gradle"
-            line="111"
-            column="20"/>
-    </issue>
-
-    <issue
         id="DataExtractionRules"
         message="The attribute `android:allowBackup` is deprecated from Android 12 and may be removed in future versions. Consider adding the attribute `android:dataExtractionRules` specifying an `@xml` resource which configures backups and device transfers on Android 12 and higher."
         errorLine1="        android:allowBackup=&quot;false&quot;"

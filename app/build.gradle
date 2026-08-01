@@ -107,8 +107,8 @@ dependencies {
     // Event Bus
     implementation 'org.greenrobot:eventbus:3.3.1'
 
-    // Maps (osmdroid)
-    implementation 'org.osmdroid:osmdroid-android:6.1.18'
+    // Maps (MapLibre GL Native, OpenGL backend — the plain `android-sdk` artifact is Vulkan-only since 13.0)
+    implementation 'org.maplibre.gl:android-sdk-opengl:13.4.1'
 
     // CameraX
     def camerax_version = "1.4.1"

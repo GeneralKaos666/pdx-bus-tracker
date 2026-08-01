@@ -171,6 +171,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
 
             val arrivalArr = resultSet.optJSONArray("arrival")
             val arrivalList = mutableListOf<Arrival>()
+            val parsedBlockPositions = mutableListOf<BlockPosition>()
             if (arrivalArr != null) {
                 for (i in 0 until arrivalArr.length()) {
                     val obj = arrivalArr.getJSONObject(i)
@@ -198,38 +199,32 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                     }
                         }
                     arrivalList.add(arrival)
+                    // TriMet returns each block's live position nested inside its arrival object
+                    // (only when showPosition/true is requested)
+                    val bpObj = obj.optJSONObject("blockPosition")
+                    if (bpObj != null) {
+                        val bp = BlockPosition().apply {
+                            id = bpObj.optInt("id", 0)
+                            at = bpObj.optLong("at", 0)
+                            vehicleID = bpObj.optInt("vehicleID", 0)
+                            feet = bpObj.optInt("feet", 0)
+                            heading = bpObj.optDouble("heading", 0.0).toFloat()
+                            lat = bpObj.optDouble("lat", 0.0)
+                            lng = bpObj.optDouble("lng", 0.0)
+                            routeNumber = bpObj.optInt("routeNumber", 0)
+                            direction = bpObj.optInt("direction", 0)
+                            tripID = bpObj.optString("tripID", "")
+                            isNewTrip = bpObj.optBoolean("newTrip", false)
+                        }
+                        parsedBlockPositions.add(bp)
+                    }
                         }
             }
 
             val result = ArrivalsResult().apply {
                 arrivals = arrivalList
+                blockPositions = parsedBlockPositions
                 isQueryError = false
-            }
-
-            // Parse block positions if requested
-            if (showPosition) {
-                val blockPosArr = resultSet.optJSONArray("blockPosition")
-                if (blockPosArr != null) {
-                    val blockPositions = mutableListOf<BlockPosition>()
-                    for (i in 0 until blockPosArr.length()) {
-                        val obj = blockPosArr.getJSONObject(i)
-                        val bp = BlockPosition().apply {
-                            id = obj.optInt("id", 0)
-                            at = obj.optLong("at", 0)
-                            vehicleID = obj.optInt("vehicleID", 0)
-                            feet = obj.optInt("feet", 0)
-                            heading = obj.optDouble("heading", 0.0).toFloat()
-                            lat = obj.optDouble("lat", 0.0)
-                            lng = obj.optDouble("lng", 0.0)
-                            routeNumber = obj.optInt("routeNumber", 0)
-                            direction = obj.optInt("direction", 0)
-                            tripID = obj.optString("tripID", "")
-                            isNewTrip = obj.optBoolean("newTrip", false)
-                        }
-                        blockPositions.add(bp)
-                    }
-                    result.blockPositions = blockPositions
-                }
             }
 
             // Parse top-level detours
