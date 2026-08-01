@@ -25,6 +25,9 @@ import com.trimettransit.tracker.ui.TransitApi
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.EmptyState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.trimettransit.tracker.ui.screens.components.ContentEntrance
+import com.trimettransit.tracker.ui.screens.components.pressScale
 import com.trimettransit.tracker.util.ApiKeys
 import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
 import androidx.compose.material3.MaterialTheme
@@ -68,6 +71,7 @@ fun StopsDirectionList(
                 EmptyState(message = "No directions available.")
             }
             else -> {
+                ContentEntrance(modifier = Modifier.fillMaxSize()) {
                 val smoothFling = rememberSmoothFlingBehavior()
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -76,12 +80,15 @@ fun StopsDirectionList(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(safeDirections, key = { it.dir }, contentType = { "direction" }) { direction ->
+                        val interactionSource = remember { MutableInteractionSource() }
                         Card(
                             onClick = { onDirectionSelected(direction) },
+                            interactionSource = interactionSource,
                             modifier = Modifier
                                 .animateItem()
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                                .pressScale(interactionSource),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surface
                             ),
@@ -98,6 +105,7 @@ fun StopsDirectionList(
                             )
                         }
                     }
+                }
                 }
             }
         }

@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION", "TYPE_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-
 package com.trimettransit.tracker.ui.screens.search
 
 import android.content.Context
@@ -42,10 +40,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.R
-import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.network.JSONParser
 import com.trimettransit.tracker.ui.screens.components.EmptyState
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.trimettransit.tracker.ui.screens.components.ContentEntrance
+import com.trimettransit.tracker.ui.screens.components.pressScale
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.transitColor
@@ -147,6 +148,7 @@ fun SearchStopsScreen(
                 }
 
                 else -> {
+                    ContentEntrance(modifier = Modifier.fillMaxSize()) {
                     val smoothFling = rememberSmoothFlingBehavior()
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -160,6 +162,7 @@ fun SearchStopsScreen(
                             )
                         }
                     }
+                    }
                 }
             }
         }
@@ -172,10 +175,12 @@ private fun StopSearchItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .pressScale(interactionSource)
+            .clickable(interactionSource = interactionSource, indication = LocalIndication.current, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -213,18 +218,6 @@ private fun StopSearchItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    }
-}
-
-@Suppress("unused")
-private fun addStopToFavorites(context: Context, stop: Stop): String {
-    return try {
-        val db = DatabaseHelper(context.applicationContext)
-        db.addFavorite(stop, null)
-        context.getString(R.string.favorite_added_text)
-    } catch (e: Exception) {
-        Log.e(TAG, "Failed to add favorite", e)
-        "Failed to add favorite"
     }
 }
 

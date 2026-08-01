@@ -34,8 +34,6 @@ class QRCameraActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        window.isNavigationBarContrastEnforced = false
-        window.isStatusBarContrastEnforced = false
 
         when {
             ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)

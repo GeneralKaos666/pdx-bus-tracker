@@ -19,6 +19,7 @@ import com.trimettransit.tracker.ui.TransitApi
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.EmptyState
+import com.trimettransit.tracker.ui.screens.components.ContentEntrance
 import com.trimettransit.tracker.ui.screens.components.StopListItem
 import com.trimettransit.tracker.util.ApiKeys
 import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
@@ -63,6 +64,7 @@ fun StopsStopList(
                 EmptyState(message = "No stops available.")
             }
             else -> {
+                ContentEntrance(modifier = Modifier.fillMaxSize()) {
                 val smoothFling = rememberSmoothFlingBehavior()
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -77,6 +79,7 @@ fun StopsStopList(
                             modifier = Modifier.animateItem()
                         )
                     }
+                }
                 }
             }
         }

@@ -41,6 +41,9 @@ import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.data.model.VehiclePosition
 import com.trimettransit.tracker.ui.TransitApi
 import com.trimettransit.tracker.ui.screens.components.EmptyState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.trimettransit.tracker.ui.screens.components.ContentEntrance
+import com.trimettransit.tracker.ui.screens.components.pressScale
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.transitColor
@@ -117,9 +120,12 @@ fun VehiclePositionsScreen(
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
+            val loadSource = remember { MutableInteractionSource() }
             FilledTonalButton(
                 onClick = { loadVehicles() },
-                enabled = !isLoading
+                enabled = !isLoading,
+                interactionSource = loadSource,
+                modifier = Modifier.pressScale(loadSource)
             ) {
                 Text("Load")
             }
@@ -143,6 +149,7 @@ fun VehiclePositionsScreen(
                                   else "Enter a route and tap Load"
                     )
                 } else {
+                    ContentEntrance(modifier = Modifier.fillMaxSize()) {
                     val smoothFling = rememberSmoothFlingBehavior()
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -155,6 +162,7 @@ fun VehiclePositionsScreen(
                                 modifier = Modifier.animateItem()
                             )
                         }
+                    }
                     }
                 }
             }

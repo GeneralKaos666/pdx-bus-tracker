@@ -17,9 +17,12 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.trimettransit.tracker.ui.screens.components.pressScale
 
 data class DrawerActions(
     val selectedItem: String = "",
@@ -53,38 +56,46 @@ fun DrawerContent(actions: DrawerActions) {
             }
 
             // Nav items
+            val homeSource = remember { MutableInteractionSource() }
             NavigationDrawerItem(
                 label = { Text("Home") },
                 selected = actions.selectedItem == "home",
                 onClick = actions.onHomeClick,
                 icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                interactionSource = homeSource,
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding).pressScale(homeSource)
             )
 
+            val routesSource = remember { MutableInteractionSource() }
             NavigationDrawerItem(
                 label = { Text("Routes") },
                 selected = actions.selectedItem == "stops",
                 onClick = actions.onRoutesClick,
                 icon = { Icon(Icons.Default.Map, contentDescription = null) },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                interactionSource = routesSource,
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding).pressScale(routesSource)
             )
 
+            val vehiclesSource = remember { MutableInteractionSource() }
             NavigationDrawerItem(
                 label = { Text("Vehicles") },
                 selected = actions.selectedItem == "vehicle_positions",
                 onClick = actions.onVehiclesClick,
                 icon = { Icon(Icons.Default.DirectionsBus, contentDescription = null) },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                interactionSource = vehiclesSource,
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding).pressScale(vehiclesSource)
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
+            val settingsSource = remember { MutableInteractionSource() }
             NavigationDrawerItem(
                 label = { Text("Settings") },
                 selected = actions.selectedItem == "settings",
                 onClick = actions.onSettings,
                 icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                interactionSource = settingsSource,
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding).pressScale(settingsSource)
             )
         }
     }

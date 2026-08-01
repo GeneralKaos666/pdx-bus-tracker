@@ -26,7 +26,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.trimettransit.tracker.BuildConfig
+import com.trimettransit.tracker.ui.screens.components.ContentEntrance
+import com.trimettransit.tracker.ui.screens.components.pressScale
 
 @Composable
 fun SettingsScreen() {
@@ -38,6 +42,7 @@ fun SettingsScreen() {
     val onlySelectedRoute = remember { prefs.getBoolean("pref_key_only_show_route_selected", true) }
     var onlyShowSelectedRoute by remember { mutableStateOf(onlySelectedRoute) }
 
+    ContentEntrance(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -104,6 +109,7 @@ fun SettingsScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
     }
+    }
 }
 
 @Composable
@@ -123,10 +129,12 @@ private fun SettingsRadioOption(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .pressScale(interactionSource)
+            .clickable(interactionSource = interactionSource, indication = LocalIndication.current, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -148,10 +156,12 @@ private fun SettingsSwitchOption(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = { onCheckedChange(!checked) })
+            .pressScale(interactionSource)
+            .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { onCheckedChange(!checked) }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

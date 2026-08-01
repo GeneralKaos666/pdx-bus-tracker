@@ -1,5 +1,7 @@
 package com.trimettransit.tracker.ui.screens.qr
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.trimettransit.tracker.ui.screens.components.pressScale
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -143,7 +145,12 @@ fun QRLoadingScreen(
             TopAppBar(
                 title = { Text("Loading Stop") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    val backSource = remember { MutableInteractionSource() }
+                    IconButton(
+                        onClick = onNavigateBack,
+                        interactionSource = backSource,
+                        modifier = Modifier.pressScale(backSource)
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -195,7 +202,12 @@ fun QRLoadingScreen(
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Spacer(modifier = Modifier.height(24.dp))
-                        OutlinedButton(onClick = onNavigateBack) {
+                        val goBackSource = remember { MutableInteractionSource() }
+                        OutlinedButton(
+                            onClick = onNavigateBack,
+                            interactionSource = goBackSource,
+                            modifier = Modifier.pressScale(goBackSource)
+                        ) {
                             Text("Go Back")
                         }
                     }
@@ -219,7 +231,12 @@ fun QRLoadingScreen(
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Spacer(modifier = Modifier.height(24.dp))
-                        OutlinedButton(onClick = onNavigateBack) {
+                        val goBackSource = remember { MutableInteractionSource() }
+                        OutlinedButton(
+                            onClick = onNavigateBack,
+                            interactionSource = goBackSource,
+                            modifier = Modifier.pressScale(goBackSource)
+                        ) {
                             Text("Go Back")
                         }
                     }

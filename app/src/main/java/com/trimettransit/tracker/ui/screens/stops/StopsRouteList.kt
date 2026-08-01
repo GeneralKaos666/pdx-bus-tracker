@@ -36,6 +36,9 @@ import com.trimettransit.tracker.ui.TransitApi
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.EmptyState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.trimettransit.tracker.ui.screens.components.ContentEntrance
+import com.trimettransit.tracker.ui.screens.components.pressScale
 import com.trimettransit.tracker.ui.screens.components.transitColor
 import com.trimettransit.tracker.util.ApiKeys
 import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
@@ -77,6 +80,7 @@ fun StopsRouteList(
                 EmptyState(message = "No routes available.")
             }
             else -> {
+                ContentEntrance(modifier = Modifier.fillMaxSize()) {
                 val smoothFling = rememberSmoothFlingBehavior()
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -92,6 +96,7 @@ fun StopsRouteList(
                         )
                     }
                 }
+                }
             }
         }
     }
@@ -103,11 +108,14 @@ private fun RouteListItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Card(
         onClick = onClick,
+        interactionSource = interactionSource,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .pressScale(interactionSource),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow

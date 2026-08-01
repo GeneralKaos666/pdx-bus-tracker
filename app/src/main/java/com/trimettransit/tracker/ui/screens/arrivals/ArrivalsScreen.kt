@@ -51,7 +51,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
@@ -65,6 +65,10 @@ import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.TransitApi
 import com.trimettransit.tracker.ui.screens.components.rememberSmoothFlingBehavior
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.trimettransit.tracker.ui.screens.components.ContentEntrance
+import com.trimettransit.tracker.ui.screens.components.pressScale
 import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
@@ -75,8 +79,10 @@ import com.trimettransit.tracker.ui.screens.components.transitColor
 import com.trimettransit.tracker.ui.screens.components.transitIconResource
 import com.trimettransit.tracker.ui.screens.components.transitTypeLabel
 import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.LocationOn
@@ -110,7 +116,6 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
 import androidx.compose.ui.graphics.toArgb
-import java.io.File
 
 private const val TAG = "ArrivalsScreen"
 private const val POSITION_REFRESH_MS = 30_000L
@@ -149,7 +154,9 @@ fun ArrivalsScreen(
     // Read initial favorite state from DB
     LaunchedEffect(stopId) {
         if (locId > 0) {
-            NavState.arrivalsIsFavorite = DatabaseHelper(context.applicationContext).isFavorite(locId)
+            NavState.arrivalsIsFavorite = withContext(Dispatchers.IO) {
+                DatabaseHelper(context.applicationContext).isFavorite(locId)
+            }
         }
     }
 
@@ -301,6 +308,7 @@ fun ArrivalsScreen(
             }
 
             else -> {
+                ContentEntrance(modifier = Modifier.fillMaxSize()) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     Column {
                     LazyColumn(
@@ -351,6 +359,7 @@ fun ArrivalsScreen(
 
                     if (showExpandButton) {
                         item(key = "showAll", contentType = "showAll") {
+                            val interactionSource = remember { MutableInteractionSource() }
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = MaterialTheme.shapes.small,
@@ -359,7 +368,8 @@ fun ArrivalsScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { showAllArrivals = !showAllArrivals }
+                                        .pressScale(interactionSource)
+                                        .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { showAllArrivals = !showAllArrivals }
                                         .padding(horizontal = 16.dp, vertical = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -388,6 +398,7 @@ fun ArrivalsScreen(
                 }
 
                 if (detours.isNotEmpty()) {
+                    val interactionSource = remember { MutableInteractionSource() }
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.small,
@@ -396,7 +407,8 @@ fun ArrivalsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { showAlertsSheet = true }
+                                .pressScale(interactionSource)
+                                .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { showAlertsSheet = true }
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -414,6 +426,7 @@ fun ArrivalsScreen(
                             )
                         }
                     }
+                }
                 }
                 }
             }
@@ -534,7 +547,12 @@ private fun StopMapCard(
                         modifier = Modifier.weight(1f)
                     )
                     if (onClose != null) {
-                        IconButton(onClick = onClose) {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        IconButton(
+                            onClick = onClose,
+                            interactionSource = interactionSource,
+                            modifier = Modifier.pressScale(interactionSource)
+                        ) {
                             Icon(
                                 Icons.Default.Close,
                                 contentDescription = "Close map",
@@ -547,8 +565,6 @@ private fun StopMapCard(
             AndroidView(
                 factory = { ctx ->
                     MapView(ctx).apply {
-                        // TEMP-DEBUG: file marker to verify style load / feature push on-device.
-                        mapState.debugOut = File(ctx.filesDir, "map_debug.txt").apply { delete() }
                         getMapAsync { map ->
                             mapState.map = map
                             map.uiSettings.isCompassEnabled = false
@@ -586,7 +602,6 @@ private fun StopMapCard(
                                     )
                                 )
                                 mapState.busSource = busSource
-                                mapState.log("onStyleLoaded ok")
                                 map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 16.0))
                                 mapState.applyPositions()   // in case update ran before style load
                             }
@@ -654,12 +669,6 @@ private class MapState {
     var busSource: GeoJsonSource? = null
     var positions: List<BlockPosition> = emptyList()
 
-    /** TEMP-DEBUG: file marker (logd is dead on the test device). */
-    var debugOut: File? = null
-    fun log(msg: String) {
-        debugOut?.appendText("${System.currentTimeMillis()} $msg\n")
-    }
-
     /** Pushes the latest bus positions into the GeoJsonSource (no-op until style is ready). */
     fun applyPositions() {
         val source = busSource ?: return
@@ -671,7 +680,6 @@ private class MapState {
             feature
         }
         source.setGeoJson(FeatureCollection.fromFeatures(features))
-        log("applyPositions n=${features.size}")
     }
 }
 
@@ -744,10 +752,13 @@ private fun ArrivalItem(
     val relativeText = if (minutesAway <= 0) "Due" else "${minutesAway} min"
     val isEstimated = arrival.status == "estimated"
 
+    val interactionSource = remember { MutableInteractionSource() }
     Card(
+        onClick = onClick,
+        interactionSource = interactionSource,
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .pressScale(interactionSource),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.elevatedCardColors(),
         elevation = CardDefaults.elevatedCardElevation()
@@ -861,26 +872,28 @@ private fun ArrivalItem(
     }
 }
 
-internal fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean, routeId: Int = -1, lat: Double = 0.0, lng: Double = 0.0): String {
-    return try {
-        val db = DatabaseHelper(context.applicationContext)
-        if (currentlyFavorite) {
-            val writableDb = db.writableDatabase
-            writableDb.delete("favorites", "loc_id = ?", arrayOf(locId.toString()))
-            writableDb.close()
-            context.getString(R.string.favorite_deleted_text)
-        } else {
-            val stop = Stop()
-            stop.desc = stopName
-            stop.locId = locId
-            stop.latitude = lat
-            stop.longitude = lng
-            if (routeId > 0) stop.routeNum = routeId
-            db.addFavorite(stop, null)
-            context.getString(R.string.favorite_added_text)
+internal suspend fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean, routeId: Int = -1, lat: Double = 0.0, lng: Double = 0.0): String {
+    return withContext(Dispatchers.IO) {
+        try {
+            val db = DatabaseHelper(context.applicationContext)
+            if (currentlyFavorite) {
+                val writableDb = db.writableDatabase
+                writableDb.delete("favorites", "loc_id = ?", arrayOf(locId.toString()))
+                writableDb.close()
+                context.getString(R.string.favorite_deleted_text)
+            } else {
+                val stop = Stop()
+                stop.desc = stopName
+                stop.locId = locId
+                stop.latitude = lat
+                stop.longitude = lng
+                if (routeId > 0) stop.routeNum = routeId
+                db.addFavorite(stop, null)
+                context.getString(R.string.favorite_added_text)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to toggle favorite", e)
+            "Failed to update favorite"
         }
-    } catch (e: Exception) {
-        Log.e(TAG, "Failed to toggle favorite", e)
-        "Failed to update favorite"
     }
 }

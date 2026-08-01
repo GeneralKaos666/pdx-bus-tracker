@@ -36,6 +36,9 @@ import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.data.model.Stop
 import com.trimettransit.tracker.ui.TransitApi
 import com.trimettransit.tracker.ui.screens.components.EmptyState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.trimettransit.tracker.ui.screens.components.ContentEntrance
+import com.trimettransit.tracker.ui.screens.components.pressScale
 import com.trimettransit.tracker.ui.screens.components.ErrorState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.StopListItem
@@ -108,10 +111,12 @@ fun NearbyStopsScreen(
         )
 
         // Refresh button
+        val refreshSource = remember { MutableInteractionSource() }
         FilledTonalButton(
             onClick = { loadIfPermissionGranted() },
             enabled = !isLoading,
-            modifier = Modifier.fillMaxWidth()
+            interactionSource = refreshSource,
+            modifier = Modifier.fillMaxWidth().pressScale(refreshSource)
         ) {
             Text(if (isLoading) "Loading..." else "Refresh")
         }
@@ -138,7 +143,12 @@ fun NearbyStopsScreen(
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedButton(onClick = { loadIfPermissionGranted() }) {
+                        val retrySource = remember { MutableInteractionSource() }
+                        OutlinedButton(
+                            onClick = { loadIfPermissionGranted() },
+                            interactionSource = retrySource,
+                            modifier = Modifier.pressScale(retrySource)
+                        ) {
                             Text("Try Again")
                         }
                     }
@@ -152,6 +162,7 @@ fun NearbyStopsScreen(
                                   else "Tap Refresh to find nearby stops"
                     )
                 } else {
+                    ContentEntrance(modifier = Modifier.fillMaxSize()) {
                     val smoothFling = rememberSmoothFlingBehavior()
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -165,6 +176,7 @@ fun NearbyStopsScreen(
                                 modifier = Modifier.animateItem()
                             )
                         }
+                    }
                     }
                 }
             }

@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.data.model.Stop
+import com.trimettransit.tracker.ui.screens.components.ContentEntrance
 import com.trimettransit.tracker.ui.screens.components.EmptyState
 import com.trimettransit.tracker.ui.screens.components.LoadingState
 import com.trimettransit.tracker.ui.screens.components.StopListItem
@@ -25,6 +26,7 @@ fun HomeStopListScreen(
     } else if (stops.isEmpty()) {
         EmptyState(message = emptyText)
     } else {
+        ContentEntrance(modifier = Modifier.fillMaxSize()) {
         val smoothFling = rememberSmoothFlingBehavior()
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -39,6 +41,7 @@ fun HomeStopListScreen(
                     modifier = Modifier.animateItem()
                 )
             }
+        }
         }
     }
 }

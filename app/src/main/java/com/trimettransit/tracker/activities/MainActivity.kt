@@ -46,8 +46,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import com.trimettransit.tracker.ui.screens.components.pressScale
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
@@ -137,8 +139,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        window.isNavigationBarContrastEnforced = false
-        window.isStatusBarContrastEnforced = false
         handleIncomingIntent(intent)
         setContent {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
@@ -163,9 +163,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onNewIntent(newIntent: Intent) {
-        super.onNewIntent(newIntent)
-        handleIncomingIntent(newIntent)
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIncomingIntent(intent)
     }
 
     private fun handleIncomingIntent(incoming: Intent) {
@@ -256,7 +256,12 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                             )
                         },
                         navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            val menuSource = remember { MutableInteractionSource() }
+                            IconButton(
+                                onClick = { scope.launch { drawerState.open() } },
+                                interactionSource = menuSource,
+                                modifier = Modifier.pressScale(menuSource)
+                            ) {
                                 Icon(Icons.Filled.Menu, contentDescription = "Open navigation drawer")
                             }
                         },
@@ -270,22 +275,32 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                     TopAppBar(
                         title = { Text(NavState.arrivalsStopName.ifBlank { "Stop" }) },
                         navigationIcon = {
-                            IconButton(onClick = { navController.popBackStack() }) {
+                            val backSource = remember { MutableInteractionSource() }
+                            IconButton(
+                                onClick = { navController.popBackStack() },
+                                interactionSource = backSource,
+                                modifier = Modifier.pressScale(backSource)
+                            ) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                             }
                         },
                         actions = {
-                            IconButton(onClick = {
-                                val entry = currentBackStackEntry
-                                val locId = entry?.arguments?.getString("stopId")?.toIntOrNull() ?: 0
-                                val stopName = entry?.arguments?.getString("stopName") ?: ""
-                                scope.launch {
-                                    val routeId = entry?.arguments?.getInt("routeId") ?: -1
-                                    val msg = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite, routeId, NavState.arrivalsLat, NavState.arrivalsLng)
-                                    NavState.arrivalsIsFavorite = !NavState.arrivalsIsFavorite
-                                    outerSnackbarHostState.showSnackbar(msg)
-                                }
-                            }) {
+                            val favSource = remember { MutableInteractionSource() }
+                            IconButton(
+                                onClick = {
+                                    val entry = currentBackStackEntry
+                                    val locId = entry?.arguments?.getString("stopId")?.toIntOrNull() ?: 0
+                                    val stopName = entry?.arguments?.getString("stopName") ?: ""
+                                    scope.launch {
+                                        val routeId = entry?.arguments?.getInt("routeId") ?: -1
+                                        val msg = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite, routeId, NavState.arrivalsLat, NavState.arrivalsLng)
+                                        NavState.arrivalsIsFavorite = !NavState.arrivalsIsFavorite
+                                        outerSnackbarHostState.showSnackbar(msg)
+                                    }
+                                },
+                                interactionSource = favSource,
+                                modifier = Modifier.pressScale(favSource)
+                            ) {
                                 AnimatedContent(
                                     targetState = NavState.arrivalsIsFavorite,
                                     transitionSpec = { fadeIn(tween(durationMillis = 300, easing = FastOutSlowInEasing)) togetherWith fadeOut(tween(durationMillis = 300, easing = FastOutSlowInEasing)) },
@@ -299,10 +314,15 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                                     )
                                 }
                             }
-                            IconButton(onClick = {
-                                scope.launch { refreshRotation.animateTo(refreshRotation.value + 360f, tween(durationMillis = 350, easing = FastOutSlowInEasing)) }
-                                NavState.arrivalsOnRefresh?.invoke()
-                            }) {
+                            val refreshSource = remember { MutableInteractionSource() }
+                            IconButton(
+                                onClick = {
+                                    scope.launch { refreshRotation.animateTo(refreshRotation.value + 360f, tween(durationMillis = 350, easing = FastOutSlowInEasing)) }
+                                    NavState.arrivalsOnRefresh?.invoke()
+                                },
+                                interactionSource = refreshSource,
+                                modifier = Modifier.pressScale(refreshSource)
+                            ) {
                                 Icon(
                                     Icons.Default.Refresh,
                                     contentDescription = "Refresh",
@@ -371,11 +391,14 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                                val qrFabSource = remember { MutableInteractionSource() }
                                 SmallFloatingActionButton(
                                     onClick = {
                                         showFabMenu = false
                                         context.startActivity(Intent(context, QRCameraActivity::class.java))
-                                    }
+                                    },
+                                    interactionSource = qrFabSource,
+                                    modifier = Modifier.pressScale(qrFabSource, 0.92f)
                                 ) {
                                     Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR code")
                                 }
@@ -407,11 +430,14 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                                val searchFabSource = remember { MutableInteractionSource() }
                                 SmallFloatingActionButton(
                                     onClick = {
                                         showFabMenu = false
                                         navController.navigate("search")
-                                    }
+                                    },
+                                    interactionSource = searchFabSource,
+                                    modifier = Modifier.pressScale(searchFabSource, 0.92f)
                                 ) {
                                     Icon(Icons.Default.Search, contentDescription = "Search stops")
                                 }
@@ -422,7 +448,12 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                             targetValue = if (showFabMenu) 45f else 0f,
                             animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
                         )
-                        FloatingActionButton(onClick = { showFabMenu = !showFabMenu }) {
+                        val mainFabSource = remember { MutableInteractionSource() }
+                        FloatingActionButton(
+                            onClick = { showFabMenu = !showFabMenu },
+                            interactionSource = mainFabSource,
+                            modifier = Modifier.pressScale(mainFabSource, 0.92f)
+                        ) {
                             Icon(
                                 Icons.Default.Add,
                                 contentDescription = if (showFabMenu) "Close menu" else "Open menu",
