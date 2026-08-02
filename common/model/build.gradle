@@ -1,0 +1,26 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    namespace 'com.trimettransit.tracker.model'
+    compileSdk 37
+
+    defaultConfig {
+        minSdk 31
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+
+    lint {
+        abortOnError = true
+        baseline = file("lint-baseline.xml")
+    }
+}
+
+dependencies {
+    implementation 'net.danlew:android.joda:2.12.1'
+}

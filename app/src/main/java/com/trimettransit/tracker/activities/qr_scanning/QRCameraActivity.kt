@@ -17,7 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.activities.MainActivity
-import com.trimettransit.tracker.ui.screens.qr.QRScannerCameraScreen
+import com.trimettransit.tracker.feature.qr.QRScannerCameraScreen
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
 
 class QRCameraActivity : ComponentActivity() {

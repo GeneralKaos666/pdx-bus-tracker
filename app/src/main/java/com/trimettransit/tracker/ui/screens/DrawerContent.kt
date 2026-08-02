@@ -22,7 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.trimettransit.tracker.ui.screens.components.pressScale
+import com.trimettransit.tracker.ui.components.pressScale
 
 data class DrawerActions(
     val selectedItem: String = "",

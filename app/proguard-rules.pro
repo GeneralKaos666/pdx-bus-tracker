@@ -4,10 +4,6 @@
 -keep class org.joda.** { *; }
 -dontwarn org.joda.**
 
-# Keep EventBus
--keep class org.greenrobot.** { *; }
--dontwarn org.greenrobot.**
-
 # Keep OkHttp/Okio
 -keep class okhttp3.** { *; }
 -keep class okio.** { *; }

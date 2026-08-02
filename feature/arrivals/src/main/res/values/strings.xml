@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="arrival_cancelled">Cancelled</string>
+    <string name="arrival_dropoff_only">Dropoff Only</string>
+    <string name="favorite_added_text">Favorite added.</string>
+    <string name="favorite_deleted_text">Favorite deleted.</string>
+</resources>

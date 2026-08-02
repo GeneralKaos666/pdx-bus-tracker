@@ -8,8 +8,19 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="35"
+            line="36"
             column="13"/>
+    </issue>
+
+    <issue
+        id="PictureInPictureIssue"
+        message="An activity in this app supports picture-in-picture and the targetSdkVersion is 31 or above; it is therefore strongly recommended to call both `setAutoEnterEnabled(true)` and `setSourceRectHint(...)`"
+        errorLine1="    &lt;application"
+        errorLine2="     ~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="19"
+            column="6"/>
     </issue>
 
     <issue
@@ -41,7 +52,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="78"
+            line="81"
             column="20"/>
     </issue>
 
@@ -52,7 +63,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="79"
+            line="82"
             column="20"/>
     </issue>
 
@@ -63,7 +74,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="81"
+            line="84"
             column="29"/>
     </issue>
 
@@ -74,7 +85,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="86"
+            line="89"
             column="20"/>
     </issue>
 
@@ -85,7 +96,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="88"
+            line="91"
             column="20"/>
     </issue>
 
@@ -96,7 +107,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="92"
+            line="95"
             column="20"/>
     </issue>
 
@@ -107,7 +118,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="115"
+            line="105"
             column="20"/>
     </issue>
 
@@ -118,7 +129,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="116"
+            line="106"
             column="20"/>
     </issue>
 
@@ -129,272 +140,8 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="117"
+            line="107"
             column="20"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.squareup.okhttp3:okhttp than 4.12.0 is available: 5.4.0"
-        errorLine1="    implementation &apos;com.squareup.okhttp3:okhttp:4.12.0&apos;"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="build.gradle"
-            line="98"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.squareup.okio:okio than 3.9.1 is available: 3.18.1"
-        errorLine1="    implementation &apos;com.squareup.okio:okio:3.9.1&apos;"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="build.gradle"
-            line="100"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.squareup.picasso:picasso than 2.8 is available: 2.71828"
-        errorLine1="    implementation &apos;com.squareup.picasso:picasso:2.8&apos;"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="build.gradle"
-            line="102"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of net.danlew:android.joda than 2.12.1 is available: 2.14.2.1"
-        errorLine1="    implementation &apos;net.danlew:android.joda:2.12.1&apos;"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="build.gradle"
-            line="105"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="                Log.w(TAG, &quot;Stop #$locId has zero coordinates after fallback — map hidden&quot;)"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/arrivals/ArrivalsScreen.kt"
-            line="172"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Failed to toggle favorite&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/arrivals/ArrivalsScreen.kt"
-            line="895"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Failed to fetch JSON&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/network/JSONParser.kt"
-            line="50"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Malformed QR URI&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/qr/QRLoadingScreen.kt"
-            line="128"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Security check failed&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/qr/QRLoadingScreen.kt"
-            line="132"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;QR loading failed&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/qr/QRLoadingScreen.kt"
-            line="136"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="        Log.e(TAG, &quot;Failed to add favorite&quot;, e)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/search/SearchStopsScreen.kt"
-            line="234"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="        Log.e(TAG, &quot;loadAllStops failed&quot;, e)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/search/SearchStopsScreen.kt"
-            line="264"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Failed to fetch routes&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="58"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Failed to fetch directions&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="90"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Failed to fetch stops&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="141"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.w(TAG, &quot;TriMet API key not configured&quot;)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="156"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Failed to fetch arrivals&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="259"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.w(TAG, &quot;TriMet API key not configured&quot;)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="277"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Failed to fetch vehicles&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="341"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.w(TAG, &quot;TriMet API key not configured&quot;)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="358"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Failed to fetch stops by location&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="408"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Failed to fetch stop by ID&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="433"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.w(TAG, &quot;TriMet API key not configured&quot;)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="447"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="LogNotTimber"
-        message="Using &apos;Log&apos; instead of &apos;Timber&apos;"
-        errorLine1="            Log.e(TAG, &quot;Failed to fetch alerts&quot;, e)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/TransitApi.kt"
-            line="483"
-            column="13"/>
     </issue>
 
     <issue
@@ -409,113 +156,14 @@
     </issue>
 
     <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 31"
-        errorLine1="        dynamicColor &amp;&amp; Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/theme/Theme.kt"
-            line="134"
-            column="25"/>
-    </issue>
-
-    <issue
         id="NotShrinkingResources"
         message="If enabling minification, also set shrinkResources = true"
         errorLine1="            minifyEnabled true"
         errorLine2="            ~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle"
-            line="40"
+            line="32"
             column="13"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX function `createBitmap` instead?"
-        errorLine1="        ?: Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/arrivals/ArrivalsScreen.kt"
-            line="689"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX function `createBitmap` instead?"
-        errorLine1="    val out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)"
-        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/arrivals/ArrivalsScreen.kt"
-            line="695"
-            column="15"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX function `createBitmap` instead?"
-        errorLine1="    val out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)"
-        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/arrivals/ArrivalsScreen.kt"
-            line="706"
-            column="15"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="                prefs.edit().putString(&quot;theme&quot;, &quot;system&quot;).apply()"
-        errorLine2="                ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/settings/SettingsScreen.kt"
-            line="59"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="                prefs.edit().putString(&quot;theme&quot;, &quot;light&quot;).apply()"
-        errorLine2="                ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/settings/SettingsScreen.kt"
-            line="67"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="                prefs.edit().putString(&quot;theme&quot;, &quot;dark&quot;).apply()"
-        errorLine2="                ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/settings/SettingsScreen.kt"
-            line="75"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="                prefs.edit().putBoolean(&quot;pref_key_only_show_route_selected&quot;, it).apply()"
-        errorLine2="                ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/settings/SettingsScreen.kt"
-            line="89"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="`onTouch` lambda should call `View#performClick` when a click is detected"
-        errorLine1="                        setOnTouchListener { _, event -> event.pointerCount &lt; 2 }"
-        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/ui/screens/arrivals/ArrivalsScreen.kt"
-            line="612"
-            column="44"/>
     </issue>
 
 </issues>

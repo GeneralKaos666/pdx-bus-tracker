@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="favorite_added_text">Favorite added.</string>
+    <string name="favorite_deleted_text">Favorite deleted.</string>
+    <string name="favorite_does_not_exist_text">Favorite does not exist.</string>
+    <string name="favorite_exists_text">Favorite already exists.</string>
+</resources>

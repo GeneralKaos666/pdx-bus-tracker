@@ -1,0 +1,30 @@
+package com.trimettransit.tracker.model
+
+data class VehiclePosition(
+    var vehicleID: Int = 0,
+    var type: String = "",
+    var blockID: Int = 0,
+    var latitude: Double = 0.0,
+    var longitude: Double = 0.0,
+    var bearing: Float = 0f,
+    var routeNumber: Int = 0,
+    var direction: Int = 0,
+    var tripID: String = "",
+    var isNewTrip: Boolean = false,
+    var delay: Int = 0,
+    var signMessage: String = "",
+    var signMessageLong: String = "",
+    var nextLocID: Int = 0,
+    var nextStopSeq: Int = 0,
+    var lastLocID: Int = 0,
+    var lastStopSeq: Int = 0,
+    var serviceDate: Long = 0,
+    var locationInScheduleDay: Int = 0,
+    var time: Long = 0,
+    var expires: Long = 0,
+    var isInCongestion: Boolean = false,
+    var loadPercentage: Int = 0,
+    var garage: String = "",
+    var extrablockID: String = "",
+    var isOffRoute: Boolean = false
+)

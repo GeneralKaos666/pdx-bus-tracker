@@ -3,12 +3,6 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose'
 }
 
-def quoteForBuildConfig = { String value ->
-    def safe = (value ?: "").replace("\\", "\\\\").replace("\"", "\\\"")
-    return "\"${safe}\""
-}
-
-def trimetApiKey = (project.findProperty("TRIMET_API_KEY") ?: System.getenv("TRIMET_API_KEY") ?: "").toString()
 android {
     namespace = "com.trimettransit.tracker"
     compileSdk 37
@@ -18,11 +12,9 @@ android {
         minSdk 31
         targetSdk 37
         versionCode 100
-        versionName "3.7.5"
+        versionName "4.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField "String", "TRIMET_API_KEY", quoteForBuildConfig(trimetApiKey)
     }
 
     signingConfigs {
@@ -53,7 +45,6 @@ android {
 
     buildFeatures {
         viewBinding = true
-        buildConfig = true
     }
 
     lint {
@@ -74,6 +65,18 @@ android {
 }
 
 dependencies {
+    // Modularized projects
+    implementation project(':feature:home')
+    implementation project(':feature:stops')
+    implementation project(':feature:search')
+    implementation project(':feature:vehicles')
+    implementation project(':feature:arrivals')
+    implementation project(':feature:settings')
+    implementation project(':feature:qr')
+    implementation project(':common:ui')
+    implementation project(':common:model')
+    implementation project(':component:localdata')
+
     // AndroidX Core
     implementation 'androidx.core:core:1.15.0'
     implementation 'androidx.appcompat:appcompat:1.7.0'
@@ -93,19 +96,6 @@ dependencies {
 
     // Preference/Settings
     implementation 'androidx.preference:preference:1.2.1'
-
-    // Networking
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-
-    implementation 'com.squareup.okio:okio:3.9.1'
-    // Image loading
-    implementation 'com.squareup.picasso:picasso:2.8'
-
-    // Date/Time
-    implementation 'net.danlew:android.joda:2.12.1'
-
-    // Event Bus
-    implementation 'org.greenrobot:eventbus:3.3.1'
 
     // Maps (MapLibre GL Native, OpenGL backend — the plain `android-sdk` artifact is Vulkan-only since 13.0)
     implementation 'org.maplibre.gl:android-sdk-opengl:13.4.1'

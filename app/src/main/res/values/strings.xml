@@ -2,26 +2,4 @@
 <resources>
     <string name="activity_qr_scanning_title">Scan QR Code</string>
     <string name="app_name">TriMet Bus Tracker</string>
-    <string name="base_arrival_url">https://developer.trimet.org/ws/v2/arrivals</string>
-    <string name="base_route_url">https://developer.trimet.org/ws/V1/routeConfig/json/true/streetcar/true</string>
-    <string name="base_vehicles_url">https://developer.trimet.org/ws/v2/vehicles</string>
-    <string name="base_stop_location_v2_url">https://developer.trimet.org/ws/v2/stops</string>
-    <string name="base_alerts_url">https://developer.trimet.org/ws/v2/alerts</string>
-
-    <string name="favorite_added_text">Favorite added.</string>
-    <string name="favorite_deleted_text">Favorite deleted.</string>
-    <string name="favorite_does_not_exist_text">Favorite does not exist.</string>
-    <string name="favorite_exists_text">Favorite already exists.</string>
-    <string name="arrival_dropoff_only">Dropoff Only</string>
-    <string name="arrival_cancelled">Cancelled</string>
-    <string name="stop_bidirectional_text">Bidirectional</string>
-    <string-array name="days_of_week">
-        <item>Monday</item>
-        <item>Tuesday</item>
-        <item>Wednesday</item>
-        <item>Thursday</item>
-        <item>Friday</item>
-        <item>Saturday</item>
-        <item>Sunday</item>
-    </string-array>
 </resources>

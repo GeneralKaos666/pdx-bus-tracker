@@ -7,7 +7,19 @@ pluginManagement {
 }
 
 rootProject.name = 'TriMet Bus Tracker'
-include 'app'
+include ':app'
+include ':common:model'
+include ':common:utils'
+include ':common:ui'
+include ':component:transit'
+include ':component:localdata'
+include ':feature:home'
+include ':feature:stops'
+include ':feature:search'
+include ':feature:vehicles'
+include ':feature:arrivals'
+include ':feature:settings'
+include ':feature:qr'
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
