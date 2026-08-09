@@ -17,9 +17,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -37,14 +40,13 @@ import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,6 +77,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -89,8 +93,6 @@ import com.trimettransit.tracker.activities.qr_scanning.QRCameraActivity
 import com.trimettransit.tracker.data.local.DatabaseHelper
 import kotlinx.coroutines.Dispatchers
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.ui.screens.DrawerActions
-import com.trimettransit.tracker.ui.screens.DrawerContent
 import com.trimettransit.tracker.feature.arrivals.ArrivalsScreen
 import com.trimettransit.tracker.feature.home.HomeScreen
 import com.trimettransit.tracker.feature.qr.QRLoadingScreen
@@ -137,6 +139,29 @@ private val AnimatedContentTransitionScope<*>.navPopExit: ExitTransition
         targetAlpha = 0.7f,
         animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
     )
+
+private data class BottomNavItem(val route: String, val label: String, val icon: ImageVector)
+
+private val bottomNavItems = listOf(
+    BottomNavItem("home", "Home", Icons.Filled.Home),
+    BottomNavItem("stops", "Routes", Icons.Filled.Map),
+    BottomNavItem("vehicle_positions", "Vehicles", Icons.Filled.DirectionsBus),
+    BottomNavItem("settings", "Settings", Icons.Filled.Settings),
+)
+
+@Composable
+private fun MainBottomBar(currentRoute: String, onNavigate: (String) -> Unit) {
+    NavigationBar {
+        bottomNavItems.forEach { item ->
+            NavigationBarItem(
+                selected = currentRoute == item.route,
+                onClick = { if (item.route != currentRoute) onNavigate(item.route) },
+                icon = { Icon(item.icon, contentDescription = item.label) },
+                label = { Text(item.label) },
+            )
+        }
+    }
+}
 
 class MainActivity : ComponentActivity() {
     private var pendingQrUri: String? = null
@@ -185,7 +210,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
     val navController = rememberNavController()
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val inPip = rememberIsInPipMode()
     val pipActivity = LocalContext.current.findActivity()
@@ -194,7 +218,7 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val refreshRotation = remember { Animatable(0f) }
     val currentRoute = currentBackStackEntry?.destination?.route ?: ""
-    val isRootScreen = currentRoute in setOf("home", "stops", "settings", "search", "nearby_stops", "vehicle_positions")
+    val isTopLevel = currentRoute in setOf("home", "stops", "settings", "vehicle_positions")
     var homeRefreshKey by remember { mutableStateOf(0) }
     val outerSnackbarHostState = remember { SnackbarHostState() }
 
@@ -215,62 +239,32 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
         }
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        gesturesEnabled = !inPip,
-        drawerContent = {
-            DrawerContent(actions = DrawerActions(
-                selectedItem = currentRoute,
-                onHomeClick = {
-                    scope.launch { drawerState.close() }
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = true }
-                    }
-                },
-                onRoutesClick = {
-                    scope.launch { drawerState.close() }
-                    navController.navigate("stops") {
-                        popUpTo("home")
-                    }
-                },
-                onVehiclesClick = {
-                    scope.launch { drawerState.close() }
-                    navController.navigate("vehicle_positions") {
-                        popUpTo("home")
-                    }
-                },
-                onSettings = {
-                    scope.launch { drawerState.close() }
-                    navController.navigate("settings")
-                },
-            ))
+    fun onBottomNavSelected(route: String) {
+        when (route) {
+            "home" -> navController.navigate("home") { popUpTo("home") { inclusive = true } }
+            "stops" -> navController.navigate("stops") { popUpTo("home") }
+            "vehicle_positions" -> navController.navigate("vehicle_positions") { popUpTo("home") }
+            "settings" -> navController.navigate("settings")
         }
-    ) {
-        Scaffold(
+    }
+
+    Scaffold(
             topBar = {
-                if (isRootScreen) {
+                if (currentRoute == "search" || currentRoute == "nearby_stops") {
                     TopAppBar(
                         title = {
                             Text(
-                                when (currentRoute) {
-                                    "home" -> "TriMet Go"
-                                    "stops" -> "Routes"
-                                    "settings" -> "Settings"
-                                    "search" -> "Search Stops"
-                                    "nearby_stops" -> "Nearby Stops"
-                                    "vehicle_positions" -> "Vehicles"
-                                    else -> "TriMet Go"
-                                }
+                                if (currentRoute == "search") "Search Stops" else "Nearby Stops"
                             )
                         },
                         navigationIcon = {
-                            val menuSource = remember { MutableInteractionSource() }
+                            val backSource = remember { MutableInteractionSource() }
                             IconButton(
-                                onClick = { scope.launch { drawerState.open() } },
-                                interactionSource = menuSource,
-                                modifier = Modifier.pressScale(menuSource)
+                                onClick = { navController.popBackStack() },
+                                interactionSource = backSource,
+                                modifier = Modifier.pressScale(backSource)
                             ) {
-                                Icon(Icons.Filled.Menu, contentDescription = "Open navigation drawer")
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -281,7 +275,7 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                     )
                 } else if (currentRoute.startsWith("arrivals/") && !inPip) {
                     TopAppBar(
-                        title = { Text(NavState.arrivalsStopName.ifBlank { "Stop" }) },
+                        title = {},
                         navigationIcon = {
                             val backSource = remember { MutableInteractionSource() }
                             IconButton(
@@ -356,11 +350,19 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            containerColor = Color.Transparent,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                            actionIconContentColor = MaterialTheme.colorScheme.onSurface
                         )
+                    )
+                }
+            },
+            bottomBar = {
+                if (isTopLevel) {
+                    MainBottomBar(
+                        currentRoute = currentRoute,
+                        onNavigate = ::onBottomNavSelected
                     )
                 }
             },
@@ -500,7 +502,6 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
             ) {
                 composable("home") {
                     HomeScreen(
-                        pagerScrollEnabled = drawerState.currentValue != DrawerValue.Closed,
                         refreshKey = homeRefreshKey,
                         onNavigateToArrivals = { stop: Stop ->
                             navigateToArrivals(stop, stop.routeNum)
@@ -509,7 +510,6 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                 }
                 composable("stops") {
                     StopsScreen(
-                        pagerScrollEnabled = drawerState.currentValue != DrawerValue.Closed,
                         onNavigateToArrivals = { stop: Stop, routeId: Int ->
                             navigateToArrivals(stop, routeId)
                         }
@@ -576,7 +576,6 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                 }
             }
         }
-    }
 
 }
 

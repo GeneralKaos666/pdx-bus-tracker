@@ -17,7 +17,6 @@ import com.trimettransit.tracker.ui.components.AnimatedTabRow
 
 @Composable
 fun StopsScreen(
-    pagerScrollEnabled: Boolean = true,
     onNavigateToArrivals: (Stop, routeId: Int) -> Unit
 ) {
     val tabs = listOf("Routes", "Directions", "Stops")
@@ -50,7 +49,6 @@ fun StopsScreen(
     AnimatedTabRow(
         tabs = tabs,
         pagerState = pagerState,
-        userScrollEnabled = pagerScrollEnabled,
         modifier = Modifier.fillMaxSize()
     ) { page ->
         when (page) {

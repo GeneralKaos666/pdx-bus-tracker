@@ -9,8 +9,8 @@ android {
 
     defaultConfig {
         minSdk 31
-        versionName "3.7.5"
-        buildConfigField "String", "VERSION_NAME", "\"3.7.5\""
+        versionName "4.0.0"
+        buildConfigField "String", "VERSION_NAME", "\"4.0.0\""
     }
 
     compileOptions {
