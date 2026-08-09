@@ -31,6 +31,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.components.LoadingState
@@ -65,18 +68,28 @@ fun StopsRouteList(
         isLoading = false
     }
 
-    if (isLoading) {
-        LoadingState()
-    } else {
-        val safeRoutes = routes
-        when {
-            safeRoutes == null -> {
+    val safeRoutes = routes
+    Crossfade(
+        targetState = when {
+            isLoading -> 0
+            safeRoutes == null -> 1
+            safeRoutes.isEmpty() -> 2
+            else -> 3
+        },
+        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+        label = "routesState"
+    ) { state ->
+        when (state) {
+            0 -> {
+                LoadingState()
+            }
+            1 -> {
                 ErrorState(
                     message = if (isMissingApiKey) "API key not configured.\nPlease check app settings."
                               else "Unable to load routes.\nCheck your connection."
                 )
             }
-            safeRoutes.isEmpty() -> {
+            2 -> {
                 EmptyState(message = "No routes available.")
             }
             else -> {
@@ -88,7 +101,7 @@ fun StopsRouteList(
                     contentPadding = PaddingValues(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(safeRoutes, key = { it.routeId }, contentType = { "route" }) { route ->
+                    items(safeRoutes ?: emptyList(), key = { it.routeId }, contentType = { "route" }) { route ->
                         RouteListItem(
                             route = route,
                             onClick = { onRouteSelected(route) },

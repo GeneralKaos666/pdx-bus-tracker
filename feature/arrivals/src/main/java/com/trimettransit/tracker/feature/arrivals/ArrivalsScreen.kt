@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -315,21 +316,31 @@ fun ArrivalsScreen(
         onRefresh = { loadArrivals() },
         modifier = Modifier.fillMaxSize()
     ) {
-        when {
-            isLoading && arrivals.isEmpty() -> {
-                LoadingState()
-            }
+        Crossfade(
+            targetState = when {
+                isLoading && arrivals.isEmpty() -> 0
+                isError && arrivals.isEmpty() -> 1
+                arrivals.isEmpty() -> 2
+                else -> 3
+            },
+            animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+            label = "arrivalsState"
+        ) { state ->
+            when (state) {
+                0 -> {
+                    LoadingState()
+                }
 
-            isError && arrivals.isEmpty() -> {
-                ErrorState(message = "Unable to load arrivals.\nPull to retry.")
-            }
+                1 -> {
+                    ErrorState(message = "Unable to load arrivals.\nPull to retry.")
+                }
 
-            arrivals.isEmpty() && !isLoading -> {
-                EmptyState(message = "No upcoming arrivals.")
-            }
+                2 -> {
+                    EmptyState(message = "No upcoming arrivals.")
+                }
 
-            else -> {
-                ContentEntrance(modifier = Modifier.fillMaxSize()) {
+                else -> {
+                    ContentEntrance(modifier = Modifier.fillMaxSize()) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     Column {
                     LazyColumn(
@@ -418,7 +429,13 @@ fun ArrivalsScreen(
                     }
                 }
 
-                if (detours.isNotEmpty()) {
+                AnimatedVisibility(
+                    visible = detours.isNotEmpty(),
+                    enter = expandVertically(expandFrom = Alignment.Top, animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)) +
+                        fadeIn(tween(durationMillis = 200, easing = FastOutSlowInEasing)),
+                    exit = shrinkVertically(shrinkTowards = Alignment.Top, animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)) +
+                        fadeOut(tween(durationMillis = 150, easing = FastOutSlowInEasing))
+                ) {
                     val interactionSource = remember { MutableInteractionSource() }
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
@@ -450,6 +467,7 @@ fun ArrivalsScreen(
                 }
                 }
                 }
+            }
             }
         }
     }

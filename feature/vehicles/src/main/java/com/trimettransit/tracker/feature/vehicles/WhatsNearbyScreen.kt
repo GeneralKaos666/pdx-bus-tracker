@@ -26,6 +26,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -185,12 +188,23 @@ fun WhatsNearbyScreen() {
                 vehicles = vehicles ?: emptyList(),
                 modifier = Modifier.fillMaxSize()
             )
-            when {
-                isLoading && vehicles == null -> {
-                    LoadingState()
-                }
-                errorMessage != null && vehicles == null -> {
-                    ErrorState(message = errorMessage ?: "Unknown error")
+            Crossfade(
+                targetState = when {
+                    isLoading && vehicles == null -> 0
+                    errorMessage != null && vehicles == null -> 1
+                    else -> 2
+                },
+                animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+                label = "mapOverlay"
+            ) { state ->
+                when (state) {
+                    0 -> {
+                        LoadingState()
+                    }
+                    1 -> {
+                        ErrorState(message = errorMessage ?: "Unknown error")
+                    }
+                    else -> {}
                 }
             }
         }

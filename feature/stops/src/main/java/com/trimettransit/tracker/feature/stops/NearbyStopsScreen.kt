@@ -27,6 +27,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -38,7 +41,6 @@ import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.components.EmptyState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.trimettransit.tracker.ui.components.ContentEntrance
-import com.trimettransit.tracker.ui.components.FadeInOnce
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.LoadingState
@@ -124,12 +126,23 @@ fun NearbyStopsScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        when {
-            isLoading -> {
-                LoadingState(message = "Finding nearby stops...")
-            }
-            errorMessage != null && stops == null -> {
-                FadeInOnce {
+        val safeStops = stops
+        Crossfade(
+            targetState = when {
+                isLoading -> 0
+                errorMessage != null && stops == null -> 1
+                stops != null && safeStops?.isEmpty() == true -> 2
+                stops != null -> 3
+                else -> 4
+            },
+            animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+            label = "nearbyState"
+        ) { state ->
+            when (state) {
+                0 -> {
+                    LoadingState(message = "Finding nearby stops...")
+                }
+                1 -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -156,15 +169,13 @@ fun NearbyStopsScreen(
                         }
                     }
                 }
-            }
-            stops != null -> {
-                val safeStops = stops!!
-                if (safeStops.isEmpty()) {
+                2 -> {
                     EmptyState(
                         message = if (hasLoaded) "No stops found nearby"
                                   else "Tap Refresh to find nearby stops"
                     )
-                } else {
+                }
+                3 -> {
                     ContentEntrance(modifier = Modifier.fillMaxSize()) {
                     val smoothFling = rememberSmoothFlingBehavior()
                     LazyColumn(
@@ -172,7 +183,7 @@ fun NearbyStopsScreen(
                         flingBehavior = smoothFling,
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        items(safeStops, key = { it.locId }, contentType = { "stop" }) { stop ->
+                        items(safeStops ?: emptyList(), key = { it.locId }, contentType = { "stop" }) { stop ->
                             StopListItem(
                                 stop = stop,
                                 onClick = { onNavigateToArrivals(stop, -1) },
@@ -182,11 +193,11 @@ fun NearbyStopsScreen(
                     }
                     }
                 }
-            }
-            !hasLoaded -> {
-                EmptyState(
-                    message = "Tap Refresh to find nearby stops using your current location"
-                )
+                else -> {
+                    EmptyState(
+                        message = "Tap Refresh to find nearby stops using your current location"
+                    )
+                }
             }
         }
     }

@@ -14,6 +14,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.components.LoadingState
@@ -49,18 +52,28 @@ fun StopsStopList(
         isLoading = false
     }
 
-    if (isLoading) {
-        LoadingState()
-    } else {
-        val safeStops = stops
-        when {
-            safeStops == null -> {
+    val safeStops = stops
+    Crossfade(
+        targetState = when {
+            isLoading -> 0
+            safeStops == null -> 1
+            safeStops.isEmpty() -> 2
+            else -> 3
+        },
+        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+        label = "stopsState"
+    ) { state ->
+        when (state) {
+            0 -> {
+                LoadingState()
+            }
+            1 -> {
                 ErrorState(
                     message = if (isMissingApiKey) "API key not configured.\nPlease check app settings."
-                               else "Unable to load stops.\nCheck your connection."
+                              else "Unable to load stops.\nCheck your connection."
                 )
             }
-            safeStops.isEmpty() -> {
+            2 -> {
                 EmptyState(message = "No stops available.")
             }
             else -> {
@@ -72,7 +85,7 @@ fun StopsStopList(
                     contentPadding = PaddingValues(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(safeStops, key = { it.locId }, contentType = { "stop" }) { stop ->
+                    items(safeStops ?: emptyList(), key = { it.locId }, contentType = { "stop" }) { stop ->
                         StopListItem(
                             stop = stop,
                             onClick = { onStopSelected(stop) },

@@ -34,6 +34,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -129,38 +132,50 @@ fun SearchStopsScreen(
                 content = { }
             )
 
-            when {
-                isLoading && allStops == null -> {
-                    LoadingState()
-                }
-
-                hasError && allStops == null -> {
-                    ErrorState(message = "No connection.\nPlease check your internet.")
-                }
-
-                !hasSearched && query.isBlank() -> {
-                    EmptyState(message = "Type to search stops")
-                }
-
-                hasSearched && results.isEmpty() -> {
-                    EmptyState(message = "No stops found.")
-                }
-
-                else -> {
-                    ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                    val smoothFling = rememberSmoothFlingBehavior()
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        flingBehavior = smoothFling
-                    ) {
-                        items(results, key = { it.locId }, contentType = { "stopSearch" }) { stop ->
-                            StopSearchItem(
-                                stop = stop,
-                                onClick = { onNavigateToArrivals(stop, -1) },
-                                modifier = Modifier.animateItem()
-                            )
-                        }
+            Crossfade(
+                targetState = when {
+                    isLoading && allStops == null -> 0
+                    hasError && allStops == null -> 1
+                    !hasSearched && query.isBlank() -> 2
+                    hasSearched && results.isEmpty() -> 3
+                    else -> 4
+                },
+                animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+                label = "searchState"
+            ) { state ->
+                when (state) {
+                    0 -> {
+                        LoadingState()
                     }
+
+                    1 -> {
+                        ErrorState(message = "No connection.\nPlease check your internet.")
+                    }
+
+                    2 -> {
+                        EmptyState(message = "Type to search stops")
+                    }
+
+                    3 -> {
+                        EmptyState(message = "No stops found.")
+                    }
+
+                    else -> {
+                        ContentEntrance(modifier = Modifier.fillMaxSize()) {
+                        val smoothFling = rememberSmoothFlingBehavior()
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            flingBehavior = smoothFling
+                        ) {
+                            items(results, key = { it.locId }, contentType = { "stopSearch" }) { stop ->
+                                StopSearchItem(
+                                    stop = stop,
+                                    onClick = { onNavigateToArrivals(stop, -1) },
+                                    modifier = Modifier.animateItem()
+                                )
+                            }
+                        }
+                        }
                     }
                 }
             }

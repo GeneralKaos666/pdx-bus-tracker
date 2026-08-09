@@ -250,8 +250,20 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
 
     Scaffold(
             topBar = {
-                if (currentRoute == "search" || currentRoute == "nearby_stops") {
-                    TopAppBar(
+                AnimatedContent(
+                    targetState = currentRoute,
+                    transitionSpec = {
+                        (fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
+                            slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { -it })
+                            .togetherWith(
+                                fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
+                                    slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { -it / 3 }
+                            )
+                    },
+                    label = "topBar"
+                ) { route ->
+                    when {
+                        route == "search" || route == "nearby_stops" -> TopAppBar(
                         title = {
                             Text(
                                 if (currentRoute == "search") "Search Stops" else "Nearby Stops"
@@ -273,8 +285,7 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     )
-                } else if (currentRoute.startsWith("arrivals/") && !inPip) {
-                    TopAppBar(
+                    route.startsWith("arrivals/") && !inPip -> TopAppBar(
                         title = {},
                         navigationIcon = {
                             val backSource = remember { MutableInteractionSource() }
@@ -356,10 +367,18 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                             actionIconContentColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
+                    else -> {}
                 }
+            }
             },
             bottomBar = {
-                if (isTopLevel) {
+                AnimatedVisibility(
+                    visible = isTopLevel,
+                    enter = slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { it } +
+                        fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)),
+                    exit = slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it } +
+                        fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing))
+                ) {
                     MainBottomBar(
                         currentRoute = currentRoute,
                         onNavigate = ::onBottomNavSelected
@@ -388,7 +407,13 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                 )
             },
             floatingActionButton = {
-                if (!currentRoute.startsWith("arrivals/")) {
+                AnimatedVisibility(
+                    visible = !currentRoute.startsWith("arrivals/"),
+                    enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
+                        slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { it },
+                    exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
+                        slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it }
+                ) {
                     Column(
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.spacedBy(12.dp)
