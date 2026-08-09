@@ -100,7 +100,7 @@ import com.trimettransit.tracker.feature.search.SearchStopsScreen
 import com.trimettransit.tracker.feature.settings.SettingsScreen
 import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
-import com.trimettransit.tracker.feature.vehicles.VehiclePositionsScreen
+import com.trimettransit.tracker.feature.vehicles.WhatsNearbyScreen
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
 import java.net.URLEncoder
 
@@ -145,7 +145,7 @@ private data class BottomNavItem(val route: String, val label: String, val icon:
 private val bottomNavItems = listOf(
     BottomNavItem("home", "Home", Icons.Filled.Home),
     BottomNavItem("stops", "Routes", Icons.Filled.Map),
-    BottomNavItem("vehicle_positions", "Vehicles", Icons.Filled.DirectionsBus),
+    BottomNavItem("vehicle_positions", "What's Nearby", Icons.Filled.DirectionsBus),
     BottomNavItem("settings", "Settings", Icons.Filled.Settings),
 )
 
@@ -533,7 +533,7 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                     )
                 }
                 composable("vehicle_positions") {
-                    VehiclePositionsScreen()
+                    WhatsNearbyScreen()
                 }
                 composable(
                     route = "arrivals/{stopId}?stopName={stopName}&routeId={routeId}&lat={lat}&lng={lng}",

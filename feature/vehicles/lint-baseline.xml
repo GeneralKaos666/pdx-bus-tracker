@@ -7,8 +7,8 @@
         errorLine1="    val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)"
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/trimettransit/tracker/feature/vehicles/VehiclePositionsScreen.kt"
-            line="169"
+            file="src/main/java/com/trimettransit/tracker/feature/vehicles/WhatsNearbyScreen.kt"
+            line="208"
             column="20"/>
     </issue>
 
@@ -18,9 +18,20 @@
         errorLine1="        ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)"
         errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/trimettransit/tracker/feature/vehicles/VehiclePositionsScreen.kt"
-            line="170"
+            file="src/main/java/com/trimettransit/tracker/feature/vehicles/WhatsNearbyScreen.kt"
+            line="209"
             column="12"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Missing permissions required by LocationManager.getCurrentLocation: android.permission.ACCESS_COARSE_LOCATION or android.permission.ACCESS_FINE_LOCATION"
+        errorLine1="            locationManager.getCurrentLocation(provider, signal, executor) { location ->"
+        errorLine2="            ^">
+        <location
+            file="src/main/java/com/trimettransit/tracker/feature/vehicles/WhatsNearbyScreen.kt"
+            line="232"
+            column="13"/>
     </issue>
 
     <issue

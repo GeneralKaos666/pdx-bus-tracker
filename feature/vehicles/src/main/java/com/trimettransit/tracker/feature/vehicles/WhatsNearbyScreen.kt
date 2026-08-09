@@ -6,7 +6,9 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.location.Location
 import android.location.LocationManager
+import android.os.CancellationSignal
 import android.view.MotionEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,6 +36,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toBitmap
+import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.VehiclePosition
 import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.components.ErrorState
@@ -41,7 +44,9 @@ import com.trimettransit.tracker.ui.components.LoadingState
 import com.trimettransit.tracker.ui.components.rememberOnResume
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
@@ -62,13 +67,17 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
 
-private const val VEHICLES_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
+private const val WHATS_NEARBY_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
+private const val NEARBY_STOP_SEARCH_METERS = 500
+private const val ME_CAMERA_ZOOM = 16.0
+private const val LOCATION_FIX_TIMEOUT_MS = 10_000L
 
 @Composable
-fun VehiclePositionsScreen() {
+fun WhatsNearbyScreen() {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var vehicles by remember { mutableStateOf<List<VehiclePosition>?>(null) }
+    var stops by remember { mutableStateOf<List<Stop>?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var hasLoaded by remember { mutableStateOf(false) }
@@ -105,6 +114,24 @@ fun VehiclePositionsScreen() {
         }
     }
 
+    fun loadStopsNearby() {
+        val location = myLocation ?: return
+        coroutineScope.launch {
+            stops = TransitApi.fetchStopsByLocation(
+                context = context,
+                ll = "${location.latitude},${location.longitude}",
+                meters = NEARBY_STOP_SEARCH_METERS
+            )
+        }
+    }
+
+    fun refreshLocation() {
+        if (myLocation != null) return
+        coroutineScope.launch {
+            myLocation = requestCurrentLocation(context)
+        }
+    }
+
     // Ask for location once if not granted; reading it only matters for the map camera/marker.
     LaunchedEffect(Unit) {
         if (!locationPermissionGranted) {
@@ -114,8 +141,14 @@ fun VehiclePositionsScreen() {
 
     LaunchedEffect(locationPermissionGranted) {
         if (locationPermissionGranted) {
-            myLocation = readLastKnownLocation(context)
+            // Fast path: last known fix, if any. Otherwise wait for a fresh fix so the
+            // "you are here" dot and centered camera appear even with no prior location.
+            myLocation = readLastKnownLocation(context) ?: requestCurrentLocation(context)
         }
+    }
+
+    LaunchedEffect(myLocation) {
+        loadStopsNearby()
     }
 
     LaunchedEffect(Unit) {
@@ -126,6 +159,10 @@ fun VehiclePositionsScreen() {
     rememberOnResume {
         if (hasLoaded) {
             loadVehicles()
+            loadStopsNearby()
+            if (locationPermissionGranted) {
+                refreshLocation()
+            }
         }
     }
 
@@ -135,7 +172,7 @@ fun VehiclePositionsScreen() {
             .padding(16.dp)
     ) {
         Text(
-            text = "Vehicle Positions",
+            text = "What's Nearby",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -144,6 +181,7 @@ fun VehiclePositionsScreen() {
         Box(modifier = Modifier.weight(1f)) {
             VehicleMap(
                 myLocation = myLocation,
+                stops = stops ?: emptyList(),
                 vehicles = vehicles ?: emptyList(),
                 modifier = Modifier.fillMaxSize()
             )
@@ -159,6 +197,7 @@ fun VehiclePositionsScreen() {
     }
 }
 
+/** Last-known fix from any provider; null when the device has no stored fix yet. */
 private fun readLastKnownLocation(context: Context): LatLng? {
     val hasFineLocation = ContextCompat.checkSelfPermission(
         context, Manifest.permission.ACCESS_FINE_LOCATION
@@ -172,9 +211,45 @@ private fun readLastKnownLocation(context: Context): LatLng? {
     return LatLng(location.latitude, location.longitude)
 }
 
+/**
+ * Requests a fresh fix via LocationManager.getCurrentLocation, probing GPS then the network
+ * provider, each with a bounded wait. getLastKnownLocation() is often null on devices with
+ * no prior fix, so this is the path that actually produces the me-dot and camera center.
+ */
+private suspend fun requestCurrentLocation(context: Context): LatLng? {
+    val hasFineLocation = ContextCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+    if (!hasFineLocation) return null
+    val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        ?: return null
+    val executor = ContextCompat.getMainExecutor(context)
+    for (provider in listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)) {
+        val deferred = CompletableDeferred<LatLng?>()
+        val signal = CancellationSignal()
+        try {
+            // This overload returns Unit; the signal cancels the pending fix on timeout.
+            locationManager.getCurrentLocation(provider, signal, executor) { location ->
+                deferred.complete(location?.let { LatLng(it.latitude, it.longitude) })
+            }
+        } catch (e: SecurityException) {
+            // Permission revoked between check and call — no fix from this provider.
+            deferred.complete(null)
+        } catch (e: IllegalArgumentException) {
+            // Provider not present on this device — try the next one.
+            continue
+        }
+        val fix = withTimeoutOrNull(LOCATION_FIX_TIMEOUT_MS) { deferred.await() }
+        signal.cancel()
+        if (fix != null) return fix
+    }
+    return null
+}
+
 @Composable
 private fun VehicleMap(
     myLocation: LatLng?,
+    stops: List<Stop>,
     vehicles: List<VehiclePosition>,
     modifier: Modifier = Modifier
 ) {
@@ -196,14 +271,25 @@ private fun VehicleMap(
                     map.uiSettings.isCompassEnabled = false
                     map.uiSettings.isAttributionEnabled = true
                     map.setMaxZoomPreference(18.0)
-                    map.setStyle(VEHICLES_MAP_STYLE_URL) { style ->
+                    map.setStyle(WHATS_NEARBY_MAP_STYLE_URL) { style ->
                         badgeColors.forEach { (letter, color) ->
                             style.addImage(
                                 "badge-$letter",
                                 badgeBitmap(ctx, color.toArgb(), transitIconResource(letter), density)
                             )
                         }
+                        style.addImage("stop-dot", stopDotBitmap(ctx, scheme.secondary.toArgb(), density))
                         style.addImage("me-dot", meDotBitmap(ctx, scheme.primary.toArgb(), density))
+                        val stopsSource = GeoJsonSource("stop-source")
+                        style.addSource(stopsSource)
+                        style.addLayer(
+                            SymbolLayer("stop-layer", "stop-source").withProperties(
+                                iconImage("stop-dot"),
+                                iconAnchor(Property.ICON_ANCHOR_CENTER),
+                                iconAllowOverlap(true),
+                                iconIgnorePlacement(true)
+                            )
+                        )
                         val vehiclesSource = GeoJsonSource("vehicles-source")
                         style.addSource(vehiclesSource)
                         style.addLayer(
@@ -226,17 +312,19 @@ private fun VehicleMap(
                                 iconIgnorePlacement(true)
                             )
                         )
+                        mapState.stopsSource = stopsSource
                         mapState.vehiclesSource = vehiclesSource
                         mapState.meSource = meSource
                         val location = myLocation
                         if (location != null) {
                             mapState.applyMe(location.latitude, location.longitude)
-                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 14.0))
+                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(location, ME_CAMERA_ZOOM))
                             mapState.mePlaced = true
                         } else {
-                            // Downtown Portland default viewport until buses load.
+                            // Downtown Portland default viewport until a fix arrives.
                             map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(45.5189, -122.6795), 12.0))
                         }
+                        mapState.applyStops()      // in case update ran before style load
                         mapState.applyVehicles()   // in case update ran before style load
                     }
                 }
@@ -258,6 +346,8 @@ private fun VehicleMap(
         update = { view ->
             view.onStart()   // idempotent; also covers the factory's post() ordering
             view.onResume()
+            mapState.stops = stops
+            mapState.applyStops()
             mapState.vehicles = vehicles
             mapState.applyVehicles()
             val location = myLocation
@@ -265,9 +355,9 @@ private fun VehicleMap(
                 // Location arrived after the style loaded (e.g. permission granted mid-session).
                 mapState.mePlaced = true
                 mapState.applyMe(location.latitude, location.longitude)
-                mapState.map?.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 14.0))
+                mapState.map?.moveCamera(CameraUpdateFactory.newLatLngZoom(location, ME_CAMERA_ZOOM))
             } else if (location == null && !mapState.vehiclesFit && mapState.map != null && vehicles.isNotEmpty()) {
-                // No location available: fit the camera to all buses once the viewport is stable.
+                // No location available: fit the camera to all vehicles once the viewport is stable.
                 val settled = view.width > 0 && view.height > 0 &&
                     view.width == fitSize[0] && view.height == fitSize[1]
                 if (settled) {
@@ -307,11 +397,22 @@ private fun VehicleMap(
 private class VehicleMapState {
     var mapView: MapView? = null
     var map: MapLibreMap? = null
+    var stopsSource: GeoJsonSource? = null
     var vehiclesSource: GeoJsonSource? = null
     var meSource: GeoJsonSource? = null
+    var stops: List<Stop> = emptyList()
     var vehicles: List<VehiclePosition> = emptyList()
     var mePlaced = false
     var vehiclesFit = false
+
+    /** Pushes the latest nearby stops into the stop-source (no-op until the style is ready). */
+    fun applyStops() {
+        val source = stopsSource ?: return
+        val features = stops.map { stop ->
+            Feature.fromGeometry(Point.fromLngLat(stop.longitude, stop.latitude))
+        }
+        source.setGeoJson(FeatureCollection.fromFeatures(features))
+    }
 
     /** Pushes the latest vehicle positions into the GeoJsonSource (no-op until style is ready). */
     fun applyVehicles() {
@@ -347,7 +448,7 @@ private fun drawableBitmap(context: Context, resId: Int, sizePx: Int): Bitmap {
         ?: createBitmap(1, 1, Bitmap.Config.ARGB_8888)
 }
 
-/** Colored circle badge with a white transit glyph, used as the bus marker image. */
+/** Colored circle badge with a white transit glyph, used as the vehicle marker image. */
 private fun badgeBitmap(context: Context, fillColor: Int, glyphRes: Int, density: Float): Bitmap {
     val size = (34 * density).toInt()
     val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
@@ -355,6 +456,17 @@ private fun badgeBitmap(context: Context, fillColor: Int, glyphRes: Int, density
     c.drawCircle(size / 2f, size / 2f, size / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
     val glyph = drawableBitmap(context, glyphRes, (20 * density).toInt())
     c.drawBitmap(glyph, (size - glyph.width) / 2f, (size - glyph.height) / 2f, null)
+    return out
+}
+
+/** Secondary-colored dot with a white center, used as the nearby stop marker image. */
+private fun stopDotBitmap(context: Context, fillColor: Int, density: Float): Bitmap {
+    val size = (34 * density).toInt()
+    val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val c = Canvas(out)
+    c.drawCircle(size / 2f, size / 2f, size / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
+    val dotRadius = (5 * density).toInt().toFloat()
+    c.drawCircle(size / 2f, size / 2f, dotRadius, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE })
     return out
 }
 
