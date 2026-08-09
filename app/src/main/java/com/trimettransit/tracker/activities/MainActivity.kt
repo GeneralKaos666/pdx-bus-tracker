@@ -533,11 +533,7 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                     )
                 }
                 composable("vehicle_positions") {
-                    VehiclePositionsScreen(
-                        onNavigateToArrivals = { stop: Stop, routeId: Int ->
-                            navigateToArrivals(stop, routeId)
-                        }
-                    )
+                    VehiclePositionsScreen()
                 }
                 composable(
                     route = "arrivals/{stopId}?stopName={stopName}&routeId={routeId}&lat={lat}&lng={lng}",
