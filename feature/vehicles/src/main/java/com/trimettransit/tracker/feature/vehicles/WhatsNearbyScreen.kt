@@ -212,6 +212,7 @@ fun WhatsNearbyScreen() {
 }
 
 /** Last-known fix from any provider; null when the device has no stored fix yet. */
+@android.annotation.SuppressLint("MissingPermission")
 private fun readLastKnownLocation(context: Context): LatLng? {
     val hasFineLocation = ContextCompat.checkSelfPermission(
         context, Manifest.permission.ACCESS_FINE_LOCATION
@@ -230,6 +231,7 @@ private fun readLastKnownLocation(context: Context): LatLng? {
  * provider, each with a bounded wait. getLastKnownLocation() is often null on devices with
  * no prior fix, so this is the path that actually produces the me-dot and camera center.
  */
+@android.annotation.SuppressLint("MissingPermission")
 private suspend fun requestCurrentLocation(context: Context): LatLng? {
     val hasFineLocation = ContextCompat.checkSelfPermission(
         context, Manifest.permission.ACCESS_FINE_LOCATION
@@ -250,7 +252,10 @@ private suspend fun requestCurrentLocation(context: Context): LatLng? {
             // Permission revoked between check and call — no fix from this provider.
             deferred.complete(null)
         } catch (e: IllegalArgumentException) {
-            // Provider not present on this device — try the next one.
+            // Provider not present on this device — try the next one; don't leak the
+            // pending signal or leave the deferred dangling.
+            signal.cancel()
+            deferred.complete(null)
             continue
         }
         val fix = withTimeoutOrNull(LOCATION_FIX_TIMEOUT_MS) { deferred.await() }
@@ -342,14 +347,17 @@ private fun VehicleMap(
                         mapState.applyVehicles()   // in case update ran before style load
                     }
                 }
-                // Consume single-finger touches at View level to prevent propagation
-                // to Compose parent gesture handlers. Multi-touch zoom unaffected.
+                // Block parent (Compose) gesture interception for single-finger touches so
+                // MapView can pan normally; never consume the event itself. Multi-touch
+                // zoom reaches MapView untouched.
                 setOnTouchListener { v, event ->
-                    val consume = event.pointerCount < 2
-                    if (consume && event.actionMasked == MotionEvent.ACTION_UP) {
+                    if (event.pointerCount < 2) {
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                    }
+                    if (event.actionMasked == MotionEvent.ACTION_UP) {
                         v.performClick()
                     }
-                    consume
+                    false
                 }
                 // MapLibre requires onStart() before it activates its file source (network).
                 // post() guarantees the view is attached first.
@@ -372,28 +380,7 @@ private fun VehicleMap(
                 mapState.map?.moveCamera(CameraUpdateFactory.newLatLngZoom(location, ME_CAMERA_ZOOM))
             } else if (location == null && !mapState.vehiclesFit && mapState.map != null && vehicles.isNotEmpty()) {
                 // No location available: fit the camera to all vehicles once the viewport is stable.
-                val settled = view.width > 0 && view.height > 0 &&
-                    view.width == fitSize[0] && view.height == fitSize[1]
-                if (settled) {
-                    fitVehicles(mapState.map!!, vehicles)
-                    mapState.vehiclesFit = true
-                } else {
-                    fitSize[0] = view.width
-                    fitSize[1] = view.height
-                    view.postDelayed({
-                        if (view.width == fitSize[0] && view.height == fitSize[1]) {
-                            fitVehicles(mapState.map!!, vehicles)
-                            mapState.vehiclesFit = true
-                        } else {
-                            fitSize[0] = view.width
-                            fitSize[1] = view.height
-                            view.postDelayed({
-                                fitVehicles(mapState.map!!, vehicles)
-                                mapState.vehiclesFit = true
-                            }, 400)
-                        }
-                    }, 400)
-                }
+                scheduleVehicleCameraFit(view, mapState, vehicles, fitSize)
             }
         },
         modifier = modifier
@@ -401,9 +388,13 @@ private fun VehicleMap(
 
     DisposableEffect(Unit) {
         onDispose {
-            mapState.mapView?.onStop()
             mapState.mapView?.onPause()
+            mapState.mapView?.onStop()
             mapState.mapView?.onDestroy()
+            // Drop the map references so any still-scheduled fit callbacks no-op
+            // instead of touching a destroyed map.
+            mapState.map = null
+            mapState.mapView = null
         }
     }
 }
@@ -511,3 +502,44 @@ private fun fitVehicles(map: MapLibreMap, vehicles: List<VehiclePosition>) {
         map.easeCamera(CameraUpdateFactory.newCameraPosition(cam), 400)
     }
 }
+
+/**
+ * Fits the camera to all vehicles once the viewport size is stable (non-zero and unchanged
+ * since the last sample). The view can be resized or detached while a retry is pending, and
+ * the map can be destroyed entirely, so every callback re-checks attachment and reads the
+ * live map reference instead of a captured `!!`. Retries are capped — a later update() pass
+ * (e.g. the next vehicle poll) re-triggers the fit if the size still hasn't settled.
+ */
+private fun scheduleVehicleCameraFit(
+    view: MapView,
+    state: VehicleMapState,
+    vehicles: List<VehiclePosition>,
+    fitSize: IntArray,
+    attempts: Int = 0
+) {
+    val map = state.map ?: return
+    if (state.vehiclesFit || vehicles.isEmpty()) return
+    val settled = view.width > 0 && view.height > 0 &&
+        view.width == fitSize[0] && view.height == fitSize[1]
+    if (settled) {
+        fitVehicles(map, vehicles)
+        state.vehiclesFit = true
+        return
+    }
+    fitSize[0] = view.width
+    fitSize[1] = view.height
+    if (attempts >= MAX_VEHICLE_FIT_ATTEMPTS) return
+    view.postDelayed({
+        if (state.vehiclesFit || !view.isAttachedToWindow) return@postDelayed
+        val liveMap = state.map ?: return@postDelayed
+        if (view.width > 0 && view.height > 0 && view.width == fitSize[0] && view.height == fitSize[1]) {
+            fitVehicles(liveMap, vehicles)
+            state.vehiclesFit = true
+        } else {
+            scheduleVehicleCameraFit(view, state, vehicles, fitSize, attempts + 1)
+        }
+    }, 400)
+}
+
+/** Cap on settle-check retries before giving up on the vehicle camera fit. */
+private const val MAX_VEHICLE_FIT_ATTEMPTS = 3

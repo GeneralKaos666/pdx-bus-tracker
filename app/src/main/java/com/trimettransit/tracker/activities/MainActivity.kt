@@ -266,7 +266,7 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                         route == "search" || route == "nearby_stops" -> TopAppBar(
                         title = {
                             Text(
-                                if (currentRoute == "search") "Search Stops" else "Nearby Stops"
+                                if (route == "search") "Search Stops" else "Nearby Stops"
                             )
                         },
                         navigationIcon = {
@@ -286,7 +286,7 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                         )
                     )
                     route.startsWith("arrivals/") && !inPip -> TopAppBar(
-                        title = {},
+                        title = { Text(NavState.arrivalsStopName.ifBlank { "Stop" }) },
                         navigationIcon = {
                             val backSource = remember { MutableInteractionSource() }
                             IconButton(

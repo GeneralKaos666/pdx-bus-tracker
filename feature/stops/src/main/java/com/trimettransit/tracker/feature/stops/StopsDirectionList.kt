@@ -59,7 +59,7 @@ fun StopsDirectionList(
         isLoading = false
     }
 
-val safeDirections = directions
+    val safeDirections = directions
     Crossfade(
         targetState = when {
             isLoading -> 0
