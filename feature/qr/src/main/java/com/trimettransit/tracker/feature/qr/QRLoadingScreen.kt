@@ -4,6 +4,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.trimettransit.tracker.ui.components.FadeInOnce
 import com.trimettransit.tracker.ui.components.pressScale
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
@@ -170,11 +171,12 @@ fun QRLoadingScreen(
                 .padding(padding),
             contentAlignment = Alignment.Center
         ) {
-            Crossfade(
-                targetState = state,
-                animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
-                label = "qrState"
-            ) { currentState ->
+            FadeInOnce {
+                Crossfade(
+                    targetState = state,
+                    animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+                    label = "qrState"
+                ) { currentState ->
             when (currentState) {
                 QRLoadingState.Loading -> {
                     Column(
@@ -247,6 +249,7 @@ fun QRLoadingScreen(
                         }
                     }
                 }
+            }
             }
             }
         }

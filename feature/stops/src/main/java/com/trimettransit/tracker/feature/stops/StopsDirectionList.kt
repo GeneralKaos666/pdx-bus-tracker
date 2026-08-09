@@ -20,6 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.components.LoadingState
@@ -56,18 +59,28 @@ fun StopsDirectionList(
         isLoading = false
     }
 
-    if (isLoading) {
-        LoadingState()
-    } else {
-        val safeDirections = directions
-        when {
-            safeDirections == null -> {
+    val safeDirections = directions
+    Crossfade(
+        targetState = when {
+            isLoading -> 0
+            safeDirections == null -> 1
+            safeDirections.isEmpty() -> 2
+            else -> 3
+        },
+        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+        label = "directionsState"
+    ) { state ->
+        when (state) {
+            0 -> {
+                LoadingState()
+            }
+            1 -> {
                 ErrorState(
                     message = if (isMissingApiKey) "API key not configured.\nPlease check app settings."
-                               else "Unable to load directions.\nCheck your connection."
+                              else "Unable to load directions.\nCheck your connection."
                 )
             }
-            safeDirections.isEmpty() -> {
+            2 -> {
                 EmptyState(message = "No directions available.")
             }
             else -> {
@@ -79,7 +92,7 @@ fun StopsDirectionList(
                     contentPadding = PaddingValues(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(safeDirections, key = { it.dir }, contentType = { "direction" }) { direction ->
+                    items(safeDirections ?: emptyList(), key = { it.dir }, contentType = { "direction" }) { direction ->
                         val interactionSource = remember { MutableInteractionSource() }
                         Card(
                             onClick = { onDirectionSelected(direction) },

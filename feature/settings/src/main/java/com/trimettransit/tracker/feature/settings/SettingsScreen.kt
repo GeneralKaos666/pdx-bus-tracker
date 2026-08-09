@@ -96,7 +96,7 @@ fun SettingsScreen() {
         SectionHeader(title = "About")
 
         Text(
-            text = "TriMet Go",
+            text = "TriMet Bus Tracker",
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
         )

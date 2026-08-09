@@ -22,7 +22,6 @@ import kotlinx.coroutines.withContext
 @Composable
 fun HomeScreen(
     refreshKey: Int = 0,
-    pagerScrollEnabled: Boolean = true,
     onNavigateToArrivals: (Stop) -> Unit
 ) {
     val context = LocalContext.current
@@ -50,7 +49,6 @@ fun HomeScreen(
     AnimatedTabRow(
         tabs = tabs,
         pagerState = pagerState,
-        userScrollEnabled = pagerScrollEnabled,
         modifier = Modifier.fillMaxSize()
     ) { page ->
         when (page) {
