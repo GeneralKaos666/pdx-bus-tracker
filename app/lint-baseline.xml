@@ -8,7 +8,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="36"
+            line="37"
             column="13"/>
     </issue>
 
@@ -36,7 +36,7 @@
 
     <issue
         id="AndroidGradlePluginVersion"
-        message="A newer version of Gradle than 9.5.0 is available: 9.6.1"
+        message="A newer version of Gradle than 9.5.0 is available: 9.7.0"
         errorLine1="distributionUrl=https\://services.gradle.org/distributions/gradle-9.5.0-all.zip"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location

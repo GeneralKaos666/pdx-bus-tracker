@@ -63,7 +63,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/trimettransit/tracker/feature/arrivals/ArrivalsScreen.kt"
-            line="173"
+            line="176"
             column="17"/>
     </issue>
 
@@ -74,7 +74,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/trimettransit/tracker/feature/arrivals/ArrivalsScreen.kt"
-            line="916"
+            line="933"
             column="13"/>
     </issue>
 
@@ -85,7 +85,7 @@
         errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/trimettransit/tracker/feature/arrivals/ArrivalsScreen.kt"
-            line="710"
+            line="723"
             column="12"/>
     </issue>
 
@@ -96,7 +96,7 @@
         errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/trimettransit/tracker/feature/arrivals/ArrivalsScreen.kt"
-            line="716"
+            line="729"
             column="15"/>
     </issue>
 
@@ -107,7 +107,7 @@
         errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/trimettransit/tracker/feature/arrivals/ArrivalsScreen.kt"
-            line="727"
+            line="740"
             column="15"/>
     </issue>
 
@@ -118,7 +118,7 @@
         errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/trimettransit/tracker/feature/arrivals/ArrivalsScreen.kt"
-            line="633"
+            line="646"
             column="44"/>
     </issue>
 
