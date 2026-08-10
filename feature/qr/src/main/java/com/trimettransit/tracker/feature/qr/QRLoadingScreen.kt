@@ -40,9 +40,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.trimettransit.tracker.transit.JSONParser
 import com.trimettransit.tracker.util.ConnectionUtils
-import com.trimettransit.tracker.transit.ApiKeys
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -107,24 +105,21 @@ fun QRLoadingScreen(
                 }
             }
 
-            if (!SecurityUtils.hasConfiguredTrimetApiKey()) {
-                state = QRLoadingState.Error
-                errorMessage = "API key not configured.\nPlease check app settings."
-                return@LaunchedEffect
-            }
-
-            // Verify stop exists via arrivals API
-            val arrivalsUrl = "${context.getString(R.string.base_arrival_url)}/appID/${ApiKeys.getTrimetApiKey()}/locIDs/$stopId/arrivals/1"
-            withContext(Dispatchers.IO) {
-                JSONParser.fetch(arrivalsUrl)
-            }
-
+            // Validate immediately after extraction so non-numeric/oversized IDs fail early,
+            // before any further network calls.
             val stopIdInt = stopId.toIntOrNull()
             if (stopIdInt == null) {
                 state = QRLoadingState.Error
                 errorMessage = "Invalid stop ID in QR code."
                 return@LaunchedEffect
             }
+
+            if (!SecurityUtils.hasConfiguredTrimetApiKey()) {
+                state = QRLoadingState.Error
+                errorMessage = "API key not configured.\nPlease check app settings."
+                return@LaunchedEffect
+            }
+
             onStopResolved(stopIdInt)
         } catch (e: IllegalArgumentException) {
             Log.e(TAG, "Malformed QR URI", e)
@@ -193,65 +188,51 @@ fun QRLoadingScreen(
                 }
 
                 QRLoadingState.Error -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = errorMessage,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        val goBackSource = remember { MutableInteractionSource() }
-                        OutlinedButton(
-                            onClick = onNavigateBack,
-                            interactionSource = goBackSource,
-                            modifier = Modifier.pressScale(goBackSource)
-                        ) {
-                            Text("Go Back")
-                        }
-                    }
+                    QrErrorColumn(
+                        message = errorMessage,
+                        onBack = onNavigateBack
+                    )
                 }
 
                 QRLoadingState.Offline -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No internet connection.\nPlease check your connection.",
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        val goBackSource = remember { MutableInteractionSource() }
-                        OutlinedButton(
-                            onClick = onNavigateBack,
-                            interactionSource = goBackSource,
-                            modifier = Modifier.pressScale(goBackSource)
-                        ) {
-                            Text("Go Back")
-                        }
-                    }
+                    QrErrorColumn(
+                        message = "No internet connection.\nPlease check your connection.",
+                        onBack = onNavigateBack
+                    )
                 }
             }
             }
             }
+        }
+    }
+}
+
+@Composable
+private fun QrErrorColumn(message: String, onBack: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(32.dp)
+    ) {
+        Icon(
+            Icons.Default.Warning,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.error
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = message,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        val goBackSource = remember { MutableInteractionSource() }
+        OutlinedButton(
+            onClick = onBack,
+            interactionSource = goBackSource,
+            modifier = Modifier.pressScale(goBackSource)
+        ) {
+            Text("Go Back")
         }
     }
 }

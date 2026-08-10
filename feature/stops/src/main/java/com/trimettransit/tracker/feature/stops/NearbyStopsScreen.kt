@@ -3,7 +3,12 @@ package com.trimettransit.tracker.feature.stops
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
 import android.location.LocationManager
+import android.location.LocationRequest
+import android.os.Bundle
+import java.util.concurrent.Executor
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +54,9 @@ import com.trimettransit.tracker.ui.components.rememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.coroutines.resume
 
 @Composable
 fun NearbyStopsScreen(
@@ -73,7 +81,7 @@ fun NearbyStopsScreen(
     ) { granted ->
         locationPermissionGranted = granted
         if (granted) {
-            loadNearbyStops(context, coroutineScope, stops, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
+            loadNearbyStops(context, coroutineScope, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
         } else {
             errorMessage = "Location permission is required to find nearby stops"
         }
@@ -81,7 +89,7 @@ fun NearbyStopsScreen(
 
     fun loadIfPermissionGranted() {
         if (locationPermissionGranted) {
-            loadNearbyStops(context, coroutineScope, stops, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
+            loadNearbyStops(context, coroutineScope, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
         } else {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
@@ -90,7 +98,7 @@ fun NearbyStopsScreen(
     // Auto-load on first composition if permission already granted
     LaunchedEffect(locationPermissionGranted) {
         if (locationPermissionGranted && !hasLoaded) {
-            loadNearbyStops(context, coroutineScope, stops, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
+            loadNearbyStops(context, coroutineScope, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
         }
     }
 
@@ -206,13 +214,11 @@ fun NearbyStopsScreen(
 private fun loadNearbyStops(
     context: Context,
     coroutineScope: kotlinx.coroutines.CoroutineScope,
-    currentStops: List<Stop>?,
     setStops: (List<Stop>?) -> Unit,
     setLoading: (Boolean) -> Unit,
     setError: (String?) -> Unit,
     setHasLoaded: () -> Unit
 ) {
-    if (currentStops != null && currentStops.isEmpty().not()) return  // already loaded
     setLoading(true)
     setError(null)
     setHasLoaded()
@@ -236,7 +242,8 @@ private fun loadNearbyStops(
                 return@launch
             }
 
-            val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            val location = withTimeoutOrNull(10_000L) { requestFreshLocation(locationManager) }
+                ?: locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
                 ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
 
             if (location == null) {
@@ -263,3 +270,41 @@ private fun loadNearbyStops(
         }
     }
 }
+
+/** Requests a fresh single fix; resumes with null if permission is missing. */
+private suspend fun requestFreshLocation(locationManager: LocationManager): Location? =
+    suspendCancellableCoroutine { cont ->
+        if (cont.isCancelled) return@suspendCancellableCoroutine
+        val listener = object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                if (cont.isActive) cont.resume(location)
+            }
+
+            @Deprecated("Deprecated in Java")
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+
+            @Deprecated("Deprecated in Java")
+            override fun onProviderEnabled(provider: String) {}
+
+            @Deprecated("Deprecated in Java")
+            override fun onProviderDisabled(provider: String) {}
+        }
+        val request = LocationRequest.Builder(0L)
+            .setQuality(LocationRequest.QUALITY_HIGH_ACCURACY)
+            .build()
+        val executor = Executor { command -> command.run() }
+        val provider = if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            LocationManager.GPS_PROVIDER
+        } else {
+            LocationManager.NETWORK_PROVIDER
+        }
+        try {
+            locationManager.requestLocationUpdates(provider, request, executor, listener)
+        } catch (e: SecurityException) {
+            if (cont.isActive) cont.resume(null)
+            return@suspendCancellableCoroutine
+        }
+        cont.invokeOnCancellation {
+            locationManager.removeUpdates(listener)
+        }
+    }

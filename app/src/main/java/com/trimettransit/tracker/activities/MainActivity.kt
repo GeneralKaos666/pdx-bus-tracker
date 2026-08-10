@@ -2,6 +2,7 @@ package com.trimettransit.tracker.activities
 
 import android.app.PictureInPictureParams
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Rational
 import androidx.activity.ComponentActivity
@@ -14,6 +15,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -48,6 +50,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -172,7 +175,16 @@ class MainActivity : ComponentActivity() {
         handleIncomingIntent(intent)
         setContent {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-            val themePref = prefs.getString("theme", "system") ?: "system"
+            var themePref by remember { mutableStateOf(prefs.getString("theme", "system") ?: "system") }
+            DisposableEffect(prefs) {
+                val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                    if (key == "theme") {
+                        themePref = prefs.getString("theme", "system") ?: "system"
+                    }
+                }
+                prefs.registerOnSharedPreferenceChangeListener(listener)
+                onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+            }
             val isDark = when (themePref) {
                 "dark" -> true
                 "light" -> false
@@ -219,7 +231,6 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
     val refreshRotation = remember { Animatable(0f) }
     val currentRoute = currentBackStackEntry?.destination?.route ?: ""
     val isTopLevel = currentRoute in setOf("home", "stops", "settings", "vehicle_positions")
-    var homeRefreshKey by remember { mutableStateOf(0) }
     val outerSnackbarHostState = remember { SnackbarHostState() }
 
     fun navigateToArrivals(stop: Stop, routeId: Int) {
@@ -227,7 +238,6 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
         scope.launch(Dispatchers.IO) {
             DatabaseHelper(context.applicationContext).addRecentStop(stop)
         }
-        homeRefreshKey++
         navController.navigate(
             "arrivals/${stop.locId}?stopName=${URLEncoder.encode(stop.desc ?: "", "UTF-8")}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
         )
@@ -250,6 +260,7 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
 
     Scaffold(
             topBar = {
+                if (!isTopLevel) {
                 AnimatedContent(
                     targetState = currentRoute,
                     transitionSpec = {
@@ -368,6 +379,7 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                         )
                     )
                     else -> {}
+                }
                 }
             }
             },
@@ -519,7 +531,9 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
             NavHost(
                 navController = navController,
                 startDestination = "home",
-                modifier = Modifier.padding(padding),
+                modifier = Modifier
+                    .padding(padding)
+                    .consumeWindowInsets(padding),
                 enterTransition = { navEnter },
                 exitTransition = { navExit },
                 popEnterTransition = { navPopEnter },
@@ -527,7 +541,6 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
             ) {
                 composable("home") {
                     HomeScreen(
-                        refreshKey = homeRefreshKey,
                         onNavigateToArrivals = { stop: Stop ->
                             navigateToArrivals(stop, stop.routeNum)
                         }

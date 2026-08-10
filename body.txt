@@ -1,0 +1,147 @@
+Compiled from "Scaffold.kt"
+final class androidx.compose.material3.ScaffoldKt$ScaffoldLayout$1$1$bodyContentPlaceables$1 extends kotlin.jvm.internal.Lambda implements kotlin.jvm.functions.Function2<androidx.compose.runtime.Composer, java.lang.Integer, kotlin.Unit> {
+  final androidx.compose.foundation.layout.WindowInsets $contentWindowInsets;
+
+  final androidx.compose.ui.layout.SubcomposeMeasureScope $this_SubcomposeLayout;
+
+  final java.util.List<androidx.compose.ui.layout.Placeable> $topBarPlaceables;
+
+  final int $topBarHeight;
+
+  final java.util.List<androidx.compose.ui.layout.Placeable> $bottomBarPlaceables;
+
+  final java.lang.Integer $bottomBarHeight;
+
+  final kotlin.jvm.functions.Function3<androidx.compose.foundation.layout.PaddingValues, androidx.compose.runtime.Composer, java.lang.Integer, kotlin.Unit> $content;
+
+  androidx.compose.material3.ScaffoldKt$ScaffoldLayout$1$1$bodyContentPlaceables$1(androidx.compose.foundation.layout.WindowInsets, androidx.compose.ui.layout.SubcomposeMeasureScope, java.util.List<? extends androidx.compose.ui.layout.Placeable>, int, java.util.List<? extends androidx.compose.ui.layout.Placeable>, java.lang.Integer, kotlin.jvm.functions.Function3<? super androidx.compose.foundation.layout.PaddingValues, ? super androidx.compose.runtime.Composer, ? super java.lang.Integer, kotlin.Unit>);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: putfield      #14                 // Field $contentWindowInsets:Landroidx/compose/foundation/layout/WindowInsets;
+       5: aload_0
+       6: aload_2
+       7: putfield      #18                 // Field $this_SubcomposeLayout:Landroidx/compose/ui/layout/SubcomposeMeasureScope;
+      10: aload_0
+      11: aload_3
+      12: putfield      #22                 // Field $topBarPlaceables:Ljava/util/List;
+      15: aload_0
+      16: iload         4
+      18: putfield      #26                 // Field $topBarHeight:I
+      21: aload_0
+      22: aload         5
+      24: putfield      #29                 // Field $bottomBarPlaceables:Ljava/util/List;
+      27: aload_0
+      28: aload         6
+      30: putfield      #33                 // Field $bottomBarHeight:Ljava/lang/Integer;
+      33: aload_0
+      34: aload         7
+      36: putfield      #37                 // Field $content:Lkotlin/jvm/functions/Function3;
+      39: aload_0
+      40: iconst_2
+      41: invokespecial #40                 // Method kotlin/jvm/internal/Lambda."<init>":(I)V
+      44: return
+
+  public final void invoke(androidx.compose.runtime.Composer, int);
+    Code:
+       0: aload_1
+       1: ldc           #48                 // String C260@12377L21:Scaffold.kt#uh7d8r
+       3: invokestatic  #54                 // Method androidx/compose/runtime/ComposerKt.sourceInformation:(Landroidx/compose/runtime/Composer;Ljava/lang/String;)V
+       6: iload_2
+       7: iconst_3
+       8: iand
+       9: iconst_2
+      10: if_icmpne     22
+      13: aload_1
+      14: invokeinterface #60,  1           // InterfaceMethod androidx/compose/runtime/Composer.getSkipping:()Z
+      19: ifne          206
+      22: invokestatic  #63                 // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+      25: ifeq          37
+      28: ldc           #64                 // int -1213360416
+      30: iload_2
+      31: iconst_m1
+      32: ldc           #66                 // String androidx.compose.material3.ScaffoldLayout.<anonymous>.<anonymous>.<anonymous> (Scaffold.kt:238)
+      34: invokestatic  #70                 // Method androidx/compose/runtime/ComposerKt.traceEventStart:(IIILjava/lang/String;)V
+      37: aload_0
+      38: getfield      #14                 // Field $contentWindowInsets:Landroidx/compose/foundation/layout/WindowInsets;
+      41: aload_0
+      42: getfield      #18                 // Field $this_SubcomposeLayout:Landroidx/compose/ui/layout/SubcomposeMeasureScope;
+      45: checkcast     #72                 // class androidx/compose/ui/unit/Density
+      48: invokestatic  #78                 // Method androidx/compose/foundation/layout/WindowInsetsKt.asPaddingValues:(Landroidx/compose/foundation/layout/WindowInsets;Landroidx/compose/ui/unit/Density;)Landroidx/compose/foundation/layout/PaddingValues;
+      51: astore_3
+      52: aload_0
+      53: getfield      #22                 // Field $topBarPlaceables:Ljava/util/List;
+      56: invokeinterface #83,  1           // InterfaceMethod java/util/List.isEmpty:()Z
+      61: ifeq          73
+      64: aload_3
+      65: invokeinterface #89,  1           // InterfaceMethod androidx/compose/foundation/layout/PaddingValues."calculateTopPadding-D9Ej5fM":()F
+      70: goto          86
+      73: aload_0
+      74: getfield      #18                 // Field $this_SubcomposeLayout:Landroidx/compose/ui/layout/SubcomposeMeasureScope;
+      77: aload_0
+      78: getfield      #26                 // Field $topBarHeight:I
+      81: invokeinterface #95,  2           // InterfaceMethod androidx/compose/ui/layout/SubcomposeMeasureScope."toDp-u2uoSUM":(I)F
+      86: fstore        5
+      88: aload_0
+      89: getfield      #29                 // Field $bottomBarPlaceables:Ljava/util/List;
+      92: invokeinterface #83,  1           // InterfaceMethod java/util/List.isEmpty:()Z
+      97: ifne          107
+     100: aload_0
+     101: getfield      #33                 // Field $bottomBarHeight:Ljava/lang/Integer;
+     104: ifnonnull     116
+     107: aload_3
+     108: invokeinterface #98,  1           // InterfaceMethod androidx/compose/foundation/layout/PaddingValues."calculateBottomPadding-D9Ej5fM":()F
+     113: goto          132
+     116: aload_0
+     117: getfield      #18                 // Field $this_SubcomposeLayout:Landroidx/compose/ui/layout/SubcomposeMeasureScope;
+     120: aload_0
+     121: getfield      #33                 // Field $bottomBarHeight:Ljava/lang/Integer;
+     124: invokevirtual #104                // Method java/lang/Integer.intValue:()I
+     127: invokeinterface #95,  2           // InterfaceMethod androidx/compose/ui/layout/SubcomposeMeasureScope."toDp-u2uoSUM":(I)F
+     132: fstore        6
+     134: aload_3
+     135: aload_0
+     136: getfield      #18                 // Field $this_SubcomposeLayout:Landroidx/compose/ui/layout/SubcomposeMeasureScope;
+     139: invokeinterface #108,  1          // InterfaceMethod androidx/compose/ui/layout/SubcomposeMeasureScope.getLayoutDirection:()Landroidx/compose/ui/unit/LayoutDirection;
+     144: invokestatic  #114                // Method androidx/compose/foundation/layout/PaddingKt.calculateStartPadding:(Landroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/ui/unit/LayoutDirection;)F
+     147: fstore        7
+     149: aload_3
+     150: aload_0
+     151: getfield      #18                 // Field $this_SubcomposeLayout:Landroidx/compose/ui/layout/SubcomposeMeasureScope;
+     154: invokeinterface #108,  1          // InterfaceMethod androidx/compose/ui/layout/SubcomposeMeasureScope.getLayoutDirection:()Landroidx/compose/ui/unit/LayoutDirection;
+     159: invokestatic  #117                // Method androidx/compose/foundation/layout/PaddingKt.calculateEndPadding:(Landroidx/compose/foundation/layout/PaddingValues;Landroidx/compose/ui/unit/LayoutDirection;)F
+     162: fstore        8
+     164: fload         7
+     166: fload         5
+     168: fload         8
+     170: fload         6
+     172: invokestatic  #121                // Method androidx/compose/foundation/layout/PaddingKt."PaddingValues-a9UjIt4":(FFFF)Landroidx/compose/foundation/layout/PaddingValues;
+     175: astore        4
+     177: aload_0
+     178: getfield      #37                 // Field $content:Lkotlin/jvm/functions/Function3;
+     181: aload         4
+     183: aload_1
+     184: iconst_0
+     185: invokestatic  #125                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+     188: invokeinterface #130,  4          // InterfaceMethod kotlin/jvm/functions/Function3.invoke:(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+     193: pop
+     194: invokestatic  #63                 // Method androidx/compose/runtime/ComposerKt.isTraceInProgress:()Z
+     197: ifeq          212
+     200: invokestatic  #134                // Method androidx/compose/runtime/ComposerKt.traceEventEnd:()V
+     203: goto          212
+     206: aload_1
+     207: invokeinterface #137,  1          // InterfaceMethod androidx/compose/runtime/Composer.skipToGroupEnd:()V
+     212: return
+
+  public java.lang.Object invoke(java.lang.Object, java.lang.Object);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: checkcast     #56                 // class androidx/compose/runtime/Composer
+       5: aload_2
+       6: checkcast     #146                // class java/lang/Number
+       9: invokevirtual #147                // Method java/lang/Number.intValue:()I
+      12: invokevirtual #149                // Method invoke:(Landroidx/compose/runtime/Composer;I)V
+      15: getstatic     #155                // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+      18: areturn
+}

@@ -14,6 +14,7 @@ import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.AnimatedTabRow
+import com.trimettransit.tracker.ui.components.EmptyState
 
 @Composable
 fun StopsScreen(
@@ -63,11 +64,12 @@ fun StopsScreen(
                 if (route != null) {
                     StopsDirectionList(
                         routeId = route.routeId,
-                        routeDesc = route.desc ?: "",
                         onDirectionSelected = { direction ->
                             selectedDirection = direction
                         }
                     )
+                } else {
+                    EmptyState(message = "Select a route first")
                 }
             }
             2 -> {
@@ -77,13 +79,14 @@ fun StopsScreen(
                     StopsStopList(
                         routeId = route.routeId,
                         directionId = direction.dir,
-                        directionDesc = direction.desc ?: "",
                         onStopSelected = { stop ->
                             NavState.savedRoute = route
                             NavState.savedDirection = direction
                             onNavigateToArrivals(stop, route.routeId)
                         }
                     )
+                } else {
+                    EmptyState(message = "Select a direction first")
                 }
             }
         }

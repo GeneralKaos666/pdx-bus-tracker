@@ -6,19 +6,19 @@ import android.os.Parcelable
 data class Detour(
     var id: Int = 0,
     var desc: String = "",
-    var routes: List<Int> = emptyList()
+    var routes: MutableList<Int>? = mutableListOf()
 ) : Parcelable {
 
     constructor(parcel: Parcel) : this(
         parcel.readInt(),
         parcel.readString() ?: "",
-        parcel.createIntArray()?.toList() ?: emptyList()
+        parcel.createIntArray()?.toMutableList() ?: mutableListOf()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeInt(id)
         parcel.writeString(desc)
-        parcel.writeIntArray(routes.toIntArray())
+        parcel.writeIntArray(routes?.toIntArray() ?: intArrayOf())
     }
 
     override fun describeContents(): Int = 0

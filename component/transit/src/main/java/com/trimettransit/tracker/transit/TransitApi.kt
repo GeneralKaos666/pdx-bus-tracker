@@ -35,7 +35,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
     suspend fun fetchRoutes(context: Context, url: String): List<Route>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
         try {
-            val json = parser.fetch(url) ?: return@withContext null
+            val json = parser.fetch(url)
             val routes = mutableListOf<Route>()
             val arr = json.getJSONObject("resultSet").getJSONArray("route")
             for (i in 0 until arr.length()) {
@@ -60,7 +60,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
     suspend fun fetchDirections(context: Context, url: String): List<Direction>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
         try {
-            val json = parser.fetch(url) ?: return@withContext null
+            val json = parser.fetch(url)
             val dirs = mutableListOf<Direction>()
             val routeObj = json.getJSONObject("resultSet").getJSONArray("route").getJSONObject(0)
             val routeDesc = routeObj.optString("desc", "")
@@ -92,7 +92,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
     suspend fun fetchStops(context: Context, url: String): List<Stop>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
         try {
-            val json = parser.fetch(url) ?: return@withContext null
+            val json = parser.fetch(url)
             val resultSet = json.optJSONObject("resultSet") ?: return@withContext null
             val routeArr = resultSet.optJSONArray("route")
             if (routeArr == null || routeArr.length() == 0) return@withContext null
@@ -163,7 +163,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                 append("/minutes/").append(minutes)
                 append("/arrivals/").append(maxArrivals)
             }
-            val json = parser.fetch(url) ?: return@withContext null
+            val json = parser.fetch(url)
             val resultSet = json.getJSONObject("resultSet")
 
             val arrivalArr = resultSet.optJSONArray("arrival")
@@ -205,7 +205,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                             at = bpObj.optLong("at", 0)
                             vehicleID = bpObj.optInt("vehicleID", 0)
                             feet = bpObj.optInt("feet", 0)
-                            heading = bpObj.optDouble("heading", 0.0).toFloat()
+                            bearing = bpObj.optDouble("heading", 0.0).toFloat()
                             lat = bpObj.optDouble("lat", 0.0)
                             lng = bpObj.optDouble("lng", 0.0)
                             routeNumber = bpObj.optInt("routeNumber", 0)
@@ -221,7 +221,6 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
             val result = ArrivalsResult().apply {
                 arrivals = arrivalList
                 blockPositions = parsedBlockPositions
-                isQueryError = false
             }
 
             // Parse top-level detours
@@ -235,7 +234,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                         desc = obj.optString("desc", "")
                         val routesArr = obj.optJSONArray("routes")
                         if (routesArr != null) {
-                            routes = List(routesArr.length()) { k -> routesArr.optInt(k, 0) }
+                            routes = MutableList(routesArr.length()) { k -> routesArr.optInt(k, 0) }
                         }
                     }
                     detourList.add(detour)
@@ -295,7 +294,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                 if (!onRouteOnly) append("/onRouteOnly/false")
                 if (showStale) append("/showStale/true")
             }
-            val json = parser.fetch(url) ?: return@withContext null
+            val json = parser.fetch(url)
             val resultSet = json.getJSONObject("resultSet")
             val vehicleArr = resultSet.optJSONArray("vehicle")
             if (vehicleArr == null) return@withContext emptyList()
@@ -367,7 +366,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                 if (maxStops != null) append("/maxStops/").append(maxStops)
                 if (showRoutes) append("/showRoutes/true")
             }
-            val json = parser.fetch(url) ?: return@withContext null
+            val json = parser.fetch(url)
             val resultSet = json.getJSONObject("resultSet")
             val locationArr = resultSet.optJSONArray("location")
             if (locationArr == null) return@withContext emptyList()
@@ -414,7 +413,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
         try {
             val baseUrl = context.getString(R.string.base_stop_location_v2_url)
             val url = "$baseUrl/appID/$apiKey/locIds/$locId"
-            val json = parser.fetch(url) ?: return@withContext null
+            val json = parser.fetch(url)
             val resultSet = json.getJSONObject("resultSet")
             val locationArr = resultSet.optJSONArray("location")
             if (locationArr == null || locationArr.length() == 0) return@withContext null
@@ -425,9 +424,64 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                 this.locId = obj.optInt("locid", 0)
                 latitude = obj.optDouble("lat", 0.0)
                 longitude = obj.optDouble("lng", 0.0)
+                // Parse routes so transitType is populated for QR-fallback stops
+                val routeArr = obj.optJSONArray("route")
+                if (routeArr != null) {
+                    for (j in 0 until routeArr.length()) {
+                        val routeObj = routeArr.getJSONObject(j)
+                        val route = Route().apply {
+                            desc = routeObj.optString("desc", "")
+                            routeId = routeObj.optInt("route", 0)
+                            val type = routeObj.optString("type", "")
+                            applyRouteType(type, desc)
+                            applyStreetcarType(desc, type)
+                        }
+                        addRoute(route)
+                    }
+                }
+                computeTransitType()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch stop by ID", e)
+            null
+        }
+    }
+
+    suspend fun fetchSearchStops(context: Context, url: String): List<Stop>? = withContext(Dispatchers.IO) {
+        if (!ConnectionUtils.isOnline(context)) return@withContext null
+        try {
+            val json = parser.fetch(url)
+            val resultSet = json.optJSONObject("resultSet") ?: return@withContext null
+            val routeArr = resultSet.optJSONArray("route") ?: return@withContext null
+            val seen = HashSet<Int>()
+            val stops = mutableListOf<Stop>()
+            for (ri in 0 until routeArr.length()) {
+                val routeObj = routeArr.getJSONObject(ri)
+                val dirArr = routeObj.optJSONArray("dir") ?: continue
+                val routeNum = routeObj.optInt("route", 0)
+                for (di in 0 until dirArr.length()) {
+                    val dirObj = dirArr.getJSONObject(di)
+                    val stopArr = dirObj.optJSONArray("stop") ?: continue
+                    val dirDesc = dirObj.optString("desc", "")
+                    for (si in 0 until stopArr.length()) {
+                        val obj = stopArr.getJSONObject(si)
+                        val locId = obj.optInt("locid", 0)
+                        if (!seen.add(locId)) continue
+                        val stop = Stop()
+                        stop.locId = locId
+                        stop.desc = obj.optString("desc", "")
+                        val stopDir = obj.optString("dir", "")
+                        stop.dirDesc = if (stopDir == "") dirDesc else stopDir
+                        stop.latitude = obj.optDouble("lat", 0.0)
+                        stop.longitude = if (obj.has("lng")) obj.getDouble("lng") else obj.optDouble("lon", 0.0)
+                        stop.routeNum = routeNum
+                        stops.add(stop)
+                    }
+                }
+            }
+            stops
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to fetch search stops", e)
             null
         }
     }
@@ -457,7 +511,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                 }
                 if (systemWideOnly) append("/systemWideOnly/true")
             }
-            val json = parser.fetch(url) ?: return@withContext null
+            val json = parser.fetch(url)
             val resultSet = json.getJSONObject("resultSet")
             val detourArr = resultSet.optJSONArray("detour")
             if (detourArr == null) return@withContext emptyList()
@@ -470,7 +524,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                     desc = obj.optString("desc", "")
                     val routesArr = obj.optJSONArray("routes")
                     if (routesArr != null) {
-                        routes = List(routesArr.length()) { k -> routesArr.optInt(k, 0) }
+                        routes = MutableList(routesArr.length()) { k -> routesArr.optInt(k, 0) }
                     }
                 }
                 detours.add(detour)

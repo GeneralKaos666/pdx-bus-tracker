@@ -30,3 +30,17 @@ fun transitTypeLabel(type: String?): String = when (type) {
     "W" -> "WES Commuter Rail"
     else -> "Transit"
 }
+
+/**
+ * Returns the route badge letter for a route number ("M" for MAX, "R" for
+ * Rail/Streetcar 90·100, "B" for buses; "" when unknown).
+ */
+fun transitBadgeLetter(routeNumber: Int): String = when {
+    routeNumber == 200 -> "M"
+    routeNumber == 100 || routeNumber == 90 -> "R"
+    routeNumber in 1..99 -> "B"
+    else -> ""
+}
+
+/** Letters actually produced by [transitBadgeLetter]. */
+fun transitBadgeLetters(): List<String> = listOf("B", "M", "R")

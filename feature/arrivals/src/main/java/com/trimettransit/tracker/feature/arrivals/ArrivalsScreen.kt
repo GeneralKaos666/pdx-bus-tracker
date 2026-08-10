@@ -77,6 +77,8 @@ import com.trimettransit.tracker.ui.components.LoadingState
 import com.trimettransit.tracker.ui.components.rememberOnResume
 import com.trimettransit.tracker.util.formatDateTime
 import com.trimettransit.tracker.util.minutesUntil
+import com.trimettransit.tracker.ui.components.transitBadgeLetter
+import com.trimettransit.tracker.ui.components.transitBadgeLetters
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitTypeLabel
@@ -186,8 +188,8 @@ fun ArrivalsScreen(
                 minutes = 30,
                 maxArrivals = 15
             )
-            if (result != null && !result.isQueryError) {
-                val allArrivals = result.arrivals?.toList() ?: emptyList()
+            if (result != null) {
+                val allArrivals = result.arrivals ?: emptyList()
                 unfilteredArrivals = allArrivals
                 val prefs = PreferenceManager.getDefaultSharedPreferences(context)
                 val onlySelectedRoute = prefs.getBoolean("pref_key_only_show_route_selected", true)
@@ -196,8 +198,8 @@ fun ArrivalsScreen(
                 } else {
                     allArrivals
                 }
-                detours = result.detours?.toList() ?: emptyList()
-                blockPositions = result.blockPositions?.toList() ?: emptyList()
+                detours = result.detours ?: emptyList()
+                blockPositions = result.blockPositions ?: emptyList()
                 // Resolve stop coordinates from arrivals response if not yet known
                 if (stopLat == 0.0 || stopLng == 0.0) {
                     if (result.stopLat != 0.0 && result.stopLng != 0.0) {
@@ -252,8 +254,8 @@ fun ArrivalsScreen(
                     minutes = 30,
                     maxArrivals = 15
                 )
-                if (result != null && !result.isQueryError) {
-                    blockPositions = result.blockPositions?.toList() ?: emptyList()
+                if (result != null) {
+                    blockPositions = result.blockPositions ?: emptyList()
                 }
             } finally {
                 positionRefreshInFlight = false
@@ -524,13 +526,6 @@ private fun formatDelay(arrival: Arrival): String? {
     }
 }
 
-private fun routeTypeLetter(routeNumber: Int): String = when {
-    routeNumber == 200 -> "M"
-    routeNumber == 100 || routeNumber == 90 -> "R"
-    routeNumber in 1..99 -> "B"
-    else -> ""
-}
-
 @Composable
 private fun StopMapCard(
     lat: Double,
@@ -550,7 +545,7 @@ private fun StopMapCard(
     val density = LocalDensity.current.density
     val scheme = MaterialTheme.colorScheme
     val badgeColors = remember(scheme) {
-        listOf("B", "M", "R", "W", "T").associateWith { transitColor(it, scheme) }
+        transitBadgeLetters().associateWith { transitColor(it, scheme) }
     }
 
     Card(
@@ -633,7 +628,7 @@ private fun StopMapCard(
                                 style.addLayer(
                                     SymbolLayer("bus-layer", "bus-source").withProperties(
                                         iconImage(Expression.get("icon")),
-                                        iconRotate(Expression.get("heading")),
+                                        iconRotate(Expression.get("bearing")),
                                         iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
                                         iconAnchor(Property.ICON_ANCHOR_CENTER),
                                         iconAllowOverlap(true),
@@ -712,10 +707,10 @@ private class MapState {
     fun applyPositions() {
         val source = busSource ?: return
         val features = positions.map { bp ->
-            val letter = routeTypeLetter(bp.routeNumber).ifBlank { "B" }
+            val letter = transitBadgeLetter(bp.routeNumber).ifBlank { "B" }
             val feature = Feature.fromGeometry(Point.fromLngLat(bp.lng, bp.lat))
             feature.addStringProperty("icon", "badge-$letter")
-            feature.addNumberProperty("heading", bp.heading)
+            feature.addNumberProperty("bearing", bp.bearing)
             feature
         }
         source.setGeoJson(FeatureCollection.fromFeatures(features))
@@ -775,7 +770,7 @@ private fun ArrivalItem(
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val type = routeTypeLetter(arrival.routeId)
+    val type = transitBadgeLetter(arrival.routeId)
     val scheme = MaterialTheme.colorScheme
     val color = remember(type, scheme) {
         transitColor(type, scheme)
@@ -916,10 +911,11 @@ suspend fun toggleFavorite(context: Context, locId: Int, stopName: String, curre
         try {
             val db = DatabaseHelper(context.applicationContext)
             if (currentlyFavorite) {
-                val writableDb = db.writableDatabase
-                writableDb.delete("favorites", "loc_id = ?", arrayOf(locId.toString()))
-                writableDb.close()
-                context.getString(R.string.favorite_deleted_text)
+                if (db.removeFavorite(locId)) {
+                    context.getString(R.string.favorite_deleted_text)
+                } else {
+                    context.getString(R.string.favorite_does_not_exist_text)
+                }
             } else {
                 val stop = Stop()
                 stop.desc = stopName
@@ -927,8 +923,11 @@ suspend fun toggleFavorite(context: Context, locId: Int, stopName: String, curre
                 stop.latitude = lat
                 stop.longitude = lng
                 if (routeId > 0) stop.routeNum = routeId
-                db.addFavorite(stop, null)
-                context.getString(R.string.favorite_added_text)
+                if (db.addFavorite(stop)) {
+                    context.getString(R.string.favorite_added_text)
+                } else {
+                    context.getString(R.string.favorite_exists_text)
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to toggle favorite", e)
@@ -966,7 +965,7 @@ private fun PipCountdownContent(
             )
         } else {
             arrivals.take(5).forEach { arrival ->
-                val type = routeTypeLetter(arrival.routeId)
+                val type = transitBadgeLetter(arrival.routeId)
                 val color = transitColor(type, scheme)
                 val displayTime = if (arrival.status == "estimated" && arrival.estimated != null) {
                     arrival.estimated

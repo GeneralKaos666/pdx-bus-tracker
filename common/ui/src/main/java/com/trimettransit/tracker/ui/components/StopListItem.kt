@@ -94,15 +94,15 @@ fun StopListItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stop.desc ?: "",
+                    text = stop.desc,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (!stop.dirDesc.isNullOrBlank()) {
+                if (stop.dirDesc.isNotBlank()) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = stop.dirDesc ?: "",
+                        text = stop.dirDesc,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

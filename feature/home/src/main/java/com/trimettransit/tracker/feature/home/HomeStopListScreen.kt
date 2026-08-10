@@ -13,6 +13,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.EmptyState
+import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.LoadingState
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
@@ -21,37 +22,40 @@ import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 fun HomeStopListScreen(
     stops: List<Stop>,
     isLoading: Boolean,
+    isError: Boolean,
     emptyText: String,
     onNavigateToArrivals: (Stop) -> Unit
 ) {
     Crossfade(
         targetState = when {
-            isLoading -> 0
-            stops.isEmpty() -> 1
-            else -> 2
+            isLoading && stops.isEmpty() -> 0
+            isError && stops.isEmpty() -> 1
+            stops.isEmpty() -> 2
+            else -> 3
         },
         animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
         label = "homeStopList"
     ) { state ->
         when (state) {
             0 -> LoadingState()
-            1 -> EmptyState(message = emptyText)
+            1 -> ErrorState(message = "Unable to load.\nCheck your connection.")
+            2 -> EmptyState(message = emptyText)
             else -> ContentEntrance(modifier = Modifier.fillMaxSize()) {
-            val smoothFling = rememberSmoothFlingBehavior()
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                flingBehavior = smoothFling,
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                items(stops.size, key = { stops[it].locId }, contentType = { "stop" }) { index ->
-                    val stop = stops[index]
-                    StopListItem(
-                        stop = stop,
-                        onClick = { onNavigateToArrivals(stop) },
-                        modifier = Modifier.animateItem()
-                    )
+                val smoothFling = rememberSmoothFlingBehavior()
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    flingBehavior = smoothFling,
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    items(stops.size, key = { stops[it].locId }, contentType = { "stop" }) { index ->
+                        val stop = stops[index]
+                        StopListItem(
+                            stop = stop,
+                            onClick = { onNavigateToArrivals(stop) },
+                            modifier = Modifier.animateItem()
+                        )
+                    }
                 }
-            }
             }
         }
     }

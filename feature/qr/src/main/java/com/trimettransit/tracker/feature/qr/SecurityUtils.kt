@@ -61,7 +61,7 @@ object SecurityUtils {
         while (candidate.startsWith("0") && candidate.length > 1) candidate = candidate.substring(1)
         if (candidate.length > MAX_STOP_ID_LENGTH) return null
 
-        for (c in candidate) if (!c.isDigit()) return null
+        for (c in candidate) if (c !in '0'..'9') return null
 
         return candidate
     }

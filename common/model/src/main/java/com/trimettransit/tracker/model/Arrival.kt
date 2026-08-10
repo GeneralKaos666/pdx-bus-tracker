@@ -7,7 +7,6 @@ data class Arrival(
     var shortSign: String = "",
     var estimated: DateTime? = null,
     var scheduled: DateTime? = null,
-    var detours: MutableList<Detour>? = null,
     var routeId: Int = 0,
     var status: String = "",
     var dropOffOnly: Boolean = false,

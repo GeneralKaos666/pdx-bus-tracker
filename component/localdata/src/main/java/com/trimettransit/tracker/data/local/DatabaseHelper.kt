@@ -4,8 +4,6 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import android.view.View
-import com.google.android.material.snackbar.Snackbar
 import com.trimettransit.tracker.model.Stop
 
 class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
@@ -29,7 +27,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
                     )
                 }
             }
-            db.close()
             return stops
         }
 
@@ -53,7 +50,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
                     )
                 }
             }
-            db.close()
             return stops
         }
 
@@ -89,29 +85,20 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         }
     }
 
-    fun addFavorite(stop: Stop, view: View?) {
+    fun addFavorite(stop: Stop): Boolean {
         val db = writableDatabase
-        db.query("favorites", arrayOf("loc_id"), "loc_id = ?", arrayOf(stop.locId.toString()), null, null, null).use { cursor ->
-            if (!cursor.moveToFirst()) {
-                ContentValues().apply {
-                    put("desc", stop.desc)
-                    put("dir_desc", stop.dirDesc)
-                    put("loc_id", stop.locId)
-                    put("transit_type", stop.transitType)
-                    put("longitude", stop.longitude)
-                    put("latitude", stop.latitude)
-                    put("route_num", stop.routeNum)
-                    db.insertWithOnConflict("favorites", null, this, SQLiteDatabase.CONFLICT_IGNORE)
-                }
-                if (view != null) {
-                    Snackbar.make(view, R.string.favorite_added_text, Snackbar.LENGTH_INDEFINITE).show()
-                }
-            } else {
-                if (view != null) {
-                    Snackbar.make(view, R.string.favorite_exists_text, Snackbar.LENGTH_INDEFINITE).show()
-                }
-            }
+        val rowId = ContentValues().apply {
+            put("desc", stop.desc)
+            put("dir_desc", stop.dirDesc)
+            put("loc_id", stop.locId)
+            put("transit_type", stop.transitType)
+            put("longitude", stop.longitude)
+            put("latitude", stop.latitude)
+            put("route_num", stop.routeNum)
+        }.let { values ->
+            db.insertWithOnConflict("favorites", null, values, SQLiteDatabase.CONFLICT_IGNORE)
         }
+        return rowId != -1L
     }
 
     fun isFavorite(locId: Int): Boolean {
@@ -121,14 +108,9 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         }
     }
 
-    fun removeFavorite(locId: Int, view: View?) {
+    fun removeFavorite(locId: Int): Boolean {
         val db = writableDatabase
-        if (db.delete("favorites", "loc_id = ?", arrayOf(locId.toString())) > 0) {
-            Snackbar.make(view!!, R.string.favorite_deleted_text, Snackbar.LENGTH_INDEFINITE).show()
-        } else {
-            Snackbar.make(view!!, R.string.favorite_does_not_exist_text, Snackbar.LENGTH_INDEFINITE).show()
-        }
-        db.close()
+        return db.delete("favorites", "loc_id = ?", arrayOf(locId.toString())) > 0
     }
 
     fun addRecentStop(stop: Stop) {

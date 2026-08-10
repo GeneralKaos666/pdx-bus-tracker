@@ -43,72 +43,72 @@ fun SettingsScreen() {
     var onlyShowSelectedRoute by remember { mutableStateOf(onlySelectedRoute) }
 
     ContentEntrance(modifier = Modifier.fillMaxSize()) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        // Theme section
-        SectionHeader(title = "Theme")
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Theme section
+            SectionHeader(title = "Theme")
 
-        SettingsRadioOption(
-            label = "System default",
-            selected = selectedTheme == "system",
-            onClick = {
-                selectedTheme = "system"
-                prefs.edit().putString("theme", "system").apply()
-            }
-        )
-        SettingsRadioOption(
-            label = "Light",
-            selected = selectedTheme == "light",
-            onClick = {
-                selectedTheme = "light"
-                prefs.edit().putString("theme", "light").apply()
-            }
-        )
-        SettingsRadioOption(
-            label = "Dark",
-            selected = selectedTheme == "dark",
-            onClick = {
-                selectedTheme = "dark"
-                prefs.edit().putString("theme", "dark").apply()
-            }
-        )
+            SettingsRadioOption(
+                label = "System default",
+                selected = selectedTheme == "system",
+                onClick = {
+                    selectedTheme = "system"
+                    prefs.edit().putString("theme", "system").apply()
+                }
+            )
+            SettingsRadioOption(
+                label = "Light",
+                selected = selectedTheme == "light",
+                onClick = {
+                    selectedTheme = "light"
+                    prefs.edit().putString("theme", "light").apply()
+                }
+            )
+            SettingsRadioOption(
+                label = "Dark",
+                selected = selectedTheme == "dark",
+                onClick = {
+                    selectedTheme = "dark"
+                    prefs.edit().putString("theme", "dark").apply()
+                }
+            )
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-        // Route filter section
-        SectionHeader(title = "Arrivals")
+            // Route filter section
+            SectionHeader(title = "Arrivals")
 
-        SettingsSwitchOption(
-            label = "Only show selected route's arrivals",
-            checked = onlyShowSelectedRoute,
-            onCheckedChange = {
-                onlyShowSelectedRoute = it
-                prefs.edit().putBoolean("pref_key_only_show_route_selected", it).apply()
-            }
-        )
+            SettingsSwitchOption(
+                label = "Only show selected route's arrivals",
+                checked = onlyShowSelectedRoute,
+                onCheckedChange = {
+                    onlyShowSelectedRoute = it
+                    prefs.edit().putBoolean("pref_key_only_show_route_selected", it).apply()
+                }
+            )
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-        // About section
-        SectionHeader(title = "About")
+            // About section
+            SectionHeader(title = "About")
 
-        Text(
-            text = "TriMet Bus Tracker",
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
-        )
-        Text(
-            text = "Version ${BuildConfig.VERSION_NAME}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
-        )
+            Text(
+                text = "TriMet Bus Tracker",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
+            )
+            Text(
+                text = "Version ${BuildConfig.VERSION_NAME}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
-    }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }
 

@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun LoadingState(
-    modifier: Modifier = Modifier,
-    message: String? = null
+    message: String? = null,
+    modifier: Modifier = Modifier
 ) {
     FadeInOnce(modifier = modifier.fillMaxSize()) {
         Box(

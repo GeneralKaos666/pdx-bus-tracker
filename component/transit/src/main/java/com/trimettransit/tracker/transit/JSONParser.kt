@@ -36,6 +36,14 @@ object JSONParser {
 
         try {
             httpClient.newCall(request).execute().use { response ->
+                // The client follows redirects, so response.request.url is the FINAL url
+                // after any chain — re-enforce HTTPS there too, otherwise a redirect to
+                // http:// would silently downgrade the caller's data in transit.
+                if (!response.request.url.isHttps) {
+                    throw IOException(
+                        "Only HTTPS endpoints are allowed; final URL was ${response.request.url}"
+                    )
+                }
                 if (!response.isSuccessful) {
                     throw IOException("Unsuccessful response code: ${response.code}")
                 }

@@ -27,7 +27,7 @@ object NavState {
     var arrivalsIsFavorite by mutableStateOf(false)
     var arrivalsLat by mutableStateOf(0.0)
     var arrivalsLng by mutableStateOf(0.0)
-    var arrivalsOnRefresh: (() -> Unit)? = null
+    var arrivalsOnRefresh by mutableStateOf<(() -> Unit)?>(null)
 
     fun clearArrivals() {
         arrivalsStopName = ""

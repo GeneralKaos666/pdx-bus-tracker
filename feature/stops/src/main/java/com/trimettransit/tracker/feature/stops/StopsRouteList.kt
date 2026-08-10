@@ -1,18 +1,13 @@
 package com.trimettransit.tracker.feature.stops
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,20 +26,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.transit.TransitApi
-import com.trimettransit.tracker.ui.components.LoadingState
-import com.trimettransit.tracker.ui.components.ErrorState
-import com.trimettransit.tracker.ui.components.EmptyState
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.transitColor
+import com.trimettransit.tracker.ui.components.transitTypeLabel
 import com.trimettransit.tracker.transit.ApiKeys
-import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 
 @Composable
 fun StopsRouteList(
@@ -69,49 +57,21 @@ fun StopsRouteList(
     }
 
     val safeRoutes = routes
-    Crossfade(
-        targetState = when {
-            isLoading -> 0
-            safeRoutes == null -> 1
-            safeRoutes.isEmpty() -> 2
-            else -> 3
-        },
-        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
-        label = "routesState"
-    ) { state ->
-        when (state) {
-            0 -> {
-                LoadingState()
-            }
-            1 -> {
-                ErrorState(
-                    message = if (isMissingApiKey) "API key not configured.\nPlease check app settings."
-                              else "Unable to load routes.\nCheck your connection."
-                )
-            }
-            2 -> {
-                EmptyState(message = "No routes available.")
-            }
-            else -> {
-                ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                val smoothFling = rememberSmoothFlingBehavior()
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    flingBehavior = smoothFling,
-                    contentPadding = PaddingValues(vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    items(safeRoutes ?: emptyList(), key = { it.routeId }, contentType = { "route" }) { route ->
-                        RouteListItem(
-                            route = route,
-                            onClick = { onRouteSelected(route) },
-                            modifier = Modifier.animateItem()
-                        )
-                    }
-                }
-                }
-            }
-        }
+    StopListContent(
+        isLoading = isLoading,
+        items = safeRoutes,
+        errorMessage = if (isMissingApiKey) "API key not configured.\nPlease check app settings."
+                       else "Unable to load routes.\nCheck your connection.",
+        emptyMessage = "No routes available.",
+        stateLabel = "routesState",
+        key = { it.routeId },
+        contentType = { "route" }
+    ) { route ->
+        RouteListItem(
+            route = route,
+            onClick = { onRouteSelected(route) },
+            modifier = Modifier.animateItem()
+        )
     }
 }
 
@@ -168,19 +128,11 @@ private fun RouteListItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = routeTypeLabel(route.typeLetter),
+                    text = transitTypeLabel(route.typeLetter),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
             }
         }
     }
-}
-
-private fun routeTypeLabel(type: String?): String = when (type) {
-    "B" -> "Bus"
-    "R", "M" -> "MAX Light Rail"
-    "T" -> "Streetcar"
-    "W" -> "WES Commuter Rail"
-    else -> "Transit"
 }

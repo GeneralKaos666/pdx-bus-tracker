@@ -1,13 +1,13 @@
 package com.trimettransit.tracker.feature.search
 
-import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,8 +24,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,7 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.transit.JSONParser
+import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.components.EmptyState
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -62,7 +60,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
-private const val TAG = "SearchStopsScreen"
 private const val MAX_RESULTS = 250
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,21 +75,26 @@ fun SearchStopsScreen(
     var hasError by remember { mutableStateOf(false) }
     var results by remember { mutableStateOf<List<Stop>>(emptyList()) }
     var hasSearched by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
 
     // Lazy-load all stops once
     LaunchedEffect(Unit) {
-        if (allStops == null && ConnectionUtils.isOnline(context)) {
-            isLoading = true
-            allStops = withContext(Dispatchers.IO) { loadAllStops(context) }
-            isLoading = false
-            if (allStops == null) hasError = true
+        if (allStops == null) {
+            val key = ApiKeys.getTrimetApiKey()
+            if (key.isNotBlank() && ConnectionUtils.isOnline(context)) {
+                isLoading = true
+                val url = context.getString(R.string.base_route_url) +
+                    "/appID/$key/dir/true/stops/true"
+                allStops = TransitApi.fetchSearchStops(context, url)
+                isLoading = false
+                if (allStops == null) hasError = true
+            }
         }
     }
 
     // Filter whenever query changes
     LaunchedEffect(query, allStops) {
         if (query.isBlank() || allStops == null) {
+            hasSearched = false
             results = emptyList()
             return@LaunchedEffect
         }
@@ -100,9 +102,7 @@ fun SearchStopsScreen(
         results = withContext(Dispatchers.Default) { searchStops(allStops!!, query) }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
+    Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -247,55 +247,4 @@ private fun searchStops(allStops: List<Stop>, query: String): List<Stop> {
         val matchId = queryAsInt != null && stop.locId.toString().contains(queryAsInt.toString())
         matchDesc || matchDir || matchId
     }.take(MAX_RESULTS)
-}
-
-private fun loadAllStops(context: Context): List<Stop>? {
-    return try {
-        val key = ApiKeys.getTrimetApiKey()
-        if (key.isBlank()) return null
-
-        if (!ConnectionUtils.isOnline(context)) return null
-
-        val url = context.getString(R.string.base_route_url) + "/appID/$key/dir/true/stops/true"
-        val json = JSONParser.fetch(url) ?: return null
-        TransitApi.parseRouteConfigStops(json)
-    } catch (e: Exception) {
-        Log.e(TAG, "loadAllStops failed", e)
-        null
-    }
-}
-
-private object TransitApi {
-    fun parseRouteConfigStops(json: org.json.JSONObject): List<Stop>? {
-        val resultSet = json.optJSONObject("resultSet") ?: return null
-        val routeArr = resultSet.optJSONArray("route") ?: return null
-        val seen = HashSet<Int>()
-        val stops = mutableListOf<Stop>()
-        for (ri in 0 until routeArr.length()) {
-            val routeObj = routeArr.getJSONObject(ri)
-            val dirArr = routeObj.optJSONArray("dir") ?: continue
-            val routeNum = routeObj.optInt("route", 0)
-            for (di in 0 until dirArr.length()) {
-                val dirObj = dirArr.getJSONObject(di)
-                val stopArr = dirObj.optJSONArray("stop") ?: continue
-                val dirDesc = dirObj.optString("desc", "")
-                for (si in 0 until stopArr.length()) {
-                    val obj = stopArr.getJSONObject(si)
-                    val locId = obj.optInt("locid", 0)
-                    if (!seen.add(locId)) continue
-                    val stop = Stop()
-                    stop.locId = locId
-                    stop.desc = obj.optString("desc", "")
-                    val stopDir = obj.optString("dir", "")
-                    stop.dirDesc = if (stopDir == "") dirDesc else stopDir
-                    stop.latitude = obj.optDouble("lat", 0.0)
-                    stop.longitude = if (obj.has("lng")) obj.getDouble("lng") else obj.optDouble("lon", 0.0)
-                    stop.routeNum = routeNum
-
-                    stops.add(stop)
-                }
-            }
-        }
-        return stops
-    }
 }

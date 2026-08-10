@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.qr
 
+import android.util.Log
 import android.util.Size
 import android.view.ViewGroup
 import androidx.camera.core.CameraSelector
@@ -40,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -50,6 +50,8 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 
+private const val TAG = "QRScannerCameraScreen"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QRScannerCameraScreen(
@@ -57,9 +59,9 @@ fun QRScannerCameraScreen(
     onQrDetected: (String) -> Unit,
     onBack: () -> Unit
 ) {
-    val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
     var detected by remember { mutableStateOf(false) }
+    var cameraError by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -130,35 +132,35 @@ fun QRScannerCameraScreen(
 
                     val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
                     cameraProviderFuture.addListener({
-                        val cameraProvider = cameraProviderFuture.get()
-
-                        val previewSelector = ResolutionSelector.Builder()
-                            .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
-                            .build()
-
-                        val analysisSelector = ResolutionSelector.Builder()
-                            .setResolutionStrategy(
-                                ResolutionStrategy(
-                                    Size(1280, 720),
-                                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
-                                )
-                            )
-                            .build()
-
-                        val preview = Preview.Builder()
-                            .setResolutionSelector(previewSelector)
-                            .build()
-                            .also { it.setSurfaceProvider(previewView.surfaceProvider) }
-
-                        val imageAnalysis = ImageAnalysis.Builder()
-                            .setResolutionSelector(analysisSelector)
-                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                            .build()
-                            .also { it.setAnalyzer(Executors.newSingleThreadExecutor(), analyzer) }
-
-                        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
                         try {
+                            val cameraProvider = cameraProviderFuture.get()
+
+                            val previewSelector = ResolutionSelector.Builder()
+                                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                                .build()
+
+                            val analysisSelector = ResolutionSelector.Builder()
+                                .setResolutionStrategy(
+                                    ResolutionStrategy(
+                                        Size(1280, 720),
+                                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER
+                                    )
+                                )
+                                .build()
+
+                            val preview = Preview.Builder()
+                                .setResolutionSelector(previewSelector)
+                                .build()
+                                .also { it.setSurfaceProvider(previewView.surfaceProvider) }
+
+                            val imageAnalysis = ImageAnalysis.Builder()
+                                .setResolutionSelector(analysisSelector)
+                                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                .build()
+                                .also { it.setAnalyzer(Executors.newSingleThreadExecutor(), analyzer) }
+
+                            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
                             cameraProvider.unbindAll()
                             cameraProvider.bindToLifecycle(
                                 lifecycleOwner,
@@ -167,8 +169,11 @@ fun QRScannerCameraScreen(
                                 imageAnalysis
                             )
                             isLoading = false
+                            cameraError = false
                         } catch (e: Exception) {
+                            Log.e(TAG, "Failed to start camera", e)
                             isLoading = false
+                            cameraError = true
                         }
                     }, ContextCompat.getMainExecutor(ctx))
 
@@ -181,6 +186,18 @@ fun QRScannerCameraScreen(
             if (isLoading) {
                 FadeInOnce(modifier = Modifier.align(Alignment.Center)) {
                     CircularProgressIndicator(color = Color.White)
+                }
+            }
+
+            // Camera error message
+            if (cameraError) {
+                FadeInOnce(modifier = Modifier.align(Alignment.Center)) {
+                    Text(
+                        text = "Could not start camera.\nPlease check camera access.",
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(24.dp)
+                    )
                 }
             }
 
@@ -231,23 +248,32 @@ private class QRImageAnalyzer(
 
         isProcessing = true
 
-        val inputImage = InputImage.fromMediaImage(
-            mediaImage,
-            imageProxy.imageInfo.rotationDegrees
-        )
+        try {
+            val inputImage = InputImage.fromMediaImage(
+                mediaImage,
+                imageProxy.imageInfo.rotationDegrees
+            )
 
-        scanner.process(inputImage)
-            .addOnSuccessListener { barcodes ->
-                for (barcode in barcodes) {
-                    barcode.rawValue?.let { uri ->
-                        onQrDetected(uri)
-                        break
+            scanner.process(inputImage)
+                .addOnSuccessListener { barcodes ->
+                    for (barcode in barcodes) {
+                        barcode.rawValue?.let { uri ->
+                            onQrDetected(uri)
+                            break
+                        }
                     }
                 }
-            }
-            .addOnCompleteListener {
-                isProcessing = false
-                imageProxy.close()
-            }
+                .addOnCompleteListener {
+                    isProcessing = false
+                    imageProxy.close()
+                }
+        } catch (e: Exception) {
+            // Synchronous failure: no task was scheduled, so clean up here.
+            // (The async path is closed by addOnCompleteListener — closing again
+            // here would double-close the ImageProxy.)
+            Log.e(TAG, "QR analysis failed", e)
+            isProcessing = false
+            imageProxy.close()
+        }
     }
 }

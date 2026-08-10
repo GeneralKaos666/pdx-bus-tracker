@@ -12,14 +12,14 @@ data class Stop(
 ) {
     fun computeTransitType() {
         routes?.forEach { route ->
-            when {
-                route.isStreetcar -> transitType = "S"
-                route.isBus && !route.desc.contains("Shuttle") &&
-                        (transitType.isNullOrEmpty() || transitType !in setOf("M", "W", "S")) ->
-                    transitType = "B"
-                route.isMax || route.desc.contains("Vintage Trolley") -> transitType = "M"
-                route.isWes -> transitType = "W"
-                else -> transitType = "Z"
+            if (transitType.isNullOrEmpty()) {
+                when {
+                    route.isStreetcar -> transitType = "S"
+                    route.isBus && !route.desc.contains("Shuttle") -> transitType = "B"
+                    route.isMax || route.desc.contains("Vintage Trolley") -> transitType = "M"
+                    route.isWes -> transitType = "W"
+                    else -> transitType = "Z"
+                }
             }
         }
     }

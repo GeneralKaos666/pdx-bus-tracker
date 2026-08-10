@@ -47,4 +47,34 @@ public class SecurityUtilsTest {
     public void extractStopIdFromPath_handlesTrailingSlash() {
         assertEquals("1234", SecurityUtils.extractStopIdFromPath("/stops/01234/"));
     }
+
+    @Test
+    public void isAllowedQrHost_rejectsSpoofedHosts() {
+        assertFalse(SecurityUtils.isAllowedQrHost("trimet.org.qq.com"));
+        assertFalse(SecurityUtils.isAllowedQrHost("nottrimet.org"));
+        assertFalse(SecurityUtils.isAllowedQrHost("stop.trimet.org"));
+        assertFalse(SecurityUtils.isAllowedQrHost("www.trimet.org."));
+    }
+
+    @Test
+    public void isValidHttpsUri_rejectsNull() {
+        assertFalse(SecurityUtils.isValidHttpsUri(null));
+    }
+
+    @Test
+    public void isValidHttpsUri_acceptsUppercaseScheme() {
+        assertTrue(SecurityUtils.isValidHttpsUri(URI.create("HTTPS://trimet.org/stops/1234")));
+    }
+
+    @Test
+    public void extractStopIdFromPath_rejectsOverflowLength() {
+        assertNull(SecurityUtils.extractStopIdFromPath("/stops/123456789"));
+        assertNull(SecurityUtils.extractStopIdFromPath("/stops/0123456789"));
+    }
+
+    @Test
+    public void extractStopIdFromPath_stripsLeadingZeros() {
+        assertEquals("1234", SecurityUtils.extractStopIdFromPath("/stops/0001234"));
+        assertEquals("99999999", SecurityUtils.extractStopIdFromPath("/stops/099999999"));
+    }
 }

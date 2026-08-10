@@ -16,9 +16,5 @@ fun formatDateTime(dateTime: DateTime, context: Context): String {
 }
 
 fun minutesUntil(dateTime: DateTime): Long {
-    return (Math.abs(dateTime.millis - DateTime.now().millis) / 1000) / 60
-}
-
-fun formatTime(dateTime: DateTime): String {
-    return dateTime.toString(DateTimeFormat.forPattern("h:mm aa"))
+    return (dateTime.millis - DateTime.now().millis) / 60000
 }
