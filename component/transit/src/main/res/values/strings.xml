@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="base_alerts_url">https://developer.trimet.org/ws/v2/alerts</string>
     <string name="base_arrival_url">https://developer.trimet.org/ws/v2/arrivals</string>
     <string name="base_vehicles_url">https://developer.trimet.org/ws/v2/vehicles</string>
     <string name="base_stop_location_v2_url">https://developer.trimet.org/ws/v2/stops</string>
+    <!-- routeConfig base URL; consumed by feature:search and feature:stops via
+         com.trimettransit.tracker.transit.R (single owner for all TriMet API bases). -->
+    <string name="base_route_url" tools:ignore="UnusedResources">https://developer.trimet.org/ws/V1/routeConfig/json/true/streetcar/true</string>
     <string name="stop_bidirectional_text">Bidirectional</string>
 </resources>

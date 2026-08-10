@@ -2,28 +2,6 @@
 <issues format="6" by="lint 9.3.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.3.1)" variant="all" version="9.3.1">
 
     <issue
-        id="MissingPermission"
-        message="Missing permissions required by LocationManager.getLastKnownLocation: android.permission.ACCESS_COARSE_LOCATION or android.permission.ACCESS_FINE_LOCATION"
-        errorLine1="            val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)"
-        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/feature/stops/NearbyStopsScreen.kt"
-            line="225"
-            column="28"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Missing permissions required by LocationManager.getLastKnownLocation: android.permission.ACCESS_COARSE_LOCATION or android.permission.ACCESS_FINE_LOCATION"
-        errorLine1="                ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/feature/stops/NearbyStopsScreen.kt"
-            line="226"
-            column="20"/>
-    </issue>
-
-    <issue
         id="GradleDependency"
         message="A newer version of androidx.compose:compose-bom than 2024.12.01 is available: 2026.06.01"
         errorLine1="    implementation platform(&apos;androidx.compose:compose-bom:2024.12.01&apos;)"

@@ -38,7 +38,7 @@ fun StopsDirectionList(
             isMissingApiKey = true
             directions = null
         } else {
-            val url = context.getString(R.string.base_route_url) +
+            val url = context.getString(com.trimettransit.tracker.transit.R.string.base_route_url) +
                     "/appID/$key/route/$routeId/dir/true"
             directions = TransitApi.fetchDirections(context, url)
         }

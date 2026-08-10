@@ -30,7 +30,7 @@ fun StopsStopList(
             isMissingApiKey = true
             stops = null
         } else {
-            val url = context.getString(R.string.base_route_url) +
+            val url = context.getString(com.trimettransit.tracker.transit.R.string.base_route_url) +
                     "/appID/$key/route/$routeId/dir/$directionId/stops/true"
             stops = TransitApi.fetchStops(context, url)
         }

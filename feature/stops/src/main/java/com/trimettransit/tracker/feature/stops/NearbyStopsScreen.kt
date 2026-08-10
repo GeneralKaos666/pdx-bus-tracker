@@ -211,6 +211,7 @@ fun NearbyStopsScreen(
     }
 }
 
+@android.annotation.SuppressLint("MissingPermission")
 private fun loadNearbyStops(
     context: Context,
     coroutineScope: kotlinx.coroutines.CoroutineScope,
@@ -272,6 +273,7 @@ private fun loadNearbyStops(
 }
 
 /** Requests a fresh single fix; resumes with null if permission is missing. */
+@android.annotation.SuppressLint("MissingPermission")
 private suspend fun requestFreshLocation(locationManager: LocationManager): Location? =
     suspendCancellableCoroutine { cont ->
         if (cont.isCancelled) return@suspendCancellableCoroutine

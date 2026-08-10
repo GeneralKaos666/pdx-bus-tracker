@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="base_arrival_url">https://developer.trimet.org/ws/v2/arrivals</string>
-</resources>

@@ -49,7 +49,7 @@ fun StopsRouteList(
             isMissingApiKey = true
             routes = null
         } else {
-            val url = context.getString(R.string.base_route_url) +
+            val url = context.getString(com.trimettransit.tracker.transit.R.string.base_route_url) +
                     "/appID/$key"
             routes = TransitApi.fetchRoutes(context, url)
         }

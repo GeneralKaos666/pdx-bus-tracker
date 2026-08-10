@@ -82,7 +82,7 @@ fun SearchStopsScreen(
             val key = ApiKeys.getTrimetApiKey()
             if (key.isNotBlank() && ConnectionUtils.isOnline(context)) {
                 isLoading = true
-                val url = context.getString(R.string.base_route_url) +
+                val url = context.getString(com.trimettransit.tracker.transit.R.string.base_route_url) +
                     "/appID/$key/dir/true/stops/true"
                 allStops = TransitApi.fetchSearchStops(context, url)
                 isLoading = false
