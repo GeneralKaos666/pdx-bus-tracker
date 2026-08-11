@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
@@ -93,7 +94,7 @@ private const val LOCATION_FIX_TIMEOUT_MS = 10_000L
 private const val LOCATION_REFRESH_INTERVAL_MS = 5 * 60_000L
 
 @Composable
-fun WhatsNearbyScreen() {
+fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var vehicles by remember { mutableStateOf<List<VehiclePosition>?>(null) }
@@ -238,6 +239,7 @@ fun WhatsNearbyScreen() {
                 myLocation = myLocation,
                 stops = stops ?: emptyList(),
                 vehicles = vehicles ?: emptyList(),
+                onStopClick = { stop -> onNavigateToArrivals(stop, -1) },
                 modifier = Modifier.fillMaxSize()
             )
             Crossfade(
@@ -327,8 +329,12 @@ private fun VehicleMap(
     myLocation: LatLng?,
     stops: List<Stop>,
     vehicles: List<VehiclePosition>,
+    onStopClick: (Stop) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Re-read the latest stop-click callback on every recomposition so the once-registered
+    // map click listener never fires a stale lambda.
+    val currentOnStopClick by rememberUpdatedState(onStopClick)
     val mapState = remember { VehicleMapState() }
     // Size of the map view at the time of the last camera fit; a degenerate (0x0 or still
     // resizing) viewport yields a never-converging fit, so defer until the size is stable.
@@ -412,6 +418,22 @@ private fun VehicleMap(
                         mapState.applyStops()      // in case update ran before style load
                         mapState.applyVehicles()   // in case update ran before style load
                     }
+                    // Tap a stop dot to open that stop's arrivals screen. Registered once per map
+                    // lifetime; the map is destroyed with the view (DisposableEffect below), so no
+                    // removeOnMapClickListener is needed. Returning false for a miss lets the map
+                    // pan normally.
+                    map.addOnMapClickListener { latLng ->
+                        val screen = map.projection.toScreenLocation(latLng)
+                        val hits = map.queryRenderedFeatures(screen, "stop-layer")
+                        val locId = hits.firstOrNull()?.getNumberProperty("locId")?.toInt() ?: 0
+                        val stop = mapState.stops.firstOrNull { it.locId == locId }
+                        if (stop != null) {
+                            currentOnStopClick(stop)
+                            true
+                        } else {
+                            false
+                        }
+                    }
                 }
                 // Block parent (Compose) gesture interception for single-finger touches so
                 // MapView can pan normally; never consume the event itself. Multi-touch
@@ -491,7 +513,9 @@ private class VehicleMapState {
     fun applyStops() {
         val source = stopsSource ?: return
         val features = stops.map { stop ->
-            Feature.fromGeometry(Point.fromLngLat(stop.longitude, stop.latitude))
+            val feature = Feature.fromGeometry(Point.fromLngLat(stop.longitude, stop.latitude))
+            feature.addNumberProperty("locId", stop.locId)
+            feature
         }
         source.setGeoJson(FeatureCollection.fromFeatures(features))
     }

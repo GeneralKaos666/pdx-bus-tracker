@@ -115,6 +115,16 @@ import org.maplibre.android.style.layers.PropertyFactory.iconIgnorePlacement
 import org.maplibre.android.style.layers.PropertyFactory.iconImage
 import org.maplibre.android.style.layers.PropertyFactory.iconRotate
 import org.maplibre.android.style.layers.PropertyFactory.iconRotationAlignment
+import org.maplibre.android.style.layers.PropertyFactory.textAllowOverlap
+import org.maplibre.android.style.layers.PropertyFactory.textAnchor
+import org.maplibre.android.style.layers.PropertyFactory.textColor
+import org.maplibre.android.style.layers.PropertyFactory.textField
+import org.maplibre.android.style.layers.PropertyFactory.textFont
+import org.maplibre.android.style.layers.PropertyFactory.textHaloColor
+import org.maplibre.android.style.layers.PropertyFactory.textHaloWidth
+import org.maplibre.android.style.layers.PropertyFactory.textIgnorePlacement
+import org.maplibre.android.style.layers.PropertyFactory.textOffset
+import org.maplibre.android.style.layers.PropertyFactory.textSize
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
@@ -385,6 +395,7 @@ fun ArrivalsScreen(
                                     lng = stopLng,
                                     stopName = stopName,
                                     blockPositions = trackedPositions,
+                                    arrivals = arrivals,
                                     headerText = trackingSign.ifBlank { stopName },
                                     onClose = { trackingKey = null }
                                 )
@@ -533,6 +544,7 @@ private fun StopMapCard(
     lng: Double,
     stopName: String,
     blockPositions: List<BlockPosition> = emptyList(),
+    arrivals: List<Arrival> = emptyList(),
     headerText: String? = null,
     onClose: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -637,6 +649,20 @@ private fun StopMapCard(
                                     )
                                 )
                                 mapState.busSource = busSource
+                                style.addLayer(
+                                    SymbolLayer("countdown-layer", "bus-source").withProperties(
+                                        textField(Expression.get("countdown")),
+                                        textAnchor(Property.TEXT_ANCHOR_BOTTOM),
+                                        textOffset(arrayOf(0f, -1.8f)),
+                                        textSize(11f),
+                                        textColor(scheme.onSurface.toArgb()),
+                                        textHaloColor(android.graphics.Color.WHITE),
+                                        textHaloWidth(2f),
+                                        textAllowOverlap(true),
+                                        textIgnorePlacement(true),
+                                        textFont(arrayOf("Noto Sans Bold"))
+                                    )
+                                )
                                 map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 16.0))
                                 mapState.applyPositions()   // in case update ran before style load
                             }
@@ -655,6 +681,7 @@ private fun StopMapCard(
                     view.onStart()   // idempotent; also covers the factory's post() ordering
                     view.onResume()
                     mapState.positions = blockPositions
+                    mapState.arrivals = arrivals
                     mapState.applyPositions()
                     // Keep stop + tracked buses in view; re-fit only once the map has a
                     // stable, non-degenerate size and something is actually off-screen.
@@ -703,6 +730,7 @@ private class MapState {
     var map: MapLibreMap? = null
     var busSource: GeoJsonSource? = null
     var positions: List<BlockPosition> = emptyList()
+    var arrivals: List<Arrival> = emptyList()
 
     /** Pushes the latest bus positions into the GeoJsonSource (no-op until style is ready). */
     fun applyPositions() {
@@ -712,6 +740,17 @@ private class MapState {
             val feature = Feature.fromGeometry(Point.fromLngLat(bp.lng, bp.lat))
             feature.addStringProperty("icon", "badge-$letter")
             feature.addNumberProperty("bearing", bp.bearing)
+            // Time-left label shown above the icon: the tracked arrival for this vehicle,
+            // phrased exactly like the list rows. Empty string renders nothing on the map.
+            val match = arrivals.firstOrNull { it.vehicleID == bp.vehicleID }
+            val displayTime = match?.let { a ->
+                if (a.status == "estimated" && a.estimated != null) a.estimated else a.scheduled
+            }
+            val label = if (displayTime != null) {
+                val mins = minutesUntil(displayTime)
+                if (mins <= 0) "Due" else "$mins min"
+            } else ""
+            feature.addStringProperty("countdown", label)
             feature
         }
         source.setGeoJson(FeatureCollection.fromFeatures(features))
