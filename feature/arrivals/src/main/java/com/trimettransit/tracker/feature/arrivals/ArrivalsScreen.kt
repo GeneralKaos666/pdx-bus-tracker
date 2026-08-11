@@ -57,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.model.Arrival
@@ -396,7 +397,7 @@ fun ArrivalsScreen(
                             val interactionSource = remember { MutableInteractionSource() }
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = MaterialTheme.shapes.small,
+                                shape = MaterialTheme.shapes.large,
                                 color = MaterialTheme.colorScheme.surfaceContainerLow
                             ) {
                                 Row(
@@ -441,7 +442,7 @@ fun ArrivalsScreen(
                     val interactionSource = remember { MutableInteractionSource() }
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.small,
+                        shape = MaterialTheme.shapes.large,
                         color = MaterialTheme.colorScheme.errorContainer
                     ) {
                         Row(
@@ -552,7 +553,7 @@ private fun StopMapCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
@@ -793,8 +794,14 @@ private fun ArrivalItem(
         modifier = modifier
             .fillMaxWidth()
             .pressScale(interactionSource),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.elevatedCardColors(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = lerp(
+                MaterialTheme.colorScheme.surfaceContainerLow,
+                color,
+                0.10f
+            )
+        ),
         elevation = CardDefaults.elevatedCardElevation()
     ) {
         Row(
@@ -823,7 +830,7 @@ private fun ArrivalItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = arrival.shortSign,
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.titleMedium
                 )
                 Text(
                     text = formattedTime,
@@ -833,7 +840,7 @@ private fun ArrivalItem(
             }
 
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(50),
                 color = color
             ) {
                 if (arrival.status == "canceled") {

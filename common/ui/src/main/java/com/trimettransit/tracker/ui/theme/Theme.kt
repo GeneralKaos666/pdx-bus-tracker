@@ -21,8 +21,8 @@ val TriMetGoShapes = Shapes(
     extraSmall = RoundedCornerShape(4.dp),
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(16.dp),
-    extraLarge = RoundedCornerShape(24.dp)
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp)
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -115,7 +115,7 @@ private fun Color.saturated(factor: Float): Color {
 }
 
 private fun androidx.compose.material3.ColorScheme.withVibrantColors(): androidx.compose.material3.ColorScheme {
-    val factor = 1.0f
+    val factor = 1.25f
     return copy(
         primary = primary.saturated(factor),
         primaryContainer = primaryContainer.saturated(factor),
