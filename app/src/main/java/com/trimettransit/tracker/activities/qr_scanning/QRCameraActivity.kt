@@ -13,9 +13,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.activities.MainActivity
 import com.trimettransit.tracker.feature.qr.QRScannerCameraScreen
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
@@ -46,7 +48,9 @@ class QRCameraActivity : ComponentActivity() {
         }
 
         setContent {
-            TriMetGoTheme {
+            val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+            val dynamicColor = remember { prefs.getBoolean("pref_key_dynamic_color", true) }
+            TriMetGoTheme(dynamicColor = dynamicColor) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

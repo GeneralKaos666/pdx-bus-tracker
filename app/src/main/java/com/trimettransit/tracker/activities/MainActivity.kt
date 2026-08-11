@@ -176,10 +176,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
             var themePref by remember { mutableStateOf(prefs.getString("theme", "system") ?: "system") }
+            var dynamicColorPref by remember { mutableStateOf(prefs.getBoolean("pref_key_dynamic_color", true)) }
             DisposableEffect(prefs) {
                 val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                    if (key == "theme") {
-                        themePref = prefs.getString("theme", "system") ?: "system"
+                    when (key) {
+                        "theme" -> themePref = prefs.getString("theme", "system") ?: "system"
+                        "pref_key_dynamic_color" -> dynamicColorPref = prefs.getBoolean("pref_key_dynamic_color", true)
                     }
                 }
                 prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -190,7 +192,7 @@ class MainActivity : ComponentActivity() {
                 "light" -> false
                 else -> isSystemInDarkTheme()
             }
-            TriMetGoTheme(darkTheme = isDark) {
+            TriMetGoTheme(darkTheme = isDark, dynamicColor = dynamicColorPref) {
                 val activity = LocalContext.current as ComponentActivity
                 SideEffect {
                     WindowInsetsControllerCompat(

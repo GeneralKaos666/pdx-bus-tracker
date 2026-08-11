@@ -1,18 +1,36 @@
 package com.trimettransit.tracker.feature.settings
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Route
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,12 +40,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
+import androidx.core.graphics.drawable.toBitmap
 import androidx.preference.PreferenceManager
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.trimettransit.tracker.feature.settings.BuildConfig
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.pressScale
@@ -37,10 +58,11 @@ fun SettingsScreen() {
     val context = LocalContext.current
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-    val currentTheme = remember { prefs.getString("theme", "system") ?: "system" }
-    var selectedTheme by remember { mutableStateOf(currentTheme) }
-    val onlySelectedRoute = remember { prefs.getBoolean("pref_key_only_show_route_selected", true) }
-    var onlyShowSelectedRoute by remember { mutableStateOf(onlySelectedRoute) }
+    var selectedTheme by remember { mutableStateOf(prefs.getString("theme", "system") ?: "system") }
+    var dynamicColor by remember { mutableStateOf(prefs.getBoolean("pref_key_dynamic_color", true)) }
+    var onlyShowSelectedRoute by remember {
+        mutableStateOf(prefs.getBoolean("pref_key_only_show_route_selected", true))
+    }
 
     ContentEntrance(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -48,64 +70,109 @@ fun SettingsScreen() {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Theme section
-            SectionHeader(title = "Theme")
+            SectionHeader(title = "Appearance")
 
-            SettingsRadioOption(
-                label = "System default",
-                selected = selectedTheme == "system",
-                onClick = {
-                    selectedTheme = "system"
-                    prefs.edit().putString("theme", "system").apply()
-                }
-            )
-            SettingsRadioOption(
-                label = "Light",
-                selected = selectedTheme == "light",
-                onClick = {
-                    selectedTheme = "light"
-                    prefs.edit().putString("theme", "light").apply()
-                }
-            )
-            SettingsRadioOption(
-                label = "Dark",
-                selected = selectedTheme == "dark",
-                onClick = {
-                    selectedTheme = "dark"
-                    prefs.edit().putString("theme", "dark").apply()
-                }
-            )
+            SettingsCard {
+                SettingsRadioOption(
+                    label = "System default",
+                    subtitle = "Follow your device's theme",
+                    icon = Icons.Filled.BrightnessAuto,
+                    selected = selectedTheme == "system",
+                    onClick = {
+                        selectedTheme = "system"
+                        prefs.edit { putString("theme", "system") }
+                    }
+                )
+                SettingsRadioOption(
+                    label = "Light",
+                    subtitle = "Always use the light theme",
+                    icon = Icons.Filled.LightMode,
+                    selected = selectedTheme == "light",
+                    onClick = {
+                        selectedTheme = "light"
+                        prefs.edit { putString("theme", "light") }
+                    }
+                )
+                SettingsRadioOption(
+                    label = "Dark",
+                    subtitle = "Always use the dark theme",
+                    icon = Icons.Filled.DarkMode,
+                    selected = selectedTheme == "dark",
+                    onClick = {
+                        selectedTheme = "dark"
+                        prefs.edit { putString("theme", "dark") }
+                    }
+                )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
 
-            // Route filter section
+                SettingsSwitchOption(
+                    label = "Dynamic colors",
+                    subtitle = "Use your wallpaper's colors",
+                    icon = Icons.Filled.Palette,
+                    checked = dynamicColor,
+                    onCheckedChange = {
+                        dynamicColor = it
+                        prefs.edit { putBoolean("pref_key_dynamic_color", it) }
+                    }
+                )
+            }
+
             SectionHeader(title = "Arrivals")
 
-            SettingsSwitchOption(
-                label = "Only show selected route's arrivals",
-                checked = onlyShowSelectedRoute,
-                onCheckedChange = {
-                    onlyShowSelectedRoute = it
-                    prefs.edit().putBoolean("pref_key_only_show_route_selected", it).apply()
-                }
-            )
+            SettingsCard {
+                SettingsSwitchOption(
+                    label = "Only show selected route's arrivals",
+                    subtitle = "Filters the arrivals list when opened from a route",
+                    icon = Icons.Filled.Route,
+                    checked = onlyShowSelectedRoute,
+                    onCheckedChange = {
+                        onlyShowSelectedRoute = it
+                        prefs.edit { putBoolean("pref_key_only_show_route_selected", it) }
+                    }
+                )
+            }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            // About section
             SectionHeader(title = "About")
 
-            Text(
-                text = "TriMet Bus Tracker",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
-            )
-            Text(
-                text = "Version ${BuildConfig.VERSION_NAME}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp)
-            )
+            SettingsCard {
+                val appIcon = remember {
+                    context.packageManager.getApplicationIcon(context.packageName)
+                        .toBitmap().asImageBitmap()
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(48.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Image(
+                                bitmap = appIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "TriMet Bus Tracker",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = "Version ${BuildConfig.VERSION_NAME} · MIT License",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -124,8 +191,46 @@ private fun SectionHeader(title: String) {
 }
 
 @Composable
+private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(content = content)
+    }
+}
+
+@Composable
+private fun SettingsIconCircle(icon: ImageVector, highlighted: Boolean) {
+    Surface(
+        modifier = Modifier.size(40.dp),
+        shape = CircleShape,
+        color = if (highlighted) MaterialTheme.colorScheme.primaryContainer
+        else MaterialTheme.colorScheme.surfaceContainerHighest
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (highlighted) MaterialTheme.colorScheme.onPrimaryContainer
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+@Composable
 private fun SettingsRadioOption(
     label: String,
+    subtitle: String,
+    icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit
 ) {
@@ -134,18 +239,35 @@ private fun SettingsRadioOption(
         modifier = Modifier
             .fillMaxWidth()
             .pressScale(interactionSource)
-            .clickable(interactionSource = interactionSource, indication = LocalIndication.current, onClick = onClick)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                onClick = onClick
+            )
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        SettingsIconCircle(icon = icon, highlighted = selected)
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
         RadioButton(
             selected = selected,
             onClick = null
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(start = 16.dp)
         )
     }
 }
@@ -153,6 +275,8 @@ private fun SettingsRadioOption(
 @Composable
 private fun SettingsSwitchOption(
     label: String,
+    subtitle: String,
+    icon: ImageVector,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
@@ -161,17 +285,31 @@ private fun SettingsSwitchOption(
         modifier = Modifier
             .fillMaxWidth()
             .pressScale(interactionSource)
-            .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { onCheckedChange(!checked) }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current
+            ) { onCheckedChange(!checked) }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 16.dp)
-        )
+        SettingsIconCircle(icon = icon, highlighted = false)
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
         Switch(
             checked = checked,
             onCheckedChange = null

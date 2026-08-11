@@ -45,48 +45,4 @@
             column="20"/>
     </issue>
 
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="                    prefs.edit().putString(&quot;theme&quot;, &quot;system&quot;).apply()"
-        errorLine2="                    ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/feature/settings/SettingsScreen.kt"
-            line="59"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="                    prefs.edit().putString(&quot;theme&quot;, &quot;light&quot;).apply()"
-        errorLine2="                    ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/feature/settings/SettingsScreen.kt"
-            line="67"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="                    prefs.edit().putString(&quot;theme&quot;, &quot;dark&quot;).apply()"
-        errorLine2="                    ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/feature/settings/SettingsScreen.kt"
-            line="75"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="                    prefs.edit().putBoolean(&quot;pref_key_only_show_route_selected&quot;, it).apply()"
-        errorLine2="                    ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/trimettransit/tracker/feature/settings/SettingsScreen.kt"
-            line="89"
-            column="21"/>
-    </issue>
-
 </issues>
