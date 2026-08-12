@@ -71,7 +71,7 @@ fun FadeInOnce(
  * a private source would never emit and the scale would never animate.
  * MUST be applied BEFORE the clickable in the modifier chain (graphicsLayer wraps
  * the clickable so the ripple scales too). Press-down ~100ms, release ~150ms,
- * no overshoot (Spring.DampingRatioNoBouncy, Spring.StiffnessMedium).
+ * no overshoot (Spring.DampingRatioNoBouncy, Spring.StiffnessMediumLow).
  */
 @Composable
 fun Modifier.pressScale(

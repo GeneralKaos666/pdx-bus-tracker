@@ -145,6 +145,33 @@ private val AnimatedContentTransitionScope<*>.navPopExit: ExitTransition
         animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
     )
 
+/**
+ * Enter transition for the Arrivals destination: a stiffer spring than the
+ * default [navEnter] so pushing to Arrivals from Home/Routes feels a hair
+ * snappier (settles well under the 300ms [navExitQuick] that bounds it).
+ */
+private val AnimatedContentTransitionScope<*>.navEnterArrivals: EnterTransition
+    get() = slideInHorizontally(
+        initialOffsetX = { it },
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+    ) + fadeIn(
+        initialAlpha = 0.7f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+    )
+
+/**
+ * Slightly shorter exit (350 → 300ms) for the Home and Routes destinations so
+ * the push to Arrivals reads tighter; same slide+fade shape as [navExit].
+ */
+private val AnimatedContentTransitionScope<*>.navExitQuick: ExitTransition
+    get() = slideOutHorizontally(
+        targetOffsetX = { -it },
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+    ) + fadeOut(
+        targetAlpha = 0.7f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+    )
+
 private data class BottomNavItem(val route: String, val label: String, val icon: ImageVector)
 
 private val bottomNavItems = listOf(
@@ -543,14 +570,14 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                 popEnterTransition = { navPopEnter },
                 popExitTransition = { navPopExit }
             ) {
-                composable("home") {
+                composable("home", exitTransition = { navExitQuick }) {
                     HomeScreen(
                         onNavigateToArrivals = { stop: Stop ->
                             navigateToArrivals(stop, stop.routeNum)
                         }
                     )
                 }
-                composable("stops") {
+                composable("stops", exitTransition = { navExitQuick }) {
                     StopsScreen(
                         onNavigateToArrivals = { stop: Stop, routeId: Int ->
                             navigateToArrivals(stop, routeId)
@@ -589,7 +616,8 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                         navArgument("routeId") { type = NavType.IntType; defaultValue = -1 },
                         navArgument("lat") { type = NavType.StringType; defaultValue = "" },
                         navArgument("lng") { type = NavType.StringType; defaultValue = "" }
-                    )
+                    ),
+                    enterTransition = { navEnterArrivals }
                 ) { backStackEntry ->
                     ArrivalsScreen(
                         stopId = backStackEntry.arguments?.getString("stopId") ?: "",
