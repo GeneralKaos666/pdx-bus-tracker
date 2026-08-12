@@ -73,6 +73,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.AnimatedContent
@@ -110,10 +112,10 @@ import java.net.URLEncoder
 private val AnimatedContentTransitionScope<*>.navEnter: EnterTransition
     get() = slideInHorizontally(
         initialOffsetX = { it },
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
     ) + fadeIn(
         initialAlpha = 0.7f,
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
     )
 
 private val AnimatedContentTransitionScope<*>.navExit: ExitTransition
@@ -128,10 +130,10 @@ private val AnimatedContentTransitionScope<*>.navExit: ExitTransition
 private val AnimatedContentTransitionScope<*>.navPopEnter: EnterTransition
     get() = slideInHorizontally(
         initialOffsetX = { -it },
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
     ) + fadeIn(
         initialAlpha = 0.7f,
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
     )
 
 private val AnimatedContentTransitionScope<*>.navPopExit: ExitTransition
@@ -434,8 +436,8 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                     ) {
                         AnimatedVisibility(
                             visible = showFabMenu,
-                            enter = fadeIn() + slideInVertically { it / 2 },
-                            exit = fadeOut() + slideOutVertically { it / 2 }
+                            enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) + slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { it / 2 },
+                            exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) + slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it / 2 }
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -473,8 +475,8 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
 
                         AnimatedVisibility(
                             visible = showFabMenu,
-                            enter = fadeIn() + slideInVertically { it / 2 },
-                            exit = fadeOut() + slideOutVertically { it / 2 }
+                            enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) + slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { it / 2 },
+                            exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) + slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it / 2 }
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,

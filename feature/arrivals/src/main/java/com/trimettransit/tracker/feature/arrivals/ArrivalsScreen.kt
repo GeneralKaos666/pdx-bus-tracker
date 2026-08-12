@@ -925,12 +925,18 @@ private fun ArrivalItem(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
-                        Text(
-                            text = relativeText,
-                            color = Color.White,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = if (isEstimated) FontWeight.Bold else FontWeight.Normal
-                        )
+                        Crossfade(
+                            targetState = relativeText,
+                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                            label = "countdownText"
+                        ) { text ->
+                            Text(
+                                text = text,
+                                color = Color.White,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = if (isEstimated) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
                         val delayText = formatDelay(arrival)
                         if (delayText != null) {
                             Text(

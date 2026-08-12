@@ -83,7 +83,7 @@ fun Modifier.pressScale(
         targetValue = if (pressed) scale else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMedium
+            stiffness = Spring.StiffnessMediumLow
         ),
         label = "pressScale"
     )

@@ -1,5 +1,8 @@
 package com.trimettransit.tracker.feature.settings
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -208,18 +211,28 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 private fun SettingsIconCircle(icon: ImageVector, highlighted: Boolean) {
+    val containerColor by animateColorAsState(
+        targetValue = if (highlighted) MaterialTheme.colorScheme.primaryContainer
+                      else MaterialTheme.colorScheme.surfaceContainerHighest,
+        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+        label = "settingsIconContainer"
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (highlighted) MaterialTheme.colorScheme.onPrimaryContainer
+                      else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+        label = "settingsIconContent"
+    )
     Surface(
         modifier = Modifier.size(40.dp),
         shape = CircleShape,
-        color = if (highlighted) MaterialTheme.colorScheme.primaryContainer
-        else MaterialTheme.colorScheme.surfaceContainerHighest
+        color = containerColor
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (highlighted) MaterialTheme.colorScheme.onPrimaryContainer
-                else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = contentColor,
                 modifier = Modifier.size(24.dp)
             )
         }

@@ -1,5 +1,8 @@
 package com.trimettransit.tracker.ui.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,27 +23,48 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
+import kotlinx.coroutines.launch
 
 @Composable
 fun StopListItem(
     stop: Stop,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    zoomOnTap: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val scope = rememberCoroutineScope()
+    val zoom = remember { Animatable(1f) }
     Card(
-        onClick = onClick,
+        onClick = {
+            if (zoomOnTap && !zoom.isRunning) {
+                scope.launch {
+                    zoom.animateTo(1.08f, tween(durationMillis = 200, easing = FastOutSlowInEasing))
+                    onClick()
+                }
+            } else {
+                onClick()
+            }
+        },
         interactionSource = interactionSource,
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
-            .pressScale(interactionSource),
+            .pressScale(interactionSource)
+            .graphicsLayer {
+                if (zoomOnTap) {
+                    scaleX = zoom.value
+                    scaleY = zoom.value
+                }
+            },
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer

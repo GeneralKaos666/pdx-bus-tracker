@@ -51,7 +51,8 @@ fun StopsStopList(
         StopListItem(
             stop = stop,
             onClick = { onStopSelected(stop) },
-            modifier = Modifier.animateItem()
+            modifier = Modifier.animateItem(),
+            zoomOnTap = true
         )
     }
 }

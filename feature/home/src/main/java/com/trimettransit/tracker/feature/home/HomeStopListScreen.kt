@@ -52,7 +52,8 @@ fun HomeStopListScreen(
                         StopListItem(
                             stop = stop,
                             onClick = { onNavigateToArrivals(stop) },
-                            modifier = Modifier.animateItem()
+                            modifier = Modifier.animateItem(),
+                            zoomOnTap = true
                         )
                     }
                 }

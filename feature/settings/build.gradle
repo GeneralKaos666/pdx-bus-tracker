@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         minSdk 31
-        versionName "4.6.0"
+        versionName "4.6.1"
         buildConfigField "String", "VERSION_NAME", "\"${versionName}\""
     }
 
