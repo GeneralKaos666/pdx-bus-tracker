@@ -1,5 +1,23 @@
 # Changelog
 
+## What's New in v4.6.1
+
+### Smoother animations
+- Press feedback on cards, tabs, buttons, and icon buttons is now softer — the shared `pressScale` spring uses a gentler stiffness, so press/release feel smoother everywhere.
+- Screen navigation now springs in (velocity-matched slide + fade) instead of a linear tween, so arriving screens ease to rest naturally.
+- The FAB menu rows (Scan QR code / Search stops) animate with the same standardized fade + slide timing as the FAB, bottom bar, and top bar.
+- Home → Arrivals and Routes → Arrivals navigation is a hair shorter (300ms vs 350ms) with a snappier slide-in, so tapping a stop gets you to arrivals faster.
+  (`common/ui/.../components/Animations.kt`; `app/.../activities/MainActivity.kt`)
+
+### Zoom on tap
+- Tapping a favorite or recent stop on Home, or a stop on the Routes screen, now zooms the card in slightly before the Arrivals screen slides in — a quick 200ms scale-up that makes the selection feel direct.
+  (`common/ui/.../components/StopListItem.kt`, new `zoomOnTap` option; `feature/home/HomeStopListScreen.kt`; `feature/stops/StopsStopList.kt`)
+
+### Animations where there were none
+- The arrivals countdown ("5 min" → "4 min") now crossfades on each refresh instead of snapping.
+- The Settings radio icons animate their highlight color when switching theme options (System / Light / Dark).
+  (`feature/arrivals/ArrivalsScreen.kt`; `feature/settings/SettingsScreen.kt`)
+
 ## What's New in v4.5.0
 
 ### New "What's Nearby" map
