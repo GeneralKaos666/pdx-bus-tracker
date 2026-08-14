@@ -3,7 +3,7 @@
 
     <issue
         id="GradleDependency"
-        message="A newer version of androidx.compose:compose-bom than 2024.12.01 is available: 2026.06.01"
+        message="A newer version of androidx.compose:compose-bom than 2024.12.01 is available: 2026.08.00"
         errorLine1="    implementation platform(&apos;androidx.compose:compose-bom:2024.12.01&apos;)"
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location

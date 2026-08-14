@@ -3,7 +3,7 @@
 
     <issue
         id="GradleDependency"
-        message="A newer version of androidx.compose:compose-bom than 2024.12.01 is available: 2026.06.01"
+        message="A newer version of androidx.compose:compose-bom than 2024.12.01 is available: 2026.08.00"
         errorLine1="    implementation platform(&apos;androidx.compose:compose-bom:2024.12.01&apos;)"
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -42,6 +42,17 @@
         <location
             file="build.gradle"
             line="36"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.maplibre.gl:android-sdk-opengl than 13.4.1 is available: 13.5.0"
+        errorLine1="    implementation &apos;org.maplibre.gl:android-sdk-opengl:13.4.1&apos;"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle"
+            line="37"
             column="20"/>
     </issue>
 

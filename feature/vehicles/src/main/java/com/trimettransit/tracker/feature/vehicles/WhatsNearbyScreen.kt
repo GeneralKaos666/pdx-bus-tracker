@@ -72,6 +72,14 @@ import org.maplibre.android.style.layers.PropertyFactory.iconIgnorePlacement
 import org.maplibre.android.style.layers.PropertyFactory.iconImage
 import org.maplibre.android.style.layers.PropertyFactory.iconRotate
 import org.maplibre.android.style.layers.PropertyFactory.iconRotationAlignment
+import org.maplibre.android.style.layers.PropertyFactory.textAllowOverlap
+import org.maplibre.android.style.layers.PropertyFactory.textAnchor
+import org.maplibre.android.style.layers.PropertyFactory.textColor
+import org.maplibre.android.style.layers.PropertyFactory.textField
+import org.maplibre.android.style.layers.PropertyFactory.textFont
+import org.maplibre.android.style.layers.PropertyFactory.textIgnorePlacement
+import org.maplibre.android.style.layers.PropertyFactory.textOffset
+import org.maplibre.android.style.layers.PropertyFactory.textSize
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
@@ -83,7 +91,7 @@ import kotlin.math.sin
 
 private const val WHATS_NEARBY_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 /** Nearby stop search + map radius around the user, in feet (matches NearbyStopsScreen, which uses feet = 500). */
-private const val NEARBY_RADIUS_FEET = 500
+private const val NEARBY_RADIUS_FEET = 800
 private const val FOOT_TO_METERS = 0.3048
 /** Derived so the stop search and the map radius circle can never drift apart. */
 private val NEARBY_RADIUS_METERS = NEARBY_RADIUS_FEET * FOOT_TO_METERS
@@ -377,7 +385,15 @@ private fun VehicleMap(
                                 iconImage("stop-dot"),
                                 iconAnchor(Property.ICON_ANCHOR_CENTER),
                                 iconAllowOverlap(true),
-                                iconIgnorePlacement(true)
+                                iconIgnorePlacement(true),
+                                textField(Expression.get("name")),
+                                textFont(arrayOf("Open Sans Regular")),
+                                textSize(11f),
+                                textColor(android.graphics.Color.BLACK),
+                                textAnchor(Property.TEXT_ANCHOR_TOP),
+                                textOffset(arrayOf(0f, 1.5f)),
+                                textAllowOverlap(true),
+                                textIgnorePlacement(true)
                             )
                         )
                         val vehiclesSource = GeoJsonSource("vehicles-source")
@@ -515,6 +531,7 @@ private class VehicleMapState {
         val features = stops.map { stop ->
             val feature = Feature.fromGeometry(Point.fromLngLat(stop.longitude, stop.latitude))
             feature.addNumberProperty("locId", stop.locId)
+            feature.addStringProperty("name", stop.desc)
             feature
         }
         source.setGeoJson(FeatureCollection.fromFeatures(features))
@@ -533,7 +550,7 @@ private class VehicleMapState {
         source.setGeoJson(FeatureCollection.fromFeatures(features))
     }
 
-    /** Drops the me-dot and the 500-ft radius ring into their sources. */
+    /** Drops the me-dot and the 800-ft radius ring into their sources. */
     fun applyMe(lat: Double, lng: Double) {
         val center = LatLng(lat, lng)
         meSource?.setGeoJson(
@@ -562,14 +579,21 @@ private fun badgeBitmap(context: Context, fillColor: Int, glyphRes: Int, density
     return out
 }
 
-/** Secondary-colored dot with a white center, used as the nearby stop marker image. */
+/** Secondary-colored dot with a dark outline and white center, used as the nearby stop marker image. */
 private fun stopDotBitmap(context: Context, fillColor: Int, density: Float): Bitmap {
-    val size = (34 * density).toInt()
+    val size = (44 * density).toInt()
     val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val c = Canvas(out)
-    c.drawCircle(size / 2f, size / 2f, size / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
-    val dotRadius = (5 * density).toInt().toFloat()
-    c.drawCircle(size / 2f, size / 2f, dotRadius, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE })
+    val center = size / 2f
+    // Dark outline ensures the dot is visible on any map background.
+    val outline = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.BLACK }
+    c.drawCircle(center, center, size / 2f, outline)
+    // Fill circle slightly smaller than outline for a ring effect.
+    val fillRadius = size / 2f - (2 * density)
+    c.drawCircle(center, center, fillRadius, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
+    // White center dot.
+    val dotRadius = (6 * density).toInt().toFloat()
+    c.drawCircle(center, center, dotRadius, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE })
     return out
 }
 
@@ -596,7 +620,7 @@ private fun meDotBitmap(context: Context, fillColor: Int, density: Float): Bitma
     return out
 }
 
-/** Bounds of the 500-ft radius around a center (lat/lng degree offsets at that latitude). */
+/** Bounds of the 800-ft radius around a center (lat/lng degree offsets at that latitude). */
 private fun radiusBounds(center: LatLng): LatLngBounds {
     val latDeg = NEARBY_RADIUS_METERS / 111_320.0
     val lngDeg = NEARBY_RADIUS_METERS / (111_320.0 * cos(Math.toRadians(center.latitude)))
@@ -606,7 +630,7 @@ private fun radiusBounds(center: LatLng): LatLngBounds {
     )
 }
 
-/** Camera centered on the user showing the 500-ft radius with 48px padding; falls back to a
+/** Camera centered on the user showing the 800-ft radius with 48px padding; falls back to a
  *  fixed zoom when bounds fitting is unavailable (degenerate viewport). */
 private fun cameraFramingRadius(map: MapLibreMap, location: LatLng): CameraUpdate {
     val cam = map.getCameraForLatLngBounds(radiusBounds(location), intArrayOf(48, 48, 48, 48))
@@ -622,7 +646,7 @@ private fun movedBeyondRadius(from: LatLng, to: LatLng): Boolean {
     return results[0] > NEARBY_RADIUS_METERS
 }
 
-/** 96-point closed ring approximating the 500-ft radius circle (GeoJSON rings must be closed). */
+/** 96-point closed ring approximating the 800-ft radius circle (GeoJSON rings must be closed). */
 private fun radiusRing(center: LatLng): Polygon {
     val latDeg = NEARBY_RADIUS_METERS / 111_320.0
     val lngDeg = NEARBY_RADIUS_METERS / (111_320.0 * cos(Math.toRadians(center.latitude)))
