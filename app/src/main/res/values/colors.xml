@@ -3,6 +3,7 @@
     <!-- TriMet brand colors -->
     <color name="trimet_blue">#FF0079C1</color>
     <color name="trimet_orange">#FFFF7F00</color>
+    <color name="trimet_blue_dark">#FF005A91</color>
 
     <!-- Line circle colors -->
 
