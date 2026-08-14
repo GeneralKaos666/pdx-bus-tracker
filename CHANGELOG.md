@@ -1,5 +1,17 @@
 # Changelog
 
+## What's New in v4.6.5
+
+### New app icon
+- The launcher icon is now an adaptive icon: a white bus glyph on the dark TriMet blue (`#005A91`), with a monochrome variant for themed icons. The old static PNG icons are gone.
+  (`app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`, new `ic_launcher_background.xml` / `ic_launcher_foreground.xml`; old `drawable-*/ic_launcher.png` removed)
+
+### Better "What's Nearby" map
+- Stop markers now show the stop name as a label right on the map, styled to stay readable over any tile background.
+- Nearby stop markers are larger (44dp) with a dark outline ring and a bigger white center dot, so they stand out on light and dark map backgrounds alike.
+- The map's search radius around you is wider — 800 ft instead of 500 ft — so more nearby transit appears.
+  (`feature/vehicles/WhatsNearbyScreen.kt`)
+
 ## What's New in v4.6.1
 
 ### Smoother animations
