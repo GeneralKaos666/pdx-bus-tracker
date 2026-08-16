@@ -349,143 +349,147 @@ fun ArrivalsScreen(
                 }
 
                 2 -> {
-                    EmptyState(message = "No upcoming arrivals.")
+                    EmptyState(
+                        message = if (unfilteredArrivals.isNotEmpty())
+                            "No upcoming arrivals for this route.\nArrivals from other routes are hidden — disable the filter in Settings."
+                        else "No upcoming arrivals."
+                    )
                 }
 
                 else -> {
                     ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Column {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f).fillMaxSize(),
-                        flingBehavior = smoothFling,
-                        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-
-
-                    val visibleArrivals = if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
-                    items(visibleArrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }, contentType = { "arrival" }) { arrival ->
-                        val rowKey = "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}"
+                    Box(modifier = Modifier.fillMaxSize()) {
                         Column {
-                            ArrivalItem(
-                                arrival = arrival,
-                                context = context,
-                                onClick = {
-                                    if (hasValidCoords) {
-                                        if (trackingKey == rowKey) {
-                                            trackingKey = null              // tap the tracked row again to close
-                                        } else {
-                                            trackingKey = rowKey            // opens under this row; switches if another row is tracked
-                                            trackingRouteId = arrival.routeId
-                                            trackingSign = arrival.shortSign
-                                            trackingVehicleId = arrival.vehicleID
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.animateItem()
-                            )
-                            AnimatedVisibility(
-                                visible = trackingKey == rowKey,
-                                enter = expandVertically() + fadeIn(),
-                                exit = shrinkVertically() + fadeOut()
-                            ) {
-                                StopMapCard(
-                                    lat = stopLat,
-                                    lng = stopLng,
-                                    stopName = stopName,
-                                    blockPositions = trackedPositions,
-                                    arrivals = arrivals,
-                                    headerText = trackingSign.ifBlank { stopName },
-                                    onClose = { trackingKey = null }
-                                )
-                            }
-                        }
-                    }
+                        LazyColumn(
+                            modifier = Modifier.weight(1f).fillMaxSize(),
+                            flingBehavior = smoothFling,
+                            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
 
-                    if (showExpandButton) {
-                        item(key = "showAll", contentType = "showAll") {
-                            val interactionSource = remember { MutableInteractionSource() }
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = MaterialTheme.shapes.large,
-                                color = MaterialTheme.colorScheme.surfaceContainerLow
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .pressScale(interactionSource)
-                                        .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { showAllArrivals = !showAllArrivals }
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+
+                        val visibleArrivals = if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
+                        items(visibleArrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }, contentType = { "arrival" }) { arrival ->
+                            val rowKey = "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}"
+                            Column {
+                                ArrivalItem(
+                                    arrival = arrival,
+                                    context = context,
+                                    onClick = {
+                                        if (hasValidCoords) {
+                                            if (trackingKey == rowKey) {
+                                                trackingKey = null              // tap the tracked row again to close
+                                            } else {
+                                                trackingKey = rowKey            // opens under this row; switches if another row is tracked
+                                                trackingRouteId = arrival.routeId
+                                                trackingSign = arrival.shortSign
+                                                trackingVehicleId = arrival.vehicleID
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.animateItem()
+                                )
+                                AnimatedVisibility(
+                                    visible = trackingKey == rowKey,
+                                    enter = expandVertically() + fadeIn(),
+                                    exit = shrinkVertically() + fadeOut()
                                 ) {
-                                    Text(
-                                        text = if (showAllArrivals) "Show fewer"
-                                            else "Show all arrivals (${unfilteredArrivals.size - visibleCount} more)",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    val showAllArrowRotation by animateFloatAsState(
-                                        targetValue = if (showAllArrivals) 180f else 0f,
-                                        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.KeyboardArrowDown,
-                                        contentDescription = if (showAllArrivals) "Collapse arrivals"
-                                            else "Expand arrivals",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.rotate(showAllArrowRotation)
+                                    StopMapCard(
+                                        lat = stopLat,
+                                        lng = stopLng,
+                                        stopName = stopName,
+                                        blockPositions = trackedPositions,
+                                        arrivals = arrivals,
+                                        headerText = trackingSign.ifBlank { stopName },
+                                        onClose = { trackingKey = null }
                                     )
                                 }
                             }
                         }
-                    }
-                }
 
-                AnimatedVisibility(
-                    visible = detours.isNotEmpty(),
-                    enter = expandVertically(expandFrom = Alignment.Top, animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)) +
-                        fadeIn(tween(durationMillis = 200, easing = FastOutSlowInEasing)),
-                    exit = shrinkVertically(shrinkTowards = Alignment.Top, animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)) +
-                        fadeOut(tween(durationMillis = 150, easing = FastOutSlowInEasing))
-                ) {
-                    val interactionSource = remember { MutableInteractionSource() }
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.errorContainer
+                        if (showExpandButton) {
+                            item(key = "showAll", contentType = "showAll") {
+                                val interactionSource = remember { MutableInteractionSource() }
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.large,
+                                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .pressScale(interactionSource)
+                                            .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { showAllArrivals = !showAllArrivals }
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = if (showAllArrivals) "Show fewer"
+                                                else "Show all arrivals (${unfilteredArrivals.size - visibleCount} more)",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        val showAllArrowRotation by animateFloatAsState(
+                                            targetValue = if (showAllArrivals) 180f else 0f,
+                                            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+                                        )
+                                        Icon(
+                                            imageVector = Icons.Default.KeyboardArrowDown,
+                                            contentDescription = if (showAllArrivals) "Collapse arrivals"
+                                                else "Expand arrivals",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.rotate(showAllArrowRotation)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        }
+
+                    AnimatedVisibility(
+                        visible = detours.isNotEmpty(),
+                        enter = expandVertically(expandFrom = Alignment.Top, animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)) +
+                            fadeIn(tween(durationMillis = 200, easing = FastOutSlowInEasing)),
+                        exit = shrinkVertically(shrinkTowards = Alignment.Top, animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)) +
+                            fadeOut(tween(durationMillis = 150, easing = FastOutSlowInEasing))
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .pressScale(interactionSource)
-                                .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { showAlertsSheet = true }
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        val interactionSource = remember { MutableInteractionSource() }
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.large,
+                            color = MaterialTheme.colorScheme.errorContainer
                         ) {
-                            Text(
-                                text = "Alerts (${detours.size})",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = "Show alerts",
-                                tint = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.size(18.dp)
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .pressScale(interactionSource)
+                                    .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { showAlertsSheet = true }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Alerts (${detours.size})",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = "Show alerts",
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
+                        }
+                    }
+                    }
                 }
-                }
-                }
-            }
             }
         }
     }
-}
 
     if (showAlertsSheet) {
         ModalBottomSheet(
@@ -517,7 +521,7 @@ fun ArrivalsScreen(
                             modifier = Modifier.padding(end = 8.dp)
                         )
                         Text(
-                            text = detour.desc ?: "",
+                            text = detour.desc,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
@@ -958,15 +962,16 @@ private fun ArrivalItem(
     }
 }
 
-suspend fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean, routeId: Int = -1, lat: Double = 0.0, lng: Double = 0.0): String {
+suspend fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean, routeId: Int = -1, lat: Double = 0.0, lng: Double = 0.0): Pair<Boolean, String> {
     return withContext(Dispatchers.IO) {
         try {
             val db = DatabaseHelper(context.applicationContext)
             if (currentlyFavorite) {
                 if (db.removeFavorite(locId)) {
-                    context.getString(R.string.favorite_deleted_text)
+                    true to context.getString(R.string.favorite_deleted_text)
                 } else {
-                    context.getString(R.string.favorite_does_not_exist_text)
+                    // Stop was already absent — the DB already matches the unfavorited UI state.
+                    true to context.getString(R.string.favorite_does_not_exist_text)
                 }
             } else {
                 val stop = Stop()
@@ -976,14 +981,15 @@ suspend fun toggleFavorite(context: Context, locId: Int, stopName: String, curre
                 stop.longitude = lng
                 if (routeId > 0) stop.routeNum = routeId
                 if (db.addFavorite(stop)) {
-                    context.getString(R.string.favorite_added_text)
+                    true to context.getString(R.string.favorite_added_text)
                 } else {
-                    context.getString(R.string.favorite_exists_text)
+                    // Already a favorite — the DB already matches the favorited UI state.
+                    true to context.getString(R.string.favorite_exists_text)
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to toggle favorite", e)
-            "Failed to update favorite"
+            false to "Failed to update favorite"
         }
     }
 }

@@ -53,6 +53,8 @@ import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.rememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
@@ -75,13 +77,28 @@ fun NearbyStopsScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var hasLoaded by remember { mutableStateOf(false) }
+    // In-flight load, deduped so resume/re-entry can't stack overlapping fetches.
+    var loadJob by remember { mutableStateOf<Job?>(null) }
+
+    fun launchLoadNearbyStops() {
+        loadJob?.cancel()
+        loadJob = coroutineScope.launch {
+            loadNearbyStops(
+                context = context,
+                setStops = { stops = it },
+                setLoading = { isLoading = it },
+                setError = { errorMessage = it },
+                setHasLoaded = { hasLoaded = true }
+            )
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         locationPermissionGranted = granted
         if (granted) {
-            loadNearbyStops(context, coroutineScope, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
+            launchLoadNearbyStops()
         } else {
             errorMessage = "Location permission is required to find nearby stops"
         }
@@ -89,7 +106,7 @@ fun NearbyStopsScreen(
 
     fun loadIfPermissionGranted() {
         if (locationPermissionGranted) {
-            loadNearbyStops(context, coroutineScope, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
+            launchLoadNearbyStops()
         } else {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
@@ -98,7 +115,7 @@ fun NearbyStopsScreen(
     // Auto-load on first composition if permission already granted
     LaunchedEffect(locationPermissionGranted) {
         if (locationPermissionGranted && !hasLoaded) {
-            loadNearbyStops(context, coroutineScope, { stops = it }, { isLoading = it }, { errorMessage = it }, { hasLoaded = true })
+            launchLoadNearbyStops()
         }
     }
 
@@ -212,9 +229,8 @@ fun NearbyStopsScreen(
 }
 
 @android.annotation.SuppressLint("MissingPermission")
-private fun loadNearbyStops(
+private suspend fun loadNearbyStops(
     context: Context,
-    coroutineScope: kotlinx.coroutines.CoroutineScope,
     setStops: (List<Stop>?) -> Unit,
     setLoading: (Boolean) -> Unit,
     setError: (String?) -> Unit,
@@ -224,51 +240,49 @@ private fun loadNearbyStops(
     setError(null)
     setHasLoaded()
 
-    coroutineScope.launch {
-        try {
-            val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val hasGps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-            if (!hasGps) {
-                setError("GPS is disabled.\nPlease enable location services.")
-                setLoading(false)
-                return@launch
-            }
-
-            val hasFineLocation = ContextCompat.checkSelfPermission(
-                context, Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!hasFineLocation) {
-                setError("Location permission is required.")
-                setLoading(false)
-                return@launch
-            }
-
-            val location = withTimeoutOrNull(10_000L) { requestFreshLocation(locationManager) }
-                ?: locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-
-            if (location == null) {
-                setError("Unable to get current location.\nPlease try again.")
-                setLoading(false)
-                return@launch
-            }
-
-            val stops = TransitApi.fetchStopsByLocation(
-                context = context,
-                ll = "${location.latitude},${location.longitude}",
-                feet = 500,
-                showRoutes = true
-            )
-            if (stops != null) {
-                setStops(stops)
-            } else {
-                setError("Unable to find nearby stops.\nPlease try again.")
-            }
-        } catch (e: Exception) {
-            setError("Unable to find nearby stops.\nPlease try again.")
-        } finally {
-            setLoading(false)
+    try {
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val hasGps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        if (!hasGps) {
+            setError("GPS is disabled.\nPlease enable location services.")
+            return
         }
+
+        val hasFineLocation = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!hasFineLocation) {
+            setError("Location permission is required.")
+            return
+        }
+
+        val location = withTimeoutOrNull(10_000L) { requestFreshLocation(locationManager) }
+            ?: locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+
+        if (location == null) {
+            setError("Unable to get current location.\nPlease try again.")
+            return
+        }
+
+        val stops = TransitApi.fetchStopsByLocation(
+            context = context,
+            ll = "${location.latitude},${location.longitude}",
+            feet = 500,
+            showRoutes = true
+        )
+        if (stops != null) {
+            setStops(stops)
+        } else {
+            setError("Unable to find nearby stops.\nPlease try again.")
+        }
+    } catch (e: CancellationException) {
+        // A newer load superseded this one — don't paint an error for a cancelled fetch.
+        throw e
+    } catch (e: Exception) {
+        setError("Unable to find nearby stops.\nPlease try again.")
+    } finally {
+        setLoading(false)
     }
 }
 

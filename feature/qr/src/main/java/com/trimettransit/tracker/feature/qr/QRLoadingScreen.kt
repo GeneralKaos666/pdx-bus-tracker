@@ -173,36 +173,36 @@ fun QRLoadingScreen(
                     label = "qrState"
                 ) { currentState ->
             when (currentState) {
-                QRLoadingState.Loading -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Finding stop...",
-                            style = MaterialTheme.typography.bodyLarge
+                    QRLoadingState.Loading -> {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Finding stop...",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+
+                    QRLoadingState.Error -> {
+                        QrErrorColumn(
+                            message = errorMessage,
+                            onBack = onNavigateBack
+                        )
+                    }
+
+                    QRLoadingState.Offline -> {
+                        QrErrorColumn(
+                            message = "No internet connection.\nPlease check your connection.",
+                            onBack = onNavigateBack
                         )
                     }
                 }
-
-                QRLoadingState.Error -> {
-                    QrErrorColumn(
-                        message = errorMessage,
-                        onBack = onNavigateBack
-                    )
                 }
-
-                QRLoadingState.Offline -> {
-                    QrErrorColumn(
-                        message = "No internet connection.\nPlease check your connection.",
-                        onBack = onNavigateBack
-                    )
                 }
-            }
-            }
-            }
         }
     }
 }

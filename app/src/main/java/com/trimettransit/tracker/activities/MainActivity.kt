@@ -196,7 +196,7 @@ private fun MainBottomBar(currentRoute: String, onNavigate: (String) -> Unit) {
 }
 
 class MainActivity : ComponentActivity() {
-    private var pendingQrUri: String? = null
+    private var pendingQrUri by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -231,7 +231,11 @@ class MainActivity : ComponentActivity() {
                         activity.window, activity.window.decorView
                     ).isAppearanceLightNavigationBars = !isDark
                 }
-                MainAppContent(incomingQrUri = pendingQrUri, isDark = isDark)
+                MainAppContent(
+                    incomingQrUri = pendingQrUri,
+                    isDark = isDark,
+                    onQrUriConsumed = { pendingQrUri = null }
+                )
             }
         }
     }
@@ -251,7 +255,11 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
+private fun MainAppContent(
+    incomingQrUri: String? = null,
+    isDark: Boolean,
+    onQrUriConsumed: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
     val inPip = rememberIsInPipMode()
@@ -270,13 +278,14 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
             DatabaseHelper(context.applicationContext).addRecentStop(stop)
         }
         navController.navigate(
-            "arrivals/${stop.locId}?stopName=${URLEncoder.encode(stop.desc ?: "", "UTF-8")}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
+            "arrivals/${stop.locId}?stopName=${URLEncoder.encode(stop.desc, "UTF-8")}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
         )
     }
 
     LaunchedEffect(incomingQrUri) {
         if (incomingQrUri != null) {
             navController.navigate("qr_loading/${URLEncoder.encode(incomingQrUri, "UTF-8")}")
+            onQrUriConsumed()
         }
     }
 
@@ -365,9 +374,11 @@ private fun MainAppContent(incomingQrUri: String? = null, isDark: Boolean) {
                                     val stopName = entry?.arguments?.getString("stopName") ?: ""
                                     scope.launch {
                                         val routeId = entry?.arguments?.getInt("routeId") ?: -1
-                                        val msg = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite, routeId, NavState.arrivalsLat, NavState.arrivalsLng)
-                                        NavState.arrivalsIsFavorite = !NavState.arrivalsIsFavorite
-                                        outerSnackbarHostState.showSnackbar(msg)
+                                        val result = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite, routeId, NavState.arrivalsLat, NavState.arrivalsLng)
+                                        if (result.first) {
+                                            NavState.arrivalsIsFavorite = !NavState.arrivalsIsFavorite
+                                        }
+                                        outerSnackbarHostState.showSnackbar(result.second)
                                     }
                                 },
                                 interactionSource = favSource,

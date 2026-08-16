@@ -73,7 +73,7 @@ fun StopsDirectionList(
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Text(
-                text = direction.desc ?: "",
+                text = direction.desc,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,

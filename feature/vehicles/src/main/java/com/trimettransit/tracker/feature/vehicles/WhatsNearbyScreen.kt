@@ -115,6 +115,7 @@ fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
     var myLocationAgeMs by remember { mutableStateOf(0L) }
     // In-flight jobs, deduped so resume/re-entry can't stack overlapping fetches.
     var vehiclesJob by remember { mutableStateOf<Job?>(null) }
+    var stopsJob by remember { mutableStateOf<Job?>(null) }
     var locationJob by remember { mutableStateOf<Job?>(null) }
     var locationPermissionGranted by remember {
         mutableStateOf(
@@ -157,7 +158,9 @@ fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
 
     fun loadStopsNearby() {
         val location = myLocation ?: return
-        coroutineScope.launch {
+        // Cancel any in-flight fetch first so a slow older response can't overwrite newer stops.
+        stopsJob?.cancel()
+        stopsJob = coroutineScope.launch {
             stops = TransitApi.fetchStopsByLocation(
                 context = context,
                 ll = "${location.latitude},${location.longitude}",

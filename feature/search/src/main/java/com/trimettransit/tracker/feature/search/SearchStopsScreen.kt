@@ -162,20 +162,20 @@ fun SearchStopsScreen(
 
                     else -> {
                         ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                        val smoothFling = rememberSmoothFlingBehavior()
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            flingBehavior = smoothFling
-                        ) {
-                            items(results, key = { it.locId }, contentType = { "stopSearch" }) { stop ->
-                                StopSearchItem(
-                                    stop = stop,
-                                    onClick = { onNavigateToArrivals(stop, -1) },
-                                    modifier = Modifier.animateItem()
-                                )
+                            val smoothFling = rememberSmoothFlingBehavior()
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                flingBehavior = smoothFling
+                            ) {
+                                items(results, key = { it.locId }, contentType = { "stopSearch" }) { stop ->
+                                    StopSearchItem(
+                                        stop = stop,
+                                        onClick = { onNavigateToArrivals(stop, -1) },
+                                        modifier = Modifier.animateItem()
+                                    )
+                                }
                             }
-                        }
-                        }
+                            }
                     }
                 }
             }
@@ -222,12 +222,12 @@ private fun StopSearchItem(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stop.desc ?: "",
+                text = stop.desc,
                 style = MaterialTheme.typography.titleSmall
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = stop.dirDesc ?: "",
+                text = stop.dirDesc,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

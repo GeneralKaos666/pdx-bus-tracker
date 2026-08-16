@@ -193,8 +193,8 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                         if (scheduledMs != -1L) {
                             scheduledMillis = scheduledMs
                             scheduled = org.joda.time.DateTime(scheduledMs)
-                    }
                         }
+                    }
                     arrivalList.add(arrival)
                     // TriMet returns each block's live position nested inside its arrival object
                     // (only when showPosition/true is requested)
@@ -215,7 +215,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                         }
                         parsedBlockPositions.add(bp)
                     }
-                        }
+                }
             }
 
             val result = ArrivalsResult().apply {
@@ -312,7 +312,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                     routeNumber = obj.optInt("routeNumber", 0)
                     direction = obj.optInt("direction", 0)
                     tripID = obj.optString("tripID", "")
-                            isNewTrip = obj.optBoolean("newTrip", false)
+                    isNewTrip = obj.optBoolean("newTrip", false)
                     delay = obj.optInt("delay", 0)
                     signMessage = obj.optString("signMessage", "")
                     signMessageLong = obj.optString("signMessageLong", "")
@@ -324,11 +324,11 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                     locationInScheduleDay = obj.optInt("locationInScheduleDay", 0)
                     time = obj.optLong("time", 0)
                     expires = obj.optLong("expires", 0)
-                            isInCongestion = obj.optBoolean("inCongestion", false)
+                    isInCongestion = obj.optBoolean("inCongestion", false)
                     loadPercentage = obj.optInt("loadPercentage", 0)
                     garage = obj.optString("garage", "")
                     extrablockID = obj.optString("extrablockID", "")
-                            isOffRoute = obj.optBoolean("offRoute", false)
+                    isOffRoute = obj.optBoolean("offRoute", false)
                 }
                 vehicles.add(vp)
             }
@@ -453,12 +453,19 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
             val json = parser.fetch(url)
             val resultSet = json.optJSONObject("resultSet") ?: return@withContext null
             val routeArr = resultSet.optJSONArray("route") ?: return@withContext null
-            val seen = HashSet<Int>()
-            val stops = mutableListOf<Stop>()
+            val stopsByLocId = LinkedHashMap<Int, Stop>()
             for (ri in 0 until routeArr.length()) {
                 val routeObj = routeArr.getJSONObject(ri)
                 val dirArr = routeObj.optJSONArray("dir") ?: continue
                 val routeNum = routeObj.optInt("route", 0)
+                val routeType = routeObj.optString("type", "")
+                val routeDesc = routeObj.optString("desc", "")
+                val route = Route().apply {
+                    desc = routeDesc
+                    this.routeId = routeNum
+                    applyRouteType(routeType, routeDesc)
+                    applyStreetcarType(routeDesc, routeType)
+                }
                 for (di in 0 until dirArr.length()) {
                     val dirObj = dirArr.getJSONObject(di)
                     val stopArr = dirObj.optJSONArray("stop") ?: continue
@@ -466,20 +473,26 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                     for (si in 0 until stopArr.length()) {
                         val obj = stopArr.getJSONObject(si)
                         val locId = obj.optInt("locid", 0)
-                        if (!seen.add(locId)) continue
-                        val stop = Stop()
-                        stop.locId = locId
-                        stop.desc = obj.optString("desc", "")
-                        val stopDir = obj.optString("dir", "")
-                        stop.dirDesc = if (stopDir == "") dirDesc else stopDir
-                        stop.latitude = obj.optDouble("lat", 0.0)
-                        stop.longitude = if (obj.has("lng")) obj.getDouble("lng") else obj.optDouble("lon", 0.0)
-                        stop.routeNum = routeNum
-                        stops.add(stop)
+                        val stop = stopsByLocId[locId]
+                        if (stop == null) {
+                            val newStop = Stop()
+                            newStop.locId = locId
+                            newStop.desc = obj.optString("desc", "")
+                            val stopDir = obj.optString("dir", "")
+                            newStop.dirDesc = if (stopDir == "") dirDesc else stopDir
+                            newStop.latitude = obj.optDouble("lat", 0.0)
+                            newStop.longitude = if (obj.has("lng")) obj.getDouble("lng") else obj.optDouble("lon", 0.0)
+                            newStop.routeNum = routeNum
+                            newStop.addRoute(route)
+                            stopsByLocId[locId] = newStop
+                        } else {
+                            stop.addRoute(route)
+                        }
                     }
                 }
             }
-            stops
+            stopsByLocId.values.forEach { it.computeTransitType() }
+            stopsByLocId.values.toList()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch search stops", e)
             null
