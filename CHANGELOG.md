@@ -1,5 +1,33 @@
 # Changelog
 
+## What's New in v4.7.0
+
+### Floating navigation pill
+- The bottom navigation bar is now a Material 3 Expressive floating pill (material3 1.4.0-alpha12 `HorizontalFloatingToolbar`) that hovers above the system navigation bar, using the vibrant expressive color tokens — primaryContainer pill, surfaceContainer pop-out for the selected item, tertiaryContainer action button — so it follows the app's dynamic color scheme in light and dark.
+- The FAB moved into the pill as its trailing button: a plain Settings button that opens the Settings screen directly (no expanding menu).
+- Home's Favorites/Recent tabs moved into the pill: on Home, the pill's first slot becomes the two tab buttons.
+  (`app/.../activities/MainActivity.kt`)
+
+### Swipe between top-level screens
+- Home, Routes, What's Nearby, and Search stops are now pages of one swipeable pager — swipe left/right to move between the main screens. The pill highlights the current screen and tapping a pill item animates the pager; system back walks back to Home before leaving the app.
+- Settings moved off the nav bar into the FAB, opening as its own screen with a back button.
+- Swipes keep their context: Home swipes its Favorites/Recent tabs, the map pans on What's Nearby, and Routes/Search swipe between screens.
+- Pressing Home in the pill from any other screen always opens the Favorites tab.
+  (`app/.../activities/MainActivity.kt`)
+
+### Routes accordion
+- The Routes screen's three tabs (Routes / Directions / Stops) are gone. Tapping a route now expands its directions inline under the row — the same expand-and-fade pattern as the arrivals map card — and tapping a direction expands its stops; tap again to collapse.
+- The expanded drill-down survives swiping to another screen and back, and returns from Arrivals intact.
+  (`feature/stops/StopsScreen.kt`, `StopsRouteList.kt`; `AnimatedTabRow.kt` removed)
+
+### QR scanning removed
+- QR code scanning is gone: the CameraX + ML Kit camera scanner (`QRCameraActivity`), the loading/security screen (`feature/qr` module), the `qr2.it` network-security domain, and the CAMERA permission were all removed, along with the repo's only unit test. The FAB is now a plain Settings button.
+  (`feature/qr` deleted; `app/.../activities/MainActivity.kt`, `AndroidManifest.xml`, `network_security_config.xml`)
+
+### Dead code cleanup
+- Removed the unused `TransitApi.fetchAlerts` function and its `base_alerts_url` string (detours already come through `fetchArrivals`), the empty `values/integers.xml`, and five empty drawable density folders left over from the old PNG launcher icons.
+  (`component/transit/.../TransitApi.kt`, `component/transit/.../res/values/strings.xml`; `app/src/main/res/`)
+
 ## What's New in v4.6.5
 
 ### New app icon

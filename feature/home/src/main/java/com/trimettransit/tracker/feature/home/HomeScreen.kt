@@ -2,7 +2,8 @@ package com.trimettransit.tracker.feature.home
 
 import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.ui.components.AnimatedTabRow
 import com.trimettransit.tracker.ui.components.rememberOnResume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -23,6 +23,7 @@ private const val TAG = "HomeScreen"
 
 @Composable
 fun HomeScreen(
+    pagerState: PagerState,
     onNavigateToArrivals: (Stop) -> Unit
 ) {
     val context = LocalContext.current
@@ -64,13 +65,10 @@ fun HomeScreen(
         loadFavorites()
     }
 
-    val tabs = listOf("Favorites", "Recent")
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
-
-    AnimatedTabRow(
-        tabs = tabs,
-        pagerState = pagerState,
-        modifier = Modifier.fillMaxSize()
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier.fillMaxSize(),
+        beyondViewportPageCount = 1
     ) { page ->
         when (page) {
             0 -> HomeStopListScreen(

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="base_alerts_url">https://developer.trimet.org/ws/v2/alerts</string>
     <string name="base_arrival_url">https://developer.trimet.org/ws/v2/arrivals</string>
     <string name="base_vehicles_url">https://developer.trimet.org/ws/v2/vehicles</string>
     <string name="base_stop_location_v2_url">https://developer.trimet.org/ws/v2/stops</string>

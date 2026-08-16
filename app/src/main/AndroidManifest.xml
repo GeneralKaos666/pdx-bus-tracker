@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -12,9 +11,6 @@
         android:required="true"/>
     <uses-feature
         android:name="android.hardware.touchscreen"
-        android:required="false"/>
-    <uses-feature
-        android:name="android.hardware.camera"
         android:required="false"/>
     <application
         android:theme="@style/AppTheme"
@@ -40,9 +36,5 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity
-            android:label="@string/activity_qr_scanning_title"
-            android:name="com.trimettransit.tracker.activities.qr_scanning.QRCameraActivity"
-            android:configChanges="screenSize|orientation|screenLayout|keyboardHidden" />
     </application>
 </manifest>

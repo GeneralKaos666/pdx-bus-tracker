@@ -19,8 +19,9 @@ import com.trimettransit.tracker.ui.components.LoadingState
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 
 /**
- * Shared list shell for the Routes / Directions / Stops pager tabs:
- * Crossfade between loading, error, empty and the smooth-fling LazyColumn.
+ * Shared list shell for the Routes list: Crossfade between loading, error,
+ * empty and the smooth-fling LazyColumn. [itemTrailingContent] renders under
+ * each item (used by the routes accordion's expanded sub-cards).
  */
 @Composable
 internal fun <T> StopListContent(
@@ -31,7 +32,8 @@ internal fun <T> StopListContent(
     stateLabel: String,
     key: (T) -> Any,
     contentType: (T) -> Any?,
-    itemContent: @Composable LazyItemScope.(T) -> Unit
+    itemContent: @Composable LazyItemScope.(T) -> Unit,
+    itemTrailingContent: @Composable LazyItemScope.(T) -> Unit = {}
 ) {
     val safeItems = items
     Crossfade(
@@ -59,6 +61,7 @@ internal fun <T> StopListContent(
                     ) {
                         items(safeItems ?: emptyList(), key = key, contentType = contentType) { item ->
                             itemContent(item)
+                            itemTrailingContent(item)
                         }
                     }
                 }

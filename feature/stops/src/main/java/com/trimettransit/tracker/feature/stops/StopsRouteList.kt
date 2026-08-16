@@ -1,5 +1,9 @@
 package com.trimettransit.tracker.feature.stops
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,9 +12,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,21 +30,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Route
+import com.trimettransit.tracker.transit.ApiKeys
 import com.trimettransit.tracker.transit.TransitApi
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
-import com.trimettransit.tracker.transit.ApiKeys
 
 @Composable
 fun StopsRouteList(
-    onRouteSelected: (Route) -> Unit
+    selectedRoute: Route?,
+    onRouteToggle: (Route) -> Unit,
+    routeTrailingContent: @Composable LazyItemScope.(Route) -> Unit
 ) {
     val context = LocalContext.current
     var routes by remember { mutableStateOf<List<Route>?>(null) }
@@ -65,19 +75,25 @@ fun StopsRouteList(
         emptyMessage = "No routes available.",
         stateLabel = "routesState",
         key = { it.routeId },
-        contentType = { "route" }
-    ) { route ->
-        RouteListItem(
-            route = route,
-            onClick = { onRouteSelected(route) },
-            modifier = Modifier.animateItem()
-        )
-    }
+        contentType = { "route" },
+        itemContent = { route ->
+            RouteListItem(
+                route = route,
+                isExpanded = selectedRoute?.routeId == route.routeId,
+                onClick = { onRouteToggle(route) },
+                modifier = Modifier.animateItem()
+            )
+        },
+        itemTrailingContent = { route ->
+            routeTrailingContent(route)
+        }
+    )
 }
 
 @Composable
 private fun RouteListItem(
     route: Route,
+    isExpanded: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -134,6 +150,18 @@ private fun RouteListItem(
                     color = MaterialTheme.colorScheme.outline
                 )
             }
+            val chevronRotation by animateFloatAsState(
+                targetValue = if (isExpanded) 180f else 0f,
+                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+            )
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .rotate(chevronRotation)
+            )
         }
     }
 }

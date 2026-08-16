@@ -424,7 +424,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                 this.locId = obj.optInt("locid", 0)
                 latitude = obj.optDouble("lat", 0.0)
                 longitude = obj.optDouble("lng", 0.0)
-                // Parse routes so transitType is populated for QR-fallback stops
+                // Parse routes so transitType is populated for id-lookup stops
                 val routeArr = obj.optJSONArray("route")
                 if (routeArr != null) {
                     for (j in 0 until routeArr.length()) {
@@ -499,53 +499,4 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
         }
     }
 
-    suspend fun fetchAlerts(
-        context: Context,
-        routeIds: List<Int>? = null,
-        locIds: List<Int>? = null,
-        systemWideOnly: Boolean = false
-    ): List<Detour>? = withContext(Dispatchers.IO) {
-        if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = ApiKeys.getTrimetApiKey()
-        if (apiKey.isBlank()) {
-            Log.w(TAG, "TriMet API key not configured")
-            return@withContext null
-        }
-        try {
-            val baseUrl = context.getString(R.string.base_alerts_url)
-            val url = buildString {
-                append(baseUrl)
-                append("/appID/").append(apiKey)
-                if (routeIds != null && routeIds.isNotEmpty()) {
-                    append("/routes/").append(routeIds.joinToString(","))
-                }
-                if (locIds != null && locIds.isNotEmpty()) {
-                    append("/locIDs/").append(locIds.joinToString(","))
-                }
-                if (systemWideOnly) append("/systemWideOnly/true")
-            }
-            val json = parser.fetch(url)
-            val resultSet = json.getJSONObject("resultSet")
-            val detourArr = resultSet.optJSONArray("detour")
-            if (detourArr == null) return@withContext emptyList()
-
-            val detours = mutableListOf<Detour>()
-            for (i in 0 until detourArr.length()) {
-                val obj = detourArr.getJSONObject(i)
-                val detour = Detour().apply {
-                    id = obj.optInt("id", 0)
-                    desc = obj.optString("desc", "")
-                    val routesArr = obj.optJSONArray("routes")
-                    if (routesArr != null) {
-                        routes = MutableList(routesArr.length()) { k -> routesArr.optInt(k, 0) }
-                    }
-                }
-                detours.add(detour)
-            }
-            detours
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch alerts", e)
-            null
-        }
-    }
 }

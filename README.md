@@ -8,15 +8,15 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 
 - **Real-time arrivals** — live departure countdowns at any stop, per-run bus positions on a map card, pull-to-refresh, and auto-refresh when the app returns to the foreground
 - **Live "What's Nearby" map** — MapLibre GL map of nearby vehicles, stops, and your location on OpenFreeMap vector tiles (no API key required)
-- **Route & stop browser** — routes → directions → stops in an animated 3-tab view
+- **Route & stop browser** — routes → directions → stops in an animated accordion drill-down
 - **Nearby stops** — find stops around your current GPS location
 - **Stop search** — instant client-side search by name
-- **Favorites & recent stops** — saved locally in SQLite
-- **QR code scanning** — scan a TriMet stop QR code to jump straight to arrivals (CameraX + ML Kit barcode scanning); URLs are validated against an allowlist and must be HTTPS
+- **Favorites & recent stops** — saved locally in SQLite; the Home button always lands on the Favorites tab
+- **Floating pill navigation** — a Material 3 Expressive pill bottom bar for Home, Routes, What's Nearby, and Search, with swipeable screens and a Settings button
 - **Service alerts & detours** — active TriMet alerts for the stop and its routes
 - **Picture-in-picture** — mini-window countdown on the arrivals screen (2:3 PiP)
 - **Dynamic theming** — Material 3 with Android 12+ dynamic color; system/light/dark override in Settings
-- **Route-pinned mode** — optional setting to show only the route you arrived from
+- **Route-pinned mode** — optional setting to show only the arrivals for the route you opened the stop from
 
 ## Screenshots
 
@@ -30,12 +30,12 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 
 ## Architecture
 
-13 Gradle modules in four strictly downward layers (no module→app or feature→feature edges):
+12 Gradle modules in four strictly downward layers (no module→app or feature→feature edges):
 
 | Layer | Modules |
 |---|---|
-| `app` | single Activity, Compose Navigation graph, bottom nav, FAB menu, PiP |
-| `feature/*` | `home`, `stops`, `search`, `vehicles`, `arrivals`, `settings`, `qr` — one screen area per module |
+| `app` | single Activity, Compose Navigation graph, floating pill nav + Settings FAB, PiP |
+| `feature/*` | `home`, `stops`, `search`, `vehicles`, `arrivals`, `settings` — one screen area per module |
 | `component/*` | `transit` (TriMet API client: OkHttp + JSON parsing), `localdata` (SQLite favorites/recent stops) |
 | `common/*` | `model` (domain models), `utils` (connectivity, date helpers), `ui` (theme, shared Compose components, cross-screen state) |
 
@@ -72,7 +72,6 @@ No ViewModels, no DI framework, no Room — screens own state with `remember { m
 | Joda-Time (android.joda) | 2.12.1 |
 | Kotlin coroutines | 1.7.3 |
 | MapLibre GL Native (OpenGL backend) | 13.4.1 + OpenFreeMap tiles |
-| CameraX / ML Kit barcode-scanning | 1.4.1 / 17.3.0 |
 
 ## License
 

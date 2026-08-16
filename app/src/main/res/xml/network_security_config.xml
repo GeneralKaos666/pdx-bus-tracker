@@ -3,7 +3,6 @@
     <base-config cleartextTrafficPermitted="false"/>
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">developer.trimet.org</domain>
-        <domain includeSubdomains="true">qr2.it</domain>
         <domain includeSubdomains="true">trimet.org</domain>
     </domain-config>
 </network-security-config>

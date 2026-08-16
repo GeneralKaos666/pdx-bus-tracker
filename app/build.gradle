@@ -11,8 +11,8 @@ android {
         applicationId 'com.trimettransit.tracker'
         minSdk 31
         targetSdk 37
-        versionCode 465
-        versionName "4.6.5"
+        versionCode 470
+        versionName "4.7.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -57,7 +57,7 @@ android {
             excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/LICENSE.txt',
                          'META-INF/NOTICE', 'META-INF/NOTICE.txt']
         }
-        // Prevents Gradle from calling the incompatible x86_64 llvm-strip binary on ML Kit dependencies
+        // Prevents Gradle from calling the incompatible x86_64 llvm-strip binary on native dependencies
         jniLibs {
             doNotStrip "**/*.so"
         }
@@ -72,7 +72,6 @@ dependencies {
     implementation project(':feature:vehicles')
     implementation project(':feature:arrivals')
     implementation project(':feature:settings')
-    implementation project(':feature:qr')
     implementation project(':common:ui')
     implementation project(':common:model')
     implementation project(':component:localdata')
@@ -83,7 +82,7 @@ dependencies {
     // Compose
     implementation platform('androidx.compose:compose-bom:2024.12.01')
     implementation 'androidx.compose.ui:ui'
-    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.material3:material3:1.4.0-alpha12'
     implementation 'androidx.compose.material:material-icons-extended'
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.activity:activity-compose:1.9.3'
@@ -100,14 +99,6 @@ dependencies {
     // Maps (MapLibre GL Native, OpenGL backend — the plain `android-sdk` artifact is Vulkan-only since 13.0)
     implementation 'org.maplibre.gl:android-sdk-opengl:13.4.1'
 
-    // CameraX
-    def camerax_version = "1.4.1"
-    implementation "androidx.camera:camera-camera2:${camerax_version}"
-    implementation "androidx.camera:camera-lifecycle:${camerax_version}"
-    implementation "androidx.camera:camera-view:${camerax_version}"
-
-    // ML Kit barcode scanning (bundled, no Play Services dependency)
-    implementation 'com.google.mlkit:barcode-scanning:17.3.0'
     // Testing
     testImplementation 'junit:junit:4.13.2'
 }

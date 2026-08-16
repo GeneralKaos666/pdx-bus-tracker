@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="activity_qr_scanning_title">Scan QR Code</string>
     <string name="app_name">TriMet Bus Tracker</string>
 </resources>

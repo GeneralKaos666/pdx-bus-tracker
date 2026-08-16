@@ -1,31 +1,39 @@
 package com.trimettransit.tracker.activities
 
 import android.app.PictureInPictureParams
-import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Rational
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import kotlinx.coroutines.launch
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.SideEffect
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
@@ -37,13 +45,13 @@ import androidx.compose.material3.SnackbarHostState
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.feature.arrivals.toggleFavorite
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.SmallFloatingActionButton
-import androidx.compose.material3.Surface
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.IconButton
@@ -76,7 +84,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.draw.rotate
@@ -84,9 +92,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -94,13 +103,14 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.preference.PreferenceManager
-import com.trimettransit.tracker.activities.qr_scanning.QRCameraActivity
 import com.trimettransit.tracker.data.local.DatabaseHelper
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import com.trimettransit.tracker.model.Direction
+import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.feature.arrivals.ArrivalsScreen
 import com.trimettransit.tracker.feature.home.HomeScreen
-import com.trimettransit.tracker.feature.qr.QRLoadingScreen
 import com.trimettransit.tracker.feature.search.SearchStopsScreen
 import com.trimettransit.tracker.feature.settings.SettingsScreen
 import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
@@ -172,36 +182,146 @@ private val AnimatedContentTransitionScope<*>.navExitQuick: ExitTransition
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
     )
 
-private data class BottomNavItem(val route: String, val label: String, val icon: ImageVector)
-
-private val bottomNavItems = listOf(
-    BottomNavItem("home", "Home", Icons.Filled.Home),
-    BottomNavItem("stops", "Routes", Icons.Filled.Map),
-    BottomNavItem("vehicle_positions", "What's Nearby", Icons.Filled.DirectionsBus),
-    BottomNavItem("settings", "Settings", Icons.Filled.Settings),
+private data class BottomNavItem(
+    val pageIndex: Int,
+    val label: String,
+    val icon: ImageVector,
+    val tabIndex: Int = -1
 )
 
+private val bottomNavItems = listOf(
+    BottomNavItem(0, "Home", Icons.Filled.Home),
+    BottomNavItem(1, "Routes", Icons.Filled.Map),
+    BottomNavItem(2, "What's Nearby", Icons.Filled.DirectionsBus),
+    BottomNavItem(3, "Search", Icons.Filled.Search),
+)
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun MainBottomBar(currentRoute: String, onNavigate: (String) -> Unit) {
-    NavigationBar {
-        bottomNavItems.forEach { item ->
-            NavigationBarItem(
-                selected = currentRoute == item.route,
-                onClick = { if (item.route != currentRoute) onNavigate(item.route) },
-                icon = { Icon(item.icon, contentDescription = item.label) },
-                label = { Text(item.label) },
-            )
-        }
+private fun MainBottomBar(
+    topPage: Int,
+    onNavigate: (Int) -> Unit,
+    homePagerState: PagerState,
+    onSettingsClick: () -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    val fontScale = LocalDensity.current.fontScale
+    val scope = rememberCoroutineScope()
+    val items = if (topPage == 0) {
+        listOf(
+            BottomNavItem(0, "Favorites", Icons.Filled.Favorite, tabIndex = 0),
+            BottomNavItem(0, "Recent", Icons.Filled.History, tabIndex = 1)
+        ) + bottomNavItems.filter { it.pageIndex != 0 }
+    } else {
+        bottomNavItems
     }
+    val shouldHideLabel = fontScale > 1.25f || (configuration.screenWidthDp < 400 && items.size > 3)
+
+    HorizontalFloatingToolbar(
+            modifier = Modifier
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            expanded = true,
+            floatingActionButton = {
+                val fabSource = remember { MutableInteractionSource() }
+                FloatingToolbarDefaults.VibrantFloatingActionButton(
+                    onClick = onSettingsClick,
+                    interactionSource = fabSource,
+                    modifier = Modifier.pressScale(fabSource, 0.92f)
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                }
+            },
+            colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
+            content = {
+                items.forEachIndexed { index, item ->
+                    val isSelected = if (item.tabIndex >= 0) {
+                        topPage == 0 && homePagerState.currentPage == item.tabIndex
+                    } else {
+                        topPage == item.pageIndex
+                    }
+
+                    val labelWidth by animateDpAsState(
+                        targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        ),
+                        label = "label_width_$index"
+                    )
+
+                    val spacerWidth by animateDpAsState(
+                        targetValue = if (index < items.size - 1) 8.dp else 0.dp,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        ),
+                        label = "spacer_width_$index"
+                    )
+
+                    IconButton(
+                        onClick = {
+                            if (item.tabIndex >= 0) {
+                                if (homePagerState.currentPage != item.tabIndex) {
+                                    scope.launch { homePagerState.animateScrollToPage(item.tabIndex) }
+                                }
+                            } else if (item.pageIndex != topPage) {
+                                onNavigate(item.pageIndex)
+                            }
+                        },
+                        modifier = Modifier
+                            .width(48.dp + labelWidth)
+                            .height(48.dp),
+                        colors = if (isSelected) {
+                            IconButtonDefaults.filledIconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                            )
+                        } else {
+                            IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label,
+                                tint = if (isSelected) {
+                                    MaterialTheme.colorScheme.onSurface
+                                } else {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                },
+                                modifier = Modifier.size(24.dp)
+                            )
+                            if (isSelected && !shouldHideLabel) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = item.label,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    maxLines = 1,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+
+                    if (index < items.size - 1) {
+                        Spacer(modifier = Modifier.width(spacerWidth))
+                    }
+                }
+            }
+        )
 }
 
 class MainActivity : ComponentActivity() {
-    private var pendingQrUri by mutableStateOf<String?>(null)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        handleIncomingIntent(intent)
         setContent {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
             var themePref by remember { mutableStateOf(prefs.getString("theme", "system") ?: "system") }
@@ -231,24 +351,8 @@ class MainActivity : ComponentActivity() {
                         activity.window, activity.window.decorView
                     ).isAppearanceLightNavigationBars = !isDark
                 }
-                MainAppContent(
-                    incomingQrUri = pendingQrUri,
-                    isDark = isDark,
-                    onQrUriConsumed = { pendingQrUri = null }
-                )
+                MainAppContent(isDark = isDark)
             }
-        }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        handleIncomingIntent(intent)
-    }
-
-    private fun handleIncomingIntent(incoming: Intent) {
-        val qrUri = incoming.getStringExtra("qr_uri")
-        if (qrUri != null) {
-            pendingQrUri = qrUri
         }
     }
 }
@@ -256,21 +360,22 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainAppContent(
-    incomingQrUri: String? = null,
-    isDark: Boolean,
-    onQrUriConsumed: () -> Unit = {}
+    isDark: Boolean
 ) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
     val inPip = rememberIsInPipMode()
     val pipActivity = LocalContext.current.findActivity()
     val context = LocalContext.current
-    var showFabMenu by remember { mutableStateOf(false) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val refreshRotation = remember { Animatable(0f) }
     val currentRoute = currentBackStackEntry?.destination?.route ?: ""
-    val isTopLevel = currentRoute in setOf("home", "stops", "settings", "vehicle_positions")
+    val isTopLevel = currentRoute == "home"
     val outerSnackbarHostState = remember { SnackbarHostState() }
+    val homePagerState = rememberPagerState(pageCount = { 2 })
+    val topPagerState = rememberPagerState(pageCount = { bottomNavItems.size })
+    var selectedStopsRoute by remember { mutableStateOf<Route?>(null) }
+    var selectedStopsDirection by remember { mutableStateOf<Direction?>(null) }
 
     fun navigateToArrivals(stop: Stop, routeId: Int) {
         if (routeId > 0) stop.routeNum = routeId
@@ -282,20 +387,18 @@ private fun MainAppContent(
         )
     }
 
-    LaunchedEffect(incomingQrUri) {
-        if (incomingQrUri != null) {
-            navController.navigate("qr_loading/${URLEncoder.encode(incomingQrUri, "UTF-8")}")
-            onQrUriConsumed()
+    fun onTopPageSelected(page: Int) {
+        scope.launch {
+            if (page == 0 && homePagerState.currentPage != 0) {
+                homePagerState.animateScrollToPage(0)
+            }
+            topPagerState.animateScrollToPage(page)
         }
     }
 
-    fun onBottomNavSelected(route: String) {
-        when (route) {
-            "home" -> navController.navigate("home") { popUpTo("home") { inclusive = true } }
-            "stops" -> navController.navigate("stops") { popUpTo("home") }
-            "vehicle_positions" -> navController.navigate("vehicle_positions") { popUpTo("home") }
-            "settings" -> navController.navigate("settings")
-        }
+    // System back walks the top-level pager back to Home before leaving the app
+    BackHandler(enabled = isTopLevel && topPagerState.currentPage > 0) {
+        scope.launch { topPagerState.animateScrollToPage(0) }
     }
 
     Scaffold(
@@ -314,10 +417,10 @@ private fun MainAppContent(
                     label = "topBar"
                 ) { route ->
                     when {
-                        route == "search" || route == "nearby_stops" -> TopAppBar(
+                        route == "nearby_stops" || route == "settings" -> TopAppBar(
                         title = {
                             Text(
-                                if (route == "search") "Search Stops" else "Nearby Stops"
+                                if (route == "nearby_stops") "Nearby Stops" else "Settings"
                             )
                         },
                         navigationIcon = {
@@ -434,8 +537,12 @@ private fun MainAppContent(
                         fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing))
                 ) {
                     MainBottomBar(
-                        currentRoute = currentRoute,
-                        onNavigate = ::onBottomNavSelected
+                        topPage = topPagerState.currentPage,
+                        onNavigate = ::onTopPageSelected,
+                        homePagerState = homePagerState,
+                        onSettingsClick = {
+                            navController.navigate("settings")
+                        }
                     )
                 }
             },
@@ -462,110 +569,19 @@ private fun MainAppContent(
             },
             floatingActionButton = {
                 AnimatedVisibility(
-                    visible = !currentRoute.startsWith("arrivals/"),
+                    visible = !isTopLevel && currentRoute != "settings",
                     enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
                         slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { it },
                     exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
                         slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it }
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    val fabSource = remember { MutableInteractionSource() }
+                    FloatingActionButton(
+                        onClick = { navController.navigate("settings") },
+                        interactionSource = fabSource,
+                        modifier = Modifier.pressScale(fabSource, 0.92f)
                     ) {
-                        AnimatedVisibility(
-                            visible = showFabMenu,
-                            enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) + slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { it / 2 },
-                            exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) + slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it / 2 }
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                            ) {
-                                Surface(
-                                    shape = MaterialTheme.shapes.small,
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shadowElevation = 4.dp,
-                                    tonalElevation = 2.dp,
-                                    modifier = Modifier
-                                        .padding(end = 12.dp)
-                                        .clearAndSetSemantics { }
-                                ) {
-                                    Text(
-                                        "Scan QR code",
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                val qrFabSource = remember { MutableInteractionSource() }
-                                SmallFloatingActionButton(
-                                    onClick = {
-                                        showFabMenu = false
-                                        context.startActivity(Intent(context, QRCameraActivity::class.java))
-                                    },
-                                    interactionSource = qrFabSource,
-                                    modifier = Modifier.pressScale(qrFabSource, 0.92f)
-                                ) {
-                                    Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR code")
-                                }
-                            }
-                        }
-
-                        AnimatedVisibility(
-                            visible = showFabMenu,
-                            enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) + slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { it / 2 },
-                            exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) + slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it / 2 }
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                            ) {
-                                Surface(
-                                    shape = MaterialTheme.shapes.small,
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shadowElevation = 4.dp,
-                                    tonalElevation = 2.dp,
-                                    modifier = Modifier
-                                        .padding(end = 12.dp)
-                                        .clearAndSetSemantics { }
-                                ) {
-                                    Text(
-                                        "Search stops",
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                val searchFabSource = remember { MutableInteractionSource() }
-                                SmallFloatingActionButton(
-                                    onClick = {
-                                        showFabMenu = false
-                                        navController.navigate("search")
-                                    },
-                                    interactionSource = searchFabSource,
-                                    modifier = Modifier.pressScale(searchFabSource, 0.92f)
-                                ) {
-                                    Icon(Icons.Default.Search, contentDescription = "Search stops")
-                                }
-                            }
-                        }
-
-                        val fabRotation by animateFloatAsState(
-                            targetValue = if (showFabMenu) 45f else 0f,
-                            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
-                        )
-                        val mainFabSource = remember { MutableInteractionSource() }
-                        FloatingActionButton(
-                            onClick = { showFabMenu = !showFabMenu },
-                            interactionSource = mainFabSource,
-                            modifier = Modifier.pressScale(mainFabSource, 0.92f)
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = if (showFabMenu) "Close menu" else "Open menu",
-                                modifier = Modifier.rotate(fabRotation)
-                            )
-                        }
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                 }
             }
@@ -582,40 +598,52 @@ private fun MainAppContent(
                 popExitTransition = { navPopExit }
             ) {
                 composable("home", exitTransition = { navExitQuick }) {
-                    HomeScreen(
-                        onNavigateToArrivals = { stop: Stop ->
-                            navigateToArrivals(stop, stop.routeNum)
+                    HorizontalPager(
+                        state = topPagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        beyondViewportPageCount = 1
+                    ) { page ->
+                        when (page) {
+                            0 -> HomeScreen(
+                                pagerState = homePagerState,
+                                onNavigateToArrivals = { stop: Stop ->
+                                    navigateToArrivals(stop, stop.routeNum)
+                                }
+                            )
+                            1 -> StopsScreen(
+                                selectedRoute = selectedStopsRoute,
+                                selectedDirection = selectedStopsDirection,
+                                onRouteToggle = { route ->
+                                    selectedStopsRoute = if (selectedStopsRoute?.routeId == route.routeId) null else route
+                                    selectedStopsDirection = null
+                                },
+                                onDirectionToggle = { direction ->
+                                    selectedStopsDirection = if (selectedStopsDirection?.dir == direction.dir) null else direction
+                                },
+                                onNavigateToArrivals = { stop: Stop, routeId: Int ->
+                                    navigateToArrivals(stop, routeId)
+                                }
+                            )
+                            2 -> WhatsNearbyScreen(
+                                onNavigateToArrivals = { stop: Stop, _: Int ->
+                                    navigateToArrivals(stop, -1)
+                                }
+                            )
+                            3 -> SearchStopsScreen(
+                                onNavigateToArrivals = { stop: Stop, _: Int ->
+                                    navigateToArrivals(stop, stop.routeNum)
+                                }
+                            )
                         }
-                    )
-                }
-                composable("stops", exitTransition = { navExitQuick }) {
-                    StopsScreen(
-                        onNavigateToArrivals = { stop: Stop, routeId: Int ->
-                            navigateToArrivals(stop, routeId)
-                        }
-                    )
+                    }
                 }
                 composable("settings") {
                     SettingsScreen()
-                }
-                composable("search") {
-                    SearchStopsScreen(
-                        onNavigateToArrivals = { stop: Stop, _: Int ->
-                            navigateToArrivals(stop, stop.routeNum)
-                        }
-                    )
                 }
                 composable("nearby_stops") {
                     NearbyStopsScreen(
                         onNavigateToArrivals = { stop: Stop, routeId: Int ->
                             navigateToArrivals(stop, routeId)
-                        }
-                    )
-                }
-                composable("vehicle_positions") {
-                    WhatsNearbyScreen(
-                        onNavigateToArrivals = { stop: Stop, _: Int ->
-                            navigateToArrivals(stop, -1)
                         }
                     )
                 }
@@ -636,23 +664,6 @@ private fun MainAppContent(
                         routeId = backStackEntry.arguments?.getInt("routeId") ?: -1,
                         latitude = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0,
                         longitude = backStackEntry.arguments?.getString("lng")?.toDoubleOrNull() ?: 0.0,
-                    )
-                }
-                composable(
-                    route = "qr_loading/{qrUri}",
-                    arguments = listOf(
-                        navArgument("qrUri") { type = NavType.StringType }
-                    )
-                ) { backStackEntry ->
-                    val qrUri = backStackEntry.arguments?.getString("qrUri") ?: return@composable
-                    QRLoadingScreen(
-                        qrUri = qrUri,
-                        onNavigateBack = { navController.popBackStack() },
-                        onStopResolved = { stopId: Int ->
-                            navController.navigate("arrivals/$stopId?stopName=QR+Stop&routeId=-1") {
-                                popUpTo("qr_loading/{qrUri}") { inclusive = true }
-                            }
-                        }
                     )
                 }
             }
