@@ -19,6 +19,10 @@
 - The About card's version string is now read live from `PackageManager` instead of a hardcoded `BuildConfig.VERSION_NAME` that had frozen at 4.6.5 — it can no longer drift from the installed APK (the settings module's `buildConfig` feature was removed).
   (`feature/settings/SettingsScreen.kt`; `feature/settings/build.gradle`)
 
+### Official TriMet logo icon
+- The launcher icon is now TriMet's official brand mark — an orange (`#E0651F`) disc with the three white strokes of the "T" swirl logo — adapted from the public-domain `TriMet logo 2.svg` (the same logo trimet.org uses). The old white bus glyph on dark blue is gone. The strokes are exact copies of the official vector's bezier paths, so the icon matches the brand mark pixel-for-pixel; the monochrome layer still reuses them for themed icons.
+  (`app/src/main/res/values/colors.xml`; `ic_launcher_background.xml` / `ic_launcher_foreground.xml`)
+
 ### Housekeeping
 - The TriMet base route URL is resolved once via `stringResource` instead of per-composable `context.getString` calls in Search and the Stops screens.
   (`feature/search/SearchStopsScreen.kt`; `feature/stops/StopsScreen.kt`, `StopsRouteList.kt`)
