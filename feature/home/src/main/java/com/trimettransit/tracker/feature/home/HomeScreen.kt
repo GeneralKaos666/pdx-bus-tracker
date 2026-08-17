@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.ui.components.rememberOnResume
+import com.trimettransit.tracker.ui.components.RememberOnResume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -55,7 +55,7 @@ fun HomeScreen(
 
     // Auto-refresh both tabs on app re-entry (observer replays ON_RESUME synchronously
     // when already resumed, so this replaces LaunchedEffect for the initial load too)
-    rememberOnResume {
+    RememberOnResume {
         if (hasLoaded) {
             isLoadingFavorites = true
             isLoadingRecent = true

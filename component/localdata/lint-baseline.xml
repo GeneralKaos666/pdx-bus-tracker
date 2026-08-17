@@ -1,15 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <issues format="6" by="lint 9.3.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.3.1)" variant="all" version="9.3.1">
 
-    <issue
-        id="GradleDependency"
-        message="A newer version of com.google.android.material:material than 1.12.0 is available: 1.14.0"
-        errorLine1="    implementation &apos;com.google.android.material:material:1.12.0&apos;"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="build.gradle"
-            line="26"
-            column="20"/>
-    </issue>
-
 </issues>

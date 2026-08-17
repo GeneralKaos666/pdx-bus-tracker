@@ -29,6 +29,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Home
@@ -93,9 +96,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
@@ -210,8 +213,9 @@ private fun MainBottomBar(
     onBackClick: () -> Unit = {},
     onTabClick: (Int) -> Unit = {}
 ) {
-    val configuration = LocalConfiguration.current
-    val fontScale = LocalDensity.current.fontScale
+    val windowInfo = LocalWindowInfo.current
+    val density = LocalDensity.current
+    val fontScale = density.fontScale
     val items = if (topPage == 0) {
         listOf(
             BottomNavItem(0, "Favorites", Icons.Filled.Favorite, tabIndex = 0),
@@ -220,7 +224,8 @@ private fun MainBottomBar(
     } else {
         bottomNavItems
     }
-    val shouldHideLabel = fontScale > 1.25f || (configuration.screenWidthDp < 400 && items.size > 3)
+    val shouldHideLabel = fontScale > 1.25f ||
+            (windowInfo.containerSize.width < with(density) { 400.dp.roundToPx() } && items.size > 3)
 
     Box(
         modifier = Modifier
@@ -494,15 +499,29 @@ private fun MainAppContent(
                         },
                         actions = {
                             val pipSource = remember { MutableInteractionSource() }
+                            var pipButtonRect by remember { mutableStateOf<android.graphics.Rect?>(null) }
                             IconButton(
                                 onClick = {
                                     val params = PictureInPictureParams.Builder()
                                         .setAspectRatio(Rational(2, 3))
+                                        .setAutoEnterEnabled(true)
+                                        .apply { pipButtonRect?.let { setSourceRectHint(it) } }
                                         .build()
+                                    pipActivity.setPictureInPictureParams(params)
                                     pipActivity.enterPictureInPictureMode(params)
                                 },
                                 interactionSource = pipSource,
-                                modifier = Modifier.pressScale(pipSource)
+                                modifier = Modifier
+                                    .pressScale(pipSource)
+                                    .onGloballyPositioned { coords ->
+                                        val pos = coords.positionInWindow()
+                                        pipButtonRect = android.graphics.Rect(
+                                            pos.x.roundToInt(),
+                                            pos.y.roundToInt(),
+                                            (pos.x + coords.size.width).roundToInt(),
+                                            (pos.y + coords.size.height).roundToInt()
+                                        )
+                                    }
                             ) {
                                 Icon(
                                     Icons.Outlined.PictureInPictureAlt,

@@ -52,7 +52,7 @@ import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.LoadingState
 import com.trimettransit.tracker.ui.components.StopListItem
-import com.trimettransit.tracker.ui.components.rememberOnResume
+import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 
 import kotlinx.coroutines.CancellationException
@@ -122,7 +122,7 @@ fun NearbyStopsScreen(
     }
 
     // Re-fetch on app re-entry
-    rememberOnResume {
+    RememberOnResume {
         if (hasLoaded) {
             stops = null
             loadIfPermissionGranted()

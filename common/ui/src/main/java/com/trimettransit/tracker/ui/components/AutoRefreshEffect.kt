@@ -9,7 +9,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 
 @Composable
-fun rememberOnResume(onResume: () -> Unit) {
+fun RememberOnResume(onResume: () -> Unit) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnResume by rememberUpdatedState(onResume)
     DisposableEffect(lifecycleOwner) {

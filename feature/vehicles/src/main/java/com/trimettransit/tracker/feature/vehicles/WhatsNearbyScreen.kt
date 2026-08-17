@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,7 +46,7 @@ import com.trimettransit.tracker.model.VehiclePosition
 import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.LoadingState
-import com.trimettransit.tracker.ui.components.rememberOnResume
+import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.transitBadgeLetter
 import com.trimettransit.tracker.ui.components.transitBadgeLetters
 import com.trimettransit.tracker.ui.components.transitColor
@@ -112,7 +113,7 @@ fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
     var hasLoaded by remember { mutableStateOf(false) }
     var myLocation by remember { mutableStateOf<LatLng?>(null) }
     // Age (device time) of the current fix; 0 when no fix has been acquired yet.
-    var myLocationAgeMs by remember { mutableStateOf(0L) }
+    var myLocationAgeMs by remember { mutableLongStateOf(0L) }
     // In-flight jobs, deduped so resume/re-entry can't stack overlapping fetches.
     var vehiclesJob by remember { mutableStateOf<Job?>(null) }
     var stopsJob by remember { mutableStateOf<Job?>(null) }
@@ -223,7 +224,7 @@ fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
     }
 
     // Re-fetch on app re-entry
-    rememberOnResume {
+    RememberOnResume {
         if (hasLoaded) {
             loadVehicles()
             loadStopsNearby()

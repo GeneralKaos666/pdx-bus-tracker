@@ -11,8 +11,8 @@ android {
         applicationId 'com.trimettransit.tracker'
         minSdk 31
         targetSdk 37
-        versionCode 480
-        versionName "4.8.0"
+        versionCode 481
+        versionName "4.8.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -30,6 +30,7 @@ android {
         release {
             signingConfig = signingConfigs.release
             minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
@@ -45,6 +46,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 
     lint {
@@ -78,7 +80,7 @@ dependencies {
 
     // AndroidX Core
     implementation 'androidx.core:core:1.19.0'
-    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.appcompat:appcompat:1.8.0'
     // Compose
     implementation platform('androidx.compose:compose-bom:2026.08.00')
     implementation 'androidx.compose.ui:ui'
@@ -98,6 +100,9 @@ dependencies {
 
     // Maps (MapLibre GL Native, OpenGL backend — the plain `android-sdk` artifact is Vulkan-only since 13.0)
     implementation 'org.maplibre.gl:android-sdk-opengl:13.5.0'
+
+    // Logging (Timber tree planted in TrimetTransitTracker)
+    implementation 'com.jakewharton.timber:timber:5.0.1'
 
     // Testing
     testImplementation 'junit:junit:4.13.2'

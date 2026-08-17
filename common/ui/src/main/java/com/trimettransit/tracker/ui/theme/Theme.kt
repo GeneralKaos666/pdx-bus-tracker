@@ -1,7 +1,6 @@
 package com.trimettransit.tracker.ui.theme
 
 import android.graphics.Color as AndroidColor
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -135,7 +134,7 @@ fun TriMetGoTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        dynamicColor -> {
             val context = LocalContext.current
             val base = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
             val saturatedScheme = remember(base) { base.withVibrantColors() }

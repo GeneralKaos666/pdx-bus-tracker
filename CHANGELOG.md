@@ -27,6 +27,23 @@
 - The TriMet base route URL is resolved once via `stringResource` instead of per-composable `context.getString` calls in Search and the Stops screens.
   (`feature/search/SearchStopsScreen.kt`; `feature/stops/StopsScreen.kt`, `StopsRouteList.kt`)
 
+### Bug fixes & cleanup (4.8.1)
+- **Lint baselines cleared:** every one of the 38 baselined lint issues across all 12 modules is fixed — all `lint-baseline.xml` files are now empty and the full CI gate (`clean test lint assembleDebug`) passes with no warnings.
+- **Pictures-in-picture:** pressing Home (or swiping away) while on the Arrivals screen now auto-enters PiP with the countdown still visible; the PiP entry animation zooms from the mini-window button itself. The manual button still works.
+  (`app/.../activities/MainActivity.kt`)
+- **State correctness:** lat/lng, tracking IDs, and the alerts-bar alpha now use primitive state (`mutableDoubleStateOf`/`mutableIntStateOf`/`mutableFloatStateOf`) instead of boxed `mutableStateOf`, and the location age in What's Nearby uses `mutableLongStateOf` — no autoboxing churn on every recomposition.
+  (`common/ui/.../NavState.kt`; `feature/arrivals/ArrivalsScreen.kt`; `feature/vehicles/WhatsNearbyScreen.kt`)
+- **Logging:** migrated the last two `android.util.Log` calls to Timber (5.0.1), now planted in `TrimetTransitTracker.onCreate` when debuggable; `TAG` constants are gone.
+  (`app/.../TrimetTransitTracker.kt`; `feature/arrivals/ArrivalsScreen.kt`)
+- **Modernized APIs:** `Bitmap.createBitmap` → core-ktx `createBitmap` (×3); `Configuration.screenWidthDp` → `LocalWindowInfo.current.containerSize` for the bottom-pill label hide threshold (same 400dp behavior); dead pre-minSdk-31 `SDK_INT` branches removed; the map's touch-consumer now calls `performClick()` (accessibility).
+  (`feature/arrivals/ArrivalsScreen.kt`; `app/.../activities/MainActivity.kt`; `common/ui/.../theme/Theme.kt`; `common/utils/.../ConnectionUtils.kt`)
+- **Manifest & resources:** removed the redundant activity label and `enableOnBackInvokedCallback`; added `android:dataExtractionRules` (backup/transfer stay disabled, matching `allowBackup="false"`); merged `mipmap-anydpi-v26` into `mipmap-anydpi` (minSdk 31 makes the qualifier dead); deleted the unused `trimet_blue_dark` color; declared `ACCESS_NETWORK_STATE` in `common:utils` so the offline check is permission-visible at the module level.
+  (`app/.../AndroidManifest.xml`, `app/src/main/res/`; `common/utils/.../AndroidManifest.xml`)
+- **Dependencies:** Gradle wrapper 9.5.0 → 9.7.0, appcompat 1.7.0 → 1.8.0, core 1.15.0 → 1.19.0 (feature/home), Timber 5.0.1 added; release builds now also shrink resources (`shrinkResources true`).
+  (`gradle/wrapper/`; `app/build.gradle`, `feature/home/build.gradle`, `feature/arrivals/build.gradle`)
+- **Conventions:** `rememberOnResume` renamed to `RememberOnResume` (Compose naming rule); `LoadingState`/`StopMapCard`/`ArrivalItem` modifier params moved first; the arrivals list's odd indentation fixed.
+  (`common/ui/.../components/AutoRefreshEffect.kt`, `StateComponents.kt`; `feature/arrivals/ArrivalsScreen.kt`, `feature/home/HomeScreen.kt`, `feature/stops/NearbyStopsScreen.kt`, `feature/vehicles/WhatsNearbyScreen.kt`)
+
 ## What's New in v4.7.0
 
 ### Floating navigation pill

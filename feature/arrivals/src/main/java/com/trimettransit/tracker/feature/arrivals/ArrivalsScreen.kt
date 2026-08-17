@@ -4,7 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.util.Log
+import android.view.MotionEvent
+import timber.log.Timber
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -53,6 +54,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,6 +77,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -92,7 +97,7 @@ import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.LoadingState
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberIsInPipMode
-import com.trimettransit.tracker.ui.components.rememberOnResume
+import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.transitBadgeLetter
 import com.trimettransit.tracker.ui.components.transitBadgeLetters
@@ -134,7 +139,6 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
 
-private const val TAG = "ArrivalsScreen"
 private const val POSITION_REFRESH_MS = 30_000L
 private const val STOP_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 
@@ -156,14 +160,14 @@ fun ArrivalsScreen(
     var showAlertsExpanded by remember { mutableStateOf(false) }
     var showAllArrivals by remember { mutableStateOf(false) }
     var trackingKey by remember { mutableStateOf<String?>(null) }
-    var trackingRouteId by remember { mutableStateOf(-1) }
+    var trackingRouteId by remember { mutableIntStateOf(-1) }
     var trackingSign by remember { mutableStateOf("") }
-    var trackingVehicleId by remember { mutableStateOf(0) }
+    var trackingVehicleId by remember { mutableIntStateOf(0) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
     val locId = stopId.toIntOrNull() ?: 0
-    var stopLat by remember { mutableStateOf(latitude) }
-    var stopLng by remember { mutableStateOf(longitude) }
+    var stopLat by remember { mutableDoubleStateOf(latitude) }
+    var stopLng by remember { mutableDoubleStateOf(longitude) }
     var isLoadingStop by remember { mutableStateOf(false) }
     val hasValidCoords = !isLoadingStop && stopLat != 0.0 && stopLng != 0.0
 
@@ -185,7 +189,7 @@ fun ArrivalsScreen(
             }
             isLoadingStop = false
             if (stopLat == 0.0 || stopLng == 0.0) {
-                Log.w(TAG, "Stop #$locId has zero coordinates after fallback — map hidden")
+                Timber.w("Stop #$locId has zero coordinates after fallback — map hidden")
             }
         }
     }
@@ -229,7 +233,7 @@ fun ArrivalsScreen(
     }
 
     // Re-fetch arrivals on app re-entry (and initial composition via lifecycle observer)
-    rememberOnResume { loadArrivals() }
+    RememberOnResume { loadArrivals() }
     val totalRouteCount = unfilteredArrivals.map { it.routeId }.distinct().size
     val visibleCount = minOf(arrivals.size, 5)
     val showExpandButton = totalRouteCount > 1 && unfilteredArrivals.size > visibleCount
@@ -302,7 +306,7 @@ fun ArrivalsScreen(
     AutoHideBottomBarEffect(listState)
 
     // Fade the alerts card out as it slides above the viewport top
-    var alertsBarAlpha by remember { mutableStateOf(1f) }
+    var alertsBarAlpha by remember { mutableFloatStateOf(1f) }
     LaunchedEffect(listState) {
         snapshotFlow {
             val item = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == "alerts" }
@@ -494,11 +498,11 @@ fun ArrivalsScreen(
                             }
 
                             val visibleArrivals =
-                                        if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
-                                    items(
-                                        visibleArrivals,
-                                        key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" },
-                                        contentType = { "arrival" }) { arrival ->
+                                if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
+                            items(
+                                visibleArrivals,
+                                key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" },
+                                contentType = { "arrival" }) { arrival ->
                                         val rowKey =
                                             "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}"
                                         Column {
@@ -612,11 +616,11 @@ private fun StopMapCard(
     lat: Double,
     lng: Double,
     stopName: String,
+    modifier: Modifier = Modifier,
     blockPositions: List<BlockPosition> = emptyList(),
     arrivals: List<Arrival> = emptyList(),
     headerText: String? = null,
     onClose: (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
     showHeader: Boolean = true
 ) {
     val mapState = remember { MapState() }
@@ -755,7 +759,10 @@ private fun StopMapCard(
                         // Consume single-finger touches at View level to prevent
                         // propagation to Compose parent gesture handlers
                         // (pull-to-refresh, nav drawer). Multi-touch zoom unaffected.
-                        setOnTouchListener { _, event -> event.pointerCount < 2 }
+                        setOnTouchListener { _, event ->
+                            if (event.actionMasked == MotionEvent.ACTION_UP) performClick()
+                            event.pointerCount < 2
+                        }
                         // MapLibre requires onStart() before it activates its file source
                         // (network). post() guarantees the view is attached first.
                         post { onStart() }
@@ -845,13 +852,13 @@ private class MapState {
 private fun drawableBitmap(context: Context, resId: Int, sizePx: Int): Bitmap {
     val d = ContextCompat.getDrawable(context, resId)
     return d?.toBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-        ?: Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        ?: createBitmap(1, 1, Bitmap.Config.ARGB_8888)
 }
 
 /** Colored circle badge with a white transit glyph, used as the bus marker image. */
 private fun badgeBitmap(context: Context, fillColor: Int, glyphRes: Int, density: Float): Bitmap {
     val size = (34 * density).toInt()
-    val out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val c = Canvas(out)
     c.drawCircle(
         size / 2f,
@@ -866,7 +873,7 @@ private fun badgeBitmap(context: Context, fillColor: Int, glyphRes: Int, density
 /** Primary-colored dot with a white center, used as the stop marker image. */
 private fun stopDotBitmap(context: Context, fillColor: Int, density: Float): Bitmap {
     val size = (34 * density).toInt()
-    val out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val c = Canvas(out)
     c.drawCircle(
         size / 2f,
@@ -909,8 +916,8 @@ private fun fitIfNeeded(
 private fun ArrivalItem(
     arrival: Arrival,
     context: Context,
-    onClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     val type = transitBadgeLetter(arrival.routeId)
     val scheme = MaterialTheme.colorScheme
@@ -1097,7 +1104,7 @@ suspend fun toggleFavorite(
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to toggle favorite", e)
+            Timber.e(e, "Failed to toggle favorite")
             false to "Failed to update favorite"
         }
     }
