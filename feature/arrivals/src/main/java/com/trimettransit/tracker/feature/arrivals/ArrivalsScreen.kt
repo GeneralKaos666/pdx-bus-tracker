@@ -46,7 +46,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -58,10 +57,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -152,7 +153,7 @@ fun ArrivalsScreen(
     var detours by remember { mutableStateOf<List<Detour>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
-    var showAlertsSheet by remember { mutableStateOf(false) }
+    var showAlertsExpanded by remember { mutableStateOf(false) }
     var showAllArrivals by remember { mutableStateOf(false) }
     var trackingKey by remember { mutableStateOf<String?>(null) }
     var trackingRouteId by remember { mutableStateOf(-1) }
@@ -300,14 +301,38 @@ fun ArrivalsScreen(
     val listState = rememberLazyListState()
     AutoHideBottomBarEffect(listState)
 
+    // Fade the alerts card out as it slides above the viewport top
+    var alertsBarAlpha by remember { mutableStateOf(1f) }
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val item = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == "alerts" }
+            (item?.offset ?: 0) to (item?.size ?: 0)
+        }.collect { (offset, size) ->
+            if (offset < 0 && size > 0) {
+                alertsBarAlpha = (1f + offset.toFloat() / size).coerceIn(0f, 1f)
+            } else {
+                alertsBarAlpha = 1f
+            }
+        }
+    }
+
+    // Auto-collapse the alerts dropdown once the card has scrolled out of view
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo.any { it.key == "alerts" }
+        }.collect { visible ->
+            if (!visible && showAlertsExpanded) showAlertsExpanded = false
+        }
+    }
+
     val inPip = rememberIsInPipMode()
 
-    // PiP: keep the countdown live; drop the map card and alerts sheet
+    // PiP: keep the countdown live; drop the map card and alerts dropdown
     // (they cannot render usefully in the small window).
     LaunchedEffect(inPip) {
         if (inPip) {
             trackingKey = null
-            showAlertsSheet = false
+            showAlertsExpanded = false
             while (true) {
                 delay(POSITION_REFRESH_MS)
                 loadArrivals()
@@ -360,24 +385,115 @@ fun ArrivalsScreen(
 
                 else -> {
                     ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            Column {
-                                LazyColumn(
-                                    state = listState,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxSize(),
-                                    flingBehavior = smoothFling,
-                                    contentPadding = PaddingValues(
-                                        start = 12.dp,
-                                        end = 12.dp,
-                                        top = 8.dp
-                                    ),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            flingBehavior = smoothFling,
+                            contentPadding = PaddingValues(
+                                start = 12.dp,
+                                end = 12.dp,
+                                top = 8.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (detours.isNotEmpty()) {
+                                item(key = "alerts", contentType = "alerts") {
+                                    val interactionSource =
+                                        remember { MutableInteractionSource() }
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .graphicsLayer { alpha = alertsBarAlpha },
+                                        shape = MaterialTheme.shapes.large,
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.errorContainer
+                                        )
+                                    ) {
+                                        Column {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .pressScale(interactionSource)
+                                                    .clickable(
+                                                        interactionSource = interactionSource,
+                                                        indication = LocalIndication.current
+                                                    ) { showAlertsExpanded = !showAlertsExpanded }
+                                                    .padding(
+                                                        horizontal = 16.dp,
+                                                        vertical = 12.dp
+                                                    ),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Warning,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                                Spacer(Modifier.width(8.dp))
+                                                Text(
+                                                    text = "Alerts (${detours.size})",
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                val alertsArrowRotation by animateFloatAsState(
+                                                    targetValue = if (showAlertsExpanded) 180f else 0f,
+                                                    animationSpec = tween(
+                                                        durationMillis = 350,
+                                                        easing = FastOutSlowInEasing
+                                                    )
+                                                )
+                                                Icon(
+                                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                                    contentDescription = if (showAlertsExpanded) "Hide alerts"
+                                                    else "Show alerts",
+                                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                                    modifier = Modifier.rotate(
+                                                        alertsArrowRotation
+                                                    )
+                                                )
+                                            }
+                                            AnimatedVisibility(
+                                                visible = showAlertsExpanded,
+                                                enter = expandVertically() + fadeIn(),
+                                                exit = shrinkVertically() + fadeOut()
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier.padding(
+                                                        start = 16.dp,
+                                                        end = 16.dp,
+                                                        bottom = 12.dp
+                                                    )
+                                                ) {
+                                                    detours.forEach { detour ->
+                                                        Row(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .padding(bottom = 8.dp),
+                                                            verticalAlignment = Alignment.Top
+                                                        ) {
+                                                            Text(
+                                                                text = "\u2022",
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                                                modifier = Modifier.padding(end = 8.dp)
+                                                            )
+                                                            Text(
+                                                                text = detour.desc,
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                color = MaterialTheme.colorScheme.onErrorContainer
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
 
-
-                                    val visibleArrivals =
+                            val visibleArrivals =
                                         if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
                                     items(
                                         visibleArrivals,
@@ -474,110 +590,6 @@ fun ArrivalsScreen(
                                         }
                                     }
                                 }
-
-                                AnimatedVisibility(
-                                    visible = detours.isNotEmpty(),
-                                    enter = expandVertically(
-                                        expandFrom = Alignment.Top,
-                                        animationSpec = tween(
-                                            durationMillis = 200,
-                                            easing = FastOutSlowInEasing
-                                        )
-                                    ) +
-                                            fadeIn(
-                                                tween(
-                                                    durationMillis = 200,
-                                                    easing = FastOutSlowInEasing
-                                                )
-                                            ),
-                                    exit = shrinkVertically(
-                                        shrinkTowards = Alignment.Top,
-                                        animationSpec = tween(
-                                            durationMillis = 150,
-                                            easing = FastOutSlowInEasing
-                                        )
-                                    ) +
-                                            fadeOut(
-                                                tween(
-                                                    durationMillis = 150,
-                                                    easing = FastOutSlowInEasing
-                                                )
-                                            )
-                                ) {
-                                    val interactionSource = remember { MutableInteractionSource() }
-                                    Surface(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = MaterialTheme.shapes.large,
-                                        color = MaterialTheme.colorScheme.errorContainer
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .pressScale(interactionSource)
-                                                .clickable(
-                                                    interactionSource = interactionSource,
-                                                    indication = LocalIndication.current
-                                                ) { showAlertsSheet = true }
-                                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = "Alerts (${detours.size})",
-                                                style = MaterialTheme.typography.labelLarge,
-                                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                            Icon(
-                                                imageVector = Icons.Default.Warning,
-                                                contentDescription = "Show alerts",
-                                                tint = MaterialTheme.colorScheme.onErrorContainer,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (showAlertsSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showAlertsSheet = false },
-            containerColor = MaterialTheme.colorScheme.errorContainer,
-            contentColor = MaterialTheme.colorScheme.onErrorContainer
-        ) {
-            Column(
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp)
-            ) {
-                Text(
-                    text = "Alerts (${detours.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-                detours.forEach { detour ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Text(
-                            text = "\u2022",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                        Text(
-                            text = detour.desc,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
                     }
                 }
             }
