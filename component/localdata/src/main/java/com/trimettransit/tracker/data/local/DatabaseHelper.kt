@@ -1,3 +1,5 @@
+@file:Suppress("Annotator", "Annotator", "Annotator")
+
 package com.trimettransit.tracker.data.local
 
 import android.content.ContentValues

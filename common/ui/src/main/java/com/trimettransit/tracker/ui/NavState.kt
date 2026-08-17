@@ -12,6 +12,9 @@ object NavState {
     var arrivalsLng by mutableStateOf(0.0)
     var arrivalsOnRefresh by mutableStateOf<(() -> Unit)?>(null)
 
+    // Bottom bar scroll-hide bridge — written by AutoHideBottomBarEffect, read by the outer scaffold
+    var bottomBarVisible by mutableStateOf(true)
+
     fun clearArrivals() {
         arrivalsStopName = ""
         arrivalsIsFavorite = false

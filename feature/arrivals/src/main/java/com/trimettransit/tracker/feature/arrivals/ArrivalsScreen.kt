@@ -1,37 +1,47 @@
 package com.trimettransit.tracker.feature.arrivals
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.ui.draw.rotate
-import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,72 +51,64 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.transit.TransitApi
-import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
-import com.trimettransit.tracker.ui.components.rememberIsInPipMode
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.trimettransit.tracker.ui.NavState
+import com.trimettransit.tracker.ui.components.AutoHideBottomBarEffect
 import com.trimettransit.tracker.ui.components.ContentEntrance
-import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.LoadingState
+import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import com.trimettransit.tracker.ui.components.rememberOnResume
-import com.trimettransit.tracker.util.formatDateTime
-import com.trimettransit.tracker.util.minutesUntil
+import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.transitBadgeLetter
 import com.trimettransit.tracker.ui.components.transitBadgeLetters
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitTypeLabel
-import androidx.compose.ui.res.painterResource
+import com.trimettransit.tracker.util.formatDateTime
+import com.trimettransit.tracker.util.minutesUntil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.viewinterop.AndroidView
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
-import androidx.compose.ui.platform.LocalDensity
-import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
-import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.maps.MapView
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory.iconAllowOverlap
@@ -130,7 +132,6 @@ import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
-import androidx.compose.ui.graphics.toArgb
 
 private const val TAG = "ArrivalsScreen"
 private const val POSITION_REFRESH_MS = 30_000L
@@ -144,8 +145,7 @@ fun ArrivalsScreen(
     routeId: Int,
     latitude: Double = 0.0,
     longitude: Double = 0.0,
-)
-{
+) {
     val context = LocalContext.current
     var arrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
     var blockPositions by remember { mutableStateOf<List<BlockPosition>>(emptyList()) }
@@ -297,6 +297,8 @@ fun ArrivalsScreen(
         }
     }
     val smoothFling = rememberSmoothFlingBehavior()
+    val listState = rememberLazyListState()
+    AutoHideBottomBarEffect(listState)
 
     val inPip = rememberIsInPipMode()
 
@@ -358,133 +360,184 @@ fun ArrivalsScreen(
 
                 else -> {
                     ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Column {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f).fillMaxSize(),
-                            flingBehavior = smoothFling,
-                            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-
-
-                        val visibleArrivals = if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
-                        items(visibleArrivals, key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" }, contentType = { "arrival" }) { arrival ->
-                            val rowKey = "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}"
+                        Box(modifier = Modifier.fillMaxSize()) {
                             Column {
-                                ArrivalItem(
-                                    arrival = arrival,
-                                    context = context,
-                                    onClick = {
-                                        if (hasValidCoords) {
-                                            if (trackingKey == rowKey) {
-                                                trackingKey = null              // tap the tracked row again to close
-                                            } else {
-                                                trackingKey = rowKey            // opens under this row; switches if another row is tracked
-                                                trackingRouteId = arrival.routeId
-                                                trackingSign = arrival.shortSign
-                                                trackingVehicleId = arrival.vehicleID
+                                LazyColumn(
+                                    state = listState,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxSize(),
+                                    flingBehavior = smoothFling,
+                                    contentPadding = PaddingValues(
+                                        start = 12.dp,
+                                        end = 12.dp,
+                                        top = 8.dp
+                                    ),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+
+
+                                    val visibleArrivals =
+                                        if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
+                                    items(
+                                        visibleArrivals,
+                                        key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" },
+                                        contentType = { "arrival" }) { arrival ->
+                                        val rowKey =
+                                            "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}"
+                                        Column {
+                                            ArrivalItem(
+                                                arrival = arrival,
+                                                context = context,
+                                                onClick = {
+                                                    if (hasValidCoords) {
+                                                        if (trackingKey == rowKey) {
+                                                            trackingKey =
+                                                                null              // tap the tracked row again to close
+                                                        } else {
+                                                            trackingKey =
+                                                                rowKey            // opens under this row; switches if another row is tracked
+                                                            trackingRouteId = arrival.routeId
+                                                            trackingSign = arrival.shortSign
+                                                            trackingVehicleId = arrival.vehicleID
+                                                        }
+                                                    }
+                                                },
+                                                modifier = Modifier.animateItem()
+                                            )
+                                            AnimatedVisibility(
+                                                visible = trackingKey == rowKey,
+                                                enter = expandVertically() + fadeIn(),
+                                                exit = shrinkVertically() + fadeOut()
+                                            ) {
+                                                StopMapCard(
+                                                    lat = stopLat,
+                                                    lng = stopLng,
+                                                    stopName = stopName,
+                                                    blockPositions = trackedPositions,
+                                                    arrivals = arrivals,
+                                                    headerText = trackingSign.ifBlank { stopName },
+                                                    onClose = { trackingKey = null }
+                                                )
                                             }
                                         }
-                                    },
-                                    modifier = Modifier.animateItem()
-                                )
-                                AnimatedVisibility(
-                                    visible = trackingKey == rowKey,
-                                    enter = expandVertically() + fadeIn(),
-                                    exit = shrinkVertically() + fadeOut()
-                                ) {
-                                    StopMapCard(
-                                        lat = stopLat,
-                                        lng = stopLng,
-                                        stopName = stopName,
-                                        blockPositions = trackedPositions,
-                                        arrivals = arrivals,
-                                        headerText = trackingSign.ifBlank { stopName },
-                                        onClose = { trackingKey = null }
-                                    )
-                                }
-                            }
-                        }
+                                    }
 
-                        if (showExpandButton) {
-                            item(key = "showAll", contentType = "showAll") {
-                                val interactionSource = remember { MutableInteractionSource() }
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = MaterialTheme.shapes.large,
-                                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                                    if (showExpandButton) {
+                                        item(key = "showAll", contentType = "showAll") {
+                                            val interactionSource =
+                                                remember { MutableInteractionSource() }
+                                            Surface(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                shape = MaterialTheme.shapes.large,
+                                                color = MaterialTheme.colorScheme.surfaceContainerLow
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .pressScale(interactionSource)
+                                                        .clickable(
+                                                            interactionSource = interactionSource,
+                                                            indication = LocalIndication.current
+                                                        ) { showAllArrivals = !showAllArrivals }
+                                                        .padding(
+                                                            horizontal = 16.dp,
+                                                            vertical = 12.dp
+                                                        ),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = if (showAllArrivals) "Show fewer"
+                                                        else "Show all arrivals (${unfilteredArrivals.size - visibleCount} more)",
+                                                        style = MaterialTheme.typography.labelLarge,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                    val showAllArrowRotation by animateFloatAsState(
+                                                        targetValue = if (showAllArrivals) 180f else 0f,
+                                                        animationSpec = tween(
+                                                            durationMillis = 350,
+                                                            easing = FastOutSlowInEasing
+                                                        )
+                                                    )
+                                                    Icon(
+                                                        imageVector = Icons.Default.KeyboardArrowDown,
+                                                        contentDescription = if (showAllArrivals) "Collapse arrivals"
+                                                        else "Expand arrivals",
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.rotate(
+                                                            showAllArrowRotation
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                AnimatedVisibility(
+                                    visible = detours.isNotEmpty(),
+                                    enter = expandVertically(
+                                        expandFrom = Alignment.Top,
+                                        animationSpec = tween(
+                                            durationMillis = 200,
+                                            easing = FastOutSlowInEasing
+                                        )
+                                    ) +
+                                            fadeIn(
+                                                tween(
+                                                    durationMillis = 200,
+                                                    easing = FastOutSlowInEasing
+                                                )
+                                            ),
+                                    exit = shrinkVertically(
+                                        shrinkTowards = Alignment.Top,
+                                        animationSpec = tween(
+                                            durationMillis = 150,
+                                            easing = FastOutSlowInEasing
+                                        )
+                                    ) +
+                                            fadeOut(
+                                                tween(
+                                                    durationMillis = 150,
+                                                    easing = FastOutSlowInEasing
+                                                )
+                                            )
                                 ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .pressScale(interactionSource)
-                                            .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { showAllArrivals = !showAllArrivals }
-                                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                    val interactionSource = remember { MutableInteractionSource() }
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = MaterialTheme.shapes.large,
+                                        color = MaterialTheme.colorScheme.errorContainer
                                     ) {
-                                        Text(
-                                            text = if (showAllArrivals) "Show fewer"
-                                                else "Show all arrivals (${unfilteredArrivals.size - visibleCount} more)",
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        val showAllArrowRotation by animateFloatAsState(
-                                            targetValue = if (showAllArrivals) 180f else 0f,
-                                            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
-                                        )
-                                        Icon(
-                                            imageVector = Icons.Default.KeyboardArrowDown,
-                                            contentDescription = if (showAllArrivals) "Collapse arrivals"
-                                                else "Expand arrivals",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.rotate(showAllArrowRotation)
-                                        )
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .pressScale(interactionSource)
+                                                .clickable(
+                                                    interactionSource = interactionSource,
+                                                    indication = LocalIndication.current
+                                                ) { showAlertsSheet = true }
+                                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "Alerts (${detours.size})",
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            Icon(
+                                                imageVector = Icons.Default.Warning,
+                                                contentDescription = "Show alerts",
+                                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                        }
-
-                    AnimatedVisibility(
-                        visible = detours.isNotEmpty(),
-                        enter = expandVertically(expandFrom = Alignment.Top, animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)) +
-                            fadeIn(tween(durationMillis = 200, easing = FastOutSlowInEasing)),
-                        exit = shrinkVertically(shrinkTowards = Alignment.Top, animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)) +
-                            fadeOut(tween(durationMillis = 150, easing = FastOutSlowInEasing))
-                    ) {
-                        val interactionSource = remember { MutableInteractionSource() }
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.large,
-                            color = MaterialTheme.colorScheme.errorContainer
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .pressScale(interactionSource)
-                                    .clickable(interactionSource = interactionSource, indication = LocalIndication.current) { showAlertsSheet = true }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Alerts (${detours.size})",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.Warning,
-                                    contentDescription = "Show alerts",
-                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-                        }
-                    }
                     }
                 }
             }
@@ -622,15 +675,26 @@ private fun StopMapCard(
                             map.uiSettings.isAttributionEnabled = true
                             map.setMaxZoomPreference(18.0)
                             map.setStyle(STOP_MAP_STYLE_URL) { style ->
-                                style.addImage("stop-dot", stopDotBitmap(ctx, scheme.primary.toArgb(), density))
+                                style.addImage(
+                                    "stop-dot",
+                                    stopDotBitmap(ctx, scheme.primary.toArgb(), density)
+                                )
                                 badgeColors.forEach { (letter, color) ->
                                     style.addImage(
                                         "badge-$letter",
-                                        badgeBitmap(ctx, color.toArgb(), transitIconResource(letter), density)
+                                        badgeBitmap(
+                                            ctx,
+                                            color.toArgb(),
+                                            transitIconResource(letter),
+                                            density
+                                        )
                                     )
                                 }
                                 style.addSource(
-                                    GeoJsonSource("stop-source", Feature.fromGeometry(Point.fromLngLat(lng, lat)))
+                                    GeoJsonSource(
+                                        "stop-source",
+                                        Feature.fromGeometry(Point.fromLngLat(lng, lat))
+                                    )
                                 )
                                 style.addLayer(
                                     SymbolLayer("stop-layer", "stop-source").withProperties(
@@ -667,7 +731,12 @@ private fun StopMapCard(
                                         textFont(arrayOf("Noto Sans Bold"))
                                     )
                                 )
-                                map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 16.0))
+                                map.moveCamera(
+                                    CameraUpdateFactory.newLatLngZoom(
+                                        LatLng(lat, lng),
+                                        16.0
+                                    )
+                                )
                                 mapState.applyPositions()   // in case update ran before style load
                             }
                         }
@@ -693,7 +762,7 @@ private fun StopMapCard(
                     val points = blockPositions.map { it.lat to it.lng }
                     if (map != null && points.isNotEmpty()) {
                         val settled = view.width > 0 && view.height > 0 &&
-                            view.width == fitSize[0] && view.height == fitSize[1]
+                                view.width == fitSize[0] && view.height == fitSize[1]
                         if (settled) {
                             fitIfNeeded(map, lat, lng, points)
                         } else {
@@ -772,7 +841,11 @@ private fun badgeBitmap(context: Context, fillColor: Int, glyphRes: Int, density
     val size = (34 * density).toInt()
     val out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val c = Canvas(out)
-    c.drawCircle(size / 2f, size / 2f, size / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
+    c.drawCircle(
+        size / 2f,
+        size / 2f,
+        size / 2f,
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
     val glyph = drawableBitmap(context, glyphRes, (20 * density).toInt())
     c.drawBitmap(glyph, (size - glyph.width) / 2f, (size - glyph.height) / 2f, null)
     return out
@@ -783,13 +856,26 @@ private fun stopDotBitmap(context: Context, fillColor: Int, density: Float): Bit
     val size = (34 * density).toInt()
     val out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val c = Canvas(out)
-    c.drawCircle(size / 2f, size / 2f, size / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
+    c.drawCircle(
+        size / 2f,
+        size / 2f,
+        size / 2f,
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
     val dotRadius = (6 * density).toInt().toFloat()
-    c.drawCircle(size / 2f, size / 2f, dotRadius, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE })
+    c.drawCircle(
+        size / 2f,
+        size / 2f,
+        dotRadius,
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE })
     return out
 }
 
-private fun fitIfNeeded(map: MapLibreMap, stopLat: Double, stopLng: Double, points: List<Pair<Double, Double>>) {
+private fun fitIfNeeded(
+    map: MapLibreMap,
+    stopLat: Double,
+    stopLng: Double,
+    points: List<Pair<Double, Double>>
+) {
     val all = listOf(LatLng(stopLat, stopLng)) + points.map { LatLng(it.first, it.second) }
     val visible = map.projection.visibleRegion.latLngBounds
     if (all.any { !visible.contains(it) }) {
@@ -931,7 +1017,10 @@ private fun ArrivalItem(
                     ) {
                         Crossfade(
                             targetState = relativeText,
-                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = FastOutSlowInEasing
+                            ),
                             label = "countdownText"
                         ) { text ->
                             Text(
@@ -962,7 +1051,15 @@ private fun ArrivalItem(
     }
 }
 
-suspend fun toggleFavorite(context: Context, locId: Int, stopName: String, currentlyFavorite: Boolean, routeId: Int = -1, lat: Double = 0.0, lng: Double = 0.0): Pair<Boolean, String> {
+suspend fun toggleFavorite(
+    context: Context,
+    locId: Int,
+    stopName: String,
+    currentlyFavorite: Boolean,
+    routeId: Int = -1,
+    lat: Double = 0.0,
+    lng: Double = 0.0
+): Pair<Boolean, String> {
     return withContext(Dispatchers.IO) {
         try {
             val db = DatabaseHelper(context.applicationContext)

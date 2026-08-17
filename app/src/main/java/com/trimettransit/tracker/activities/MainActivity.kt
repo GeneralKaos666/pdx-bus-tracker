@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.SideEffect
@@ -15,11 +16,13 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -42,13 +45,10 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.feature.arrivals.toggleFavorite
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingToolbarDefaults
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -63,6 +63,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import com.trimettransit.tracker.ui.components.findActivity
@@ -95,6 +96,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -186,27 +188,30 @@ private data class BottomNavItem(
     val pageIndex: Int,
     val label: String,
     val icon: ImageVector,
-    val tabIndex: Int = -1
+    val tabIndex: Int = -1,
+    val iconSize: Dp = 24.dp
 )
 
 private val bottomNavItems = listOf(
     BottomNavItem(0, "Home", Icons.Filled.Home),
     BottomNavItem(1, "Routes", Icons.Filled.Map),
     BottomNavItem(2, "What's Nearby", Icons.Filled.DirectionsBus),
-    BottomNavItem(3, "Search", Icons.Filled.Search),
+    BottomNavItem(3, "Search", Icons.Filled.Search, iconSize = 27.dp),
 )
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainBottomBar(
     topPage: Int,
     onNavigate: (Int) -> Unit,
     homePagerState: PagerState,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    showBack: Boolean = false,
+    onBackClick: () -> Unit = {},
+    onTabClick: (Int) -> Unit = {}
 ) {
     val configuration = LocalConfiguration.current
     val fontScale = LocalDensity.current.fontScale
-    val scope = rememberCoroutineScope()
     val items = if (topPage == 0) {
         listOf(
             BottomNavItem(0, "Favorites", Icons.Filled.Favorite, tabIndex = 0),
@@ -217,24 +222,28 @@ private fun MainBottomBar(
     }
     val shouldHideLabel = fontScale > 1.25f || (configuration.screenWidthDp < 400 && items.size > 3)
 
-    HorizontalFloatingToolbar(
-            modifier = Modifier
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            expanded = true,
-            floatingActionButton = {
-                val fabSource = remember { MutableInteractionSource() }
-                FloatingToolbarDefaults.VibrantFloatingActionButton(
-                    onClick = onSettingsClick,
-                    interactionSource = fabSource,
-                    modifier = Modifier.pressScale(fabSource, 0.92f)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shadowElevation = 8.dp,
+                tonalElevation = 4.dp
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(8.dp)
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings")
-                }
-            },
-            colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
-            content = {
-                items.forEachIndexed { index, item ->
+                    items.forEachIndexed { index, item ->
                     val isSelected = if (item.tabIndex >= 0) {
                         topPage == 0 && homePagerState.currentPage == item.tabIndex
                     } else {
@@ -262,9 +271,7 @@ private fun MainBottomBar(
                     IconButton(
                         onClick = {
                             if (item.tabIndex >= 0) {
-                                if (homePagerState.currentPage != item.tabIndex) {
-                                    scope.launch { homePagerState.animateScrollToPage(item.tabIndex) }
-                                }
+                                onTabClick(item.tabIndex)
                             } else if (item.pageIndex != topPage) {
                                 onNavigate(item.pageIndex)
                             }
@@ -296,7 +303,7 @@ private fun MainBottomBar(
                                 } else {
                                     MaterialTheme.colorScheme.onPrimaryContainer
                                 },
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(item.iconSize)
                             )
                             if (isSelected && !shouldHideLabel) {
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -314,8 +321,31 @@ private fun MainBottomBar(
                         Spacer(modifier = Modifier.width(spacerWidth))
                     }
                 }
+                }
             }
-        )
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                shadowElevation = 8.dp,
+                tonalElevation = 4.dp
+            ) {
+                val bubbleSource = remember { MutableInteractionSource() }
+                IconButton(
+                    onClick = if (showBack) onBackClick else onSettingsClick,
+                    interactionSource = bubbleSource,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .pressScale(bubbleSource, 0.92f)
+                ) {
+                    Icon(
+                        if (showBack) Icons.AutoMirrored.Filled.ArrowBack else Icons.Default.Settings,
+                        contentDescription = if (showBack) "Back" else "Settings",
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+            }
+        }
+    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -342,14 +372,16 @@ class MainActivity : ComponentActivity() {
                 else -> isSystemInDarkTheme()
             }
             TriMetGoTheme(darkTheme = isDark, dynamicColor = dynamicColorPref) {
-                val activity = LocalContext.current as ComponentActivity
+                val activity = LocalActivity.current
                 SideEffect {
-                    WindowInsetsControllerCompat(
-                        activity.window, activity.window.decorView
-                    ).isAppearanceLightStatusBars = !isDark
-                    WindowInsetsControllerCompat(
-                        activity.window, activity.window.decorView
-                    ).isAppearanceLightNavigationBars = !isDark
+                    if (activity != null) {
+                        WindowInsetsControllerCompat(
+                            activity.window, activity.window.decorView
+                        ).isAppearanceLightStatusBars = !isDark
+                        WindowInsetsControllerCompat(
+                            activity.window, activity.window.decorView
+                        ).isAppearanceLightNavigationBars = !isDark
+                    }
                 }
                 MainAppContent(isDark = isDark)
             }
@@ -372,6 +404,8 @@ private fun MainAppContent(
     val currentRoute = currentBackStackEntry?.destination?.route ?: ""
     val isTopLevel = currentRoute == "home"
     val outerSnackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(currentRoute) { NavState.bottomBarVisible = true }
     val homePagerState = rememberPagerState(pageCount = { 2 })
     val topPagerState = rememberPagerState(pageCount = { bottomNavItems.size })
     var selectedStopsRoute by remember { mutableStateOf<Route?>(null) }
@@ -396,6 +430,13 @@ private fun MainAppContent(
         }
     }
 
+    fun navigateToTopPage(page: Int) {
+        if (currentRoute != "home") {
+            navController.popBackStack("home", inclusive = false)
+        }
+        onTopPageSelected(page)
+    }
+
     // System back walks the top-level pager back to Home before leaving the app
     BackHandler(enabled = isTopLevel && topPagerState.currentPage > 0) {
         scope.launch { topPagerState.animateScrollToPage(0) }
@@ -417,7 +458,7 @@ private fun MainAppContent(
                     label = "topBar"
                 ) { route ->
                     when {
-                        route == "nearby_stops" || route == "settings" -> TopAppBar(
+                        route == "nearby_stops" -> TopAppBar(
                         title = {
                             Text(
                                 if (route == "nearby_stops") "Nearby Stops" else "Settings"
@@ -530,7 +571,7 @@ private fun MainAppContent(
             },
             bottomBar = {
                 AnimatedVisibility(
-                    visible = isTopLevel,
+                    visible = !inPip && NavState.bottomBarVisible,
                     enter = slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { it } +
                         fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)),
                     exit = slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it } +
@@ -538,10 +579,22 @@ private fun MainAppContent(
                 ) {
                     MainBottomBar(
                         topPage = topPagerState.currentPage,
-                        onNavigate = ::onTopPageSelected,
+                        onNavigate = ::navigateToTopPage,
                         homePagerState = homePagerState,
                         onSettingsClick = {
                             navController.navigate("settings")
+                        },
+                        showBack = currentRoute == "settings",
+                        onBackClick = { navController.popBackStack() },
+                        onTabClick = { tab ->
+                            if (currentRoute != "home") {
+                                navController.popBackStack("home", inclusive = false)
+                            }
+                            scope.launch {
+                                if (homePagerState.currentPage != tab) {
+                                    homePagerState.animateScrollToPage(tab)
+                                }
+                            }
                         }
                     )
                 }
@@ -566,24 +619,6 @@ private fun MainAppContent(
                         )
                     }
                 )
-            },
-            floatingActionButton = {
-                AnimatedVisibility(
-                    visible = !isTopLevel && currentRoute != "settings",
-                    enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
-                        slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { it },
-                    exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
-                        slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it }
-                ) {
-                    val fabSource = remember { MutableInteractionSource() }
-                    FloatingActionButton(
-                        onClick = { navController.navigate("settings") },
-                        interactionSource = fabSource,
-                        modifier = Modifier.pressScale(fabSource, 0.92f)
-                    ) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                }
             }
         ) { padding ->
             NavHost(

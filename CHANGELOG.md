@@ -1,5 +1,28 @@
 # Changelog
 
+## What's New in v4.8.0
+
+### Auto-hiding bottom bar
+- The bottom pill now slides away while you scroll down through arrivals, stop lists, search results, and settings, and slides back in as soon as you scroll up — more room for content with no extra taps. A new `AutoHideBottomBarEffect` watches scroll offsets (a `LazyListState` variant for lists, a `ScrollState` variant for Settings) and writes `NavState.bottomBarVisible`, which the outer scaffold animates into the pill's slide/fade. The bar always stays put in picture-in-picture, and resets to visible whenever you change screens.
+  (`common/ui/.../components/ScrollHideEffect.kt`, new; `common/ui/.../NavState.kt`; `app/.../activities/MainActivity.kt`; `feature/arrivals/ArrivalsScreen.kt`, `feature/home/HomeStopListScreen.kt`, `feature/stops/StopListContent.kt` + `NearbyStopsScreen.kt`, `feature/search/SearchStopsScreen.kt`, `feature/settings/SettingsScreen.kt`)
+
+### Bottom pill: FAB gone, Back button on Settings
+- The standalone Settings FAB is removed entirely — Settings is opened from the pill's trailing button on every screen, and while the Settings screen is open that same trailing button becomes a Back button. The Settings top bar is gone, so Settings now navigates like every other screen.
+- Tapping a pill item or a Home tab now always returns to the top-level pager first (popping the nav stack back to `"home"` if needed) before switching pages.
+  (`app/.../activities/MainActivity.kt`)
+
+### Dependency updates
+- Compose BOM 2024.12.01 → 2026.08.00, material3 1.4.0-alpha12 → 1.4.0 (stable), navigation-compose 2.8.5 → 2.9.8, activity-compose 1.9.3 → 1.13.0, core/core-ktx 1.15.0 → 1.19.0, material 1.12.0 → 1.14.0, MapLibre OpenGL 13.4.1 → 13.5.0, okhttp 4.12.0 → 5.5.0, coroutines-android 1.7.3 → 1.11.0, android.joda 2.12.1 → 2.14.2.1, Compose compiler plugin 2.2.10 → 2.4.10.
+  (per-module `build.gradle`; root `build.gradle`)
+
+### Settings: real version number
+- The About card's version string is now read live from `PackageManager` instead of a hardcoded `BuildConfig.VERSION_NAME` that had frozen at 4.6.5 — it can no longer drift from the installed APK (the settings module's `buildConfig` feature was removed).
+  (`feature/settings/SettingsScreen.kt`; `feature/settings/build.gradle`)
+
+### Housekeeping
+- The TriMet base route URL is resolved once via `stringResource` instead of per-composable `context.getString` calls in Search and the Stops screens.
+  (`feature/search/SearchStopsScreen.kt`; `feature/stops/StopsScreen.kt`, `StopsRouteList.kt`)
+
 ## What's New in v4.7.0
 
 ### Floating navigation pill

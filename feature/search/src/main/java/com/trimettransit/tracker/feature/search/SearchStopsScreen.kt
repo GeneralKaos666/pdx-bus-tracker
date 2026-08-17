@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.transit.TransitApi
+import com.trimettransit.tracker.ui.components.AutoHideBottomBarEffect
 import com.trimettransit.tracker.ui.components.EmptyState
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -53,6 +55,7 @@ import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitTypeLabel
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.util.ConnectionUtils
 import com.trimettransit.tracker.transit.ApiKeys
@@ -68,6 +71,7 @@ fun SearchStopsScreen(
     onNavigateToArrivals: (Stop, Int) -> Unit
 ) {
     val context = LocalContext.current
+    val baseRouteUrl = stringResource(com.trimettransit.tracker.transit.R.string.base_route_url)
     var query by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     var allStops by remember { mutableStateOf<List<Stop>?>(null) }
@@ -82,8 +86,7 @@ fun SearchStopsScreen(
             val key = ApiKeys.getTrimetApiKey()
             if (key.isNotBlank() && ConnectionUtils.isOnline(context)) {
                 isLoading = true
-                val url = context.getString(com.trimettransit.tracker.transit.R.string.base_route_url) +
-                    "/appID/$key/dir/true/stops/true"
+                val url = "$baseRouteUrl/appID/$key/dir/true/stops/true"
                 allStops = TransitApi.fetchSearchStops(context, url)
                 isLoading = false
                 if (allStops == null) hasError = true
@@ -162,8 +165,11 @@ fun SearchStopsScreen(
 
                     else -> {
                         ContentEntrance(modifier = Modifier.fillMaxSize()) {
+                            val listState = rememberLazyListState()
+                            AutoHideBottomBarEffect(listState)
                             val smoothFling = rememberSmoothFlingBehavior()
                             LazyColumn(
+                                state = listState,
                                 modifier = Modifier.fillMaxSize(),
                                 flingBehavior = smoothFling
                             ) {

@@ -22,5 +22,5 @@ android {
 }
 
 dependencies {
-    implementation 'net.danlew:android.joda:2.12.1'
+    implementation 'net.danlew:android.joda:2.14.2.1'
 }

@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.transit.ApiKeys
@@ -49,6 +50,7 @@ fun StopsRouteList(
     routeTrailingContent: @Composable LazyItemScope.(Route) -> Unit
 ) {
     val context = LocalContext.current
+    val baseRouteUrl = stringResource(com.trimettransit.tracker.transit.R.string.base_route_url)
     var routes by remember { mutableStateOf<List<Route>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
@@ -59,8 +61,7 @@ fun StopsRouteList(
             isMissingApiKey = true
             routes = null
         } else {
-            val url = context.getString(com.trimettransit.tracker.transit.R.string.base_route_url) +
-                    "/appID/$key"
+            val url = "$baseRouteUrl/appID/$key"
             routes = TransitApi.fetchRoutes(context, url)
         }
         isLoading = false

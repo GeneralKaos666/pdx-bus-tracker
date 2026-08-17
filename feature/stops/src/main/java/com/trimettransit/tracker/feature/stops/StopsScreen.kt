@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -99,6 +100,7 @@ private fun DirectionsSubCard(
     directionTrailingContent: @Composable (Direction) -> Unit
 ) {
     val context = LocalContext.current
+    val baseRouteUrl = stringResource(com.trimettransit.tracker.transit.R.string.base_route_url)
     var directions by remember { mutableStateOf<List<Direction>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
@@ -109,8 +111,7 @@ private fun DirectionsSubCard(
             isMissingApiKey = true
             directions = null
         } else {
-            val url = context.getString(com.trimettransit.tracker.transit.R.string.base_route_url) +
-                    "/appID/$key/route/${route.routeId}/dir/true"
+            val url = "$baseRouteUrl/appID/$key/route/${route.routeId}/dir/true"
             directions = TransitApi.fetchDirections(context, url)
         }
         isLoading = false
@@ -206,6 +207,7 @@ private fun StopsSubCard(
     onStopSelected: (Stop) -> Unit
 ) {
     val context = LocalContext.current
+    val baseRouteUrl = stringResource(com.trimettransit.tracker.transit.R.string.base_route_url)
     var stops by remember { mutableStateOf<List<Stop>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
@@ -216,8 +218,7 @@ private fun StopsSubCard(
             isMissingApiKey = true
             stops = null
         } else {
-            val url = context.getString(com.trimettransit.tracker.transit.R.string.base_route_url) +
-                    "/appID/$key/route/$routeId/dir/$directionId/stops/true"
+            val url = "$baseRouteUrl/appID/$key/route/$routeId/dir/$directionId/stops/true"
             stops = TransitApi.fetchStops(context, url)
         }
         isLoading = false

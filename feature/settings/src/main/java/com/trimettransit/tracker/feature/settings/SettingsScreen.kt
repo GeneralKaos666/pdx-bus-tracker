@@ -49,10 +49,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.content.edit
 import androidx.core.graphics.drawable.toBitmap
 import androidx.preference.PreferenceManager
-import com.trimettransit.tracker.feature.settings.BuildConfig
+import com.trimettransit.tracker.ui.components.AutoHideBottomBarEffect
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.pressScale
 
@@ -68,10 +70,12 @@ fun SettingsScreen() {
     }
 
     ContentEntrance(modifier = Modifier.fillMaxSize()) {
+        val scrollState = rememberScrollState()
+        AutoHideBottomBarEffect(scrollState)
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
         ) {
             SectionHeader(title = "Appearance")
 
@@ -143,6 +147,21 @@ fun SettingsScreen() {
                     context.packageManager.getApplicationIcon(context.packageName)
                         .toBitmap().asImageBitmap()
                 }
+                val versionName = remember {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        runCatching {
+                            context.packageManager
+                                .getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
+                                .versionName
+                        }.getOrNull() ?: "0.0.0"
+                    } else {
+                        runCatching {
+                            context.packageManager
+                                .getPackageInfo(context.packageName, 0)
+                                .versionName
+                        }.getOrNull() ?: "0.0.0"
+                    }
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -169,7 +188,7 @@ fun SettingsScreen() {
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = "Version ${BuildConfig.VERSION_NAME} · MIT License",
+                            text = "Version $versionName · MIT License",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

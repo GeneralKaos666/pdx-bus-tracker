@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.trimettransit.tracker.ui.components.AutoHideBottomBarEffect
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
@@ -52,8 +54,11 @@ internal fun <T> StopListContent(
             2 -> EmptyState(message = emptyMessage)
             else -> {
                 ContentEntrance(modifier = Modifier.fillMaxSize()) {
+                    val listState = rememberLazyListState()
+                    AutoHideBottomBarEffect(listState)
                     val smoothFling = rememberSmoothFlingBehavior()
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         flingBehavior = smoothFling,
                         contentPadding = PaddingValues(vertical = 8.dp),
