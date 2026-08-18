@@ -21,6 +21,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -28,19 +29,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +54,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -64,6 +70,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -74,6 +81,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -157,7 +165,7 @@ fun ArrivalsScreen(
     var detours by remember { mutableStateOf<List<Detour>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
-    var showAlertsExpanded by remember { mutableStateOf(false) }
+    var showAlertsDialog by remember { mutableStateOf(false) }
     var showAllArrivals by remember { mutableStateOf(false) }
     var trackingKey by remember { mutableStateOf<String?>(null) }
     var trackingRouteId by remember { mutableIntStateOf(-1) }
@@ -305,38 +313,38 @@ fun ArrivalsScreen(
     val listState = rememberLazyListState()
     AutoHideBottomBarEffect(listState)
 
-    // Fade the alerts card out as it slides above the viewport top
-    var alertsBarAlpha by remember { mutableFloatStateOf(1f) }
+    // Progress of the alerts button collapsing into the pinned strip as it
+    // slides above the viewport top: 0 = at rest, 1 = fully scrolled off.
+    // Once the button leaves the viewport entirely, the strip stays collapsed
+    // (progress 1) until the button scrolls back into view.
+    var alertsProgress by remember { mutableFloatStateOf(0f) }
+    var alertsItemSeen by remember { mutableStateOf(false) }
     LaunchedEffect(listState) {
         snapshotFlow {
             val item = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == "alerts" }
             (item?.offset ?: 0) to (item?.size ?: 0)
         }.collect { (offset, size) ->
-            if (offset < 0 && size > 0) {
-                alertsBarAlpha = (1f + offset.toFloat() / size).coerceIn(0f, 1f)
-            } else {
-                alertsBarAlpha = 1f
+            if (size > 0) {
+                alertsItemSeen = true
+                alertsProgress = if (offset < 0) {
+                    (-offset.toFloat() / size).coerceIn(0f, 1f)
+                } else {
+                    0f
+                }
+            } else if (alertsItemSeen) {
+                alertsProgress = 1f
             }
-        }
-    }
-
-    // Auto-collapse the alerts dropdown once the card has scrolled out of view
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            listState.layoutInfo.visibleItemsInfo.any { it.key == "alerts" }
-        }.collect { visible ->
-            if (!visible && showAlertsExpanded) showAlertsExpanded = false
         }
     }
 
     val inPip = rememberIsInPipMode()
 
-    // PiP: keep the countdown live; drop the map card and alerts dropdown
+    // PiP: keep the countdown live; drop the map card and alerts dialog
     // (they cannot render usefully in the small window).
     LaunchedEffect(inPip) {
         if (inPip) {
             trackingKey = null
-            showAlertsExpanded = false
+            showAlertsDialog = false
             while (true) {
                 delay(POSITION_REFRESH_MS)
                 loadArrivals()
@@ -389,6 +397,7 @@ fun ArrivalsScreen(
 
                 else -> {
                     ContentEntrance(modifier = Modifier.fillMaxSize()) {
+                        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
@@ -402,98 +411,11 @@ fun ArrivalsScreen(
                         ) {
                             if (detours.isNotEmpty()) {
                                 item(key = "alerts", contentType = "alerts") {
-                                    val interactionSource =
-                                        remember { MutableInteractionSource() }
-                                    Card(
+                                    Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .graphicsLayer { alpha = alertsBarAlpha },
-                                        shape = MaterialTheme.shapes.large,
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = MaterialTheme.colorScheme.errorContainer
-                                        )
-                                    ) {
-                                        Column {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .pressScale(interactionSource)
-                                                    .clickable(
-                                                        interactionSource = interactionSource,
-                                                        indication = LocalIndication.current
-                                                    ) { showAlertsExpanded = !showAlertsExpanded }
-                                                    .padding(
-                                                        horizontal = 16.dp,
-                                                        vertical = 12.dp
-                                                    ),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Warning,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                                Spacer(Modifier.width(8.dp))
-                                                Text(
-                                                    text = "Alerts (${detours.size})",
-                                                    style = MaterialTheme.typography.labelLarge,
-                                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                                    modifier = Modifier.weight(1f)
-                                                )
-                                                val alertsArrowRotation by animateFloatAsState(
-                                                    targetValue = if (showAlertsExpanded) 180f else 0f,
-                                                    animationSpec = tween(
-                                                        durationMillis = 350,
-                                                        easing = FastOutSlowInEasing
-                                                    )
-                                                )
-                                                Icon(
-                                                    imageVector = Icons.Default.KeyboardArrowDown,
-                                                    contentDescription = if (showAlertsExpanded) "Hide alerts"
-                                                    else "Show alerts",
-                                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                                    modifier = Modifier.rotate(
-                                                        alertsArrowRotation
-                                                    )
-                                                )
-                                            }
-                                            AnimatedVisibility(
-                                                visible = showAlertsExpanded,
-                                                enter = expandVertically() + fadeIn(),
-                                                exit = shrinkVertically() + fadeOut()
-                                            ) {
-                                                Column(
-                                                    modifier = Modifier.padding(
-                                                        start = 16.dp,
-                                                        end = 16.dp,
-                                                        bottom = 12.dp
-                                                    )
-                                                ) {
-                                                    detours.forEach { detour ->
-                                                        Row(
-                                                            modifier = Modifier
-                                                                .fillMaxWidth()
-                                                                .padding(bottom = 8.dp),
-                                                            verticalAlignment = Alignment.Top
-                                                        ) {
-                                                            Text(
-                                                                text = "\u2022",
-                                                                style = MaterialTheme.typography.bodyMedium,
-                                                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                                                modifier = Modifier.padding(end = 8.dp)
-                                                            )
-                                                            Text(
-                                                                text = detour.desc,
-                                                                style = MaterialTheme.typography.bodyMedium,
-                                                                color = MaterialTheme.colorScheme.onErrorContainer
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                                            .height(44.dp)
+                                    )
                                 }
                             }
 
@@ -594,11 +516,132 @@ fun ArrivalsScreen(
                                         }
                                     }
                                 }
+
+                            if (detours.isNotEmpty()) {
+                                val stripWidth = 40.dp * (1 - alertsProgress) + maxWidth * alertsProgress
+                                val stripHeight = 40.dp * (1 - alertsProgress) + 4.dp * alertsProgress
+                                val stripOffsetX = -12.dp * (1 - alertsProgress)
+                                val stripOffsetY = 12.dp * (1 - alertsProgress)
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = stripOffsetX, y = stripOffsetY)
+                                        .width(stripWidth)
+                                        .height(stripHeight)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(
+                                            lerp(
+                                                MaterialTheme.colorScheme.errorContainer,
+                                                MaterialTheme.colorScheme.error,
+                                                alertsProgress
+                                            )
+                                        )
+                                        .clickable(
+                                            enabled = alertsProgress < 0.5f
+                                        ) { showAlertsDialog = true },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_alert_warning),
+                                        contentDescription = "Show alerts",
+                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier
+                                            .size(22.dp)
+                                            .graphicsLayer {
+                                                alpha = 1 - alertsProgress
+                                                scaleX = (1 - alertsProgress).coerceAtLeast(0.01f)
+                                                scaleY = (1 - alertsProgress).coerceAtLeast(0.01f)
+                                            }
+                                    )
+                                }
+                                Text(
+                                    text = detours.size.toString(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset {
+                                            val p = 1 - alertsProgress
+                                            IntOffset(
+                                                x = (-4.dp * p).roundToPx(),
+                                                y = (4.dp * p).roundToPx()
+                                            )
+                                        }
+                                        .graphicsLayer {
+                                            alpha = 1 - alertsProgress
+                                            scaleX = (1 - alertsProgress).coerceAtLeast(0.01f)
+                                            scaleY = (1 - alertsProgress).coerceAtLeast(0.01f)
+                                        }
+                                        .background(
+                                            MaterialTheme.colorScheme.error,
+                                            CircleShape
+                                        )
+                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     }
+
+    if (showAlertsDialog && detours.isNotEmpty()) {
+        AlertsDialog(
+            detours = detours,
+            onDismiss = { showAlertsDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun AlertsDialog(
+    detours: List<Detour>,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Alerts (${detours.size})",
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                detours.forEach { detour ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = "\u2022",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(
+                            text = detour.desc,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
 }
 
 private fun formatDelay(arrival: Arrival): String? {
