@@ -13,7 +13,6 @@ import androidx.compose.runtime.SideEffect
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,9 +33,7 @@ import androidx.compose.ui.layout.positionInWindow
 import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsBus
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.History
@@ -115,8 +112,8 @@ import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.feature.arrivals.ArrivalsScreen
-import com.trimettransit.tracker.feature.home.HomeScreen
-import com.trimettransit.tracker.feature.search.SearchStopsScreen
+import com.trimettransit.tracker.feature.home.FavoritesScreen
+import com.trimettransit.tracker.feature.home.RecentStopsScreen
 import com.trimettransit.tracker.feature.settings.SettingsScreen
 import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
@@ -191,15 +188,14 @@ private data class BottomNavItem(
     val pageIndex: Int,
     val label: String,
     val icon: ImageVector,
-    val tabIndex: Int = -1,
     val iconSize: Dp = 24.dp
 )
 
 private val bottomNavItems = listOf(
-    BottomNavItem(0, "Home", Icons.Filled.Home),
-    BottomNavItem(1, "Routes", Icons.Filled.Map),
-    BottomNavItem(2, "What's Nearby", Icons.Filled.DirectionsBus),
-    BottomNavItem(3, "Search", Icons.Filled.Search, iconSize = 27.dp),
+    BottomNavItem(0, "Favorites", Icons.Filled.Favorite),
+    BottomNavItem(1, "Recent", Icons.Filled.History),
+    BottomNavItem(2, "Routes", Icons.Filled.Map),
+    BottomNavItem(3, "What's Nearby", Icons.Filled.DirectionsBus),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -207,23 +203,14 @@ private val bottomNavItems = listOf(
 private fun MainBottomBar(
     topPage: Int,
     onNavigate: (Int) -> Unit,
-    homePagerState: PagerState,
     onSettingsClick: () -> Unit,
     showBack: Boolean = false,
-    onBackClick: () -> Unit = {},
-    onTabClick: (Int) -> Unit = {}
+    onBackClick: () -> Unit = {}
 ) {
     val windowInfo = LocalWindowInfo.current
     val density = LocalDensity.current
     val fontScale = density.fontScale
-    val items = if (topPage == 0) {
-        listOf(
-            BottomNavItem(0, "Favorites", Icons.Filled.Favorite, tabIndex = 0),
-            BottomNavItem(0, "Recent", Icons.Filled.History, tabIndex = 1)
-        ) + bottomNavItems.filter { it.pageIndex != 0 }
-    } else {
-        bottomNavItems
-    }
+    val items = bottomNavItems
     val shouldHideLabel = fontScale > 1.25f ||
             (windowInfo.containerSize.width < with(density) { 400.dp.roundToPx() } && items.size > 3)
 
@@ -249,11 +236,7 @@ private fun MainBottomBar(
                     modifier = Modifier.padding(8.dp)
                 ) {
                     items.forEachIndexed { index, item ->
-                    val isSelected = if (item.tabIndex >= 0) {
-                        topPage == 0 && homePagerState.currentPage == item.tabIndex
-                    } else {
-                        topPage == item.pageIndex
-                    }
+                    val isSelected = topPage == item.pageIndex
 
                     val labelWidth by animateDpAsState(
                         targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
@@ -275,9 +258,7 @@ private fun MainBottomBar(
 
                     IconButton(
                         onClick = {
-                            if (item.tabIndex >= 0) {
-                                onTabClick(item.tabIndex)
-                            } else if (item.pageIndex != topPage) {
+                            if (item.pageIndex != topPage) {
                                 onNavigate(item.pageIndex)
                             }
                         },
@@ -411,7 +392,6 @@ private fun MainAppContent(
     val outerSnackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(currentRoute) { NavState.bottomBarVisible = true }
-    val homePagerState = rememberPagerState(pageCount = { 2 })
     val topPagerState = rememberPagerState(pageCount = { bottomNavItems.size })
     var selectedStopsRoute by remember { mutableStateOf<Route?>(null) }
     var selectedStopsDirection by remember { mutableStateOf<Direction?>(null) }
@@ -428,9 +408,6 @@ private fun MainAppContent(
 
     fun onTopPageSelected(page: Int) {
         scope.launch {
-            if (page == 0 && homePagerState.currentPage != 0) {
-                homePagerState.animateScrollToPage(0)
-            }
             topPagerState.animateScrollToPage(page)
         }
     }
@@ -442,7 +419,7 @@ private fun MainAppContent(
         onTopPageSelected(page)
     }
 
-    // System back walks the top-level pager back to Home before leaving the app
+    // System back walks the top-level pager back to Favorites (page 0) before leaving the app
     BackHandler(enabled = isTopLevel && topPagerState.currentPage > 0) {
         scope.launch { topPagerState.animateScrollToPage(0) }
     }
@@ -599,22 +576,11 @@ private fun MainAppContent(
                     MainBottomBar(
                         topPage = topPagerState.currentPage,
                         onNavigate = ::navigateToTopPage,
-                        homePagerState = homePagerState,
                         onSettingsClick = {
                             navController.navigate("settings")
                         },
                         showBack = currentRoute == "settings",
-                        onBackClick = { navController.popBackStack() },
-                        onTabClick = { tab ->
-                            if (currentRoute != "home") {
-                                navController.popBackStack("home", inclusive = false)
-                            }
-                            scope.launch {
-                                if (homePagerState.currentPage != tab) {
-                                    homePagerState.animateScrollToPage(tab)
-                                }
-                            }
-                        }
+                        onBackClick = { navController.popBackStack() }
                     )
                 }
             },
@@ -658,13 +624,17 @@ private fun MainAppContent(
                         beyondViewportPageCount = 1
                     ) { page ->
                         when (page) {
-                            0 -> HomeScreen(
-                                pagerState = homePagerState,
+                            0 -> FavoritesScreen(
                                 onNavigateToArrivals = { stop: Stop ->
                                     navigateToArrivals(stop, stop.routeNum)
                                 }
                             )
-                            1 -> StopsScreen(
+                            1 -> RecentStopsScreen(
+                                onNavigateToArrivals = { stop: Stop ->
+                                    navigateToArrivals(stop, stop.routeNum)
+                                }
+                            )
+                            2 -> StopsScreen(
                                 selectedRoute = selectedStopsRoute,
                                 selectedDirection = selectedStopsDirection,
                                 onRouteToggle = { route ->
@@ -678,14 +648,9 @@ private fun MainAppContent(
                                     navigateToArrivals(stop, routeId)
                                 }
                             )
-                            2 -> WhatsNearbyScreen(
+                            3 -> WhatsNearbyScreen(
                                 onNavigateToArrivals = { stop: Stop, _: Int ->
                                     navigateToArrivals(stop, -1)
-                                }
-                            )
-                            3 -> SearchStopsScreen(
-                                onNavigateToArrivals = { stop: Stop, _: Int ->
-                                    navigateToArrivals(stop, stop.routeNum)
                                 }
                             )
                         }

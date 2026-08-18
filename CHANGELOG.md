@@ -1,5 +1,21 @@
 # Changelog
 
+## What's New in v4.9.0
+
+### Stop search moves to the Home screen
+- The standalone Search screen (top-pager page 3) and its `feature:search` module are gone. Search is now a search field pinned at the top of the Home screen — typing a query opens a floating results dropdown over the Favorites/Recent tabs, with loading / connection-error / "No stops found." states; tapping a result navigates to arrivals and clears the query. All stops lazy-load on the first keystroke instead of on screen open. This also kills the old screen's bug: the M3 `DockedSearchBar` expanded over the screen with an empty panel, so results showed through behind the scrim on the background — nothing expands anymore.
+- The bottom pill drops its Search item: Home / Routes / What's Nearby, and the top-level pager shrinks from 4 to 3 pages.
+  (`feature/home/.../HomeSearchBar.kt`, new; `feature/home/.../HomeScreen.kt`; `app/.../activities/MainActivity.kt`; `feature/search/` deleted; `settings.gradle`, `app/build.gradle`)
+
+### Bottom pill stays put everywhere but Arrivals
+- The scroll auto-hide is now Arrivals-only: the pill no longer slides away while scrolling through the Home lists, Routes, Nearby Stops, or Settings. The `ScrollState` variant of `AutoHideBottomBarEffect` was removed; the `LazyListState` variant remains in use solely on the Arrivals screen.
+  (`common/ui/.../components/ScrollHideEffect.kt`; `common/ui/.../NavState.kt`; `feature/home/HomeStopListScreen.kt`, `feature/settings/SettingsScreen.kt`, `feature/stops/StopListContent.kt` + `NearbyStopsScreen.kt`)
+
+### Favorites and Recent are separate screens
+- The Favorites/Recent tabs inside the Home screen are gone. They're now two top-level screens of their own: Favorites (with the stop-search field pinned on top, as before) and Recent Stops (a bold "Recent Stops" title header above the list, matching the What's Nearby screen's layout). The inner 2-page home pager (`homePagerState`) and the Home tab-swap in the pill are removed.
+- The bottom pill no longer morphs between a Home item and Favorites/Recent tab items depending on which page you're on — it's now a fixed 4-item bar: Favorites / Recent / Routes / What's Nearby.
+  (`feature/home/.../FavoritesScreen.kt`, new; `feature/home/.../RecentStopsScreen.kt`, new; `feature/home/.../HomeScreen.kt` deleted; `app/.../activities/MainActivity.kt`)
+
 ## What's New in v4.8.2
 
 ### Alerts are a dialog now

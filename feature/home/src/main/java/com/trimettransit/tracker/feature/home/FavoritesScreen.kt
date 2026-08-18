@@ -1,9 +1,8 @@
 package com.trimettransit.tracker.feature.home
 
 import android.util.Log
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,19 +18,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private const val TAG = "HomeScreen"
+private const val TAG = "FavoritesScreen"
 
 @Composable
-fun HomeScreen(
-    pagerState: PagerState,
+fun FavoritesScreen(
     onNavigateToArrivals: (Stop) -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var favorites by remember { mutableStateOf<List<Stop>>(emptyList()) }
-    var recentStops by remember { mutableStateOf<List<Stop>>(emptyList()) }
-    var isLoadingFavorites by remember { mutableStateOf(true) }
-    var isLoadingRecent by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
     var hasLoaded by remember { mutableStateOf(false) }
 
@@ -39,50 +35,35 @@ fun HomeScreen(
         coroutineScope.launch {
             try {
                 val db = DatabaseHelper(context)
-                val (favs, recents) = withContext(Dispatchers.IO) { db.favorites to db.recentStops }
-                favorites = favs
-                recentStops = recents
+                favorites = withContext(Dispatchers.IO) { db.favorites }
                 isError = false
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to load favorites and recent stops", e)
+                Log.e(TAG, "Failed to load favorites", e)
                 isError = true
             } finally {
-                isLoadingFavorites = false
-                isLoadingRecent = false
+                isLoading = false
             }
         }
     }
 
-    // Auto-refresh both tabs on app re-entry (observer replays ON_RESUME synchronously
+    // Auto-refresh on app re-entry (observer replays ON_RESUME synchronously
     // when already resumed, so this replaces LaunchedEffect for the initial load too)
     RememberOnResume {
         if (hasLoaded) {
-            isLoadingFavorites = true
-            isLoadingRecent = true
+            isLoading = true
         } else {
             hasLoaded = true
         }
         loadFavorites()
     }
 
-    HorizontalPager(
-        state = pagerState,
-        modifier = Modifier.fillMaxSize(),
-        beyondViewportPageCount = 1
-    ) { page ->
-        when (page) {
-            0 -> HomeStopListScreen(
+    Column(modifier = Modifier.fillMaxSize()) {
+        HomeSearchBar(onStopSelected = onNavigateToArrivals) {
+            HomeStopListScreen(
                 stops = favorites,
-                isLoading = isLoadingFavorites,
+                isLoading = isLoading,
                 isError = isError,
                 emptyText = "No favorite stops yet.\nTap the heart on arrivals to add one.",
-                onNavigateToArrivals = onNavigateToArrivals
-            )
-            1 -> HomeStopListScreen(
-                stops = recentStops,
-                isLoading = isLoadingRecent,
-                isError = isError,
-                emptyText = "No recent stops.",
                 onNavigateToArrivals = onNavigateToArrivals
             )
         }

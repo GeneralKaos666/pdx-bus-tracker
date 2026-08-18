@@ -10,9 +10,9 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 - **Live "What's Nearby" map** — MapLibre GL map of nearby vehicles, stops, and your location on OpenFreeMap vector tiles (no API key required)
 - **Route & stop browser** — routes → directions → stops in an animated accordion drill-down
 - **Nearby stops** — find stops around your current GPS location
-- **Stop search** — instant client-side search by name
+- **Stop search** — instant client-side search by name, right on the Home screen
 - **Favorites & recent stops** — saved locally in SQLite; the Home button always lands on the Favorites tab
-- **Floating pill navigation** — a Material 3 Expressive pill bottom bar for Home, Routes, What's Nearby, and Search, with swipeable screens and a Settings button
+- **Floating pill navigation** — a Material 3 Expressive pill bottom bar for Home, Routes, and What's Nearby, with swipeable screens and a Settings button
 - **Service alerts & detours** — active TriMet alerts for the stop and its routes
 - **Picture-in-picture** — mini-window countdown on the arrivals screen (2:3 PiP)
 - **Dynamic theming** — Material 3 with Android 12+ dynamic color; system/light/dark override in Settings
@@ -30,12 +30,12 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 
 ## Architecture
 
-12 Gradle modules in four strictly downward layers (no module→app or feature→feature edges):
+11 Gradle modules in four strictly downward layers (no module→app or feature→feature edges):
 
 | Layer | Modules |
 |---|---|
 | `app` | single Activity, Compose Navigation graph, floating pill nav + Settings FAB, PiP |
-| `feature/*` | `home`, `stops`, `search`, `vehicles`, `arrivals`, `settings` — one screen area per module |
+| `feature/*` | `home`, `stops`, `vehicles`, `arrivals`, `settings` — one screen area per module |
 | `component/*` | `transit` (TriMet API client: OkHttp + JSON parsing), `localdata` (SQLite favorites/recent stops) |
 | `common/*` | `model` (domain models), `utils` (connectivity, date helpers), `ui` (theme, shared Compose components, cross-screen state) |
 

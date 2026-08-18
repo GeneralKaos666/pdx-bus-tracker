@@ -54,7 +54,6 @@ import android.os.Build
 import androidx.core.content.edit
 import androidx.core.graphics.drawable.toBitmap
 import androidx.preference.PreferenceManager
-import com.trimettransit.tracker.ui.components.AutoHideBottomBarEffect
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.pressScale
 
@@ -71,7 +70,6 @@ fun SettingsScreen() {
 
     ContentEntrance(modifier = Modifier.fillMaxSize()) {
         val scrollState = rememberScrollState()
-        AutoHideBottomBarEffect(scrollState)
         Column(
             modifier = Modifier
                 .fillMaxSize()
