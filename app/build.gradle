@@ -42,8 +42,8 @@ android {
         applicationId = 'com.trimettransit.tracker'
         minSdk = 31
         targetSdk = 37
-        versionCode = 482
-        versionName = "4.8.2"
+        versionCode = 490
+        versionName = "4.9.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -114,7 +114,6 @@ dependencies {
     // Modularized projects
     implementation project(':feature:home')
     implementation project(':feature:stops')
-    implementation project(':feature:search')
     implementation project(':feature:vehicles')
     implementation project(':feature:arrivals')
     implementation project(':feature:settings')

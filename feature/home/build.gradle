@@ -24,6 +24,8 @@ android {
 
 dependencies {
     implementation project(':component:localdata')
+    implementation project(':component:transit')
+    implementation project(':common:utils')
     implementation project(':common:model')
     implementation project(':common:ui')
     implementation platform('androidx.compose:compose-bom:2026.08.00')

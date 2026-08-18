@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.transit.TransitApi
-import com.trimettransit.tracker.ui.components.AutoHideBottomBarEffect
 import com.trimettransit.tracker.ui.components.EmptyState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.trimettransit.tracker.ui.components.ContentEntrance
@@ -205,7 +204,6 @@ fun NearbyStopsScreen(
                 3 -> {
                     ContentEntrance(modifier = Modifier.fillMaxSize()) {
                     val listState = rememberLazyListState()
-                    AutoHideBottomBarEffect(listState)
                     val smoothFling = rememberSmoothFlingBehavior()
                     LazyColumn(
                         state = listState,
