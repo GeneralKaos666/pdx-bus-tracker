@@ -10,17 +10,17 @@ def quoteForBuildConfig = { String value ->
 def trimetApiKey = (project.findProperty("TRIMET_API_KEY") ?: System.getenv("TRIMET_API_KEY") ?: "").toString()
 
 android {
-    namespace 'com.trimettransit.tracker.transit'
-    compileSdk 37
+    namespace = 'com.trimettransit.tracker.transit'
+    compileSdk = 37
 
     defaultConfig {
-        minSdk 31
+        minSdk = 31
         buildConfigField "String", "TRIMET_API_KEY", quoteForBuildConfig(trimetApiKey)
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_21
-        targetCompatibility JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     buildFeatures {

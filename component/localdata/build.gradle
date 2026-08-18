@@ -3,16 +3,16 @@ plugins {
 }
 
 android {
-    namespace 'com.trimettransit.tracker.data.local'
-    compileSdk 37
+    namespace = 'com.trimettransit.tracker.data.local'
+    compileSdk = 37
 
     defaultConfig {
-        minSdk 31
+        minSdk = 31
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_21
-        targetCompatibility JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     lint {
