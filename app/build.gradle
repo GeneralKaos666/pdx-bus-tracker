@@ -1,6 +1,37 @@
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.BuiltArtifact
+import com.android.build.api.variant.BuiltArtifacts
+import com.android.build.api.variant.BuiltArtifactsLoader
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.plugin.compose'
+}
+
+abstract class RenameApkTask extends DefaultTask {
+    @Internal
+    abstract Property<BuiltArtifactsLoader> getBuiltArtifactsLoader()
+    @InputDirectory
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract DirectoryProperty getInput()
+    @OutputDirectory
+    abstract DirectoryProperty getOutput()
+    @Input
+    abstract Property<String> getVariantName()
+
+    @TaskAction
+    void renameApk() {
+        BuiltArtifacts builtArtifacts = builtArtifactsLoader.get().load(input.get())
+        def outDir = output.get().asFile
+        outDir.deleteDir()
+        outDir.mkdirs()
+        builtArtifacts.elements.each { artifact ->
+            def newName = "TrimetTracker-${variantName.get()}-${artifact.versionName}.apk"
+            Files.copy(new File(artifact.outputFile).toPath(), new File(output.get().asFile, newName).toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
+    }
 }
 
 android {
@@ -64,6 +95,19 @@ android {
             doNotStrip "**/*.so"
         }
   }
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def renameTask = tasks.register("renameApkFor${variant.name.capitalize()}", RenameApkTask) {
+            output.set(layout.buildDirectory.dir("outputs/renamed_apks/${variant.name}"))
+            variantName.set(variant.name)
+            builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
+        }
+        variant.artifacts.use(renameTask)
+                .wiredWith { it.input }
+                .toListenTo(SingleArtifact.APK.INSTANCE)
+    }
 }
 
 dependencies {
