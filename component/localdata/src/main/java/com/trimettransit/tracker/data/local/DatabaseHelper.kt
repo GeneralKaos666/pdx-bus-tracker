@@ -1,4 +1,4 @@
-@file:Suppress("Annotator", "Annotator", "Annotator")
+@file:Suppress("Annotator")
 
 package com.trimettransit.tracker.data.local
 

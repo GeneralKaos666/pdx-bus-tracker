@@ -13,6 +13,7 @@ import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.VehiclePosition
+import org.json.JSONObject
 
 object TransitApi {
     private const val TAG = "TransitApi"
@@ -127,7 +128,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                     }
                     locId = obj.optInt("locid", 0)
                     latitude = obj.optDouble("lat", 0.0)
-                    longitude = if (obj.has("lng")) obj.getDouble("lng") else obj.optDouble("lon", 0.0)
+                    longitude = obj.optDouble("lng", obj.optDouble("lon", 0.0))
                     addRoute(route)
                     computeTransitType()
                 }
@@ -234,7 +235,14 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                         desc = obj.optString("desc", "")
                         val routesArr = obj.optJSONArray("routes")
                         if (routesArr != null) {
-                            routes = MutableList(routesArr.length()) { k -> routesArr.optInt(k, 0) }
+                            // Each element is a route object per TriMet's docs; fall back to
+                            // a plain int for robustness against legacy shapes.
+                            routes = MutableList(routesArr.length()) { k ->
+                                when (val el = routesArr.opt(k)) {
+                                    is JSONObject -> el.optInt("route", 0)
+                                    else -> routesArr.optInt(k, 0)
+                                }
+                            }
                         }
                     }
                     detourList.add(detour)
@@ -412,7 +420,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
         if (apiKey.isBlank()) return@withContext null
         try {
             val baseUrl = context.getString(R.string.base_stop_location_v2_url)
-            val url = "$baseUrl/appID/$apiKey/locIds/$locId"
+            val url = "$baseUrl/appID/$apiKey/locIDs/$locId"
             val json = parser.fetch(url)
             val resultSet = json.getJSONObject("resultSet")
             val locationArr = resultSet.optJSONArray("location")
@@ -481,7 +489,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                             val stopDir = obj.optString("dir", "")
                             newStop.dirDesc = if (stopDir == "") dirDesc else stopDir
                             newStop.latitude = obj.optDouble("lat", 0.0)
-                            newStop.longitude = if (obj.has("lng")) obj.getDouble("lng") else obj.optDouble("lon", 0.0)
+                            newStop.longitude = obj.optDouble("lng", obj.optDouble("lon", 0.0))
                             newStop.routeNum = routeNum
                             newStop.addRoute(route)
                             stopsByLocId[locId] = newStop

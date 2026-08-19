@@ -51,9 +51,24 @@ android {
     signingConfigs {
         release {
             storeFile = file("release.keystore")
-            storePassword = System.getenv("STORE_PASSWORD") ?: "android"
-            keyAlias = System.getenv("KEY_ALIAS") ?: "release"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: "android"
+            def storePw = System.getenv("STORE_PASSWORD")
+            def alias = System.getenv("KEY_ALIAS")
+            def keyPw = System.getenv("KEY_PASSWORD")
+            def isReleaseBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
+            if (storePw != null && alias != null && keyPw != null) {
+                storePassword = storePw
+                keyAlias = alias
+                keyPassword = keyPw
+            } else if (project.hasProperty("releaseSigningFallback")) {
+                storePassword = "android"
+                keyAlias = "release"
+                keyPassword = "android"
+            } else if (isReleaseBuild) {
+                throw new GradleException(
+                    "Release signing env vars STORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD not set. " +
+                    "Set them or build with -PreleaseSigningFallback=true."
+                )
+            }
         }
     }
 

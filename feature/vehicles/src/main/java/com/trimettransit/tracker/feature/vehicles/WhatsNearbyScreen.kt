@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -31,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -91,7 +94,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 private const val WHATS_NEARBY_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
-/** Nearby stop search + map radius around the user, in feet (matches NearbyStopsScreen, which uses feet = 500). */
+/** Nearby stop search + map radius around the user, in feet (800 ft ≈ 244 m). */
 private const val NEARBY_RADIUS_FEET = 800
 private const val FOOT_TO_METERS = 0.3048
 /** Derived so the stop search and the map radius circle can never drift apart. */
@@ -102,8 +105,12 @@ private const val LOCATION_FIX_TIMEOUT_MS = 10_000L
 /** A fix younger than this is reused on resume; older ones (or none) trigger a fresh request. */
 private const val LOCATION_REFRESH_INTERVAL_MS = 5 * 60_000L
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
+fun WhatsNearbyScreen(
+    pageVisible: Boolean,
+    onNavigateToArrivals: (Stop, Int) -> Unit
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var vehicles by remember { mutableStateOf<List<VehiclePosition>?>(null) }
@@ -112,8 +119,8 @@ fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var hasLoaded by remember { mutableStateOf(false) }
     var myLocation by remember { mutableStateOf<LatLng?>(null) }
-    // Age (device time) of the current fix; 0 when no fix has been acquired yet.
-    var myLocationAgeMs by remember { mutableLongStateOf(0L) }
+    // Device-time timestamp of the current fix; 0 when no fix has been acquired yet.
+    var myLocationFixTimeMs by remember { mutableLongStateOf(0L) }
     // In-flight jobs, deduped so resume/re-entry can't stack overlapping fetches.
     var vehiclesJob by remember { mutableStateOf<Job?>(null) }
     var stopsJob by remember { mutableStateOf<Job?>(null) }
@@ -125,6 +132,10 @@ fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
+    // Tracks whether the system permission dialog was already shown; the pager
+    // pre-composes this page while another tab is visible, so the dialog must
+    // only fire once and only while the user is actually looking at the page.
+    var hasAskedPermission by remember { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -174,7 +185,7 @@ fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
         // Re-request when there is no fix yet or the last one has gone stale; a single
         // in-flight probe is shared so concurrent resume calls can't stack duplicates.
         if (myLocation != null &&
-            System.currentTimeMillis() - myLocationAgeMs < LOCATION_REFRESH_INTERVAL_MS
+            System.currentTimeMillis() - myLocationFixTimeMs < LOCATION_REFRESH_INTERVAL_MS
         ) {
             return
         }
@@ -183,33 +194,35 @@ fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
             val fix = requestCurrentLocation(context)
             if (fix != null) {
                 myLocation = fix
-                myLocationAgeMs = System.currentTimeMillis()
+                myLocationFixTimeMs = System.currentTimeMillis()
             }
         }
     }
 
-    // Ask for location once if not granted; reading it only matters for the map camera/marker.
-    LaunchedEffect(Unit) {
-        if (!locationPermissionGranted) {
+    // Ask for location once if not granted, and only while this page is the one
+    // the user is looking at (the pager pre-composes adjacent pages).
+    LaunchedEffect(pageVisible, locationPermissionGranted) {
+        if (pageVisible && !locationPermissionGranted && !hasAskedPermission) {
+            hasAskedPermission = true
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
     LaunchedEffect(locationPermissionGranted) {
         if (locationPermissionGranted) {
-            // Fast path: last known fix, if any (carry its age so a stale cached fix
-            // triggers a fresh request on the next resume). Otherwise wait for a fresh
-            // fix so the "you are here" dot and centered camera appear even with no
-            // prior location.
+            // Fast path: last known fix, if any (carry its timestamp so a stale cached
+            // fix triggers a fresh request on the next resume). Otherwise wait for a
+            // fresh fix so the "you are here" dot and centered camera appear even with
+            // no prior location.
             val lastKnown = readLastKnownLocation(context)
             if (lastKnown != null) {
                 myLocation = lastKnown.first
-                myLocationAgeMs = lastKnown.second
+                myLocationFixTimeMs = lastKnown.second
             } else {
                 val freshFix = requestCurrentLocation(context)
                 if (freshFix != null) {
                     myLocation = freshFix
-                    myLocationAgeMs = System.currentTimeMillis()
+                    myLocationFixTimeMs = System.currentTimeMillis()
                 }
             }
         }
@@ -254,6 +267,24 @@ fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
                 onStopClick = { stop -> onNavigateToArrivals(stop, -1) },
                 modifier = Modifier.fillMaxSize()
             )
+            if (pageVisible && !locationPermissionGranted && hasAskedPermission) {
+                Surface(
+                    onClick = { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) },
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shadowElevation = 4.dp,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 8.dp)
+                ) {
+                    Text(
+                        text = "Location permission is off — tap to grant",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                    )
+                }
+            }
             Crossfade(
                 targetState = when {
                     isLoading && vehicles == null -> 0
@@ -277,9 +308,9 @@ fun WhatsNearbyScreen(onNavigateToArrivals: (Stop, Int) -> Unit) {
     }
 }
 
-/** Last-known fix from any provider, with its device-time age; null when the device
- *  has no stored fix yet. The age lets the screen refresh a stale cached fix instead
- *  of trusting it forever. */
+/** Last-known fix from any provider, with the device-time timestamp of the fix; null when
+ *  the device has no stored fix yet. Comparing the timestamp against the current time lets
+ *  the screen refresh a stale cached fix instead of trusting it forever. */
 @android.annotation.SuppressLint("MissingPermission")
 private fun readLastKnownLocation(context: Context): Pair<LatLng, Long>? {
     val hasFineLocation = ContextCompat.checkSelfPermission(

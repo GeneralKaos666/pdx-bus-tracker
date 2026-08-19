@@ -78,6 +78,9 @@ fun NearbyStopsScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var hasLoaded by remember { mutableStateOf(false) }
+    // Tracks whether the system permission dialog was already shown; prevents
+    // re-prompting on every resume after a denial.
+    var hasAskedPermission by remember { mutableStateOf(false) }
     // In-flight load, deduped so resume/re-entry can't stack overlapping fetches.
     var loadJob by remember { mutableStateOf<Job?>(null) }
 
@@ -109,6 +112,16 @@ fun NearbyStopsScreen(
         if (locationPermissionGranted) {
             launchLoadNearbyStops()
         } else {
+            errorMessage = "Location permission is required to find nearby stops"
+        }
+    }
+
+    // Explicit user action (Refresh/Try Again buttons): always allowed to prompt.
+    fun promptForPermissionAndLoad() {
+        if (locationPermissionGranted) {
+            launchLoadNearbyStops()
+        } else {
+            hasAskedPermission = true
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
@@ -142,7 +155,7 @@ fun NearbyStopsScreen(
         // Refresh button
         val refreshSource = remember { MutableInteractionSource() }
         FilledTonalButton(
-            onClick = { loadIfPermissionGranted() },
+            onClick = { promptForPermissionAndLoad() },
             enabled = !isLoading,
             interactionSource = refreshSource,
             modifier = Modifier.fillMaxWidth().pressScale(refreshSource)
@@ -186,7 +199,7 @@ fun NearbyStopsScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             val retrySource = remember { MutableInteractionSource() }
                             OutlinedButton(
-                                onClick = { loadIfPermissionGranted() },
+                                onClick = { promptForPermissionAndLoad() },
                                 interactionSource = retrySource,
                                 modifier = Modifier.pressScale(retrySource)
                             ) {
@@ -246,8 +259,9 @@ private suspend fun loadNearbyStops(
     try {
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val hasGps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        if (!hasGps) {
-            setError("GPS is disabled.\nPlease enable location services.")
+        val hasNetwork = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        if (!hasGps && !hasNetwork) {
+            setError("Location services are disabled.\nPlease enable location services.")
             return
         }
 

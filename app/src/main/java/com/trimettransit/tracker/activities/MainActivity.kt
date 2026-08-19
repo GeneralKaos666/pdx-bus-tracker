@@ -649,6 +649,7 @@ private fun MainAppContent(
                                 }
                             )
                             3 -> WhatsNearbyScreen(
+                                pageVisible = topPagerState.currentPage == 3,
                                 onNavigateToArrivals = { stop: Stop, _: Int ->
                                     navigateToArrivals(stop, -1)
                                 }

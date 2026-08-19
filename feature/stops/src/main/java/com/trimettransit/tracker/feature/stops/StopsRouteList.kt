@@ -54,8 +54,12 @@ fun StopsRouteList(
     var routes by remember { mutableStateOf<List<Route>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
+    // Bumped by the retry button to re-run the fetch (LaunchedEffect key).
+    var retryKey by remember { mutableStateOf(0) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(retryKey) {
+        isLoading = true
+        isMissingApiKey = false
         val key = ApiKeys.getTrimetApiKey()
         if (key.isBlank()) {
             isMissingApiKey = true
@@ -77,6 +81,7 @@ fun StopsRouteList(
         stateLabel = "routesState",
         key = { it.routeId },
         contentType = { "route" },
+        onRetry = { retryKey++ },
         itemContent = { route ->
             RouteListItem(
                 route = route,
