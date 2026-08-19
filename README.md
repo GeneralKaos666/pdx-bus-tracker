@@ -20,7 +20,14 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 
 ## Screenshots
 
-*None yet — PRs with a `docs/screenshots/` folder are welcome.*
+| | | |
+|---|---|---|
+| <img src="docs/screenshots/Transit_routes_list_view_1.png" width="220" alt="Transit routes list view (1)"> | <img src="docs/screenshots/Transit_routes_list_view_2.png" width="220" alt="Transit routes list view (2)"> | <img src="docs/screenshots/Search_results_for_route_72.png" width="220" alt="Search results for route 72"> |
+| Transit routes list view (1) | Transit routes list view (2) | Search results for route 72 |
+| <img src="docs/screenshots/Route_9_arrivals_Gresham_Central.png" width="220" alt="Route 9 arrivals at Gresham Central"> | <img src="docs/screenshots/Multiple_route_arrivals_Clackamas_TC_1.png" width="220" alt="Multiple-route arrivals at Clackamas Town Center (1)"> | <img src="docs/screenshots/Multiple_route_arrivals_Clackamas_TC_2.png" width="220" alt="Multiple-route arrivals at Clackamas Town Center (2)"> |
+| Route 9 arrivals at Gresham Central | Multiple-route arrivals at Clackamas Town Center (1) | Multiple-route arrivals at Clackamas Town Center (2) |
+| <img src="docs/screenshots/Empty_Favorites_page.png" width="220" alt="Empty Favorites page"> | <img src="docs/screenshots/Empty_Recent_Stops_page.png" width="220" alt="Empty Recent Stops page"> | <img src="docs/screenshots/Settings_menu.png" width="220" alt="Settings menu"> |
+| Empty Favorites page | Empty Recent Stops page | Settings menu |
 
 ## Requirements
 
