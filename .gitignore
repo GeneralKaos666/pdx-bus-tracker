@@ -13,3 +13,6 @@ scaffold.txt
 scaffold11.txt
 scaffold2.txt
 kls_database.db
+*.jks
+*.keystore
+
