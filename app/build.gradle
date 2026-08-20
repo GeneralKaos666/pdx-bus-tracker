@@ -51,6 +51,7 @@ android {
     signingConfigs {
         release {
             storeFile = file("release.keystore")
+<<<<<<< HEAD
             def storePw = System.getenv("STORE_PASSWORD")
             def alias = System.getenv("KEY_ALIAS")
             def keyPw = System.getenv("KEY_PASSWORD")
@@ -69,6 +70,16 @@ android {
                     "Set them or build with -PreleaseSigningFallback=true."
                 )
             }
+||||||| c1b1ff1
+            storeFile file("release.keystore")
+            storePassword System.getenv("STORE_PASSWORD") ?: "android"
+            keyAlias System.getenv("KEY_ALIAS") ?: "release"
+            keyPassword System.getenv("KEY_PASSWORD") ?: "android"
+=======
+            storePassword = System.getenv("STORE_PASSWORD") ?: "android"
+            keyAlias = System.getenv("KEY_ALIAS") ?: "release"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "android"
+>>>>>>> v4.9.0
         }
     }
 

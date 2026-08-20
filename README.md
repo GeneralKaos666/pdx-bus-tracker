@@ -11,8 +11,17 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 - **Route & stop browser** — routes → directions → stops in an animated accordion drill-down
 - **Nearby stops** — find stops around your current GPS location
 - **Stop search** — instant client-side search by name, right on the Home screen
+<<<<<<< HEAD
 - **Favorites & recent stops** — saved locally in SQLite; the Favorites pill always lands on the Favorites tab
 - **Floating pill navigation** — a Material 3 Expressive pill bottom bar with a fixed Favorites / Recent / Routes / What's Nearby item set, swipeable screens, and a trailing Settings button (becomes a Back button on Settings)
+||||||| c1b1ff1
+- **Stop search** — instant client-side search by name
+- **Favorites & recent stops** — saved locally in SQLite; the Home button always lands on the Favorites tab
+- **Floating pill navigation** — a Material 3 Expressive pill bottom bar for Home, Routes, What's Nearby, and Search, with swipeable screens and a Settings button
+=======
+- **Favorites & recent stops** — saved locally in SQLite; the Home button always lands on the Favorites tab
+- **Floating pill navigation** — a Material 3 Expressive pill bottom bar for Home, Routes, and What's Nearby, with swipeable screens and a Settings button
+>>>>>>> v4.9.0
 - **Service alerts & detours** — active TriMet alerts for the stop and its routes
 - **Picture-in-picture** — mini-window countdown on the arrivals screen (2:3 PiP)
 - **Dynamic theming** — Material 3 with Android 12+ dynamic color; system/light/dark override in Settings
@@ -41,7 +50,14 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 
 | Layer | Modules |
 |---|---|
+<<<<<<< HEAD
 | `app` | single Activity, Compose Navigation graph, floating pill nav + trailing Settings/Back button, PiP |
+||||||| c1b1ff1
+| `app` | single Activity, Compose Navigation graph, floating pill nav + Settings FAB, PiP |
+| `feature/*` | `home`, `stops`, `search`, `vehicles`, `arrivals`, `settings` — one screen area per module |
+=======
+| `app` | single Activity, Compose Navigation graph, floating pill nav + Settings FAB, PiP |
+>>>>>>> v4.9.0
 | `feature/*` | `home`, `stops`, `vehicles`, `arrivals`, `settings` — one screen area per module |
 | `component/*` | `transit` (TriMet API client: OkHttp + JSON parsing), `localdata` (SQLite favorites/recent stops) |
 | `common/*` | `model` (domain models), `utils` (connectivity, date helpers), `ui` (theme, shared Compose components, cross-screen state) |
