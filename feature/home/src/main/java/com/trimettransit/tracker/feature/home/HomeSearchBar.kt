@@ -84,19 +84,32 @@ fun HomeSearchBar(
     var hasError by remember { mutableStateOf(false) }
     var results by remember { mutableStateOf<List<Stop>>(emptyList()) }
 
-    LaunchedEffect(query) {
-        if (query.isBlank()) return@LaunchedEffect
-        if (allStops == null) {
+    // Lazy-load the full stop list once, on the first non-blank query. Keyed on
+    // (allStops == null, query.isNotBlank()) so typing never re-launches the
+    // network call while the list is still loading.
+    LaunchedEffect(allStops == null, query.isNotBlank()) {
+        if (allStops == null && query.isNotBlank()) {
             val key = ApiKeys.getTrimetApiKey()
             if (key.isNotBlank() && ConnectionUtils.isOnline(context)) {
                 isLoading = true
+                hasError = false
                 val url = "$baseRouteUrl/appID/$key/dir/true/stops/true"
                 allStops = TransitApi.fetchSearchStops(context, url)
                 isLoading = false
                 if (allStops == null) hasError = true
+            } else {
+                // Offline (or no API key): surface the connection message instead of
+                // pretending the search simply found nothing.
+                hasError = true
             }
         }
-        if (allStops != null) {
+    }
+
+    LaunchedEffect(query, allStops) {
+        // Drop the previous query's matches immediately so the dropdown never shows
+        // stale results under the new text while the search is being recomputed.
+        results = emptyList()
+        if (query.isNotBlank() && allStops != null) {
             results = withContext(Dispatchers.Default) { searchStops(allStops!!, query) }
         }
     }

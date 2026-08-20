@@ -32,15 +32,19 @@ fun transitTypeLabel(type: String?): String = when (type) {
 }
 
 /**
- * Returns the route badge letter for a route number ("M" for MAX, "R" for
- * Rail/Streetcar 90·100, "B" for buses; "" when unknown).
+ * Returns the route badge letter for a route number ("M" for MAX, "S" for
+ * Streetcar, "W" for WES, "B" for buses; "" when unknown).
+ * TriMet route numbers: MAX Blue=100, Red=90, Yellow=190, Green=200,
+ * Orange=290, Vintage Trolley=196; WES=203; Streetcar A=193, B=194, NS=195.
  */
 fun transitBadgeLetter(routeNumber: Int): String = when {
-    routeNumber == 200 -> "M"
-    routeNumber == 100 || routeNumber == 90 -> "R"
+    routeNumber == 90 || routeNumber == 100 || routeNumber == 190 ||
+        routeNumber == 200 || routeNumber == 290 || routeNumber == 196 -> "M"
+    routeNumber == 203 -> "W"
+    routeNumber in 193..195 -> "S"
     routeNumber in 1..99 -> "B"
     else -> ""
 }
 
 /** Letters actually produced by [transitBadgeLetter]. */
-fun transitBadgeLetters(): List<String> = listOf("B", "M", "R")
+fun transitBadgeLetters(): List<String> = listOf("B", "M", "S", "W")

@@ -7,7 +7,7 @@ import org.joda.time.format.DateTimeFormat
 fun formatDateTime(dateTime: DateTime, context: Context): String {
     val builder = StringBuilder()
     val daysOfWeek = context.resources.getStringArray(R.array.days_of_week)
-    if (dateTime.dayOfWeek != DateTime.now().dayOfWeek) {
+    if (dateTime.toLocalDate() != DateTime.now().toLocalDate()) {
         builder.append(daysOfWeek[dateTime.dayOfWeek - 1])
         builder.append(", ")
     }

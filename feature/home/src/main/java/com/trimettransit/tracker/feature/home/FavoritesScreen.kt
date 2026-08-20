@@ -15,6 +15,7 @@ import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -30,9 +31,13 @@ fun FavoritesScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
     var hasLoaded by remember { mutableStateOf(false) }
+    var loadJob by remember { mutableStateOf<Job?>(null) }
 
     fun loadFavorites() {
-        coroutineScope.launch {
+        // Cancel any in-flight read so a slower older one can't overwrite newer data.
+        loadJob?.cancel()
+        val job = coroutineScope.launch {
+            val me = coroutineContext[Job]!!
             try {
                 val db = DatabaseHelper(context)
                 favorites = withContext(Dispatchers.IO) { db.favorites }
@@ -41,9 +46,11 @@ fun FavoritesScreen(
                 Log.e(TAG, "Failed to load favorites", e)
                 isError = true
             } finally {
-                isLoading = false
+                // Only the current load may clear the loading state.
+                if (loadJob == me) isLoading = false
             }
         }
+        loadJob = job
     }
 
     // Auto-refresh on app re-entry (observer replays ON_RESUME synchronously

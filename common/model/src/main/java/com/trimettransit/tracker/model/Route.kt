@@ -11,7 +11,7 @@ data class Route(
     val typeLetter: String
         get() = when {
             isWes -> "W"
-            isMax -> "M"
+            isMax || desc.contains("Vintage Trolley") -> "M"
             isBus -> "B"
             isStreetcar -> "S"
             else -> "Z"

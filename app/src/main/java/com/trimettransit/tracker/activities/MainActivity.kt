@@ -118,8 +118,9 @@ import com.trimettransit.tracker.feature.settings.SettingsScreen
 import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
 import com.trimettransit.tracker.feature.vehicles.WhatsNearbyScreen
+import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
-import java.net.URLEncoder
+import android.net.Uri
 
 private val AnimatedContentTransitionScope<*>.navEnter: EnterTransition
     get() = slideInHorizontally(
@@ -402,7 +403,7 @@ private fun MainAppContent(
             DatabaseHelper(context.applicationContext).addRecentStop(stop)
         }
         navController.navigate(
-            "arrivals/${stop.locId}?stopName=${URLEncoder.encode(stop.desc, "UTF-8")}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
+            "arrivals/${stop.locId}?stopName=${Uri.encode(stop.desc)}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
         )
     }
 
@@ -514,7 +515,17 @@ private fun MainAppContent(
                                     val stopName = entry?.arguments?.getString("stopName") ?: ""
                                     scope.launch {
                                         val routeId = entry?.arguments?.getInt("routeId") ?: -1
-                                        val result = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite, routeId, NavState.arrivalsLat, NavState.arrivalsLng)
+                                        var lat = NavState.arrivalsLat
+                                        var lng = NavState.arrivalsLng
+                                        if (!NavState.arrivalsIsFavorite && lat == 0.0 && lng == 0.0) {
+                                            // Coords not resolved yet (fetch still in flight or offline):
+                                            // resolve them now so the favorite isn't parked at 0,0.
+                                            TransitApi.fetchStopById(context, locId)?.let {
+                                                lat = it.latitude
+                                                lng = it.longitude
+                                            }
+                                        }
+                                        val result = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite, routeId, lat, lng)
                                         if (result.first) {
                                             NavState.arrivalsIsFavorite = !NavState.arrivalsIsFavorite
                                         }
@@ -577,7 +588,8 @@ private fun MainAppContent(
                         topPage = topPagerState.currentPage,
                         onNavigate = ::navigateToTopPage,
                         onSettingsClick = {
-                            navController.navigate("settings")
+                            // launchSingleTop: a fast double-tap must not push two settings entries.
+                            navController.navigate("settings") { launchSingleTop = true }
                         },
                         showBack = currentRoute == "settings",
                         onBackClick = { navController.popBackStack() }
@@ -649,12 +661,7 @@ private fun MainAppContent(
                                 }
                             )
                             3 -> WhatsNearbyScreen(
-<<<<<<< HEAD
                                 pageVisible = topPagerState.currentPage == 3,
-||||||| c1b1ff1
-                            2 -> WhatsNearbyScreen(
-=======
->>>>>>> v4.9.0
                                 onNavigateToArrivals = { stop: Stop, _: Int ->
                                     navigateToArrivals(stop, -1)
                                 }

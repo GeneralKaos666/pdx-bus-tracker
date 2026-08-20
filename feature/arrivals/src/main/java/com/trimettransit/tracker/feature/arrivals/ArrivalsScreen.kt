@@ -115,9 +115,11 @@ import com.trimettransit.tracker.ui.components.transitTypeLabel
 import com.trimettransit.tracker.util.formatDateTime
 import com.trimettransit.tracker.util.minutesUntil
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
@@ -172,6 +174,15 @@ fun ArrivalsScreen(
     var trackingSign by remember { mutableStateOf("") }
     var trackingVehicleId by remember { mutableIntStateOf(0) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
+    // 30s tick forcing the arrival rows' countdowns to recompute in the foreground,
+    // so "8 min" doesn't sit frozen until the next manual refresh.
+    var countdownTick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000)
+            countdownTick++
+        }
+    }
     val coroutineScope = rememberCoroutineScope()
     val locId = stopId.toIntOrNull() ?: 0
     var stopLat by remember { mutableDoubleStateOf(latitude) }
@@ -202,8 +213,10 @@ fun ArrivalsScreen(
         }
     }
 
+    var arrivalsJob: Job? = null
     fun loadArrivals() {
-        coroutineScope.launch {
+        arrivalsJob?.cancel()
+        arrivalsJob = coroutineScope.launch {
             isLoading = true
             val result = TransitApi.fetchArrivals(
                 context = context,
@@ -242,9 +255,8 @@ fun ArrivalsScreen(
 
     // Re-fetch arrivals on app re-entry (and initial composition via lifecycle observer)
     RememberOnResume { loadArrivals() }
-    val totalRouteCount = unfilteredArrivals.map { it.routeId }.distinct().size
     val visibleCount = minOf(arrivals.size, 5)
-    val showExpandButton = totalRouteCount > 1 && unfilteredArrivals.size > visibleCount
+    val showExpandButton = arrivals.size > 5
     // Tracked positions: the tapped row's own vehicle when it reports a position,
     // otherwise that line's other live vehicles so the map is never empty.
     val trackedPositions = if (trackingVehicleId > 0) {
@@ -420,17 +432,18 @@ fun ArrivalsScreen(
                             }
 
                             val visibleArrivals =
-                                if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
+                                if (showAllArrivals) arrivals else arrivals.take(5)
                             items(
                                 visibleArrivals,
-                                key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}" },
+                                key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}_${it.blockID}_${it.vehicleID}" },
                                 contentType = { "arrival" }) { arrival ->
                                         val rowKey =
-                                            "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}"
+                                            "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}_${arrival.blockID}_${arrival.vehicleID}"
                                         Column {
                                             ArrivalItem(
                                                 arrival = arrival,
                                                 context = context,
+                                                refreshKey = countdownTick,
                                                 onClick = {
                                                     if (hasValidCoords) {
                                                         if (trackingKey == rowKey) {
@@ -490,7 +503,7 @@ fun ArrivalsScreen(
                                                 ) {
                                                     Text(
                                                         text = if (showAllArrivals) "Show fewer"
-                                                        else "Show all arrivals (${unfilteredArrivals.size - visibleCount} more)",
+                                                        else "Show all arrivals (${arrivals.size - visibleCount} more)",
                                                         style = MaterialTheme.typography.labelLarge,
                                                         color = MaterialTheme.colorScheme.primary,
                                                         modifier = Modifier.weight(1f)
@@ -646,10 +659,10 @@ private fun AlertsDialog(
 
 private fun formatDelay(arrival: Arrival): String? {
     if (arrival.status != "estimated" || arrival.estimatedMillis == 0L || arrival.scheduledMillis == 0L) return null
-    val delayMin = ((arrival.estimatedMillis - arrival.scheduledMillis) / 60000).toInt()
+    val delayMin = (arrival.estimatedMillis - arrival.scheduledMillis) / 60000.0
     return when {
-        delayMin > 1 -> "${delayMin} min late"
-        delayMin < -1 -> "${-delayMin} min early"
+        delayMin >= 1.0 -> "${delayMin.roundToInt()} min late"
+        delayMin <= -1.0 -> "${-delayMin.roundToInt()} min early"
         else -> "On time"
     }
 }
@@ -821,7 +834,9 @@ private fun StopMapCard(
                     // Keep stop + tracked buses in view; re-fit only once the map has a
                     // stable, non-degenerate size and something is actually off-screen.
                     val map = mapState.map
-                    val points = blockPositions.map { it.lat to it.lng }
+                    val points = blockPositions
+                        .filter { it.lat != 0.0 || it.lng != 0.0 }
+                        .map { it.lat to it.lng }
                     if (map != null && points.isNotEmpty()) {
                         val settled = view.width > 0 && view.height > 0 &&
                                 view.width == fitSize[0] && view.height == fitSize[1]
@@ -831,14 +846,19 @@ private fun StopMapCard(
                             fitSize[0] = view.width
                             fitSize[1] = view.height
                             // The card is mid-expansion; wait for layout to settle, then fit
-                            // (retry once if it is still resizing).
+                            // (retry once if it is still resizing). Guarded by isAttachedToWindow:
+                            // after disposal the view reads 0x0 and the native map is destroyed,
+                            // so any deferred fit must be dropped.
                             view.postDelayed({
+                                if (!view.isAttachedToWindow) return@postDelayed
                                 if (view.width == fitSize[0] && view.height == fitSize[1]) {
                                     fitIfNeeded(map, lat, lng, points)
                                 } else {
                                     fitSize[0] = view.width
                                     fitSize[1] = view.height
-                                    view.postDelayed({ fitIfNeeded(map, lat, lng, points) }, 400)
+                                    view.postDelayed({
+                                        if (view.isAttachedToWindow) fitIfNeeded(map, lat, lng, points)
+                                    }, 400)
                                 }
                             }, 400)
                         }
@@ -870,7 +890,9 @@ private class MapState {
     /** Pushes the latest bus positions into the GeoJsonSource (no-op until style is ready). */
     fun applyPositions() {
         val source = busSource ?: return
-        val features = positions.map { bp ->
+        val features = positions
+            .filter { it.lat != 0.0 || it.lng != 0.0 }
+            .map { bp ->
             val letter = transitBadgeLetter(bp.routeNumber).ifBlank { "B" }
             val feature = Feature.fromGeometry(Point.fromLngLat(bp.lng, bp.lat))
             feature.addStringProperty("icon", "badge-$letter")
@@ -960,6 +982,7 @@ private fun ArrivalItem(
     arrival: Arrival,
     context: Context,
     modifier: Modifier = Modifier,
+    refreshKey: Int = 0,
     onClick: () -> Unit = {}
 ) {
     val type = transitBadgeLetter(arrival.routeId)

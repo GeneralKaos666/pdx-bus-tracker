@@ -18,10 +18,10 @@ data class Stop(
                     route.isBus && !route.desc.contains("Shuttle") -> transitType = "B"
                     route.isMax || route.desc.contains("Vintage Trolley") -> transitType = "M"
                     route.isWes -> transitType = "W"
-                    else -> transitType = "Z"
                 }
             }
         }
+        if (transitType.isNullOrEmpty()) transitType = "Z"
     }
 
     fun addRoute(route: Route) {

@@ -173,11 +173,16 @@ fun WhatsNearbyScreen(
         // Cancel any in-flight fetch first so a slow older response can't overwrite newer stops.
         stopsJob?.cancel()
         stopsJob = coroutineScope.launch {
-            stops = TransitApi.fetchStopsByLocation(
+            val result = TransitApi.fetchStopsByLocation(
                 context = context,
                 ll = "${location.latitude},${location.longitude}",
                 feet = NEARBY_RADIUS_FEET
             )
+            // Keep the last-known stops when a fetch fails (e.g. offline mid-poll),
+            // mirroring loadVehicles' stale-data policy.
+            if (result != null || stops == null) {
+                stops = result
+            }
         }
     }
 
@@ -319,9 +324,13 @@ private fun readLastKnownLocation(context: Context): Pair<LatLng, Long>? {
     if (!hasFineLocation) return null
     val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
         ?: return null
-    val location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-        ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-        ?: return null
+    val location = try {
+        locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+    } catch (e: SecurityException) {
+        // Permission revoked between check and call — treat as no stored fix.
+        null
+    } ?: return null
     return LatLng(location.latitude, location.longitude) to location.time
 }
 
@@ -476,7 +485,7 @@ private fun VehicleMap(
                     map.addOnMapClickListener { latLng ->
                         val screen = map.projection.toScreenLocation(latLng)
                         val hits = map.queryRenderedFeatures(screen, "stop-layer")
-                        val locId = hits.firstOrNull()?.getNumberProperty("locId")?.toInt() ?: 0
+                        val locId = hits.firstOrNull()?.getNumberProperty("locId")?.toInt() ?: return@addOnMapClickListener false
                         val stop = mapState.stops.firstOrNull { it.locId == locId }
                         if (stop != null) {
                             currentOnStopClick(stop)
@@ -575,7 +584,9 @@ private class VehicleMapState {
     /** Pushes the latest vehicle positions into the GeoJsonSource (no-op until style is ready). */
     fun applyVehicles() {
         val source = vehiclesSource ?: return
-        val features = vehicles.map { v ->
+        val features = vehicles
+            .filter { it.latitude != 0.0 || it.longitude != 0.0 }
+            .map { v ->
             val letter = transitBadgeLetter(v.routeNumber).ifBlank { "B" }
             val feature = Feature.fromGeometry(Point.fromLngLat(v.longitude, v.latitude))
             feature.addStringProperty("icon", "badge-$letter")
@@ -697,8 +708,9 @@ private fun radiusRing(center: LatLng): Polygon {
 
 /** Fits the camera to all vehicles (no-op with a degenerate size is guarded by the caller). */
 private fun fitVehicles(map: MapLibreMap, vehicles: List<VehiclePosition>) {
-    if (vehicles.isEmpty()) return
-    val all = vehicles.map { LatLng(it.latitude, it.longitude) }
+    val valid = vehicles.filter { it.latitude != 0.0 || it.longitude != 0.0 }
+    if (valid.isEmpty()) return
+    val all = valid.map { LatLng(it.latitude, it.longitude) }
     val bounds = LatLngBounds.from(
         all.maxOf { it.latitude }, all.maxOf { it.longitude },
         all.minOf { it.latitude }, all.minOf { it.longitude }

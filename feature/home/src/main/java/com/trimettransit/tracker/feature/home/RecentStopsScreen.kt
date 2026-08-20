@@ -21,6 +21,7 @@ import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -36,9 +37,13 @@ fun RecentStopsScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
     var hasLoaded by remember { mutableStateOf(false) }
+    var loadJob by remember { mutableStateOf<Job?>(null) }
 
     fun loadRecentStops() {
-        coroutineScope.launch {
+        // Cancel any in-flight read so a slower older one can't overwrite newer data.
+        loadJob?.cancel()
+        val job = coroutineScope.launch {
+            val me = coroutineContext[Job]!!
             try {
                 val db = DatabaseHelper(context)
                 recentStops = withContext(Dispatchers.IO) { db.recentStops }
@@ -47,9 +52,11 @@ fun RecentStopsScreen(
                 Log.e(TAG, "Failed to load recent stops", e)
                 isError = true
             } finally {
-                isLoading = false
+                // Only the current load may clear the loading state.
+                if (loadJob == me) isLoading = false
             }
         }
+        loadJob = job
     }
 
     // Auto-refresh on app re-entry (observer replays ON_RESUME synchronously

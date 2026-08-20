@@ -19,17 +19,23 @@ import kotlinx.coroutines.flow.drop
 fun AutoHideBottomBarEffect(state: LazyListState) {
     val threshold = with(LocalDensity.current) { 24.dp.toPx() }
     LaunchedEffect(state) {
-        var previous = state.layoutInfo.visibleItemsInfo.firstOrNull()?.offset ?: 0
-        snapshotFlow {
-            state.layoutInfo.visibleItemsInfo.firstOrNull()?.offset ?: 0
-        }.drop(1).collect { offset ->
-            val delta = offset - previous
-            previous = offset
-            if (delta > threshold && NavState.bottomBarVisible) {
+        var previous = scrollPosition(state)
+        snapshotFlow { scrollPosition(state) }.drop(1).collect { position ->
+            val delta = position - previous
+            previous = position
+            if (delta < -threshold && NavState.bottomBarVisible) {
                 NavState.bottomBarVisible = false
-            } else if (delta < -threshold && !NavState.bottomBarVisible) {
+            } else if (delta > threshold && !NavState.bottomBarVisible) {
                 NavState.bottomBarVisible = true
             }
         }
     }
+}
+
+/** Monotonic approximation of the list's scroll position, immune to the
+ *  first-visible-item offset jumping by a whole item when one leaves the
+ *  viewport. */
+private fun scrollPosition(state: LazyListState): Float {
+    val first = state.layoutInfo.visibleItemsInfo.firstOrNull() ?: return 0f
+    return (first.index.toFloat() * first.size) + state.firstVisibleItemScrollOffset
 }

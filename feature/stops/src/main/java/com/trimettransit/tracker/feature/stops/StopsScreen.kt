@@ -24,10 +24,12 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -104,8 +106,11 @@ private fun DirectionsSubCard(
     var directions by remember { mutableStateOf<List<Direction>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
+    var retryKey by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(route.routeId) {
+    LaunchedEffect(route.routeId, retryKey) {
+        isLoading = true
+        isMissingApiKey = false
         val key = ApiKeys.getTrimetApiKey()
         if (key.isBlank()) {
             isMissingApiKey = true
@@ -134,7 +139,10 @@ private fun DirectionsSubCard(
             when {
                 isLoading -> InlineProgress(label = "Loading directions…")
                 isMissingApiKey -> InlineMessage("API key not configured.\nPlease check app settings.")
-                safeDirections == null -> InlineMessage("Unable to load directions.\nCheck your connection.")
+                safeDirections == null -> InlineRetry(
+                    message = "Unable to load directions.\nCheck your connection.",
+                    onRetry = { retryKey++ }
+                )
                 safeDirections.isEmpty() -> InlineMessage("No directions available.")
                 else -> safeDirections.forEach { direction ->
                     Column {
@@ -211,8 +219,11 @@ private fun StopsSubCard(
     var stops by remember { mutableStateOf<List<Stop>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
+    var retryKey by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(routeId, directionId) {
+    LaunchedEffect(routeId, directionId, retryKey) {
+        isLoading = true
+        isMissingApiKey = false
         val key = ApiKeys.getTrimetApiKey()
         if (key.isBlank()) {
             isMissingApiKey = true
@@ -229,7 +240,10 @@ private fun StopsSubCard(
         when {
             isLoading -> InlineProgress(label = "Loading stops…")
             isMissingApiKey -> InlineMessage("API key not configured.\nPlease check app settings.")
-            safeStops == null -> InlineMessage("Unable to load stops.\nCheck your connection.")
+            safeStops == null -> InlineRetry(
+                message = "Unable to load stops.\nCheck your connection.",
+                onRetry = { retryKey++ }
+            )
             safeStops.isEmpty() -> InlineMessage("No stops available.")
             else -> safeStops.forEach { stop ->
                 StopListItem(
@@ -270,4 +284,31 @@ private fun InlineMessage(message: String) {
             .fillMaxWidth()
             .padding(16.dp)
     )
+}
+
+@Composable
+private fun InlineRetry(message: String, onRetry: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        val retrySource = remember { MutableInteractionSource() }
+        OutlinedButton(
+            onClick = onRetry,
+            interactionSource = retrySource,
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .pressScale(retrySource)
+        ) {
+            Text("Try Again")
+        }
+    }
 }

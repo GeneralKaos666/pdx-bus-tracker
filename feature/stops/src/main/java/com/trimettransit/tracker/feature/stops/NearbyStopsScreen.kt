@@ -78,23 +78,23 @@ fun NearbyStopsScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var hasLoaded by remember { mutableStateOf(false) }
-    // Tracks whether the system permission dialog was already shown; prevents
-    // re-prompting on every resume after a denial.
-    var hasAskedPermission by remember { mutableStateOf(false) }
     // In-flight load, deduped so resume/re-entry can't stack overlapping fetches.
     var loadJob by remember { mutableStateOf<Job?>(null) }
 
     fun launchLoadNearbyStops() {
         loadJob?.cancel()
-        loadJob = coroutineScope.launch {
+        val job = coroutineScope.launch {
+            val me = coroutineContext[Job]!!
             loadNearbyStops(
                 context = context,
+                isCurrent = { loadJob == me },
                 setStops = { stops = it },
                 setLoading = { isLoading = it },
                 setError = { errorMessage = it },
                 setHasLoaded = { hasLoaded = true }
             )
         }
+        loadJob = job
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -121,7 +121,6 @@ fun NearbyStopsScreen(
         if (locationPermissionGranted) {
             launchLoadNearbyStops()
         } else {
-            hasAskedPermission = true
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
@@ -133,10 +132,9 @@ fun NearbyStopsScreen(
         }
     }
 
-    // Re-fetch on app re-entry
+    // Re-fetch on app re-entry; keep the last-known list on screen while refreshing
     RememberOnResume {
         if (hasLoaded) {
-            stops = null
             loadIfPermissionGranted()
         }
     }
@@ -247,6 +245,7 @@ fun NearbyStopsScreen(
 @android.annotation.SuppressLint("MissingPermission")
 private suspend fun loadNearbyStops(
     context: Context,
+    isCurrent: () -> Boolean,
     setStops: (List<Stop>?) -> Unit,
     setLoading: (Boolean) -> Unit,
     setError: (String?) -> Unit,
@@ -299,18 +298,32 @@ private suspend fun loadNearbyStops(
     } catch (e: Exception) {
         setError("Unable to find nearby stops.\nPlease try again.")
     } finally {
-        setLoading(false)
+        // Only the current job may clear the loading state; a superseded job must not
+        // clobber the newer load's spinner.
+        if (isCurrent()) setLoading(false)
     }
 }
 
 /** Requests a fresh single fix; resumes with null if permission is missing. */
 @android.annotation.SuppressLint("MissingPermission")
-private suspend fun requestFreshLocation(locationManager: LocationManager): Location? =
-    suspendCancellableCoroutine { cont ->
+private suspend fun requestFreshLocation(locationManager: LocationManager): Location? {
+    var updatesRemoved = false
+    fun removeUpdatesIfNeeded(listener: LocationListener) {
+        if (!updatesRemoved) {
+            updatesRemoved = true
+            locationManager.removeUpdates(listener)
+        }
+    }
+    return suspendCancellableCoroutine { cont ->
         if (cont.isCancelled) return@suspendCancellableCoroutine
         val listener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
-                if (cont.isActive) cont.resume(location)
+                if (cont.isActive) {
+                    cont.resume(location)
+                    // Success path: drop the one-shot registration so we don't leak a
+                    // live GPS/network listener (and battery drain) per refresh.
+                    removeUpdatesIfNeeded(this)
+                }
             }
 
             @Deprecated("Deprecated in Java")
@@ -338,6 +351,7 @@ private suspend fun requestFreshLocation(locationManager: LocationManager): Loca
             return@suspendCancellableCoroutine
         }
         cont.invokeOnCancellation {
-            locationManager.removeUpdates(listener)
+            removeUpdatesIfNeeded(listener)
         }
     }
+}

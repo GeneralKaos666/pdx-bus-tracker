@@ -1,5 +1,21 @@
 # Changelog
 
+## What's New in v4.9.1
+
+### Bug fixes & code-quality pass
+- **Build fixed:** the v4.9.0 merge left unresolved conflict markers in `app/build.gradle` (release signing) and `MainActivity.kt` (What's Nearby page wiring) that broke Gradle configuration and compilation. Both are resolved (HEAD side kept), and the README conflict is cleaned up too.
+- **Rail routes show as rail again:** Yellow/Orange MAX (190/290), WES (203), the streetcar lines (193–195), and the Vintage Trolley (196) were drawn with bus badges, bus icons, and bus colors. All MAX lines, streetcar, and WES now get their correct badge letter, icon, and color everywhere (arrival rows, map markers, legends, route list). A stop served by a shuttle bus no longer masks a real rail type behind the generic "Z" type.
+- **Stop names with spaces survive navigation:** stop names were URL-encoded with `URLEncoder` (spaces become `+`, which Navigation never decodes), so "SW 6th & Washington" arrived at Arrivals as "SW+6th+&+Washington" in the title, PiP header, map card, and saved favorites. Names are now encoded with `Uri.encode`.
+- **Arrivals countdowns tick in the foreground:** the "8 min" badges no longer sit frozen until you refresh — the list recomputes every 30 seconds, so "Due" appears on its own.
+- **Arrivals refresh can't show stale data:** a slow older response can no longer overwrite a newer pull-to-refresh; the in-flight fetch is cancelled first. Also: "Show all arrivals" now works for stops served by a single route with more than 5 arrivals, and no longer bypasses the "only show selected route" setting.
+- **Delay labels are honest:** a bus 1:59 late was shown as "On time" (integer truncation); delays are now rounded so "1 min late"/"1 min early" can actually appear.
+- **Map fixes:** tapping the map card and closing it within a second no longer risks touching a destroyed map (deferred camera fits are dropped once the view detaches); vehicles with missing coordinates (0,0 — the Gulf of Guinea) are filtered out of markers and camera fits on both maps.
+- **What's Nearby refresh keeps last-known stops:** a failed refresh no longer blanks every stop marker (vehicles already kept stale data; stops now do too), and a tap that misses every stop dot no longer opens a bogus arrivals screen for stop #0.
+- **Bottom pill scroll behavior fixed:** the Arrivals pill auto-hide was inverted (it appeared while scrolling down and hid while scrolling up); it now hides on scroll-down and returns on scroll-up, and no longer flickers at list-item boundaries.
+- **Location handling:** the Nearby Stops screen no longer leaks a live GPS listener on every successful refresh (battery drain) and a cancelled refresh no longer kills the newer load's spinner; What's Nearby survives permission revocation between check and call.
+- **Search polish:** typing no longer re-downloads the full stop list per keystroke, offline search shows "No connection." instead of "No stops found.", and stale results are cleared while the new query is computing.
+- **Misc:** stop cards no longer stay permanently enlarged after the first tap; an arrival exactly one week out now shows its day name (previously omitted for same-weekday-next-week); directions/stops fetch failures in the Routes accordion now offer a Try Again button; Settings can't be pushed twice by a fast double-tap; a favorite saved before the stop's coordinates resolve is fetched on the spot instead of being parked at 0,0; overlapping resume loads on Favorites/Recent are deduped.
+
 ## What's New in v4.9.0
 
 ### Stop search moves to the Home screen

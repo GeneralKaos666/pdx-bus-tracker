@@ -49,6 +49,7 @@ fun StopListItem(
                 scope.launch {
                     zoom.animateTo(1.08f, tween(durationMillis = 200, easing = FastOutSlowInEasing))
                     onClick()
+                    zoom.animateTo(1f, tween(durationMillis = 200, easing = FastOutSlowInEasing))
                 }
             } else {
                 onClick()
