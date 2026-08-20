@@ -50,10 +50,10 @@ android {
 
     signingConfigs {
         release {
-            storeFile = file("release.keystore")
-            def storePw = System.getenv("STORE_PASSWORD")
-            def alias = System.getenv("KEY_ALIAS")
-            def keyPw = System.getenv("KEY_PASSWORD")
+            storeFile = file(project.findProperty("STORE_FILE") ?: "release.keystore")
+            def storePw = project.findProperty("STORE_PASSWORD") ?: System.getenv("STORE_PASSWORD")
+            def alias = project.findProperty("KEY_ALIAS") ?: System.getenv("KEY_ALIAS")
+            def keyPw = project.findProperty("KEY_PASSWORD") ?: System.getenv("KEY_PASSWORD")
             def isReleaseBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
             if (storePw != null && alias != null && keyPw != null) {
                 storePassword = storePw
