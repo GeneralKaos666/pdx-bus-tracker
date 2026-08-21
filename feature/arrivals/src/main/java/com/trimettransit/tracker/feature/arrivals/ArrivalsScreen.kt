@@ -21,7 +21,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -30,7 +29,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -61,19 +59,15 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -81,7 +75,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -167,13 +160,14 @@ fun ArrivalsScreen(
     var detours by remember { mutableStateOf<List<Detour>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
-    var showAlertsDialog by remember { mutableStateOf(false) }
+    var selectedDetours by remember { mutableStateOf<List<Detour>?>(null) }
     var showAllArrivals by remember { mutableStateOf(false) }
     var trackingKey by remember { mutableStateOf<String?>(null) }
     var trackingRouteId by remember { mutableIntStateOf(-1) }
     var trackingSign by remember { mutableStateOf("") }
     var trackingVehicleId by remember { mutableIntStateOf(0) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
+    var onlySelectedRoute by remember { mutableStateOf(true) }
     // 30s tick forcing the arrival rows' countdowns to recompute in the foreground,
     // so "8 min" doesn't sit frozen until the next manual refresh.
     var countdownTick by remember { mutableIntStateOf(0) }
@@ -226,10 +220,11 @@ fun ArrivalsScreen(
                 maxArrivals = 15
             )
             if (result != null) {
-                val allArrivals = result.arrivals ?: emptyList()
+                val seenKeys = HashSet<String>()
+                val allArrivals = (result.arrivals ?: emptyList()).filter { seenKeys.add(arrivalKey(it)) }
                 unfilteredArrivals = allArrivals
                 val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-                val onlySelectedRoute = prefs.getBoolean("pref_key_only_show_route_selected", true)
+                onlySelectedRoute = prefs.getBoolean("pref_key_only_show_route_selected", true)
                 arrivals = if (onlySelectedRoute && routeId > 0) {
                     allArrivals.filter { it.routeId == routeId }
                 } else {
@@ -256,7 +251,7 @@ fun ArrivalsScreen(
     // Re-fetch arrivals on app re-entry (and initial composition via lifecycle observer)
     RememberOnResume { loadArrivals() }
     val visibleCount = minOf(arrivals.size, 5)
-    val showExpandButton = arrivals.size > 5
+    val showExpandButton = arrivals.size > 5 || unfilteredArrivals.size > arrivals.size
     // Tracked positions: the tapped row's own vehicle when it reports a position,
     // otherwise that line's other live vehicles so the map is never empty.
     val trackedPositions = if (trackingVehicleId > 0) {
@@ -325,30 +320,6 @@ fun ArrivalsScreen(
     val listState = rememberLazyListState()
     AutoHideBottomBarEffect(listState)
 
-    // Progress of the alerts button collapsing into the pinned strip as it
-    // slides above the viewport top: 0 = at rest, 1 = fully scrolled off.
-    // Once the button leaves the viewport entirely, the strip stays collapsed
-    // (progress 1) until the button scrolls back into view.
-    var alertsProgress by remember { mutableFloatStateOf(0f) }
-    var alertsItemSeen by remember { mutableStateOf(false) }
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            val item = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == "alerts" }
-            (item?.offset ?: 0) to (item?.size ?: 0)
-        }.collect { (offset, size) ->
-            if (size > 0) {
-                alertsItemSeen = true
-                alertsProgress = if (offset < 0) {
-                    (-offset.toFloat() / size).coerceIn(0f, 1f)
-                } else {
-                    0f
-                }
-            } else if (alertsItemSeen) {
-                alertsProgress = 1f
-            }
-        }
-    }
-
     val inPip = rememberIsInPipMode()
 
     // PiP: keep the countdown live; drop the map card and alerts dialog
@@ -356,7 +327,7 @@ fun ArrivalsScreen(
     LaunchedEffect(inPip) {
         if (inPip) {
             trackingKey = null
-            showAlertsDialog = false
+            selectedDetours = null
             while (true) {
                 delay(POSITION_REFRESH_MS)
                 loadArrivals()
@@ -409,7 +380,6 @@ fun ArrivalsScreen(
 
                 else -> {
                     ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
@@ -421,22 +391,13 @@ fun ArrivalsScreen(
                             ),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            if (detours.isNotEmpty()) {
-                                item(key = "alerts", contentType = "alerts") {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(44.dp)
-                                    )
-                                }
-                            }
-
                             val visibleArrivals =
-                                if (showAllArrivals) arrivals else arrivals.take(5)
+                                if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
                             items(
                                 visibleArrivals,
-                                key = { "${it.tripID}_${it.routeId}_${it.scheduledMillis}_${it.blockID}_${it.vehicleID}" },
+                                key = { arrivalKey(it) },
                                 contentType = { "arrival" }) { arrival ->
+                                        val lineDetours = detours.filter { it.routes?.contains(arrival.routeId) == true }
                                         val rowKey =
                                             "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}_${arrival.blockID}_${arrival.vehicleID}"
                                         Column {
@@ -444,6 +405,8 @@ fun ArrivalsScreen(
                                                 arrival = arrival,
                                                 context = context,
                                                 refreshKey = countdownTick,
+                                                lineDetours = lineDetours,
+                                                onShowAlerts = { selectedDetours = lineDetours },
                                                 onClick = {
                                                     if (hasValidCoords) {
                                                         if (trackingKey == rowKey) {
@@ -503,7 +466,7 @@ fun ArrivalsScreen(
                                                 ) {
                                                     Text(
                                                         text = if (showAllArrivals) "Show fewer"
-                                                        else "Show all arrivals (${arrivals.size - visibleCount} more)",
+                                                        else "Show all arrivals (${unfilteredArrivals.size - visibleCount} more)",
                                                         style = MaterialTheme.typography.labelLarge,
                                                         color = MaterialTheme.colorScheme.primary,
                                                         modifier = Modifier.weight(1f)
@@ -525,73 +488,10 @@ fun ArrivalsScreen(
                                                         )
                                                     )
                                                 }
-                                            }
                                         }
                                     }
                                 }
 
-                            if (detours.isNotEmpty()) {
-                                val stripWidth = 40.dp * (1 - alertsProgress) + maxWidth * alertsProgress
-                                val stripHeight = 40.dp * (1 - alertsProgress) + 4.dp * alertsProgress
-                                val stripOffsetX = -12.dp * (1 - alertsProgress)
-                                val stripOffsetY = 12.dp * (1 - alertsProgress)
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .offset(x = stripOffsetX, y = stripOffsetY)
-                                        .width(stripWidth)
-                                        .height(stripHeight)
-                                        .clip(RoundedCornerShape(50))
-                                        .background(
-                                            lerp(
-                                                MaterialTheme.colorScheme.errorContainer,
-                                                MaterialTheme.colorScheme.error,
-                                                alertsProgress
-                                            )
-                                        )
-                                        .clickable(
-                                            enabled = alertsProgress < 0.5f
-                                        ) { showAlertsDialog = true },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_alert_warning),
-                                        contentDescription = "Show alerts",
-                                        tint = MaterialTheme.colorScheme.onErrorContainer,
-                                        modifier = Modifier
-                                            .size(22.dp)
-                                            .graphicsLayer {
-                                                alpha = 1 - alertsProgress
-                                                scaleX = (1 - alertsProgress).coerceAtLeast(0.01f)
-                                                scaleY = (1 - alertsProgress).coerceAtLeast(0.01f)
-                                            }
-                                    )
-                                }
-                                Text(
-                                    text = detours.size.toString(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .offset {
-                                            val p = 1 - alertsProgress
-                                            IntOffset(
-                                                x = (-4.dp * p).roundToPx(),
-                                                y = (4.dp * p).roundToPx()
-                                            )
-                                        }
-                                        .graphicsLayer {
-                                            alpha = 1 - alertsProgress
-                                            scaleX = (1 - alertsProgress).coerceAtLeast(0.01f)
-                                            scaleY = (1 - alertsProgress).coerceAtLeast(0.01f)
-                                        }
-                                        .background(
-                                            MaterialTheme.colorScheme.error,
-                                            CircleShape
-                                        )
-                                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                                )
-                            }
                         }
                     }
                 }
@@ -599,10 +499,10 @@ fun ArrivalsScreen(
         }
     }
 
-    if (showAlertsDialog && detours.isNotEmpty()) {
+    selectedDetours?.let { detoursForDialog ->
         AlertsDialog(
-            detours = detours,
-            onDismiss = { showAlertsDialog = false }
+            detours = detoursForDialog,
+            onDismiss = { selectedDetours = null }
         )
     }
 }
@@ -666,6 +566,9 @@ private fun formatDelay(arrival: Arrival): String? {
         else -> "On time"
     }
 }
+
+private fun arrivalKey(arrival: Arrival): String =
+    "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}_${arrival.blockID}_${arrival.vehicleID}"
 
 @Composable
 private fun StopMapCard(
@@ -983,6 +886,8 @@ private fun ArrivalItem(
     context: Context,
     modifier: Modifier = Modifier,
     refreshKey: Int = 0,
+    lineDetours: List<Detour> = emptyList(),
+    onShowAlerts: (List<Detour>) -> Unit = {},
     onClick: () -> Unit = {}
 ) {
     val type = transitBadgeLetter(arrival.routeId)
@@ -1052,6 +957,35 @@ private fun ArrivalItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
+            if (lineDetours.isNotEmpty()) {
+                Spacer(modifier = Modifier.width(8.dp))
+                val alertInteractionSource = remember { MutableInteractionSource() }
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier
+                        .pressScale(alertInteractionSource)
+                        .clickable(
+                            interactionSource = alertInteractionSource,
+                            indication = LocalIndication.current
+                        ) { onShowAlerts(lineDetours) }
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_alert_warning),
+                            contentDescription = "Show alerts for route ${arrival.routeId}",
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
 
             Surface(
                 shape = RoundedCornerShape(50),

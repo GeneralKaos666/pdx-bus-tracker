@@ -1,5 +1,23 @@
 # Changelog
 
+## What's New in v4.9.2
+
+### Per-line alerts on arrival cards
+- Alerts are now per-line: a pill-shaped `errorContainer` warning button (icon-only, `RoundedCornerShape(50)`) appears **next to the countdown** on each arrival card when that route has an active detour. Tap it to open a dialog filtered to that line's detours. The global floating alerts button/strip at the top of the list is removed.
+  (`feature/arrivals/.../ArrivalsScreen.kt`)
+
+### Bug fixes
+- **Alerts pills actually appear now:** the detour parser read a `"routes"` array from the TriMet V2 response, but the API ships detour routes under `"route"` (singular) — so every detour parsed with an empty route list and no card ever showed its alert pill, even with 6 alerts active. The parser now reads `"route"` first and falls back to `"routes"`.
+  (`component/transit/.../TransitApi.kt`)
+- **"Show all arrivals" works with the route filter:** the expand button used to appear only when more than 5 arrivals survived the "only show selected route" filter — but live data shows most multi-route stops cap out around 4–5 arrivals per line within 30 minutes (e.g. Rose Quarter: 15 arrivals split 5/5/5 across Blue/Green/Red), so the button was missing almost everywhere while other routes' arrivals stayed invisible. The button now appears whenever anything is hidden — more of your route beyond the first 5 **or** other routes under the filter — counts everything it will reveal, and tapping it deliberately lifts the filter to show all upcoming arrivals for every route at the stop (each row keeps its own per-line alert pill); "Show fewer" collapses back to the filtered top 5.
+  (`feature/arrivals/.../ArrivalsScreen.kt`)
+- **Duplicate arrivals can't crash the list:** identical arrival rows (same trip/route/schedule/block/vehicle — possible with detoured trips) would throw a LazyColumn duplicate-key exception on load or expand; arrivals are now deduplicated on fetch via a shared `arrivalKey`.
+  (`feature/arrivals/.../ArrivalsScreen.kt`)
+
+### Build
+- AGP pinned to `9.3.0` (wrapper 9.7.1 satisfies AGP 9.3's Gradle ≥ 9.5 requirement). An earlier session misdiagnosed a transient classpath-resolution hang as "9.3.1 does not exist" and downgraded toward 9.0.0; 9.3.x is available on Google Maven and stays.
+  (`build.gradle`)
+
 ## What's New in v4.9.1
 
 ### Bug fixes & code-quality pass

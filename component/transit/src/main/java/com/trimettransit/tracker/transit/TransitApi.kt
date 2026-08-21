@@ -233,7 +233,8 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                     val detour = Detour().apply {
                         id = obj.optInt("id", 0)
                         desc = obj.optString("desc", "")
-                        val routesArr = obj.optJSONArray("routes")
+                        val routesArr = obj.optJSONArray("route")
+                            ?: obj.optJSONArray("routes")
                         if (routesArr != null) {
                             // Each element is a route object per TriMet's docs; fall back to
                             // a plain int for robustness against legacy shapes.
