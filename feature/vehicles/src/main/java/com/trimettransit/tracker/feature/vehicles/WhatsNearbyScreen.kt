@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.RectF
 import android.location.Location
 import android.location.LocationManager
 import android.os.CancellationSignal
@@ -94,8 +95,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 private const val WHATS_NEARBY_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
-/** Nearby stop search + map radius around the user, in feet (800 ft ≈ 244 m). */
-private const val NEARBY_RADIUS_FEET = 800
+/** Nearby stop search + map radius around the user, in feet (1200 ft ≈ 366 m). */
+private const val NEARBY_RADIUS_FEET = 1200
 private const val FOOT_TO_METERS = 0.3048
 /** Derived so the stop search and the map radius circle can never drift apart. */
 private val NEARBY_RADIUS_METERS = NEARBY_RADIUS_FEET * FOOT_TO_METERS
@@ -104,6 +105,8 @@ private const val ME_CAMERA_ZOOM = 16.0
 private const val LOCATION_FIX_TIMEOUT_MS = 10_000L
 /** A fix younger than this is reused on resume; older ones (or none) trigger a fresh request. */
 private const val LOCATION_REFRESH_INTERVAL_MS = 5 * 60_000L
+/** Tap forgiveness around a stop dot; roughly one Material touch target (48dp) across. */
+private const val STOP_TAP_SLOP_DP = 24f
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -431,7 +434,7 @@ private fun VehicleMap(
                                 iconAllowOverlap(true),
                                 iconIgnorePlacement(true),
                                 textField(Expression.get("name")),
-                                textFont(arrayOf("Open Sans Regular")),
+                                textFont(arrayOf("Noto Sans Regular")),
                                 textSize(11f),
                                 textColor(android.graphics.Color.BLACK),
                                 textAnchor(Property.TEXT_ANCHOR_TOP),
@@ -484,8 +487,19 @@ private fun VehicleMap(
                     // pan normally.
                     map.addOnMapClickListener { latLng ->
                         val screen = map.projection.toScreenLocation(latLng)
-                        val hits = map.queryRenderedFeatures(screen, "stop-layer")
-                        val locId = hits.firstOrNull()?.getNumberProperty("locId")?.toInt() ?: return@addOnMapClickListener false
+                        // Query a square around the tap so near-misses on small dots still land;
+                        // among the hits, take the one whose anchor is closest to the tap.
+                        val slop = STOP_TAP_SLOP_DP * density
+                        val hitRect = RectF(screen.x - slop, screen.y - slop, screen.x + slop, screen.y + slop)
+                        val hits = map.queryRenderedFeatures(hitRect, "stop-layer")
+                        val hit = hits.minByOrNull { feature ->
+                            val p = feature.geometry() as? Point ?: return@minByOrNull Float.MAX_VALUE
+                            val f = map.projection.toScreenLocation(LatLng(p.latitude(), p.longitude()))
+                            val dx = f.x - screen.x
+                            val dy = f.y - screen.y
+                            dx * dx + dy * dy
+                        }
+                        val locId = hit?.getNumberProperty("locId")?.toInt() ?: return@addOnMapClickListener false
                         val stop = mapState.stops.firstOrNull { it.locId == locId }
                         if (stop != null) {
                             currentOnStopClick(stop)

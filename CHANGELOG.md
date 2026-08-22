@@ -1,5 +1,15 @@
 # Changelog
 
+## What's New in v4.9.4
+
+### What's Nearby map: stop dots render again & reliable tap-to-open
+- **Stop markers are back on the map:** the ringed stop dots (and their labels) had silently disappeared from the What's Nearby map — the layer requested an `Open Sans Regular` font stack, but the OpenFreeMap Liberty basemap only hosts Noto font stacks, so glyph loading failed and MapLibre refused to place any symbol in the layer. The label now uses `Noto Sans Regular`, which the style actually serves, so stop dots render everywhere again.
+  (`feature/vehicles/.../WhatsNearbyScreen.kt`)
+- **Bigger nearby radius:** the What's Nearby search area and map circle grew from 800 ft to 1200 ft, so stops up to a quarter-mile away now show up.
+  (`feature/vehicles/.../WhatsNearbyScreen.kt`)
+- **Tapping a stop dot is forgiving:** taps were matched against a single pixel, so a finger landing even slightly off a small dot silently missed and just panned the map. Tap matching now queries a ~24dp square around your fingertip and opens the arrivals of the nearest stop dot in range.
+  (`feature/vehicles/.../WhatsNearbyScreen.kt`)
+
 ## What's New in v4.9.3
 
 ### Bottom bar polish on the Arrivals screen
