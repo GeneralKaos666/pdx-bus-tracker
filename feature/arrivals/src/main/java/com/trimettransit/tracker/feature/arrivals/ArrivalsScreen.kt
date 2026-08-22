@@ -91,7 +91,6 @@ import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.NavState
-import com.trimettransit.tracker.ui.components.AutoHideBottomBarEffect
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
@@ -318,7 +317,6 @@ fun ArrivalsScreen(
     }
     val smoothFling = rememberSmoothFlingBehavior()
     val listState = rememberLazyListState()
-    AutoHideBottomBarEffect(listState)
 
     val inPip = rememberIsInPipMode()
 

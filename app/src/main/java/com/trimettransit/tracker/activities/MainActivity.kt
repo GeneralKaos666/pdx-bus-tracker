@@ -206,7 +206,8 @@ private fun MainBottomBar(
     onNavigate: (Int) -> Unit,
     onSettingsClick: () -> Unit,
     showBack: Boolean = false,
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    compact: Boolean = false
 ) {
     val windowInfo = LocalWindowInfo.current
     val density = LocalDensity.current
@@ -214,6 +215,14 @@ private fun MainBottomBar(
     val items = bottomNavItems
     val shouldHideLabel = fontScale > 1.25f ||
             (windowInfo.containerSize.width < with(density) { 400.dp.roundToPx() } && items.size > 3)
+    val itemHeight by animateDpAsState(
+        targetValue = if (compact) 44.dp else 48.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "nav_item_height"
+    )
 
     Box(
         modifier = Modifier
@@ -265,7 +274,7 @@ private fun MainBottomBar(
                         },
                         modifier = Modifier
                             .width(48.dp + labelWidth)
-                            .height(48.dp),
+                            .height(itemHeight),
                         colors = if (isSelected) {
                             IconButtonDefaults.filledIconButtonColors(
                                 contentColor = MaterialTheme.colorScheme.onSurface,
@@ -592,7 +601,8 @@ private fun MainAppContent(
                             navController.navigate("settings") { launchSingleTop = true }
                         },
                         showBack = currentRoute == "settings",
-                        onBackClick = { navController.popBackStack() }
+                        onBackClick = { navController.popBackStack() },
+                        compact = currentRoute.startsWith("arrivals/")
                     )
                 }
             },

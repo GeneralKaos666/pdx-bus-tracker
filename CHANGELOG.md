@@ -1,5 +1,13 @@
 # Changelog
 
+## What's New in v4.9.3
+
+### Bottom bar polish on the Arrivals screen
+- **The pill nav no longer vanishes while scrolling arrivals:** the bottom bar used to auto-hide as you scrolled the list down and slide back when you scrolled up; it now stays put at all times. The now-unused scroll-hide effect was removed from `common/ui`.
+  (`feature/arrivals/.../ArrivalsScreen.kt`, `common/ui/.../NavState.kt`)
+- **Compact nav bar on Arrivals:** whenever you're on the Arrivals screen the bottom pill shrinks by 4dp in height (48dp → 44dp per item) and springs back to full size everywhere else, freeing a little extra room for the arrival list without hiding anything.
+  (`app/.../MainActivity.kt`)
+
 ## What's New in v4.9.2
 
 ### Per-line alerts on arrival cards
