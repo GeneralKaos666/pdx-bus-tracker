@@ -31,9 +31,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -44,11 +49,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.drawable.toBitmap
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.VehiclePosition
 import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.components.ErrorState
+import com.trimettransit.tracker.ui.components.badgeBitmap
 import com.trimettransit.tracker.ui.components.LoadingState
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.transitBadgeLetter
@@ -275,7 +280,13 @@ fun WhatsNearbyScreen(
                 onStopClick = { stop -> onNavigateToArrivals(stop, -1) },
                 modifier = Modifier.fillMaxSize()
             )
-            if (pageVisible && !locationPermissionGranted && hasAskedPermission) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = pageVisible && !locationPermissionGranted && hasAskedPermission,
+                enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
+                    slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { -it },
+                exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
+                    slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { -it / 3 }
+            ) {
                 Surface(
                     onClick = { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) },
                     shape = MaterialTheme.shapes.large,
@@ -540,8 +551,9 @@ private fun VehicleMap(
                 // left the current radius (GPS jitter and panning without movement are no-ops).
                 mapState.applyMe(location.latitude, location.longitude)
                 val centered = mapState.lastCentered
-                if ((centered == null || movedBeyondRadius(centered, location)) && mapState.map != null) {
-                    mapState.map?.moveCamera(cameraFramingRadius(mapState.map!!, location))
+                val map = mapState.map
+                if ((centered == null || movedBeyondRadius(centered, location)) && map != null) {
+                    map.moveCamera(cameraFramingRadius(map, location))
                     mapState.lastCentered = location
                 }
             } else if (!mapState.vehiclesFit && mapState.map != null && vehicles.isNotEmpty()) {
@@ -610,7 +622,7 @@ private class VehicleMapState {
         source.setGeoJson(FeatureCollection.fromFeatures(features))
     }
 
-    /** Drops the me-dot and the 800-ft radius ring into their sources. */
+    /** Drops the me-dot and the nearby-radius ring into their sources. */
     fun applyMe(lat: Double, lng: Double) {
         val center = LatLng(lat, lng)
         meSource?.setGeoJson(
@@ -620,23 +632,6 @@ private class VehicleMapState {
             FeatureCollection.fromFeatures(listOf(Feature.fromGeometry(radiusRing(center))))
         )
     }
-}
-
-private fun drawableBitmap(context: Context, resId: Int, sizePx: Int): Bitmap {
-    val d = ContextCompat.getDrawable(context, resId)
-    return d?.toBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-        ?: createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-}
-
-/** Colored circle badge with a white transit glyph, used as the vehicle marker image. */
-private fun badgeBitmap(context: Context, fillColor: Int, glyphRes: Int, density: Float): Bitmap {
-    val size = (34 * density).toInt()
-    val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
-    val c = Canvas(out)
-    c.drawCircle(size / 2f, size / 2f, size / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
-    val glyph = drawableBitmap(context, glyphRes, (20 * density).toInt())
-    c.drawBitmap(glyph, (size - glyph.width) / 2f, (size - glyph.height) / 2f, null)
-    return out
 }
 
 /** Secondary-colored dot with a dark outline and white center, used as the nearby stop marker image. */
@@ -680,7 +675,7 @@ private fun meDotBitmap(context: Context, fillColor: Int, density: Float): Bitma
     return out
 }
 
-/** Bounds of the 800-ft radius around a center (lat/lng degree offsets at that latitude). */
+/** Bounds of the NEARBY_RADIUS_FEET ring around a center (lat/lng degree offsets at that latitude). */
 private fun radiusBounds(center: LatLng): LatLngBounds {
     val latDeg = NEARBY_RADIUS_METERS / 111_320.0
     val lngDeg = NEARBY_RADIUS_METERS / (111_320.0 * cos(Math.toRadians(center.latitude)))
@@ -690,7 +685,7 @@ private fun radiusBounds(center: LatLng): LatLngBounds {
     )
 }
 
-/** Camera centered on the user showing the 800-ft radius with 48px padding; falls back to a
+/** Camera centered on the user showing the nearby radius with 48px padding; falls back to a
  *  fixed zoom when bounds fitting is unavailable (degenerate viewport). */
 private fun cameraFramingRadius(map: MapLibreMap, location: LatLng): CameraUpdate {
     val cam = map.getCameraForLatLngBounds(radiusBounds(location), intArrayOf(48, 48, 48, 48))
@@ -706,7 +701,7 @@ private fun movedBeyondRadius(from: LatLng, to: LatLng): Boolean {
     return results[0] > NEARBY_RADIUS_METERS
 }
 
-/** 96-point closed ring approximating the 800-ft radius circle (GeoJSON rings must be closed). */
+/** 96-point closed ring approximating the nearby-radius circle (GeoJSON rings must be closed). */
 private fun radiusRing(center: LatLng): Polygon {
     val latDeg = NEARBY_RADIUS_METERS / 111_320.0
     val lngDeg = NEARBY_RADIUS_METERS / (111_320.0 * cos(Math.toRadians(center.latitude)))

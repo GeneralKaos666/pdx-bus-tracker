@@ -18,10 +18,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -158,6 +161,13 @@ fun NearbyStopsScreen(
             interactionSource = refreshSource,
             modifier = Modifier.fillMaxWidth().pressScale(refreshSource)
         ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
             Text(if (isLoading) "Loading..." else "Refresh")
         }
 
@@ -214,22 +224,22 @@ fun NearbyStopsScreen(
                 }
                 3 -> {
                     ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                    val listState = rememberLazyListState()
-                    val smoothFling = rememberSmoothFlingBehavior()
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        flingBehavior = smoothFling,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(safeStops ?: emptyList(), key = { it.locId }, contentType = { "stop" }) { stop ->
-                            StopListItem(
-                                stop = stop,
-                                onClick = { onNavigateToArrivals(stop, -1) },
-                                modifier = Modifier.animateItem()
-                            )
+                        val listState = rememberLazyListState()
+                        val smoothFling = rememberSmoothFlingBehavior()
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            flingBehavior = smoothFling,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(safeStops ?: emptyList(), key = { it.locId }, contentType = { "stop" }) { stop ->
+                                StopListItem(
+                                    stop = stop,
+                                    onClick = { onNavigateToArrivals(stop, -1) },
+                                    modifier = Modifier.animateItem()
+                                )
+                            }
                         }
-                    }
                     }
                 }
                 else -> {

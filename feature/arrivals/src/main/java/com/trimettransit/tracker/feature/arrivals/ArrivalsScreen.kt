@@ -77,9 +77,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -92,6 +90,7 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.ContentEntrance
+import com.trimettransit.tracker.ui.components.badgeBitmap
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.LoadingState
@@ -169,13 +168,8 @@ fun ArrivalsScreen(
     var onlySelectedRoute by remember { mutableStateOf(true) }
     // 30s tick forcing the arrival rows' countdowns to recompute in the foreground,
     // so "8 min" doesn't sit frozen until the next manual refresh.
+    // The loop itself lives below the lifecycle observer so it can pause in background.
     var countdownTick by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(30_000)
-            countdownTick++
-        }
-    }
     val coroutineScope = rememberCoroutineScope()
     val locId = stopId.toIntOrNull() ?: 0
     var stopLat by remember { mutableDoubleStateOf(latitude) }
@@ -269,6 +263,15 @@ fun ArrivalsScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Countdown tick: only advance while the app is resumed, so a backgrounded
+    // screen doesn't keep waking the coroutine every 30s for invisible rows.
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000)
+            if (isAppResumed) countdownTick++
+        }
     }
 
     var positionRefreshInFlight by remember { mutableStateOf(false) }
@@ -395,100 +398,100 @@ fun ArrivalsScreen(
                                 visibleArrivals,
                                 key = { arrivalKey(it) },
                                 contentType = { "arrival" }) { arrival ->
-                                        val lineDetours = detours.filter { it.routes?.contains(arrival.routeId) == true }
-                                        val rowKey =
-                                            "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}_${arrival.blockID}_${arrival.vehicleID}"
-                                        Column {
-                                            ArrivalItem(
-                                                arrival = arrival,
-                                                context = context,
-                                                refreshKey = countdownTick,
-                                                lineDetours = lineDetours,
-                                                onShowAlerts = { selectedDetours = lineDetours },
-                                                onClick = {
-                                                    if (hasValidCoords) {
-                                                        if (trackingKey == rowKey) {
-                                                            trackingKey =
-                                                                null              // tap the tracked row again to close
-                                                        } else {
-                                                            trackingKey =
-                                                                rowKey            // opens under this row; switches if another row is tracked
-                                                            trackingRouteId = arrival.routeId
-                                                            trackingSign = arrival.shortSign
-                                                            trackingVehicleId = arrival.vehicleID
-                                                        }
-                                                    }
-                                                },
-                                                modifier = Modifier.animateItem()
-                                            )
-                                            AnimatedVisibility(
-                                                visible = trackingKey == rowKey,
-                                                enter = expandVertically() + fadeIn(),
-                                                exit = shrinkVertically() + fadeOut()
-                                            ) {
-                                                StopMapCard(
-                                                    lat = stopLat,
-                                                    lng = stopLng,
-                                                    stopName = stopName,
-                                                    blockPositions = trackedPositions,
-                                                    arrivals = arrivals,
-                                                    headerText = trackingSign.ifBlank { stopName },
-                                                    onClose = { trackingKey = null }
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    if (showExpandButton) {
-                                        item(key = "showAll", contentType = "showAll") {
-                                            val interactionSource =
-                                                remember { MutableInteractionSource() }
-                                            Surface(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                shape = MaterialTheme.shapes.large,
-                                                color = MaterialTheme.colorScheme.surfaceContainerLow
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .pressScale(interactionSource)
-                                                        .clickable(
-                                                            interactionSource = interactionSource,
-                                                            indication = LocalIndication.current
-                                                        ) { showAllArrivals = !showAllArrivals }
-                                                        .padding(
-                                                            horizontal = 16.dp,
-                                                            vertical = 12.dp
-                                                        ),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Text(
-                                                        text = if (showAllArrivals) "Show fewer"
-                                                        else "Show all arrivals (${unfilteredArrivals.size - visibleCount} more)",
-                                                        style = MaterialTheme.typography.labelLarge,
-                                                        color = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.weight(1f)
-                                                    )
-                                                    val showAllArrowRotation by animateFloatAsState(
-                                                        targetValue = if (showAllArrivals) 180f else 0f,
-                                                        animationSpec = tween(
-                                                            durationMillis = 350,
-                                                            easing = FastOutSlowInEasing
-                                                        )
-                                                    )
-                                                    Icon(
-                                                        imageVector = Icons.Default.KeyboardArrowDown,
-                                                        contentDescription = if (showAllArrivals) "Collapse arrivals"
-                                                        else "Expand arrivals",
-                                                        tint = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.rotate(
-                                                            showAllArrowRotation
-                                                        )
-                                                    )
+                                val lineDetours = detours.filter { it.routes?.contains(arrival.routeId) == true }
+                                val rowKey =
+                                    "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}_${arrival.blockID}_${arrival.vehicleID}"
+                                Column {
+                                    ArrivalItem(
+                                        arrival = arrival,
+                                        context = context,
+                                        refreshKey = countdownTick,
+                                        lineDetours = lineDetours,
+                                        onShowAlerts = { selectedDetours = lineDetours },
+                                        onClick = {
+                                            if (hasValidCoords) {
+                                                if (trackingKey == rowKey) {
+                                                    trackingKey =
+                                                        null              // tap the tracked row again to close
+                                                } else {
+                                                    trackingKey =
+                                                        rowKey            // opens under this row; switches if another row is tracked
+                                                    trackingRouteId = arrival.routeId
+                                                    trackingSign = arrival.shortSign
+                                                    trackingVehicleId = arrival.vehicleID
                                                 }
+                                            }
+                                        },
+                                        modifier = Modifier.animateItem()
+                                    )
+                                    AnimatedVisibility(
+                                        visible = trackingKey == rowKey,
+                                        enter = expandVertically() + fadeIn(),
+                                        exit = shrinkVertically() + fadeOut()
+                                    ) {
+                                        StopMapCard(
+                                            lat = stopLat,
+                                            lng = stopLng,
+                                            stopName = stopName,
+                                            blockPositions = trackedPositions,
+                                            arrivals = arrivals,
+                                            headerText = trackingSign.ifBlank { stopName },
+                                            onClose = { trackingKey = null }
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (showExpandButton) {
+                                item(key = "showAll", contentType = "showAll") {
+                                    val interactionSource =
+                                        remember { MutableInteractionSource() }
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = MaterialTheme.shapes.large,
+                                        color = MaterialTheme.colorScheme.surfaceContainerLow
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .pressScale(interactionSource)
+                                                .clickable(
+                                                    interactionSource = interactionSource,
+                                                    indication = LocalIndication.current
+                                                ) { showAllArrivals = !showAllArrivals }
+                                                .padding(
+                                                    horizontal = 16.dp,
+                                                    vertical = 12.dp
+                                                ),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = if (showAllArrivals) "Show fewer"
+                                                else "Show all arrivals (${unfilteredArrivals.size - visibleCount} more)",
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            val showAllArrowRotation by animateFloatAsState(
+                                                targetValue = if (showAllArrivals) 180f else 0f,
+                                                animationSpec = tween(
+                                                    durationMillis = 350,
+                                                    easing = FastOutSlowInEasing
+                                                )
+                                            )
+                                            Icon(
+                                                imageVector = Icons.Default.KeyboardArrowDown,
+                                                contentDescription = if (showAllArrivals) "Collapse arrivals"
+                                                else "Expand arrivals",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.rotate(
+                                                    showAllArrowRotation
+                                                )
+                                            )
                                         }
                                     }
                                 }
+                            }
 
                         }
                     }
@@ -813,27 +816,6 @@ private class MapState {
         }
         source.setGeoJson(FeatureCollection.fromFeatures(features))
     }
-}
-
-private fun drawableBitmap(context: Context, resId: Int, sizePx: Int): Bitmap {
-    val d = ContextCompat.getDrawable(context, resId)
-    return d?.toBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-        ?: createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-}
-
-/** Colored circle badge with a white transit glyph, used as the bus marker image. */
-private fun badgeBitmap(context: Context, fillColor: Int, glyphRes: Int, density: Float): Bitmap {
-    val size = (34 * density).toInt()
-    val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
-    val c = Canvas(out)
-    c.drawCircle(
-        size / 2f,
-        size / 2f,
-        size / 2f,
-        Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
-    val glyph = drawableBitmap(context, glyphRes, (20 * density).toInt())
-    c.drawBitmap(glyph, (size - glyph.width) / 2f, (size - glyph.height) / 2f, null)
-    return out
 }
 
 /** Primary-colored dot with a white center, used as the stop marker image. */

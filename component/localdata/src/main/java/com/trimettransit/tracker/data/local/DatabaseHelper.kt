@@ -1,5 +1,3 @@
-@file:Suppress("Annotator")
-
 package com.trimettransit.tracker.data.local
 
 import android.content.ContentValues
@@ -117,21 +115,29 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
 
     fun addRecentStop(stop: Stop) {
         val db = writableDatabase
-        db.delete("recent_stops", "loc_id = ?", arrayOf(stop.locId.toString()))
-        ContentValues().apply {
-            put("desc", stop.desc)
-            put("dir_desc", stop.dirDesc)
-            put("loc_id", stop.locId)
-            put("transit_type", stop.transitType)
-            put("longitude", stop.longitude)
-            put("latitude", stop.latitude)
-            put("route_num", stop.routeNum)
-            db.insertWithOnConflict("recent_stops", null, this, SQLiteDatabase.CONFLICT_REPLACE)
-        }
-        db.rawQuery("SELECT COUNT(*) FROM recent_stops", null).use { cursor ->
-            if (cursor.moveToFirst() && cursor.getInt(0) > 20) {
-                db.execSQL("DELETE FROM recent_stops WHERE id NOT IN (SELECT id FROM recent_stops ORDER BY id DESC LIMIT 20)")
+        // Delete+insert (and the trim below) must be atomic or a crash mid-way
+        // can leave the stop duplicated under its UNIQUE index replacement.
+        db.beginTransaction()
+        try {
+            db.delete("recent_stops", "loc_id = ?", arrayOf(stop.locId.toString()))
+            ContentValues().apply {
+                put("desc", stop.desc)
+                put("dir_desc", stop.dirDesc)
+                put("loc_id", stop.locId)
+                put("transit_type", stop.transitType)
+                put("longitude", stop.longitude)
+                put("latitude", stop.latitude)
+                put("route_num", stop.routeNum)
+                db.insertWithOnConflict("recent_stops", null, this, SQLiteDatabase.CONFLICT_REPLACE)
             }
+            db.rawQuery("SELECT COUNT(*) FROM recent_stops", null).use { cursor ->
+                if (cursor.moveToFirst() && cursor.getInt(0) > 20) {
+                    db.execSQL("DELETE FROM recent_stops WHERE id NOT IN (SELECT id FROM recent_stops ORDER BY id DESC LIMIT 20)")
+                }
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
         }
     }
 

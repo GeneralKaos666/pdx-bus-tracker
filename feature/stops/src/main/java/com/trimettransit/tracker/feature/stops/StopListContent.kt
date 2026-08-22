@@ -3,6 +3,7 @@ package com.trimettransit.tracker.feature.stops
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -24,6 +26,7 @@ import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.LoadingState
+import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 
 /**
@@ -67,7 +70,12 @@ internal fun <T> StopListContent(
                         ErrorState(message = errorMessage)
                         if (onRetry != null) {
                             Spacer(modifier = Modifier.height(16.dp))
-                            OutlinedButton(onClick = onRetry) {
+                            val retrySource = remember { MutableInteractionSource() }
+                            OutlinedButton(
+                                onClick = onRetry,
+                                interactionSource = retrySource,
+                                modifier = Modifier.pressScale(retrySource)
+                            ) {
                                 Text("Try Again")
                             }
                         }

@@ -246,77 +246,77 @@ private fun MainBottomBar(
                     modifier = Modifier.padding(8.dp)
                 ) {
                     items.forEachIndexed { index, item ->
-                    val isSelected = topPage == item.pageIndex
+                        val isSelected = topPage == item.pageIndex
 
-                    val labelWidth by animateDpAsState(
-                        targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        ),
-                        label = "label_width_$index"
-                    )
+                        val labelWidth by animateDpAsState(
+                            targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessLow
+                            ),
+                            label = "label_width_$index"
+                        )
 
-                    val spacerWidth by animateDpAsState(
-                        targetValue = if (index < items.size - 1) 8.dp else 0.dp,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        ),
-                        label = "spacer_width_$index"
-                    )
+                        val spacerWidth by animateDpAsState(
+                            targetValue = if (index < items.size - 1) 8.dp else 0.dp,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessLow
+                            ),
+                            label = "spacer_width_$index"
+                        )
 
-                    IconButton(
-                        onClick = {
-                            if (item.pageIndex != topPage) {
-                                onNavigate(item.pageIndex)
-                            }
-                        },
-                        modifier = Modifier
-                            .width(48.dp + labelWidth)
-                            .height(itemHeight),
-                        colors = if (isSelected) {
-                            IconButtonDefaults.filledIconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer
-                            )
-                        } else {
-                            IconButtonDefaults.iconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = item.icon,
-                                contentDescription = item.label,
-                                tint = if (isSelected) {
-                                    MaterialTheme.colorScheme.onSurface
-                                } else {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                },
-                                modifier = Modifier.size(item.iconSize)
-                            )
-                            if (isSelected && !shouldHideLabel) {
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = item.label,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    maxLines = 1,
-                                    color = MaterialTheme.colorScheme.onSurface
+                        IconButton(
+                            onClick = {
+                                if (item.pageIndex != topPage) {
+                                    onNavigate(item.pageIndex)
+                                }
+                            },
+                            modifier = Modifier
+                                .width(48.dp + labelWidth)
+                                .height(itemHeight),
+                            colors = if (isSelected) {
+                                IconButtonDefaults.filledIconButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                )
+                            } else {
+                                IconButtonDefaults.iconButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = item.label,
+                                    tint = if (isSelected) {
+                                        MaterialTheme.colorScheme.onSurface
+                                    } else {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    },
+                                    modifier = Modifier.size(item.iconSize)
+                                )
+                                if (isSelected && !shouldHideLabel) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = item.label,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        maxLines = 1,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+
+                        if (index < items.size - 1) {
+                            Spacer(modifier = Modifier.width(spacerWidth))
                         }
                     }
-
-                    if (index < items.size - 1) {
-                        Spacer(modifier = Modifier.width(spacerWidth))
-                    }
-                }
                 }
             }
             Surface(
@@ -451,11 +451,7 @@ private fun MainAppContent(
                 ) { route ->
                     when {
                         route == "nearby_stops" -> TopAppBar(
-                        title = {
-                            Text(
-                                if (route == "nearby_stops") "Nearby Stops" else "Settings"
-                            )
-                        },
+                        title = { Text("Nearby Stops") },
                         navigationIcon = {
                             val backSource = remember { MutableInteractionSource() }
                             IconButton(

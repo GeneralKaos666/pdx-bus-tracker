@@ -1,6 +1,6 @@
 package com.trimettransit.tracker.transit
 
-import android.util.Log
+import timber.log.Timber
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONException
@@ -19,7 +19,6 @@ object JSONParser {
         .callTimeout(20, TimeUnit.SECONDS)
         .build()
 
-    private const val TAG = "JSONParser"
 
     @Throws(IllegalArgumentException::class, IOException::class, JSONException::class)
     fun fetch(url: String): JSONObject {
@@ -54,7 +53,7 @@ object JSONParser {
                 return JSONObject(responseBody)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch JSON", e)
+            Timber.e(e, "Failed to fetch JSON")
             throw e
         }
     }

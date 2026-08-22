@@ -1,7 +1,7 @@
 package com.trimettransit.tracker.transit
 
 import android.content.Context
-import android.util.Log
+import timber.log.Timber
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
@@ -16,22 +16,21 @@ import com.trimettransit.tracker.model.VehiclePosition
 import org.json.JSONObject
 
 object TransitApi {
-    private const val TAG = "TransitApi"
     private val parser = JSONParser
 
-private fun Route.applyRouteType(type: String, desc: String) {
-    when {
-        type == "R" && desc.contains("WES") -> isWes = true
-        type == "R" && desc.contains("MAX") -> isMax = true
-        type == "B" -> isBus = true
+    private fun Route.applyRouteType(type: String, desc: String) {
+        when {
+            type == "R" && desc.contains("WES") -> isWes = true
+            type == "R" && desc.contains("MAX") -> isMax = true
+            type == "B" -> isBus = true
+        }
     }
-}
 
-private fun Route.applyStreetcarType(desc: String, type: String) {
-    if (desc.contains("Portland Streetcar") && type == "R") {
-        isStreetcar = true
+    private fun Route.applyStreetcarType(desc: String, type: String) {
+        if (desc.contains("Portland Streetcar") && type == "R") {
+            isStreetcar = true
+        }
     }
-}
 
     suspend fun fetchRoutes(context: Context, url: String): List<Route>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
@@ -53,7 +52,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
             }
             routes
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch routes", e)
+            Timber.e(e, "Failed to fetch routes")
             null
         }
     }
@@ -85,7 +84,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
             }
             dirs
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch directions", e)
+            Timber.e(e, "Failed to fetch directions")
             null
         }
     }
@@ -136,7 +135,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
             }
             stops
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch stops", e)
+            Timber.e(e, "Failed to fetch stops")
             null
         }
     }
@@ -151,7 +150,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
         val apiKey = ApiKeys.getTrimetApiKey()
         if (apiKey.isBlank()) {
-            Log.w(TAG, "TriMet API key not configured")
+            Timber.w("TriMet API key not configured")
             return@withContext null
         }
         try {
@@ -261,7 +260,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
 
             result
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch arrivals", e)
+            Timber.e(e, "Failed to fetch arrivals")
             null
         }
     }
@@ -279,7 +278,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
         val apiKey = ApiKeys.getTrimetApiKey()
         if (apiKey.isBlank()) {
-            Log.w(TAG, "TriMet API key not configured")
+            Timber.w("TriMet API key not configured")
             return@withContext null
         }
         try {
@@ -343,7 +342,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
             }
             vehicles
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch vehicles", e)
+            Timber.e(e, "Failed to fetch vehicles")
             null
         }
     }
@@ -360,7 +359,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
         val apiKey = ApiKeys.getTrimetApiKey()
         if (apiKey.isBlank()) {
-            Log.w(TAG, "TriMet API key not configured")
+            Timber.w("TriMet API key not configured")
             return@withContext null
         }
         try {
@@ -410,7 +409,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
             }
             stops
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch stops by location", e)
+            Timber.e(e, "Failed to fetch stops by location")
             null
         }
     }
@@ -451,7 +450,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
                 computeTransitType()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch stop by ID", e)
+            Timber.e(e, "Failed to fetch stop by ID")
             null
         }
     }
@@ -503,7 +502,7 @@ private fun Route.applyStreetcarType(desc: String, type: String) {
             stopsByLocId.values.forEach { it.computeTransitType() }
             stopsByLocId.values.toList()
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch search stops", e)
+            Timber.e(e, "Failed to fetch search stops")
             null
         }
     }

@@ -1,6 +1,19 @@
 # Changelog
 
-## What's New in v4.9.4
+## What's New in v4.9.4 (unreleased)
+
+### Codebase polish & dependency updates
+- **Battery:** the Arrivals screen's 30-second countdown recompute loop no longer runs while the app is backgrounded — it pauses with the screen and resumes on return, matching the live-position polling behavior.
+  (`feature/arrivals/.../ArrivalsScreen.kt`)
+- **Smoother What's Nearby:** the "Location permission is off" banner now fades/slides in and out instead of popping; the Nearby Stops refresh button shows an inline progress spinner while loading.
+  (`feature/vehicles/.../WhatsNearbyScreen.kt`, `feature/stops/.../NearbyStopsScreen.kt`)
+- **Press feedback everywhere:** the Routes list error-state "Try Again" button now scales on press like every other tappable element.
+  (`feature/stops/.../StopListContent.kt`)
+- **Under the hood:** shared map-marker bitmap helpers and the Favorites/Recent-Stops loader were deduplicated into common code, all logging unified on Timber, a recent-stops database write is now transactional, dead code and stale comments removed, and misindented blocks reformatted.
+  (`common/ui/.../MapBitmaps.kt`, `feature/home/.../StopListLoader.kt`, `component/transit/.../TransitApi.kt`, `component/localdata/.../DatabaseHelper.kt`)
+
+### Build
+- AGP `9.3.0` → `9.3.1`, MapLibre `13.5.0` → `13.5.1`. All other dependencies verified current (Compose BOM 2026.08.00, Kotlin 2.4.10, OkHttp 5.5.0, Coroutines 1.11.0, material3 1.4.0, navigation 2.9.8).
 
 ### What's Nearby map: stop dots render again & reliable tap-to-open
 - **Stop markers are back on the map:** the ringed stop dots (and their labels) had silently disappeared from the What's Nearby map — the layer requested an `Open Sans Regular` font stack, but the OpenFreeMap Liberty basemap only hosts Noto font stacks, so glyph loading failed and MapLibre refused to place any symbol in the layer. The label now uses `Noto Sans Regular`, which the style actually serves, so stop dots render everywhere again.
