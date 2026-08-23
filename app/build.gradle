@@ -28,7 +28,7 @@ abstract class RenameApkTask extends DefaultTask {
         outDir.deleteDir()
         outDir.mkdirs()
         builtArtifacts.elements.each { artifact ->
-            def newName = "TrimetTracker-${variantName.get()}-${artifact.versionName}.apk"
+            def newName = "PdxBusTracker-${variantName.get()}-${artifact.versionName}.apk"
             Files.copy(new File(artifact.outputFile).toPath(), new File(output.get().asFile, newName).toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
     }

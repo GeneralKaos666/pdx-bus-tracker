@@ -17,10 +17,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -144,10 +146,35 @@ fun WhatsNearbyScreen(
     // pre-composes this page while another tab is visible, so the dialog must
     // only fire once and only while the user is actually looking at the page.
     var hasAskedPermission by remember { mutableStateOf(false) }
+    // Shown once before the system permission dialog so users know why location is needed.
+    var showLocationExplainer by remember { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         locationPermissionGranted = granted
+    }
+
+    if (showLocationExplainer) {
+        AlertDialog(
+            onDismissRequest = { showLocationExplainer = false },
+            title = { Text("Use your location?") },
+            text = {
+                Text(
+                    "PDX Bus Tracker uses your location only when you ask it to find TriMet " +
+                        "stops and vehicles near you. Your location is never stored by this app " +
+                        "and is not used for anything else."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLocationExplainer = false
+                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                }) { Text("Continue") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLocationExplainer = false }) { Text("Not now") }
+            }
+        )
     }
 
     fun loadVehicles() {
@@ -213,11 +240,12 @@ fun WhatsNearbyScreen(
     }
 
     // Ask for location once if not granted, and only while this page is the one
-    // the user is looking at (the pager pre-composes adjacent pages).
+    // the user is looking at (the pager pre-composes adjacent pages). The in-app
+    // explainer dialog is shown first; the system dialog follows on "Continue".
     LaunchedEffect(pageVisible, locationPermissionGranted) {
         if (pageVisible && !locationPermissionGranted && !hasAskedPermission) {
             hasAskedPermission = true
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            showLocationExplainer = true
         }
     }
 
@@ -288,7 +316,7 @@ fun WhatsNearbyScreen(
                     slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { -it / 3 }
             ) {
                 Surface(
-                    onClick = { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) },
+                    onClick = { showLocationExplainer = true },
                     shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     shadowElevation = 4.dp,

@@ -1,34 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Original abstract mark: three parallel rounded stripes sweeping toward
+     the upper right, suggesting vehicles in motion along a route.
+     Hand-authored geometry (not derived from any existing logo).
+     Sized to stay within the adaptive-icon 66dp safe zone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <group
-        android:scaleX="1.712"
-        android:scaleY="1.712"
-        android:translateX="-106.33"
-        android:translateY="15.44">
-        <path
-            android:fillColor="@android:color/transparent"
-            android:pathData="M98.841,26.988c-1.501,0.872-3.255,1.375-5.115,1.375c-5.633,0-10.201,-4.569-10.201,-10.204c0,-5.632 4.568,-10.192 10.201,-10.192c5.632,0 10.199,4.56 10.199,10.192"
-            android:strokeColor="#FFFFFFFF"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round"
-            android:strokeWidth="2.759"/>
-        <path
-            android:fillColor="@android:color/transparent"
-            android:pathData="M93.971,17.715c1.536,0.873 2.868,2.155 3.812,3.781c2.813,4.879 1.146,11.121 -3.733,13.93c-4.878,2.828 -11.119,1.149 -13.933,-3.732c-2.814,-4.876 -1.148,-11.114 3.731,-13.934"
-            android:strokeColor="#FFFFFFFF"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round"
-            android:strokeWidth="2.759"/>
-        <path
-            android:fillColor="@android:color/transparent"
-            android:pathData="M88.209,26.583c0.004,-1.717 0.437,-3.461 1.361,-5.059c2.82,-4.878 9.056,-6.545 13.935,-3.732c4.878,2.816 6.547,9.055 3.732,13.933c-2.82,4.878 -9.056,6.55 -13.931,3.732"
-            android:strokeColor="#FFFFFFFF"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round"
-            android:strokeWidth="2.759"/>
-    </group>
+    <path
+        android:pathData="M33.49,53.29 L53.29,33.49"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="10"/>
+    <path
+        android:pathData="M46.93,61.07 L61.07,46.93"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="10"/>
+    <path
+        android:pathData="M60.37,68.85 L68.85,60.37"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="10"/>
 </vector>

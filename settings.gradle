@@ -6,7 +6,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'TriMet Bus Tracker'
+rootProject.name = 'PDX Bus Tracker'
 include ':app'
 include ':common:model'
 include ':common:utils'

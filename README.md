@@ -1,8 +1,8 @@
-# TriMet Bus Tracker
+# PDX Bus Tracker
 
 Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Rail, Streetcar, and WES Commuter Rail — built with Jetpack Compose + Material 3.
 
-*TriMet and TransitTracker are registered trademarks of TriMet. All rights reserved.*
+*PDX Bus Tracker is an unofficial, community-built app. It is not affiliated with, sponsored by, or endorsed by TriMet. "TriMet" and "TransitTracker" are trademarks of the Tri-County Metropolitan Transportation District of Oregon; they are referenced here solely to identify the transit service the app reads data from. TriMet's logos are not used, and all transit data remains the property of TriMet.*
 
 ## Features
 
@@ -81,8 +81,14 @@ No ViewModels, no DI framework, no Room — screens own state with `remember { m
 | Kotlin coroutines | 1.11.0 |
 | MapLibre GL Native (OpenGL backend) | 13.5.0 + OpenFreeMap tiles |
 
+## Privacy Policy
+
+PDX Bus Tracker collects no accounts, no analytics, and no advertising data. Location is used on-device and, when you browse nearby stops or vehicles, sent as coordinates to TriMet's public API to look up stops near you. Full details: [Privacy Policy](docs/privacy-policy.md).
+
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
-The app uses TriMet's public Web Services API. TriMet data and trademarks remain the property of TriMet.
+Third-party libraries are distributed under their own licenses; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the full list and license texts. Basemap tiles are provided by [OpenFreeMap](https://openfreemap.org/) (OpenStreetMap data), with attribution shown in-app.
+
+The app uses TriMet's public Web Services API ([developer.trimet.org](https://developer.trimet.org)). TriMet data remains the property of TriMet. PDX Bus Tracker is an unofficial project — TriMet does not sponsor, endorse, or maintain it.

@@ -2,6 +2,16 @@
 
 ## What's New in v4.9.4 (unreleased)
 
+### Trademark & licensing compliance ("PDX Bus Tracker")
+- **New app identity:** the app is renamed to **PDX Bus Tracker** (launcher label, About card, Gradle project name, APK filenames). It remains an unofficial tracker for TriMet service; the package/applicationId is unchanged, so updates and local data are unaffected.
+- **Original launcher icon:** the official TriMet logo is replaced with an original abstract mark (three motion stripes on the orange disc) — TriMet trademarks and logos are no longer used in the app's branding. Theme color resources were also given neutral names (`brand_blue`, `brand_orange`, `launcher_icon_bg`).
+- **In-app attribution:** the Settings → About card now states that the app is unofficial and not affiliated with or endorsed by TriMet, and credits TriMet's public Developer API as the data source.
+- **Open-source licenses:** added `THIRD-PARTY-NOTICES.md` with every bundled library and full license texts, plus a new expandable "Open source licenses" section in Settings → About listing the libraries in-app.
+- **Privacy policy:** added `docs/privacy-policy.md` describing exactly how location is used (on-device lookups + coordinates sent to TriMet's API for nearby-stop searches), what is stored locally, and third-party map tile providers.
+- **Location pre-permission explainer:** Nearby Stops and What's Nearby now show a short one-time explanation of why location is used before the Android permission dialog appears.
+  (`feature/stops/.../NearbyStopsScreen.kt`, `feature/vehicles/.../WhatsNearbyScreen.kt`)
+- **Docs:** README retitled with an accurate trademark/attribution statement and links to the privacy policy and third-party notices.
+
 ### Codebase polish & dependency updates
 - **Battery:** the Arrivals screen's 30-second countdown recompute loop no longer runs while the app is backgrounded — it pauses with the screen and resumes on return, matching the live-position polling behavior.
   (`feature/arrivals/.../ArrivalsScreen.kt`)

@@ -24,11 +24,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -111,6 +113,31 @@ fun NearbyStopsScreen(
         }
     }
 
+    // Shown once before the system permission dialog so users know why location is needed.
+    var showLocationExplainer by remember { mutableStateOf(false) }
+    if (showLocationExplainer) {
+        AlertDialog(
+            onDismissRequest = { showLocationExplainer = false },
+            title = { Text("Use your location?") },
+            text = {
+                Text(
+                    "PDX Bus Tracker uses your location only when you ask it to find TriMet " +
+                        "stops near you. Your location is never stored by this app and is not " +
+                        "used for anything else."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLocationExplainer = false
+                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                }) { Text("Continue") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLocationExplainer = false }) { Text("Not now") }
+            }
+        )
+    }
+
     fun loadIfPermissionGranted() {
         if (locationPermissionGranted) {
             launchLoadNearbyStops()
@@ -124,7 +151,7 @@ fun NearbyStopsScreen(
         if (locationPermissionGranted) {
             launchLoadNearbyStops()
         } else {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            showLocationExplainer = true
         }
     }
 

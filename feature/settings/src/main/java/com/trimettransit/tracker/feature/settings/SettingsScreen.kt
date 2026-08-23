@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.settings
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -24,6 +25,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Route
@@ -43,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -182,13 +186,85 @@ fun SettingsScreen() {
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "TriMet Bus Tracker",
+                            text = "PDX Bus Tracker",
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
                             text = "Version $versionName · MIT License",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Text(
+                    text = "Unofficial app — not affiliated with, sponsored by, or endorsed by TriMet.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
+                )
+                Text(
+                    text = "Data provided by TriMet's public Developer API (developer.trimet.org).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                )
+            }
+
+            SectionHeader(title = "Open source licenses")
+
+            SettingsCard {
+                var licensesExpanded by remember { mutableStateOf(false) }
+                val licenseInteractionSource = remember { MutableInteractionSource() }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pressScale(licenseInteractionSource)
+                        .clickable(
+                            interactionSource = licenseInteractionSource,
+                            indication = LocalIndication.current
+                        ) { licensesExpanded = !licensesExpanded }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SettingsIconCircle(icon = Icons.Filled.Info, highlighted = licensesExpanded)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Open source licenses",
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "Libraries used by this app and their terms",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowDown,
+                        contentDescription = if (licensesExpanded) "Collapse" else "Expand",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.rotate(if (licensesExpanded) 180f else 0f)
+                    )
+                }
+                AnimatedVisibility(visible = licensesExpanded) {
+                    Column(
+                        modifier = Modifier.padding(start = 72.dp, end = 16.dp, bottom = 16.dp)
+                    ) {
+                        LicenseEntry("AndroidX / Jetpack Compose (UI, Foundation, Material 3, Navigation, Activity, AppCompat, Preference)", "Apache License 2.0")
+                        LicenseEntry("Kotlin Standard Library & Coroutines", "Apache License 2.0")
+                        LicenseEntry("OkHttp", "Apache License 2.0")
+                        LicenseEntry("MapLibre Native (Android, OpenGL backend)", "BSD 2-Clause License")
+                        LicenseEntry("Joda-Time Android", "Apache License 2.0")
+                        LicenseEntry("Timber", "Apache License 2.0")
+                        LicenseEntry(
+                            "Full license texts: see THIRD-PARTY-NOTICES.md in the project repository.",
+                            "",
+                            isNote = true
                         )
                     }
                 }
@@ -344,5 +420,24 @@ private fun SettingsSwitchOption(
             checked = checked,
             onCheckedChange = null
         )
+    }
+}
+
+@Composable
+private fun LicenseEntry(name: String, license: String, isNote: Boolean = false) {
+    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+        Text(
+            text = name,
+            style = if (isNote) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+            color = if (isNote) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+            fontStyle = if (isNote) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal
+        )
+        if (license.isNotEmpty()) {
+            Text(
+                text = license,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
