@@ -1,6 +1,6 @@
 # Changelog
 
-## What's New in v4.9.4 (unreleased)
+## What's New in v4.9.4
 
 ### Trademark & licensing compliance ("PDX Bus Tracker")
 - **New app identity:** the app is renamed to **PDX Bus Tracker** (launcher label, About card, Gradle project name, APK filenames). It remains an unofficial tracker for TriMet service; the package/applicationId is unchanged, so updates and local data are unaffected.
