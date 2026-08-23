@@ -91,4 +91,6 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 Third-party libraries are distributed under their own licenses; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the full list and license texts. Basemap tiles are provided by [OpenFreeMap](https://openfreemap.org/) (OpenStreetMap data), with attribution shown in-app.
 
+The launcher icon's background is aerial imagery of Portland from the [USGS National Map](https://basemap.nationalmap.gov/) (U.S. Geological Survey — public domain); the route-line artwork on top is original.
+
 The app uses TriMet's public Web Services API ([developer.trimet.org](https://developer.trimet.org)). TriMet data remains the property of TriMet. PDX Bus Tracker is an unofficial project — TriMet does not sponsor, endorse, or maintain it.

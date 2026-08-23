@@ -57,6 +57,10 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **Copyright:** Copyright Jake Wharton
 - **Project:** https://github.com/JakeWharton/timber
 
+### Launcher icon map imagery — USGS National Map
+- **Source:** [U.S. Geological Survey National Map](https://basemap.nationalmap.gov/) (USGSImageryTopo service), aerial imagery of Portland, Oregon.
+- **License / status:** Public domain — work of the U.S. federal government (no copyright; attribution not required). Credited here as a courtesy.
+
 ---
 
 ## Full License Texts

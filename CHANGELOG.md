@@ -4,7 +4,7 @@
 
 ### Trademark & licensing compliance ("PDX Bus Tracker")
 - **New app identity:** the app is renamed to **PDX Bus Tracker** (launcher label, About card, Gradle project name, APK filenames). It remains an unofficial tracker for TriMet service; the package/applicationId is unchanged, so updates and local data are unaffected.
-- **Original launcher icon:** the official TriMet logo is replaced with an original abstract mark (three motion stripes on the orange disc) — TriMet trademarks and logos are no longer used in the app's branding. Theme color resources were also given neutral names (`brand_blue`, `brand_orange`, `launcher_icon_bg`).
+- **Original launcher icon:** the official TriMet logo is replaced with original artwork — stylized transit route lines (with interchange dots) over a public-domain USGS aerial image of Portland's downtown riverfront. TriMet trademarks, logos, and map designs are no longer used anywhere in the app's branding. Theme color resources were also given neutral names (`brand_blue`, `brand_orange`); map imagery courtesy USGS National Map (public domain).
 - **In-app attribution:** the Settings → About card now states that the app is unofficial and not affiliated with or endorsed by TriMet, and credits TriMet's public Developer API as the data source.
 - **Open-source licenses:** added `THIRD-PARTY-NOTICES.md` with every bundled library and full license texts, plus a new expandable "Open source licenses" section in Settings → About listing the libraries in-app.
 - **Privacy policy:** added `docs/privacy-policy.md` describing exactly how location is used (on-device lookups + coordinates sent to TriMet's API for nearby-stop searches), what is stored locally, and third-party map tile providers.
