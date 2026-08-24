@@ -141,6 +141,7 @@ import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
 
 private const val POSITION_REFRESH_MS = 30_000L
+private const val PIP_REFRESH_MS = 20_000L
 private const val STOP_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -330,14 +331,14 @@ fun ArrivalsScreen(
             trackingKey = null
             selectedDetours = null
             while (true) {
-                delay(POSITION_REFRESH_MS)
+                delay(PIP_REFRESH_MS)
                 loadArrivals()
             }
         }
     }
 
     if (inPip) {
-        PipCountdownContent(arrivals = arrivals, stopName = stopName)
+        PipCountdownContent(arrivals = arrivals, stopName = stopName, tick = countdownTick)
         return
     }
 
@@ -1094,6 +1095,7 @@ suspend fun toggleFavorite(
 private fun PipCountdownContent(
     arrivals: List<Arrival>,
     stopName: String,
+    tick: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val scheme = MaterialTheme.colorScheme

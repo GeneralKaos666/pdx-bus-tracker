@@ -4,6 +4,8 @@
 
 - **Collapsed navigation pill on sub-screens:** on Arrivals, Nearby Stops and Settings the floating bottom bar now collapses to a single pill branded with that screen's own icon and name (clock for Arrivals, compass pin for Nearby Stops, gear for Settings) instead of the last-viewed main tab, with a dedicated back-arrow button on its left; the Settings gear now appears only on the four main tabs.
   (`app/src/main/java/com/trimettransit/tracker/activities/MainActivity.kt`)
+- **Fresher Picture-in-Picture countdowns:** the PiP arrivals window now pulls fresh data every 20 seconds (was 30) and also re-computes "X min" countdowns between refreshes, so times keep rolling over even if a fetch fails.
+  (`feature/arrivals/src/main/java/com/trimettransit/tracker/feature/arrivals/ArrivalsScreen.kt`)
 
 ## What's New in v4.9.4
 
