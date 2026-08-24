@@ -34,6 +34,8 @@ import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.NearMe
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.History
@@ -210,7 +212,8 @@ private fun MainBottomBar(
     showBack: Boolean = false,
     onBackClick: () -> Unit = {},
     compact: Boolean = false,
-    collapsed: Boolean = false
+    collapsed: Boolean = false,
+    collapsedItem: BottomNavItem? = null
 ) {
     val windowInfo = LocalWindowInfo.current
     val density = LocalDensity.current
@@ -272,9 +275,11 @@ private fun MainBottomBar(
                     },
                     label = "nav_collapse"
                 ) { collapsedState ->
-                    val items = if (collapsedState)
-                        listOf(bottomNavItems[topPage.coerceIn(0, bottomNavItems.lastIndex)])
-                    else bottomNavItems
+                    val items = when {
+                        !collapsedState -> bottomNavItems
+                        collapsedItem != null -> listOf(collapsedItem)
+                        else -> listOf(bottomNavItems[topPage.coerceIn(0, bottomNavItems.lastIndex)])
+                    }
                     val shouldHideLabel = fontScale > 1.25f ||
                             (windowInfo.containerSize.width < with(density) { 400.dp.roundToPx() } && items.size > 3)
                     Row(
@@ -282,7 +287,7 @@ private fun MainBottomBar(
                         modifier = Modifier.padding(8.dp)
                     ) {
                         items.forEachIndexed { index, item ->
-                            val isSelected = topPage == item.pageIndex
+                            val isSelected = (collapsedState && items.size == 1) || topPage == item.pageIndex
 
                             val labelWidth by animateDpAsState(
                                 targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
@@ -304,7 +309,7 @@ private fun MainBottomBar(
 
                             IconButton(
                                 onClick = {
-                                    if (collapsed || item.pageIndex != topPage) {
+                                    if (item.pageIndex >= 0 && (collapsed || item.pageIndex != topPage)) {
                                         onNavigate(item.pageIndex)
                                     }
                                 },
@@ -438,6 +443,14 @@ private fun MainAppContent(
     val refreshRotation = remember { Animatable(0f) }
     val currentRoute = currentBackStackEntry?.destination?.route ?: ""
     val isTopLevel = currentRoute == "home"
+    // Sub-screens brand the collapsed pill with their own icon instead of
+    // whichever Home page was last open; pageIndex -1 makes it inert (back bubble navigates).
+    val collapsedNavItem = when {
+        currentRoute.startsWith("arrivals/") -> BottomNavItem(-1, "Arrivals", Icons.Filled.Schedule)
+        currentRoute == "nearby_stops" -> BottomNavItem(-1, "Nearby Stops", Icons.Filled.NearMe)
+        currentRoute == "settings" -> BottomNavItem(-1, "Settings", Icons.Default.Settings)
+        else -> null
+    }
     val outerSnackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(currentRoute) { NavState.bottomBarVisible = true }
@@ -638,7 +651,8 @@ private fun MainAppContent(
                         showBack = !isTopLevel,
                         onBackClick = { navController.popBackStack() },
                         compact = currentRoute.startsWith("arrivals/"),
-                        collapsed = !isTopLevel
+                        collapsed = !isTopLevel,
+                        collapsedItem = collapsedNavItem
                     )
                 }
             },
