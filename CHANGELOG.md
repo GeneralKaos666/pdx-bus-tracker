@@ -1,5 +1,10 @@
 # Changelog
 
+## What's New in v4.9.5
+
+- **Collapsed navigation pill on sub-screens:** on Arrivals, Nearby Stops and Settings the floating bottom bar now collapses to a single tab for the area you're in, with a dedicated back-arrow button on its left; the Settings gear now appears only on the four main tabs.
+  (`app/src/main/java/com/trimettransit/tracker/activities/MainActivity.kt`)
+
 ## What's New in v4.9.4
 
 ### Trademark & licensing compliance ("PDX Bus Tracker")

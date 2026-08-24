@@ -87,6 +87,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.Alignment
@@ -207,14 +209,12 @@ private fun MainBottomBar(
     onSettingsClick: () -> Unit,
     showBack: Boolean = false,
     onBackClick: () -> Unit = {},
-    compact: Boolean = false
+    compact: Boolean = false,
+    collapsed: Boolean = false
 ) {
     val windowInfo = LocalWindowInfo.current
     val density = LocalDensity.current
     val fontScale = density.fontScale
-    val items = bottomNavItems
-    val shouldHideLabel = fontScale > 1.25f ||
-            (windowInfo.containerSize.width < with(density) { 400.dp.roundToPx() } && items.size > 3)
     val itemHeight by animateDpAsState(
         targetValue = if (compact) 44.dp else 48.dp,
         animationSpec = spring(
@@ -235,109 +235,148 @@ private fun MainBottomBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            if (showBack) {
+                Surface(
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    shadowElevation = 8.dp,
+                    tonalElevation = 4.dp
+                ) {
+                    val backSource = remember { MutableInteractionSource() }
+                    IconButton(
+                        onClick = onBackClick,
+                        interactionSource = backSource,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .pressScale(backSource, 0.92f)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                }
+            }
             Surface(
                 shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shadowElevation = 8.dp,
                 tonalElevation = 4.dp
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(8.dp)
-                ) {
-                    items.forEachIndexed { index, item ->
-                        val isSelected = topPage == item.pageIndex
+                AnimatedContent(
+                    targetState = collapsed,
+                    transitionSpec = {
+                        (fadeIn(spring()) + scaleIn(initialScale = 0.85f, animationSpec = spring())) togetherWith
+                            (fadeOut(spring()) + scaleOut(targetScale = 0.85f, animationSpec = spring()))
+                    },
+                    label = "nav_collapse"
+                ) { collapsedState ->
+                    val items = if (collapsedState)
+                        listOf(bottomNavItems[topPage.coerceIn(0, bottomNavItems.lastIndex)])
+                    else bottomNavItems
+                    val shouldHideLabel = fontScale > 1.25f ||
+                            (windowInfo.containerSize.width < with(density) { 400.dp.roundToPx() } && items.size > 3)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(8.dp)
+                    ) {
+                        items.forEachIndexed { index, item ->
+                            val isSelected = topPage == item.pageIndex
 
-                        val labelWidth by animateDpAsState(
-                            targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessLow
-                            ),
-                            label = "label_width_$index"
-                        )
+                            val labelWidth by animateDpAsState(
+                                targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                ),
+                                label = "label_width_$index"
+                            )
 
-                        val spacerWidth by animateDpAsState(
-                            targetValue = if (index < items.size - 1) 8.dp else 0.dp,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessLow
-                            ),
-                            label = "spacer_width_$index"
-                        )
+                            val spacerWidth by animateDpAsState(
+                                targetValue = if (index < items.size - 1) 8.dp else 0.dp,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                ),
+                                label = "spacer_width_$index"
+                            )
 
-                        IconButton(
-                            onClick = {
-                                if (item.pageIndex != topPage) {
-                                    onNavigate(item.pageIndex)
-                                }
-                            },
-                            modifier = Modifier
-                                .width(48.dp + labelWidth)
-                                .height(itemHeight),
-                            colors = if (isSelected) {
-                                IconButtonDefaults.filledIconButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.onSurface,
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                )
-                            } else {
-                                IconButtonDefaults.iconButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.label,
-                                    tint = if (isSelected) {
-                                        MaterialTheme.colorScheme.onSurface
-                                    } else {
-                                        MaterialTheme.colorScheme.onPrimaryContainer
-                                    },
-                                    modifier = Modifier.size(item.iconSize)
-                                )
-                                if (isSelected && !shouldHideLabel) {
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = item.label,
-                                        style = MaterialTheme.typography.labelLarge,
-                                        maxLines = 1,
-                                        color = MaterialTheme.colorScheme.onSurface
+                            IconButton(
+                                onClick = {
+                                    if (collapsed || item.pageIndex != topPage) {
+                                        onNavigate(item.pageIndex)
+                                    }
+                                },
+                                modifier = Modifier
+                                    .width(48.dp + labelWidth)
+                                    .height(itemHeight),
+                                colors = if (isSelected) {
+                                    IconButtonDefaults.filledIconButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.onSurface,
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                    )
+                                } else {
+                                    IconButtonDefaults.iconButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 }
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = item.label,
+                                        tint = if (isSelected) {
+                                            MaterialTheme.colorScheme.onSurface
+                                        } else {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        },
+                                        modifier = Modifier.size(item.iconSize)
+                                    )
+                                    if (isSelected && !shouldHideLabel) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = item.label,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            maxLines = 1,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
                             }
-                        }
 
-                        if (index < items.size - 1) {
-                            Spacer(modifier = Modifier.width(spacerWidth))
+                            if (index < items.size - 1) {
+                                Spacer(modifier = Modifier.width(spacerWidth))
+                            }
                         }
                     }
                 }
             }
-            Surface(
-                shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.tertiaryContainer,
-                shadowElevation = 8.dp,
-                tonalElevation = 4.dp
-            ) {
-                val bubbleSource = remember { MutableInteractionSource() }
-                IconButton(
-                    onClick = if (showBack) onBackClick else onSettingsClick,
-                    interactionSource = bubbleSource,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .pressScale(bubbleSource, 0.92f)
+            if (!showBack) {
+                Surface(
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    shadowElevation = 8.dp,
+                    tonalElevation = 4.dp
                 ) {
-                    Icon(
-                        if (showBack) Icons.AutoMirrored.Filled.ArrowBack else Icons.Default.Settings,
-                        contentDescription = if (showBack) "Back" else "Settings",
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
+                    val bubbleSource = remember { MutableInteractionSource() }
+                    IconButton(
+                        onClick = onSettingsClick,
+                        interactionSource = bubbleSource,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .pressScale(bubbleSource, 0.92f)
+                    ) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
                 }
             }
         }
@@ -596,9 +635,10 @@ private fun MainAppContent(
                             // launchSingleTop: a fast double-tap must not push two settings entries.
                             navController.navigate("settings") { launchSingleTop = true }
                         },
-                        showBack = currentRoute == "settings",
+                        showBack = !isTopLevel,
                         onBackClick = { navController.popBackStack() },
-                        compact = currentRoute.startsWith("arrivals/")
+                        compact = currentRoute.startsWith("arrivals/"),
+                        collapsed = !isTopLevel
                     )
                 }
             },
