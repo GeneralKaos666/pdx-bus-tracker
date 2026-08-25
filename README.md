@@ -32,7 +32,7 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 ## Requirements
 
 - Android 12+ (minSdk 31, targetSdk/compileSdk 37)
-- JDK 21 locally (CI builds with JDK 17)
+- JDK 21 (locally and in CI)
 - Android SDK platform 37
 
 ## Architecture
@@ -42,7 +42,6 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 | Layer | Modules |
 |---|---|
 | `app` | single Activity, Compose Navigation graph, floating pill nav + trailing Settings/Back button, PiP |
-| `feature/*` | `home`, `stops`, `vehicles`, `arrivals`, `settings` — one screen area per module |
 | `feature/*` | `home`, `stops`, `vehicles`, `arrivals`, `settings` — one screen area per module |
 | `component/*` | `transit` (TriMet API client: OkHttp + JSON parsing), `localdata` (SQLite favorites/recent stops) |
 | `common/*` | `model` (domain models), `utils` (connectivity, date helpers), `ui` (theme, shared Compose components, cross-screen state) |
@@ -69,11 +68,25 @@ No ViewModels, no DI framework, no Room — screens own state with `remember { m
    ./gradlew clean test lint assembleDebug --stacktrace
    ```
 
+### Release builds
+
+Release builds are signed with a local keystore (`app/release.keystore`, gitignored). Provide the credentials via environment variables — the build fails fast if they are missing:
+
+```sh
+export STORE_PASSWORD=... KEY_ALIAS=... KEY_PASSWORD=...
+./gradlew assembleRelease bundleRelease
+```
+
+- **Signed APK:** `app/build/outputs/apk/release/` (a copy named `PdxBusTracker-release-<version>.apk` lands in `app/build/outputs/renamed_apks/release/`)
+- **Android App Bundle (Google Play):** `app/build/outputs/bundle/release/app-release.aab` — this is what Play Console accepts for uploads
+
+For a local smoke test without real credentials you can build with a debug fallback keystore: `-PreleaseSigningFallback=true`. Never upload that build.
+
 ## Tech stack
 
 | Stack | Version |
 |---|---|
-| Gradle / AGP | 9.7.0 / 9.3.1 |
+| Gradle / AGP | 9.7.1 / 9.3.1 |
 | Kotlin / Compose compiler plugin | 2.4.10 |
 | Jetpack Compose | BOM 2026.08.00 (Material 3 1.4.0, Navigation 2.9.8) |
 | OkHttp | 5.5.0 |

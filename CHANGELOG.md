@@ -7,6 +7,12 @@
 - **Fresher Picture-in-Picture countdowns:** the PiP arrivals window now pulls fresh data every 20 seconds (was 30) and also re-computes "X min" countdowns between refreshes, so times keep rolling over even if a fetch fails.
   (`feature/arrivals/src/main/java/com/trimettransit/tracker/feature/arrivals/ArrivalsScreen.kt`)
 
+### Release & repo polish
+- **Smaller release builds:** the blanket keep-all-app-classes R8 rule was removed (OkHttp, MapLibre, Compose and AndroidX ship their own rules), so `minifyEnabled` actually shrinks the release APK/AAB now; Joda-Time keeps retained. Unused bundled icon fonts (Font Awesome 4.7 + Ionicons 2.0.1, ~354 KB of dead assets) were deleted, as was the unused `viewBinding` build flag.
+  (`app/proguard-rules.pro`, `app/build.gradle`)
+- **Repo cleanup:** internal planning notes (`nav-pill-collapse-plan.md`, `.opencode/plans/…`) are no longer tracked in git; `.opencode/` is ignored.
+- **Docs:** README corrections (JDK version, Gradle wrapper version, duplicated architecture row) plus a new Release builds section covering signed APKs and the Play-required AAB; added `docs/play-store-checklist.md` with the full Google Play submission walkthrough (data-safety answers, listing assets, trademark guardrails).
+
 ## What's New in v4.9.4
 
 ### Trademark & licensing compliance ("PDX Bus Tracker")

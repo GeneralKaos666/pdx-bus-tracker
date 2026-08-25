@@ -15,4 +15,5 @@ scaffold2.txt
 kls_database.db
 *.jks
 *.keystore
+.opencode/
 
