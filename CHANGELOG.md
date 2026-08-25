@@ -12,6 +12,7 @@
   (`app/proguard-rules.pro`, `app/build.gradle`)
 - **Repo cleanup:** internal planning notes (`nav-pill-collapse-plan.md`, `.opencode/plans/…`) are no longer tracked in git; `.opencode/` is ignored.
 - **Docs:** README corrections (JDK version, Gradle wrapper version, duplicated architecture row) plus a new Release builds section covering signed APKs and the Play-required AAB; added `docs/play-store-checklist.md` with the full Google Play submission walkthrough (data-safety answers, listing assets, trademark guardrails).
+- **Play Store listing art:** generated the 512×512 store icon ("PDX / BUS / TRACKER" wordmark over the aerial photo with brand-color chips) and the 1024×500 feature graphic (wordmark + enlarged route-line motif) from original and public-domain artwork only (`docs/store-assets/`).
 
 ## What's New in v4.9.4
 
