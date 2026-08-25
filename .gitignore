@@ -8,7 +8,6 @@ build/
 .kotlin
 AGENTS.md
 KEYS.md
-gradle.properties
 scaffold.txt
 scaffold11.txt
 scaffold2.txt
