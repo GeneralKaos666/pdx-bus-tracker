@@ -47,14 +47,14 @@ device IDs beyond what Android/OkHttp inherently transmit.
 
 ## 3. Main store listing assets
 
-- [x] **App name:** PDX Bus Tracker (30 chars max — fits)
+- [ ] **App name:** PDX Bus Tracker (30 chars max — fits)
 - [ ] **Short description** (80 chars): e.g. "Real-time Portland TriMet arrivals, live vehicle map, routes & stop favorites."
 - [ ] **Full description:** expand from README Features section
-- [x] **App icon:** 512×512 PNG — `docs/store-assets/play-store-icon-512.png` (original launcher artwork)
-- [x] **Feature graphic:** 1024×500 PNG — `docs/store-assets/feature-graphic-1024x500.png` (same original motif + wordmark; no TriMet imagery)
-- [x] **Phone screenshots:** 2–8; the nine in `docs/screenshots/` cover every tab
+- [ ] **App icon:** 512×512 PNG (export from the original launcher artwork — route lines over USGS aerial)
+- [ ] **Feature graphic:** 1024×500 JPG/PNG (needs creating; keep it original artwork — no TriMet logos/maps)
+- [ ] **Phone screenshots:** 2–8; the nine in `docs/screenshots/` cover every tab
 - [ ] 7" tablet screenshots: optional but recommended (Compose layout scales; capture later)
-- [x] **Contact email:** `generalkaos6969@gmail.com` (required field)
+- [ ] **Contact email:** *required field* — GitHub issues alone do NOT satisfy this; decide on an address before submitting
 - [ ] Website/social: optional (repo URL works)
 
 ## 4. Trademark guardrails (keep these true at submission time)
