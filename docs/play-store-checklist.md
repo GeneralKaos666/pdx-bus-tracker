@@ -47,11 +47,15 @@ device IDs beyond what Android/OkHttp inherently transmit.
 
 ## 3. Main store listing assets
 
+Copy-paste ready **short description**, **full description**, and **release notes** live in
+[`docs/play-store-listing.md`](play-store-listing.md); ready-to-upload **icon** and
+**feature graphic** are in [`docs/play-store-listing/`](play-store-listing/).
+
 - [ ] **App name:** PDX Bus Tracker (30 chars max — fits)
-- [ ] **Short description** (80 chars): e.g. "Real-time Portland TriMet arrivals, live vehicle map, routes & stop favorites."
-- [ ] **Full description:** expand from README Features section
-- [ ] **App icon:** 512×512 PNG (export from the original launcher artwork — route lines over USGS aerial)
-- [ ] **Feature graphic:** 1024×500 JPG/PNG (needs creating; keep it original artwork — no TriMet logos/maps)
+- [ ] **Short description** (80 chars): "Real-time Portland TriMet arrivals, live vehicle map, routes & stop favorites." (in the listing file)
+- [ ] **Full description:** in the listing file (expanded from README Features, trademark disclaimer first)
+- [ ] **App icon:** `app-icon-512.png`, 512×512 PNG (original launcher artwork — route lines over USGS aerial)
+- [ ] **Feature graphic:** `feature-graphic-1024x500.png`, 1024×500 PNG (original artwork — no TriMet logos/maps)
 - [ ] **Phone screenshots:** 2–8; the nine in `docs/screenshots/` cover every tab
 - [ ] 7" tablet screenshots: optional but recommended (Compose layout scales; capture later)
 - [ ] **Contact email:** *required field* — GitHub issues alone do NOT satisfy this; decide on an address before submitting
