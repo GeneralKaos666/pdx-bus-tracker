@@ -16,3 +16,5 @@ kls_database.db
 *.keystore
 .opencode/
 
+.omo
+session-ses_fbde.md
