@@ -20,14 +20,12 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 
 ## Screenshots
 
-| | | |
-|---|---|---|
-| <img src="docs/screenshots/Transit_routes_list_view_1.png" width="220" alt="Transit routes list view (1)"> | <img src="docs/screenshots/Transit_routes_list_view_2.png" width="220" alt="Transit routes list view (2)"> | <img src="docs/screenshots/Search_results_for_route_72.png" width="220" alt="Search results for route 72"> |
-| Transit routes list view (1) | Transit routes list view (2) | Search results for route 72 |
-| <img src="docs/screenshots/Route_9_arrivals_Gresham_Central.png" width="220" alt="Route 9 arrivals at Gresham Central"> | <img src="docs/screenshots/Multiple_route_arrivals_Clackamas_TC_1.png" width="220" alt="Multiple-route arrivals at Clackamas Town Center (1)"> | <img src="docs/screenshots/Multiple_route_arrivals_Clackamas_TC_2.png" width="220" alt="Multiple-route arrivals at Clackamas Town Center (2)"> |
-| Route 9 arrivals at Gresham Central | Multiple-route arrivals at Clackamas Town Center (1) | Multiple-route arrivals at Clackamas Town Center (2) |
-| <img src="docs/screenshots/Empty_Favorites_page.png" width="220" alt="Empty Favorites page"> | <img src="docs/screenshots/Empty_Recent_Stops_page.png" width="220" alt="Empty Recent Stops page"> | <img src="docs/screenshots/Settings_menu.png" width="220" alt="Settings menu"> |
-| Empty Favorites page | Empty Recent Stops page | Settings menu |
+| | | | |
+|---|---|---|---|
+| <img src="docs/screenshots/play-phone-01-arrivals-hero.png" width="190" alt="Real-time arrivals"> | <img src="docs/screenshots/play-phone-02-live-map.png" width="190" alt="What's Nearby live map"> | <img src="docs/screenshots/play-phone-03-search-stops.png" width="190" alt="Search stops"> | <img src="docs/screenshots/play-phone-04-route-browser.png" width="190" alt="Route & stop browser"> |
+| Real-time arrivals | What's Nearby live map | Search stops | Route & stop browser |
+| <img src="docs/screenshots/play-phone-05-favorites-recents.png" width="190" alt="Favorites & recent stops"> | <img src="docs/screenshots/play-phone-06-detour-alerts.png" width="190" alt="Detour alerts"> | <img src="docs/screenshots/play-phone-07-free-no-ads.png" width="190" alt="Free, no ads"> | <img src="docs/screenshots/play-phone-08-feature-wall.png" width="190" alt="Everything in one place"> |
+| Favorites & recent stops | Detour alerts | Free, no ads | Everything in one place |
 
 ## Requirements
 
