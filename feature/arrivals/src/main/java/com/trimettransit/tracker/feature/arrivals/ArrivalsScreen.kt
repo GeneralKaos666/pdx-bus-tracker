@@ -73,6 +73,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -116,6 +117,7 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
+import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory.iconAllowOverlap
@@ -143,6 +145,7 @@ import org.maplibre.geojson.Point
 private const val POSITION_REFRESH_MS = 30_000L
 private const val PIP_REFRESH_MS = 20_000L
 private const val STOP_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
+private const val STOP_MAP_STYLE_URL_DARK = "https://tiles.openfreemap.org/styles/dark"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,6 +155,7 @@ fun ArrivalsScreen(
     routeId: Int,
     latitude: Double = 0.0,
     longitude: Double = 0.0,
+    isDark: Boolean = false,
 ) {
     val context = LocalContext.current
     var arrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
@@ -437,7 +441,8 @@ fun ArrivalsScreen(
                                             blockPositions = trackedPositions,
                                             arrivals = arrivals,
                                             headerText = trackingSign.ifBlank { stopName },
-                                            onClose = { trackingKey = null }
+                                            onClose = { trackingKey = null },
+                                            isDark = isDark
                                         )
                                     }
                                 }
@@ -582,9 +587,13 @@ private fun StopMapCard(
     arrivals: List<Arrival> = emptyList(),
     headerText: String? = null,
     onClose: (() -> Unit)? = null,
-    showHeader: Boolean = true
+    showHeader: Boolean = true,
+    isDark: Boolean = false
 ) {
     val mapState = remember { MapState() }
+    // Resolve the drop-off label in the configuration-aware composable scope (the map's
+    // getMapAsync callback is not configuration-aware, so it can't look the string up there).
+    mapState.dropoffLabel = stringResource(R.string.arrival_dropoff_only)
     // Size of the map view at the time of the last camera fit. Fitting the camera while
     // the card is still expanding (0 x 0 or growing) yields a degenerate/never-converging
     // fit, so only fit once the viewport size is stable.
@@ -593,6 +602,73 @@ private fun StopMapCard(
     val scheme = MaterialTheme.colorScheme
     val badgeColors = remember(scheme) {
         transitBadgeLetters().associateWith { transitColor(it, scheme) }
+    }
+    val context = LocalContext.current
+    val mapStyleUrl = if (isDark) STOP_MAP_STYLE_URL_DARK else STOP_MAP_STYLE_URL
+    // MapLibre halo/text colors are chosen for legibility against the basemap: light basemap
+    // wants a light halo over dark glyphs, the dark basemap wants a dark halo over light glyphs.
+    val countdownTextColor = scheme.onSurface.toArgb()
+    val countdownHaloColor = if (isDark) scheme.surface.toArgb() else android.graphics.Color.WHITE
+    // Track which basemap is currently loaded so a theme change re-applies the style in place.
+    var appliedStyleUrl by remember { mutableStateOf<String?>(null) }
+
+    fun applyStopMapStyle(style: Style) {
+        style.addImage(
+            "stop-dot",
+            stopDotBitmap(context, scheme.primary.toArgb(), density)
+        )
+        badgeColors.forEach { (letter, color) ->
+            style.addImage(
+                "badge-$letter",
+                badgeBitmap(
+                    context,
+                    color.toArgb(),
+                    transitIconResource(letter),
+                    density
+                )
+            )
+        }
+        style.addSource(
+            GeoJsonSource(
+                "stop-source",
+                Feature.fromGeometry(Point.fromLngLat(lng, lat))
+            )
+        )
+        style.addLayer(
+            SymbolLayer("stop-layer", "stop-source").withProperties(
+                iconImage("stop-dot"),
+                iconAnchor(Property.ICON_ANCHOR_CENTER),
+                iconAllowOverlap(true),
+                iconIgnorePlacement(true)
+            )
+        )
+        val busSource = GeoJsonSource("bus-source")
+        style.addSource(busSource)
+        style.addLayer(
+            SymbolLayer("bus-layer", "bus-source").withProperties(
+                iconImage(Expression.get("icon")),
+                iconRotate(Expression.get("bearing")),
+                iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
+                iconAnchor(Property.ICON_ANCHOR_CENTER),
+                iconAllowOverlap(true),
+                iconIgnorePlacement(true)
+            )
+        )
+        mapState.busSource = busSource
+        style.addLayer(
+            SymbolLayer("countdown-layer", "bus-source").withProperties(
+                textField(Expression.get("countdown")),
+                textAnchor(Property.TEXT_ANCHOR_BOTTOM),
+                textOffset(arrayOf(0f, -1.8f)),
+                textSize(11f),
+                textColor(countdownTextColor),
+                textHaloColor(countdownHaloColor),
+                textHaloWidth(2f),
+                textAllowOverlap(true),
+                textIgnorePlacement(true),
+                textFont(arrayOf("Noto Sans Bold"))
+            )
+        )
     }
 
     Card(
@@ -651,69 +727,15 @@ private fun StopMapCard(
                             map.uiSettings.isCompassEnabled = false
                             map.uiSettings.isAttributionEnabled = true
                             map.setMaxZoomPreference(18.0)
-                            map.setStyle(STOP_MAP_STYLE_URL) { style ->
-                                style.addImage(
-                                    "stop-dot",
-                                    stopDotBitmap(ctx, scheme.primary.toArgb(), density)
-                                )
-                                badgeColors.forEach { (letter, color) ->
-                                    style.addImage(
-                                        "badge-$letter",
-                                        badgeBitmap(
-                                            ctx,
-                                            color.toArgb(),
-                                            transitIconResource(letter),
-                                            density
-                                        )
-                                    )
-                                }
-                                style.addSource(
-                                    GeoJsonSource(
-                                        "stop-source",
-                                        Feature.fromGeometry(Point.fromLngLat(lng, lat))
-                                    )
-                                )
-                                style.addLayer(
-                                    SymbolLayer("stop-layer", "stop-source").withProperties(
-                                        iconImage("stop-dot"),
-                                        iconAnchor(Property.ICON_ANCHOR_CENTER),
-                                        iconAllowOverlap(true),
-                                        iconIgnorePlacement(true)
-                                    )
-                                )
-                                val busSource = GeoJsonSource("bus-source")
-                                style.addSource(busSource)
-                                style.addLayer(
-                                    SymbolLayer("bus-layer", "bus-source").withProperties(
-                                        iconImage(Expression.get("icon")),
-                                        iconRotate(Expression.get("bearing")),
-                                        iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
-                                        iconAnchor(Property.ICON_ANCHOR_CENTER),
-                                        iconAllowOverlap(true),
-                                        iconIgnorePlacement(true)
-                                    )
-                                )
-                                mapState.busSource = busSource
-                                style.addLayer(
-                                    SymbolLayer("countdown-layer", "bus-source").withProperties(
-                                        textField(Expression.get("countdown")),
-                                        textAnchor(Property.TEXT_ANCHOR_BOTTOM),
-                                        textOffset(arrayOf(0f, -1.8f)),
-                                        textSize(11f),
-                                        textColor(scheme.onSurface.toArgb()),
-                                        textHaloColor(android.graphics.Color.WHITE),
-                                        textHaloWidth(2f),
-                                        textAllowOverlap(true),
-                                        textIgnorePlacement(true),
-                                        textFont(arrayOf("Noto Sans Bold"))
-                                    )
-                                )
+                            map.setStyle(mapStyleUrl) { style ->
+                                applyStopMapStyle(style)
                                 map.moveCamera(
                                     CameraUpdateFactory.newLatLngZoom(
                                         LatLng(lat, lng),
                                         16.0
                                     )
                                 )
+                                appliedStyleUrl = mapStyleUrl
                                 mapState.applyPositions()   // in case update ran before style load
                             }
                         }
@@ -733,12 +755,21 @@ private fun StopMapCard(
                 update = { view ->
                     view.onStart()   // idempotent; also covers the factory's post() ordering
                     view.onResume()
+                    // If the resolved basemap (light/dark) changed since it was last applied,
+                    // reload the style and re-add our images/sources/layers before pushing data.
+                    val map = mapState.map
+                    if (map != null && appliedStyleUrl != mapStyleUrl) {
+                        appliedStyleUrl = mapStyleUrl
+                        map.setStyle(mapStyleUrl) { style ->
+                            applyStopMapStyle(style)
+                            mapState.applyPositions()
+                        }
+                    }
                     mapState.positions = blockPositions
                     mapState.arrivals = arrivals
                     mapState.applyPositions()
                     // Keep stop + tracked buses in view; re-fit only once the map has a
                     // stable, non-degenerate size and something is actually off-screen.
-                    val map = mapState.map
                     val points = blockPositions
                         .filter { it.lat != 0.0 || it.lng != 0.0 }
                         .map { it.lat to it.lng }
@@ -792,6 +823,9 @@ private class MapState {
     var positions: List<BlockPosition> = emptyList()
     var arrivals: List<Arrival> = emptyList()
 
+    /** Resolved "Dropoff Only" label, set when the map is configured. */
+    var dropoffLabel: String = "Dropoff Only"
+
     /** Pushes the latest bus positions into the GeoJsonSource (no-op until style is ready). */
     fun applyPositions() {
         val source = busSource ?: return
@@ -803,15 +837,20 @@ private class MapState {
             feature.addStringProperty("icon", "badge-$letter")
             feature.addNumberProperty("bearing", bp.bearing)
             // Time-left label shown above the icon: the tracked arrival for this vehicle,
-            // phrased exactly like the list rows. Empty string renders nothing on the map.
+            // phrased exactly like the list rows. Drop-off-only arrivals show the label
+            // instead of a countdown. Empty string renders nothing on the map.
             val match = arrivals.firstOrNull { it.vehicleID == bp.vehicleID }
-            val displayTime = match?.let { a ->
-                if (a.status == "estimated" && a.estimated != null) a.estimated else a.scheduled
+            val label = if (match?.dropOffOnly == true) {
+                dropoffLabel
+            } else {
+                val displayTime = match?.let { a ->
+                    if (a.status == "estimated" && a.estimated != null) a.estimated else a.scheduled
+                }
+                if (displayTime != null) {
+                    val mins = minutesUntil(displayTime)
+                    if (mins <= 0) "Due" else "$mins min"
+                } else ""
             }
-            val label = if (displayTime != null) {
-                val mins = minutesUntil(displayTime)
-                if (mins <= 0) "Due" else "$mins min"
-            } else ""
             feature.addStringProperty("countdown", label)
             feature
         }
@@ -1164,6 +1203,13 @@ private fun PipCountdownContent(
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = scheme.error
+                        )
+                    } else if (arrival.dropOffOnly) {
+                        Text(
+                            text = "Dropoff Only",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = scheme.onSurfaceVariant
                         )
                     } else {
                         Text(

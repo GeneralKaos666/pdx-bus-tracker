@@ -72,6 +72,7 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
+import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
@@ -89,6 +90,8 @@ import org.maplibre.android.style.layers.PropertyFactory.textAnchor
 import org.maplibre.android.style.layers.PropertyFactory.textColor
 import org.maplibre.android.style.layers.PropertyFactory.textField
 import org.maplibre.android.style.layers.PropertyFactory.textFont
+import org.maplibre.android.style.layers.PropertyFactory.textHaloColor
+import org.maplibre.android.style.layers.PropertyFactory.textHaloWidth
 import org.maplibre.android.style.layers.PropertyFactory.textIgnorePlacement
 import org.maplibre.android.style.layers.PropertyFactory.textOffset
 import org.maplibre.android.style.layers.PropertyFactory.textSize
@@ -102,6 +105,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 private const val WHATS_NEARBY_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
+private const val WHATS_NEARBY_MAP_STYLE_URL_DARK = "https://tiles.openfreemap.org/styles/dark"
 /** Nearby stop search + map radius around the user, in feet (1200 ft ≈ 366 m). */
 private const val NEARBY_RADIUS_FEET = 1200
 private const val FOOT_TO_METERS = 0.3048
@@ -119,7 +123,8 @@ private const val STOP_TAP_SLOP_DP = 24f
 @Composable
 fun WhatsNearbyScreen(
     pageVisible: Boolean,
-    onNavigateToArrivals: (Stop, Int) -> Unit
+    onNavigateToArrivals: (Stop, Int) -> Unit,
+    isDark: Boolean = false
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -306,6 +311,7 @@ fun WhatsNearbyScreen(
                 stops = stops ?: emptyList(),
                 vehicles = vehicles ?: emptyList(),
                 onStopClick = { stop -> onNavigateToArrivals(stop, -1) },
+                isDark = isDark,
                 modifier = Modifier.fillMaxSize()
             )
             androidx.compose.animation.AnimatedVisibility(
@@ -424,6 +430,7 @@ private fun VehicleMap(
     stops: List<Stop>,
     vehicles: List<VehiclePosition>,
     onStopClick: (Stop) -> Unit,
+    isDark: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     // Re-read the latest stop-click callback on every recomposition so the once-registered
@@ -438,6 +445,79 @@ private fun VehicleMap(
     val badgeColors = remember(scheme) {
         transitBadgeLetters().associateWith { transitColor(it, scheme) }
     }
+    val context = LocalContext.current
+    val mapStyleUrl = if (isDark) WHATS_NEARBY_MAP_STYLE_URL_DARK else WHATS_NEARBY_MAP_STYLE_URL
+    // Stop-name labels are painted for legibility against whichever basemap is active: a
+    // contrast halo makes them readable over both the light and the dark styles.
+    val labelColor = scheme.onSurface.toArgb()
+    val labelHaloColor = if (isDark) scheme.surface.toArgb() else android.graphics.Color.WHITE
+    // Track which basemap is currently loaded so a theme change re-applies the style in place.
+    var appliedStyleUrl by remember { mutableStateOf<String?>(null) }
+
+    fun applyNearbyMapStyle(style: Style) {
+        badgeColors.forEach { (letter, color) ->
+            style.addImage(
+                "badge-$letter",
+                badgeBitmap(context, color.toArgb(), transitIconResource(letter), density)
+            )
+        }
+        style.addImage("stop-dot", stopDotBitmap(context, scheme.secondary.toArgb(), density))
+        style.addImage("me-dot", meDotBitmap(context, scheme.primary.toArgb(), density))
+        val radiusSource = GeoJsonSource("radius-source")
+        style.addSource(radiusSource)
+        style.addLayer(
+            FillLayer("radius-layer", "radius-source").withProperties(
+                fillColor(scheme.primary.toArgb()),
+                fillOpacity(0.15f)
+            )
+        )
+        val stopsSource = GeoJsonSource("stop-source")
+        style.addSource(stopsSource)
+        style.addLayer(
+            SymbolLayer("stop-layer", "stop-source").withProperties(
+                iconImage("stop-dot"),
+                iconAnchor(Property.ICON_ANCHOR_CENTER),
+                iconAllowOverlap(true),
+                iconIgnorePlacement(true),
+                textField(Expression.get("name")),
+                textFont(arrayOf("Noto Sans Regular")),
+                textSize(11f),
+                textColor(labelColor),
+                textHaloColor(labelHaloColor),
+                textHaloWidth(2f),
+                textAnchor(Property.TEXT_ANCHOR_TOP),
+                textOffset(arrayOf(0f, 1.5f)),
+                textAllowOverlap(true),
+                textIgnorePlacement(true)
+            )
+        )
+        val vehiclesSource = GeoJsonSource("vehicles-source")
+        style.addSource(vehiclesSource)
+        style.addLayer(
+            SymbolLayer("vehicles-layer", "vehicles-source").withProperties(
+                iconImage(Expression.get("icon")),
+                iconRotate(Expression.get("heading")),
+                iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
+                iconAnchor(Property.ICON_ANCHOR_CENTER),
+                iconAllowOverlap(true),
+                iconIgnorePlacement(true)
+            )
+        )
+        val meSource = GeoJsonSource("me-source")
+        style.addSource(meSource)
+        style.addLayer(
+            SymbolLayer("me-layer", "me-source").withProperties(
+                iconImage("me-dot"),
+                iconAnchor(Property.ICON_ANCHOR_CENTER),
+                iconAllowOverlap(true),
+                iconIgnorePlacement(true)
+            )
+        )
+        mapState.radiusSource = radiusSource
+        mapState.stopsSource = stopsSource
+        mapState.vehiclesSource = vehiclesSource
+        mapState.meSource = meSource
+    }
 
     AndroidView(
         factory = { ctx ->
@@ -447,67 +527,9 @@ private fun VehicleMap(
                     map.uiSettings.isCompassEnabled = false
                     map.uiSettings.isAttributionEnabled = true
                     map.setMaxZoomPreference(18.0)
-                    map.setStyle(WHATS_NEARBY_MAP_STYLE_URL) { style ->
-                        badgeColors.forEach { (letter, color) ->
-                            style.addImage(
-                                "badge-$letter",
-                                badgeBitmap(ctx, color.toArgb(), transitIconResource(letter), density)
-                            )
-                        }
-                        style.addImage("stop-dot", stopDotBitmap(ctx, scheme.secondary.toArgb(), density))
-                        style.addImage("me-dot", meDotBitmap(ctx, scheme.primary.toArgb(), density))
-                        val radiusSource = GeoJsonSource("radius-source")
-                        style.addSource(radiusSource)
-                        style.addLayer(
-                            FillLayer("radius-layer", "radius-source").withProperties(
-                                fillColor(scheme.primary.toArgb()),
-                                fillOpacity(0.15f)
-                            )
-                        )
-                        val stopsSource = GeoJsonSource("stop-source")
-                        style.addSource(stopsSource)
-                        style.addLayer(
-                            SymbolLayer("stop-layer", "stop-source").withProperties(
-                                iconImage("stop-dot"),
-                                iconAnchor(Property.ICON_ANCHOR_CENTER),
-                                iconAllowOverlap(true),
-                                iconIgnorePlacement(true),
-                                textField(Expression.get("name")),
-                                textFont(arrayOf("Noto Sans Regular")),
-                                textSize(11f),
-                                textColor(android.graphics.Color.BLACK),
-                                textAnchor(Property.TEXT_ANCHOR_TOP),
-                                textOffset(arrayOf(0f, 1.5f)),
-                                textAllowOverlap(true),
-                                textIgnorePlacement(true)
-                            )
-                        )
-                        val vehiclesSource = GeoJsonSource("vehicles-source")
-                        style.addSource(vehiclesSource)
-                        style.addLayer(
-                            SymbolLayer("vehicles-layer", "vehicles-source").withProperties(
-                                iconImage(Expression.get("icon")),
-                                iconRotate(Expression.get("heading")),
-                                iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
-                                iconAnchor(Property.ICON_ANCHOR_CENTER),
-                                iconAllowOverlap(true),
-                                iconIgnorePlacement(true)
-                            )
-                        )
-                        val meSource = GeoJsonSource("me-source")
-                        style.addSource(meSource)
-                        style.addLayer(
-                            SymbolLayer("me-layer", "me-source").withProperties(
-                                iconImage("me-dot"),
-                                iconAnchor(Property.ICON_ANCHOR_CENTER),
-                                iconAllowOverlap(true),
-                                iconIgnorePlacement(true)
-                            )
-                        )
-                        mapState.radiusSource = radiusSource
-                        mapState.stopsSource = stopsSource
-                        mapState.vehiclesSource = vehiclesSource
-                        mapState.meSource = meSource
+                    map.setStyle(mapStyleUrl) { style ->
+                        applyNearbyMapStyle(style)
+                        appliedStyleUrl = mapStyleUrl
                         val location = myLocation
                         if (location != null) {
                             mapState.applyMe(location.latitude, location.longitude)
@@ -569,6 +591,17 @@ private fun VehicleMap(
         update = { view ->
             view.onStart()   // idempotent; also covers the factory's post() ordering
             view.onResume()
+            // If the resolved basemap (light/dark) changed since it was last applied, reload
+            // the style and re-add our images/sources/layers before pushing data.
+            val vmap = mapState.map
+            if (vmap != null && appliedStyleUrl != mapStyleUrl) {
+                appliedStyleUrl = mapStyleUrl
+                vmap.setStyle(mapStyleUrl) { style ->
+                    applyNearbyMapStyle(style)
+                    mapState.applyStops()
+                    mapState.applyVehicles()
+                }
+            }
             mapState.stops = stops
             mapState.applyStops()
             mapState.vehicles = vehicles

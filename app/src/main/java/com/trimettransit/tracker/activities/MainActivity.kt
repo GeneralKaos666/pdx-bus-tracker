@@ -724,7 +724,8 @@ private fun MainAppContent(
                                 pageVisible = topPagerState.currentPage == 3,
                                 onNavigateToArrivals = { stop: Stop, _: Int ->
                                     navigateToArrivals(stop, -1)
-                                }
+                                },
+                                isDark = isDark
                             )
                         }
                     }
@@ -756,6 +757,7 @@ private fun MainAppContent(
                         routeId = backStackEntry.arguments?.getInt("routeId") ?: -1,
                         latitude = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0,
                         longitude = backStackEntry.arguments?.getString("lng")?.toDoubleOrNull() ?: 0.0,
+                        isDark = isDark,
                     )
                 }
             }
