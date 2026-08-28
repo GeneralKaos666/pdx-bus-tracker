@@ -56,7 +56,7 @@ Copy-paste ready **short description**, **full description**, and **release note
 - [ ] **Full description:** in the listing file (expanded from README Features, trademark disclaimer first)
 - [ ] **App icon:** `app-icon-512.png`, 512×512 PNG (original launcher artwork — route lines over USGS aerial)
 - [ ] **Feature graphic:** `feature-graphic-1024x500.png`, 1024×500 PNG (original artwork — no TriMet logos/maps)
-- [ ] **Phone screenshots:** 2–8; the nine in `docs/screenshots/` cover every tab
+- [ ] **Phone screenshots:** 2–8; the eight 1080×1920 ad-style slides (marketing deck seeded from real screen captures at `docs/screenshots/play-phone-*.png`) cover the full pitch arc (live arrivals, live map, search, routes, favorites, detour alerts, free/no-ads, feature wall)
 - [ ] 7" tablet screenshots: optional but recommended (Compose layout scales; capture later)
 - [ ] **Contact email:** *required field* — GitHub issues alone do NOT satisfy this; decide on an address before submitting
 - [ ] Website/social: optional (repo URL works)
