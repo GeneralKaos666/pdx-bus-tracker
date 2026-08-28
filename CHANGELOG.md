@@ -3,9 +3,7 @@
 ## What's New in v4.9.6
 
 - **Drop-off-only arrivals are now consistent everywhere:** the arrivals list already labeled drop-off-only buses "Dropoff Only"; the tracked-bus map pin and the Picture-in-Picture countdown now show the same "Dropoff Only" label instead of a misleading minutes countdown.
-  (`feature/arrivals/src/main/java/com/trimettransit/tracker/feature/arrivals/ArrivalsScreen.kt`)
 - **Maps follow the theme:** the Arrivals stop map and the What's Nearby map now switch their basemap between OpenFreeMap's light ("Liberty") and dark ("Dark") styles to match the app's System/Light/Dark theme setting, updating live when the theme or device night mode changes. Stop labels and the tracked-bus countdown gain theme-aware halo colors so they stay legible on the dark basemap.
-  (`feature/arrivals/.../ArrivalsScreen.kt`, `feature/vehicles/.../WhatsNearbyScreen.kt`)
 
 ## What's New in v4.9.5
 
