@@ -430,8 +430,8 @@ private fun VehicleMap(
     stops: List<Stop>,
     vehicles: List<VehiclePosition>,
     onStopClick: (Stop) -> Unit,
-    isDark: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDark: Boolean = false
 ) {
     // Re-read the latest stop-click callback on every recomposition so the once-registered
     // map click listener never fires a stale lambda.

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- This is a Wear OS app: only ever installed on watches. -->
+    <uses-feature
+        android:name="android.hardware.type.watch"
+        android:required="true"/>
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+    <application
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/Theme.PDXWear"
+        android:allowBackup="false">
+
+        <!-- Non-standalone: core data (favorites/recent stops) comes from the
+             paired phone app over the Wearable Data Layer. -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="false"/>
+
+        <activity
+            android:name=".wear.WearMainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:configChanges="screenSize|orientation|screenLayout|smallestScreenSize|uiMode">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <!-- Receives favorites/recent-stop pushes from the phone app and caches
+             them into this device's local database. -->
+        <service
+            android:name=".wear.data.StopListSyncService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED"/>
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/stops"/>
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

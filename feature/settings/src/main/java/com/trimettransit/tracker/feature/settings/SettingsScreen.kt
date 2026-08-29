@@ -261,6 +261,8 @@ fun SettingsScreen() {
                         LicenseEntry("MapLibre Native (Android, OpenGL backend)", "BSD 2-Clause License")
                         LicenseEntry("Joda-Time Android", "Apache License 2.0")
                         LicenseEntry("Timber", "Apache License 2.0")
+                        LicenseEntry("Wear OS Compose (androidx.wear, Wear Compose)", "Apache License 2.0")
+                        LicenseEntry("Google Play services (wearable)", "Google APIs")
                         LicenseEntry(
                             "Full license texts: see THIRD-PARTY-NOTICES.md in the project repository.",
                             "",

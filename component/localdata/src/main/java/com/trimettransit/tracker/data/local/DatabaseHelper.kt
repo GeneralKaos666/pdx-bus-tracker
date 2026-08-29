@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import androidx.core.database.sqlite.transaction
 import com.trimettransit.tracker.model.Stop
 
 class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
@@ -87,18 +88,15 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
 
     fun addFavorite(stop: Stop): Boolean {
         val db = writableDatabase
-        val rowId = ContentValues().apply {
-            put("desc", stop.desc)
-            put("dir_desc", stop.dirDesc)
-            put("loc_id", stop.locId)
-            put("transit_type", stop.transitType)
-            put("longitude", stop.longitude)
-            put("latitude", stop.latitude)
-            put("route_num", stop.routeNum)
-        }.let { values ->
-            db.insertWithOnConflict("favorites", null, values, SQLiteDatabase.CONFLICT_IGNORE)
-        }
-        return rowId != -1L
+        val rowId = db.insertWithOnConflict(
+            "favorites",
+            null,
+            stopValues(stop),
+            SQLiteDatabase.CONFLICT_IGNORE
+        )
+        val added = rowId != -1L
+        if (added) notifyStopListsChanged()
+        return added
     }
 
     fun isFavorite(locId: Int): Boolean {
@@ -110,39 +108,70 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
 
     fun removeFavorite(locId: Int): Boolean {
         val db = writableDatabase
-        return db.delete("favorites", "loc_id = ?", arrayOf(locId.toString())) > 0
+        val removed = db.delete("favorites", "loc_id = ?", arrayOf(locId.toString())) > 0
+        if (removed) notifyStopListsChanged()
+        return removed
     }
 
     fun addRecentStop(stop: Stop) {
         val db = writableDatabase
         // Delete+insert (and the trim below) must be atomic or a crash mid-way
         // can leave the stop duplicated under its UNIQUE index replacement.
-        db.beginTransaction()
-        try {
-            db.delete("recent_stops", "loc_id = ?", arrayOf(stop.locId.toString()))
-            ContentValues().apply {
-                put("desc", stop.desc)
-                put("dir_desc", stop.dirDesc)
-                put("loc_id", stop.locId)
-                put("transit_type", stop.transitType)
-                put("longitude", stop.longitude)
-                put("latitude", stop.latitude)
-                put("route_num", stop.routeNum)
-                db.insertWithOnConflict("recent_stops", null, this, SQLiteDatabase.CONFLICT_REPLACE)
-            }
-            db.rawQuery("SELECT COUNT(*) FROM recent_stops", null).use { cursor ->
+        db.transaction {
+            delete("recent_stops", "loc_id = ?", arrayOf(stop.locId.toString()))
+            insertWithOnConflict("recent_stops", null, stopValues(stop), SQLiteDatabase.CONFLICT_REPLACE)
+            rawQuery("SELECT COUNT(*) FROM recent_stops", null).use { cursor ->
                 if (cursor.moveToFirst() && cursor.getInt(0) > 20) {
-                    db.execSQL("DELETE FROM recent_stops WHERE id NOT IN (SELECT id FROM recent_stops ORDER BY id DESC LIMIT 20)")
+                    execSQL("DELETE FROM recent_stops WHERE id NOT IN (SELECT id FROM recent_stops ORDER BY id DESC LIMIT 20)")
                 }
             }
-            db.setTransactionSuccessful()
-        } finally {
-            db.endTransaction()
+            notifyStopListsChanged()
         }
+    }
+
+    /**
+     * Full replacement used by the Wear companion to apply a snapshot pushed from
+     * the phone app (the watch keeps its own local copy of the phone's lists).
+     */
+    fun replaceFavorites(stops: List<Stop>) = replaceTable("favorites", stops)
+
+    /** Full replacement of the recent-stops table with a phone-pushed snapshot. */
+    fun replaceRecentStops(stops: List<Stop>) = replaceTable("recent_stops", stops)
+
+    private fun replaceTable(table: String, stops: List<Stop>) {
+        val db = writableDatabase
+        db.transaction {
+            delete(table, null, null)
+            stops.forEach { stop ->
+                insertWithOnConflict(table, null, stopValues(stop), SQLiteDatabase.CONFLICT_REPLACE)
+            }
+        }
+    }
+
+    private fun stopValues(stop: Stop) = ContentValues().apply {
+        put("desc", stop.desc)
+        put("dir_desc", stop.dirDesc)
+        put("loc_id", stop.locId)
+        put("transit_type", stop.transitType)
+        put("longitude", stop.longitude)
+        put("latitude", stop.latitude)
+        put("route_num", stop.routeNum)
+    }
+
+    private fun notifyStopListsChanged() {
+        onStopListsChanged?.invoke()
     }
 
     companion object {
         private const val DB_NAME = "TriMet_Go.db"
         private const val DB_VERSION = 7
+
+        /**
+         * Invoked after any favorites/recent mutation. The phone app registers here
+         * to push a fresh stop-list snapshot to the paired Wear device; nothing in
+         * this module itself depends on Wear.
+         */
+        @Volatile
+        var onStopListsChanged: (() -> Unit)? = null
     }
 }

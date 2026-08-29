@@ -1,5 +1,16 @@
 # Changelog
 
+## What's New in v4.9.7 (Wear OS companion — build preview)
+
+> Not yet released to the Play Store. The companion APK builds and lints clean; distribution steps will follow in a later release.
+
+- **Wear OS companion app:** a new watch app that mirrors your phone's **Favorite stops** and **Recent stops**, delivered over the Wearable Data Layer whenever anything changes on the phone (and pulled fresh when you open it). Tap any stop on the watch to see its **live TriMet arrivals** with minute-by-minute countdowns, refreshing while the screen is visible.
+- The watch app is non-standalone by design: its stop lists are kept in sync from the paired phone app rather than being entered on-device, and it's built under the same application ID and signature as the phone app so the data channel stays private.
+
+### Release & repo polish
+- **Map rendering engine updated:** MapLibre GL Native (OpenGL backend) is bumped to the latest 13.6.0 release; maps keep the theme-aware light/dark basemap behavior.
+- **Cleaner build:** every recently caught lint finding was fixed outright instead of hidden, and the lint baselines are back to empty — this covers state autoboxing, modifier parameter ordering, and SQLite transactions using the KTX extension.
+
 ## What's New in v4.9.6
 
 - **Drop-off-only arrivals are now consistent everywhere:** the arrivals list already labeled drop-off-only buses "Dropoff Only"; the tracked-bus map pin and the Picture-in-Picture countdown now show the same "Dropoff Only" label instead of a misleading minutes countdown.

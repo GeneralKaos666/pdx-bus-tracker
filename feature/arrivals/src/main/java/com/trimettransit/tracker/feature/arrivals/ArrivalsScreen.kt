@@ -1134,8 +1134,8 @@ suspend fun toggleFavorite(
 private fun PipCountdownContent(
     arrivals: List<Arrival>,
     stopName: String,
-    tick: Int = 0,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tick: Int = 0
 ) {
     val scheme = MaterialTheme.colorScheme
     Column(

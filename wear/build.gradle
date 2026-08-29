@@ -1,0 +1,110 @@
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.BuiltArtifact
+import com.android.build.api.variant.BuiltArtifacts
+import com.android.build.api.variant.BuiltArtifactsLoader
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.plugin.compose'
+}
+
+abstract class RenameWearApkTask extends DefaultTask {
+    @Internal
+    abstract Property<BuiltArtifactsLoader> getBuiltArtifactsLoader()
+    @InputDirectory
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract DirectoryProperty getInput()
+    @OutputDirectory
+    abstract DirectoryProperty getOutput()
+    @Input
+    abstract Property<String> getVariantName()
+
+    @TaskAction
+    void renameApk() {
+        BuiltArtifacts builtArtifacts = builtArtifactsLoader.get().load(input.get())
+        def outDir = output.get().asFile
+        outDir.deleteDir()
+        outDir.mkdirs()
+        builtArtifacts.elements.each { artifact ->
+            def newName = "PdxBusTracker-wear-${variantName.get()}-${artifact.versionName}.apk"
+            Files.copy(new File(artifact.outputFile).toPath(), new File(output.get().asFile, newName).toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
+    }
+}
+
+android {
+    namespace = "com.trimettransit.tracker"
+    compileSdk = 37
+
+    defaultConfig {
+        // Same applicationId + signing as the phone app: the Wearable Data Layer
+        // only pairs apps with identical package name and signature.
+        applicationId = 'com.trimettransit.tracker'
+        minSdk = 31
+        targetSdk = 37
+        // Independent version line from the phone app (phone is 496 / 4.9.6).
+        versionCode = 1
+        versionName = "1.0.0"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    lint {
+        abortOnError = true
+        baseline = file("lint-baseline.xml")
+    }
+
+    packaging {
+        resources {
+            excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/LICENSE.txt',
+                         'META-INF/NOTICE', 'META-INF/NOTICE.txt']
+        }
+    }
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def renameTask = tasks.register("renameApkFor${variant.name.capitalize()}", RenameWearApkTask) {
+            output.set(layout.buildDirectory.dir("outputs/renamed_apks/${variant.name}"))
+            variantName.set(variant.name)
+            builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
+        }
+        variant.artifacts.use(renameTask)
+                .wiredWith { it.input }
+                .toListenTo(SingleArtifact.APK.INSTANCE)
+    }
+}
+
+dependencies {
+    // Shared data + transit client (same layers as the phone app)
+    implementation project(':component:localdata')
+    implementation project(':component:transit')
+    implementation project(':common:model')
+    implementation project(':common:utils')
+
+    // Wear OS + Compose for Wear (NOT the phone compose-material3 toolkit)
+    implementation 'androidx.wear:wear:1.4.0'
+    implementation platform('androidx.compose:compose-bom:2026.08.00')
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.foundation:foundation'
+    implementation 'androidx.wear.compose:compose-foundation:1.6.2'
+    implementation 'androidx.wear.compose:compose-material:1.6.2'
+    implementation 'androidx.wear.compose:compose-navigation:1.6.2'
+    implementation 'androidx.wear.compose:compose-ui-tooling:1.6.2'
+    implementation 'androidx.activity:activity-compose:1.13.0'
+    implementation 'androidx.core:core-ktx:1.19.0'
+
+    // Time helpers surface org.joda.time.DateTime via the shared models
+    implementation 'net.danlew:android.joda:2.14.2.1'
+
+    // Wearable Data Layer sync from the phone app
+    implementation 'com.google.android.gms:play-services-wearable:20.0.1'
+
+    // Logging
+    implementation 'com.jakewharton.timber:timber:5.0.1'
+}

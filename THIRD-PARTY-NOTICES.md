@@ -37,7 +37,7 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **Project:** https://github.com/square/okhttp
 
 ### MapLibre Native (Android, OpenGL backend)
-- **Artifact:** `org.maplibre.gl:android-sdk-opengl` 13.5.1
+- **Artifact:** `org.maplibre.gl:android-sdk-opengl` 13.6.0
 - **License:** BSD 2-Clause License
 - **Copyright:** Copyright (C) 2025 MapLibre contributors; portions Copyright (C) 2020 Mapbox
 - **Project:** https://github.com/maplibre/maplibre-native
@@ -56,6 +56,16 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **License:** Apache License 2.0
 - **Copyright:** Copyright Jake Wharton
 - **Project:** https://github.com/JakeWharton/timber
+
+### Wear OS (companion app)
+- **Artifacts:** `androidx.wear:wear` 1.4.0, `androidx.wear.compose:compose-foundation` /
+  `compose-material` / `compose-navigation` / `compose-ui-tooling` (all 1.6.2)
+- **License:** Apache License 2.0
+- **Copyright:** Copyright The Android Open Source Project
+- **Project:** https://developer.android.com/jetpack/androidx/releases/wear-compose
+- **Note:** `com.google.android.gms:play-services-wearable` 20.0.1 (used for the
+  phone→watch favorites/recent-stops sync) is a proprietary Google Play services API
+  distributed under the [Google APIs Terms of Service](https://developers.google.com/terms/).
 
 ### Launcher icon map imagery — USGS National Map
 - **Source:** [U.S. Geological Survey National Map](https://basemap.nationalmap.gov/) (USGSImageryTopo service), aerial imagery of Portland, Oregon.
