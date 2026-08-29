@@ -18,3 +18,6 @@ kls_database.db
 
 .omo
 session-ses_fbde.md
+Gemfile
+Gemfile.lock
+fastlane
