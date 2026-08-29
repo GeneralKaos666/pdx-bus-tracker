@@ -1,7 +1,7 @@
 package com.trimettransit.tracker.wear.data
 
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.Wearable
 import com.trimettransit.tracker.data.local.DatabaseHelper
@@ -20,7 +20,7 @@ object WearDataPull {
         runCatching {
             val dataClient = Wearable.getDataClient(context)
             val items = dataClient
-                .getDataItems(Uri.parse("wear://*/${StopSyncContract.PATH_ROOT}"))
+                .getDataItems("wear://*/${StopSyncContract.PATH_ROOT}".toUri())
                 .await()
 
             var favorites: List<com.trimettransit.tracker.model.Stop>? = null
