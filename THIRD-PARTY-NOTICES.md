@@ -59,7 +59,7 @@ itself is licensed under the MIT License (see `LICENSE`).
 
 ### Wear OS (companion app)
 - **Artifacts:** `androidx.wear:wear` 1.4.0, `androidx.wear.compose:compose-foundation` /
-  `compose-material` / `compose-navigation` / `compose-ui-tooling` (all 1.6.2)
+  `compose-material3` / `compose-navigation` / `compose-ui-tooling` (all 1.6.2)
 - **License:** Apache License 2.0
 - **Copyright:** Copyright The Android Open Source Project
 - **Project:** https://developer.android.com/jetpack/androidx/releases/wear-compose

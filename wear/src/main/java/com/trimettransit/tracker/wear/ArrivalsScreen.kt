@@ -1,8 +1,6 @@
 package com.trimettransit.tracker.wear
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,13 +16,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.itemsIndexed
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.itemsIndexed
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.Text
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Stop
@@ -58,14 +57,13 @@ fun ArrivalsScreen(stop: Stop) {
 
     val arrivals = result?.arrivals.orEmpty()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        TimeText()
+    Box(modifier = Modifier.fillMaxSize()) {
         when {
             result == null -> {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                        .fillMaxSize()
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
@@ -74,27 +72,34 @@ fun ArrivalsScreen(stop: Stop) {
             arrivals.isEmpty() -> {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                        .fillMaxSize()
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("No arrivals right now", textAlign = TextAlign.Center)
                 }
             }
-            else -> ScalingLazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)
-            ) {
-                item {
-                    ListHeader {
-                        Text(displayName, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    }
+            else -> ArrivalList(displayName, arrivals)
+        }
+    }
+}
+
+@Composable
+private fun ArrivalList(displayName: String, arrivals: List<Arrival>) {
+    val listState = rememberTransformingLazyColumnState()
+
+    ScreenScaffold(scrollState = listState) { contentPadding ->
+        TransformingLazyColumn(
+            state = listState,
+            contentPadding = contentPadding
+        ) {
+            item {
+                ListHeader {
+                    Text(displayName, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
-                itemsIndexed(arrivals) { _, arrival ->
-                    ArrivalRow(arrival)
-                }
+            }
+            itemsIndexed(arrivals) { _, arrival ->
+                ArrivalRow(arrival)
             }
         }
     }
@@ -107,7 +112,7 @@ private fun ArrivalRow(arrival: Arrival) {
         else arrival.scheduled
     val minutes = displayTime?.let { minutesUntil(it) }
 
-    Column(
+    androidx.compose.foundation.layout.Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -123,7 +128,7 @@ private fun ArrivalRow(arrival: Arrival) {
                 minutes <= 0L -> "Due"
                 else -> "$minutes min"
             },
-            style = MaterialTheme.typography.caption2
+            style = MaterialTheme.typography.labelSmall
         )
     }
 }

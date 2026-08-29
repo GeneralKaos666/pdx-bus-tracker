@@ -1,8 +1,6 @@
 package com.trimettransit.tracker.wear
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,14 +16,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.ListHeader
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.items
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.Text
 import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.wear.data.WearDataPull
@@ -66,25 +64,23 @@ fun StopListScreen(
     onStopClick: (Stop) -> Unit
 ) {
     val state = rememberWatchStopList(read)
+    val listState = rememberTransformingLazyColumnState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        TimeText()
+    ScreenScaffold(scrollState = listState) { contentPadding ->
         when {
             state.isLoading -> {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                        .fillMaxSize()
+                        .padding(contentPadding),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
                 }
             }
-            else -> ScalingLazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)
+            else -> TransformingLazyColumn(
+                state = listState,
+                contentPadding = contentPadding
             ) {
                 item { ListHeader { Text(header) } }
                 if (state.stops.isEmpty()) {
@@ -107,29 +103,25 @@ fun StopListScreen(
 
 @Composable
 private fun StopRow(stop: Stop, onClick: () -> Unit) {
-    Chip(
+    Button(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         label = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Start
-            ) {
+            Text(
+                text = stop.desc,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Start
+            )
+        },
+        secondaryLabel = {
+            if (stop.dirDesc.isNotBlank()) {
                 Text(
-                    text = stop.desc,
+                    text = stop.dirDesc,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Start
                 )
-                if (stop.dirDesc.isNotBlank()) {
-                    Text(
-                        text = stop.dirDesc,
-                        style = MaterialTheme.typography.caption2,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Start
-                    )
-                }
             }
         }
     )

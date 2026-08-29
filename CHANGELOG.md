@@ -6,6 +6,7 @@
 
 - **Wear OS companion app:** a new watch app that mirrors your phone's **Favorite stops** and **Recent stops**, delivered over the Wearable Data Layer whenever anything changes on the phone (and pulled fresh when you open it). Tap any stop on the watch to see its **live TriMet arrivals** with minute-by-minute countdowns, refreshing while the screen is visible.
 - The watch app is non-standalone by design: its stop lists are kept in sync from the paired phone app rather than being entered on-device, and it's built under the same application ID and signature as the phone app so the data channel stays private.
+- **Wear UI rebuilt on Material 3:** the watch screens were migrated from the older Material 2 Wear toolkit to the current Material 3 Wear components (and the current Compose libraries). Besides being the supported, up-to-date stack, this fixes a blank/black screen on launch.
 
 ### Release & repo polish
 - **Map rendering engine updated:** MapLibre GL Native (OpenGL backend) is bumped to the latest 13.6.0 release; maps keep the theme-aware light/dark basemap behavior.
