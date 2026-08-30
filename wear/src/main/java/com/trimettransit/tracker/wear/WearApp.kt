@@ -2,10 +2,10 @@ package com.trimettransit.tracker.wear
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.wear.compose.material3.AppScaffold
-import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
@@ -36,10 +36,14 @@ private object Routes {
 }
 
 @Composable
-fun WearApp() {
-    PdxWearTheme {
+fun WearApp(startStop: Stop? = null) {
+    WearBusTheme {
         AppScaffold {
             val navController = rememberSwipeDismissableNavController()
+            // The stand-alone Tile launches the app with a stop in its extras.
+            LaunchedEffect(startStop) {
+                startStop?.let { navController.navigate(Routes.arrivals(it)) }
+            }
             SwipeDismissableNavHost(navController, startDestination = Routes.MAIN) {
                 composable(Routes.MAIN) {
                     HomeScreen(
@@ -53,7 +57,7 @@ fun WearApp() {
                     StopListScreen(
                         header = "Favorites",
                         read = { it.favorites },
-                        emptyText = "No favorites yet.\nTap the heart on your phone.",
+                        emptyText = "No favorites yet.\nTap the heart on any stop.",
                         onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
                     )
                 }
@@ -61,7 +65,7 @@ fun WearApp() {
                     StopListScreen(
                         header = "Recent Stops",
                         read = { it.recentStops },
-                        emptyText = "No recent stops yet.\nView stops on your phone.",
+                        emptyText = "No recent stops yet.\nStop by to get started.",
                         onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
                     )
                 }
@@ -127,12 +131,5 @@ fun WearApp() {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun PdxWearTheme(content: @Composable () -> Unit) {
-    MaterialTheme {
-        content()
     }
 }

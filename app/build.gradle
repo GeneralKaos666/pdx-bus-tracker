@@ -159,9 +159,6 @@ dependencies {
     // Maps (MapLibre GL Native, OpenGL backend — the plain `android-sdk` artifact is Vulkan-only since 13.0)
     implementation 'org.maplibre.gl:android-sdk-opengl:13.6.0'
 
-    // Wear OS companion sync (favorites / recent stops pushed to the paired watch)
-    implementation 'com.google.android.gms:play-services-wearable:20.0.1'
-
     // Logging (Timber tree planted in TrimetTransitTracker)
     implementation 'com.jakewharton.timber:timber:5.0.1'
 

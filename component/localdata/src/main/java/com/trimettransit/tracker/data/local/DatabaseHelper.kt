@@ -95,7 +95,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
             SQLiteDatabase.CONFLICT_IGNORE
         )
         val added = rowId != -1L
-        if (added) notifyStopListsChanged()
         return added
     }
 
@@ -109,7 +108,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
     fun removeFavorite(locId: Int): Boolean {
         val db = writableDatabase
         val removed = db.delete("favorites", "loc_id = ?", arrayOf(locId.toString())) > 0
-        if (removed) notifyStopListsChanged()
         return removed
     }
 
@@ -125,26 +123,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
                     execSQL("DELETE FROM recent_stops WHERE id NOT IN (SELECT id FROM recent_stops ORDER BY id DESC LIMIT 20)")
                 }
             }
-            notifyStopListsChanged()
-        }
-    }
-
-    /**
-     * Full replacement used by the Wear companion to apply a snapshot pushed from
-     * the phone app (the watch keeps its own local copy of the phone's lists).
-     */
-    fun replaceFavorites(stops: List<Stop>) = replaceTable("favorites", stops)
-
-    /** Full replacement of the recent-stops table with a phone-pushed snapshot. */
-    fun replaceRecentStops(stops: List<Stop>) = replaceTable("recent_stops", stops)
-
-    private fun replaceTable(table: String, stops: List<Stop>) {
-        val db = writableDatabase
-        db.transaction {
-            delete(table, null, null)
-            stops.forEach { stop ->
-                insertWithOnConflict(table, null, stopValues(stop), SQLiteDatabase.CONFLICT_REPLACE)
-            }
         }
     }
 
@@ -158,20 +136,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         put("route_num", stop.routeNum)
     }
 
-    private fun notifyStopListsChanged() {
-        onStopListsChanged?.invoke()
-    }
-
     companion object {
         private const val DB_NAME = "TriMet_Go.db"
         private const val DB_VERSION = 7
-
-        /**
-         * Invoked after any favorites/recent mutation. The phone app registers here
-         * to push a fresh stop-list snapshot to the paired Wear device; nothing in
-         * this module itself depends on Wear.
-         */
-        @Volatile
-        var onStopListsChanged: (() -> Unit)? = null
     }
 }

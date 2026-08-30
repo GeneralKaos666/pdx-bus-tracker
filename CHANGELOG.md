@@ -1,5 +1,11 @@
 # Changelog
 
+## What's New in Wear v2.0.0
+
+- **The watch app is now fully standalone:** favorites and recent stops live on the watch itself — every stop's arrivals screen has a **heart button** to favorite it (first favorite powers the new tile below), and any stop you open is remembered in **Recent stops**. Nothing is synced from the phone anymore; the watch talks straight to TriMet.
+- **New "Next departure" Tile:** add the one-handed **PDX Bus** tile to your watch face for a live, per-minute countdown to the soonest bus at your first favorite stop. Tap the tile to jump straight to that stop's arrivals. It refreshes in the background every half hour, so it stays current even when you haven't opened the app.
+- **Material 3 Expressive styling:** the watch now follows your watch face's color accent and uses the updated expressive type scale, with a branded navy/teal look when no dynamic accent is available.
+
 ## What's New in Wear v1.1.0
 
 - **Wear Routes browser:** a new **Routes** screen on the watch mirrors the phone's route drill-down — pick a route, then a direction, then a stop to open its live arrivals. Route, direction and stop data is fetched live from TriMet (the same data source the phone uses), so it stays current without any phone-side syncing.

@@ -17,11 +17,11 @@
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules">
 
-        <!-- Non-standalone: core data (favorites/recent stops) comes from the
-             paired phone app over the Wearable Data Layer. -->
+        <!-- Standalone: all data (favorites/recent stops/arrivals) is fetched and
+             managed on the watch itself; the phone app is not required. -->
         <meta-data
             android:name="com.google.android.wearable.standalone"
-            android:value="false"/>
+            android:value="true"/>
 
         <activity
             android:name=".wear.WearMainActivity"
@@ -35,15 +35,19 @@
             </intent-filter>
         </activity>
 
-        <!-- Receives favorites/recent-stop pushes from the phone app and caches
-             them into this device's local database. -->
+        <!-- Stand-alone "Next departure" tile: shows a per-minute countdown to the
+             soonest arrival at the watch's first favorite stop. -->
         <service
-            android:name=".wear.data.StopListSyncService"
-            android:exported="true">
+            android:name=".wear.tile.FavoriteArrivalsTileService"
+            android:exported="true"
+            android:label="@string/tile_label"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>
-                <action android:name="com.google.android.gms.wearable.DATA_CHANGED"/>
-                <data android:scheme="wear" android:host="*" android:pathPrefix="/stops"/>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER"/>
             </intent-filter>
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:value="@mipmap/ic_launcher"/>
         </service>
     </application>
 </manifest>

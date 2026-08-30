@@ -39,14 +39,15 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        // Same applicationId + signing as the phone app: the Wearable Data Layer
-        // only pairs apps with identical package name and signature.
+        // Same applicationId as the phone app so both ship under one Play Store
+        // listing; this app is fully stand-alone and needs no companion.
         applicationId = 'com.trimettransit.tracker'
         minSdk = 31
         targetSdk = 37
         // Independent version line from the phone app (phone is 496 / 4.9.6).
-        versionCode = 2
-        versionName = "1.1.0"
+        // 3: stand-alone + M3 Expressive + "Next departure" tile.
+        versionCode = 3
+        versionName = "2.0.0"
     }
 
     compileOptions {
@@ -102,8 +103,13 @@ dependencies {
     // Time helpers surface org.joda.time.DateTime via the shared models
     implementation 'net.danlew:android.joda:2.14.2.1'
 
-    // Wearable Data Layer sync from the phone app
-    implementation 'com.google.android.gms:play-services-wearable:20.0.1'
+    // Stand-alone watch tile ("Next departure") with background refresh
+    implementation 'androidx.wear.tiles:tiles:1.6.2'
+    implementation 'androidx.wear.protolayout:protolayout:1.4.2'
+    implementation 'androidx.wear.protolayout:protolayout-material3:1.4.2'
+    implementation 'androidx.wear.protolayout:protolayout-expression:1.4.2'
+    implementation 'androidx.work:work-runtime-ktx:2.11.2'
+    debugImplementation 'androidx.wear.tiles:tiles-renderer:1.6.2'
 
     // Logging
     implementation 'com.jakewharton.timber:timber:5.0.1'
