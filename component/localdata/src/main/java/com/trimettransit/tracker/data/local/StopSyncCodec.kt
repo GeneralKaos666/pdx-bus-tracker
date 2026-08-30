@@ -30,9 +30,9 @@ fun List<Stop>.toStopSyncJson(): String {
     forEach { stop ->
         arr.put(
             JSONObject()
-                .put(F_DESC, stop.desc ?: "")
-                .put(F_DIR, stop.dirDesc ?: "")
-                .put(F_TYPE, stop.transitType ?: "")
+                .put(F_DESC, stop.desc)
+                .put(F_DIR, stop.dirDesc)
+                .put(F_TYPE, stop.transitType)
                 .put(F_LOC, stop.locId)
                 .put(F_LON, stop.longitude)
                 .put(F_LAT, stop.latitude)

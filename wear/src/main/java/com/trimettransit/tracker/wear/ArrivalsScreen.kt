@@ -66,7 +66,7 @@ fun ArrivalsScreen(stop: Stop) {
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    WearFadeInOnce { CircularProgressIndicator() }
                 }
             }
             arrivals.isEmpty() -> {
@@ -76,7 +76,9 @@ fun ArrivalsScreen(stop: Stop) {
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No arrivals right now", textAlign = TextAlign.Center)
+                    WearFadeInOnce {
+                        Text("No arrivals right now", textAlign = TextAlign.Center)
+                    }
                 }
             }
             else -> ArrivalList(displayName, arrivals)
@@ -89,17 +91,18 @@ private fun ArrivalList(displayName: String, arrivals: List<Arrival>) {
     val listState = rememberTransformingLazyColumnState()
 
     ScreenScaffold(scrollState = listState) { contentPadding ->
-        TransformingLazyColumn(
-            state = listState,
-            contentPadding = contentPadding
-        ) {
-            item {
-                ListHeader {
-                    Text(displayName, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        WearContentEntrance(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
+            TransformingLazyColumn(
+                state = listState
+            ) {
+                item {
+                    ListHeader {
+                        Text(displayName, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
                 }
-            }
-            itemsIndexed(arrivals) { _, arrival ->
-                ArrivalRow(arrival)
+                itemsIndexed(arrivals) { _, arrival ->
+                    ArrivalRow(arrival)
+                }
             }
         }
     }

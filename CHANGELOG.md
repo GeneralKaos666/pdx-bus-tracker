@@ -1,5 +1,12 @@
 # Changelog
 
+## What's New in Wear v1.1.0
+
+- **Wear Routes browser:** a new **Routes** screen on the watch mirrors the phone's route drill-down — pick a route, then a direction, then a stop to open its live arrivals. Route, direction and stop data is fetched live from TriMet (the same data source the phone uses), so it stays current without any phone-side syncing.
+- **Wear About screen:** a new **About** screen on the watch shows the app name, version and license at a glance.
+- **Smoother, animated watch screens:** the main menu, routes browser, stop lists and arrivals now animate in and out with fade/slide entrance transitions, and list rows respond with a subtle press animation — matching the phone app's feel across every screen.
+- Worth noting: the Wear module now carries its own version line (1.1.0) separate from the phone app; a **Routes** entry and an **About** entry join **Favorites**, **Recent stops** and **Arrivals** on the watch's home menu.
+
 ## What's New in v4.9.7
 
 - **Wear OS companion app:** a new watch app that mirrors your phone's **Favorite stops** and **Recent stops**, delivered over the Wearable Data Layer whenever anything changes on the phone (and pulled fresh when you open it). Tap any stop on the watch to see its **live TriMet arrivals** with minute-by-minute countdowns, refreshing while the screen is visible.

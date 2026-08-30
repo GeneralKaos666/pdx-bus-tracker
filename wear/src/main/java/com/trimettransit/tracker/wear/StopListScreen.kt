@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.wear
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -75,25 +76,26 @@ fun StopListScreen(
                         .padding(contentPadding),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    WearFadeInOnce { CircularProgressIndicator() }
                 }
             }
-            else -> TransformingLazyColumn(
-                state = listState,
-                contentPadding = contentPadding
-            ) {
-                item { ListHeader { Text(header) } }
-                if (state.stops.isEmpty()) {
-                    item {
-                        Text(
-                            text = emptyText,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
-                } else {
-                    items(state.stops, key = { it.locId }) { stop ->
-                        StopRow(stop, onClick = { onStopClick(stop) })
+            else -> WearContentEntrance(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
+                TransformingLazyColumn(
+                    state = listState
+                ) {
+                    item { ListHeader { Text(header) } }
+                    if (state.stops.isEmpty()) {
+                        item {
+                            Text(
+                                text = emptyText,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+                    } else {
+                        items(state.stops, key = { it.locId }) { stop ->
+                            StopRow(stop, onClick = { onStopClick(stop) })
+                        }
                     }
                 }
             }
@@ -103,9 +105,11 @@ fun StopListScreen(
 
 @Composable
 private fun StopRow(stop: Stop, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
     Button(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        interactionSource = interactionSource,
+        modifier = Modifier.fillMaxWidth().wearPressScale(interactionSource),
         label = {
             Text(
                 text = stop.desc,

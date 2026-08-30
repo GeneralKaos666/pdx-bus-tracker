@@ -4,11 +4,13 @@ import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.AppScaffold
+import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import com.trimettransit.tracker.model.Direction
+import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
 
 private object Routes {
@@ -17,8 +19,20 @@ private object Routes {
     const val RECENT = "recent"
     const val ARRIVALS = "arrivals/{locId}?name={name}&route={route}"
 
+    const val ROUTES_LIST = "routes"
+    const val ROUTE_DIRS = "routes/{routeId}?name={name}"
+    const val ROUTE_STOPS = "stops/{routeId}/{dir}?routeName={routeName}&dirName={dirName}"
+    const val ABOUT = "about"
+
     fun arrivals(stop: Stop) =
         "arrivals/${stop.locId}?name=${Uri.encode(stop.desc)}&route=${stop.routeNum}"
+
+    fun routeDirs(route: Route) =
+        "routes/${route.routeId}?name=${Uri.encode(route.desc)}"
+
+    fun routeStops(routeId: Int, direction: Direction) =
+        "stops/$routeId/${direction.dir}?routeName=${Uri.encode(routeId.toString())}" +
+            "&dirName=${Uri.encode(direction.desc)}"
 }
 
 @Composable
@@ -30,7 +44,9 @@ fun WearApp() {
                 composable(Routes.MAIN) {
                     HomeScreen(
                         onOpenFavorites = { navController.navigate(Routes.FAVORITES) },
-                        onOpenRecent = { navController.navigate(Routes.RECENT) }
+                        onOpenRecent = { navController.navigate(Routes.RECENT) },
+                        onOpenRoutes = { navController.navigate(Routes.ROUTES_LIST) },
+                        onOpenAbout = { navController.navigate(Routes.ABOUT) }
                     )
                 }
                 composable(Routes.FAVORITES) {
@@ -48,6 +64,51 @@ fun WearApp() {
                         emptyText = "No recent stops yet.\nView stops on your phone.",
                         onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
                     )
+                }
+                composable(Routes.ROUTES_LIST) {
+                    RoutesScreen(
+                        level = RoutesLevel.ROUTES,
+                        onRouteClick = { route -> navController.navigate(Routes.routeDirs(route)) }
+                    )
+                }
+                composable(
+                    route = Routes.ROUTE_DIRS,
+                    arguments = listOf(
+                        navArgument("routeId") { type = NavType.IntType },
+                        navArgument("name") { type = NavType.StringType; defaultValue = "" }
+                    )
+                ) { entry ->
+                    val routeId = entry.arguments?.getInt("routeId") ?: 0
+                    RoutesScreen(
+                        level = RoutesLevel.DIRECTIONS,
+                        routeId = routeId,
+                        routeName = entry.arguments?.getString("name") ?: "",
+                        onDirectionClick = { direction ->
+                            navController.navigate(Routes.routeStops(routeId, direction))
+                        }
+                    )
+                }
+                composable(
+                    route = Routes.ROUTE_STOPS,
+                    arguments = listOf(
+                        navArgument("routeId") { type = NavType.IntType },
+                        navArgument("dir") { type = NavType.IntType },
+                        navArgument("routeName") { type = NavType.StringType; defaultValue = "" },
+                        navArgument("dirName") { type = NavType.StringType; defaultValue = "" }
+                    )
+                ) { entry ->
+                    val routeId = entry.arguments?.getInt("routeId") ?: 0
+                    val dirId = entry.arguments?.getInt("dir") ?: 0
+                    RoutesScreen(
+                        level = RoutesLevel.STOPS,
+                        routeId = routeId,
+                        dirId = dirId,
+                        dirName = entry.arguments?.getString("dirName") ?: "",
+                        onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
+                    )
+                }
+                composable(Routes.ABOUT) {
+                    AboutScreen()
                 }
                 composable(
                     route = Routes.ARRIVALS,
