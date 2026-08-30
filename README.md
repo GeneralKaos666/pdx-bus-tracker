@@ -28,6 +28,13 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 | <img src="docs/screenshots/play-phone-05-favorites-recents.png" width="190" alt="Favorites & recent stops"> | <img src="docs/screenshots/play-phone-06-detour-alerts.png" width="190" alt="Detour alerts"> | <img src="docs/screenshots/play-phone-07-free-no-ads.png" width="190" alt="Free, no ads"> | <img src="docs/screenshots/play-phone-08-feature-wall.png" width="190" alt="Everything in one place"> |
 | Favorites & recent stops | Detour alerts | Free, no ads | Everything in one place |
 
+### Wear OS companion
+
+| | | |
+|---|---|---|
+| <img src="docs/screenshots/play-wear-01-arrivals.png" width="140" alt="Wear OS arrivals"> | <img src="docs/screenshots/play-wear-02-favorites.png" width="140" alt="Wear OS favorites"> | <img src="docs/screenshots/play-wear-03-recents.png" width="140" alt="Wear OS recent stops"> |
+| Live arrivals | Favorites | Recent stops |
+
 ## Requirements
 
 - Android 12+ (minSdk 31, targetSdk/compileSdk 37)
