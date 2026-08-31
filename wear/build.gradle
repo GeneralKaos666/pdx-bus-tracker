@@ -46,8 +46,45 @@ android {
         targetSdk = 37
         // Independent version line from the phone app (phone is 496 / 4.9.6).
         // 3: stand-alone + M3 Expressive + "Next departure" tile.
-        versionCode = 3
-        versionName = "2.0.0"
+        // 4: R8 code + resource shrinking enabled on release builds.
+        versionCode = 4
+        versionName = "2.1.0"
+    }
+
+    signingConfigs {
+        release {
+            // Anchor to the app module's keystore (the sole real keystore in the repo),
+            // since file(...) would otherwise resolve relative to wear/.
+            storeFile = file(rootDir.absolutePath + '/app/' + (project.findProperty("STORE_FILE") ?: "release.keystore"))
+            def storePw = project.findProperty("STORE_PASSWORD") ?: System.getenv("STORE_PASSWORD")
+            def alias = project.findProperty("KEY_ALIAS") ?: System.getenv("KEY_ALIAS")
+            def keyPw = project.findProperty("KEY_PASSWORD") ?: System.getenv("KEY_PASSWORD")
+            def isReleaseBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
+            if (storePw != null && alias != null && keyPw != null) {
+                storePassword = storePw
+                keyAlias = alias
+                keyPassword = keyPw
+            } else if (project.hasProperty("releaseSigningFallback")) {
+                storePassword = "android"
+                keyAlias = "release"
+                keyPassword = "android"
+            } else if (isReleaseBuild) {
+                throw new GradleException(
+                    "Release signing env vars STORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD not set. " +
+                    "Set them or build with -PreleaseSigningFallback=true."
+                )
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.release
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            ndk.debugSymbolLevel = 'FULL'
+        }
     }
 
     compileOptions {
