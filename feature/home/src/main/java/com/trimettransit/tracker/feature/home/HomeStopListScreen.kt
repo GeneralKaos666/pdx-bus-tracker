@@ -15,7 +15,7 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
-import com.trimettransit.tracker.ui.components.LoadingState
+import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 
@@ -38,7 +38,7 @@ fun HomeStopListScreen(
         label = "homeStopList"
     ) { state ->
         when (state) {
-            0 -> LoadingState()
+            0 -> ListLoadingSkeleton()
             1 -> ErrorState(message = "Unable to load.\nCheck your connection.")
             2 -> EmptyState(message = emptyText)
             else -> ContentEntrance(modifier = Modifier.fillMaxSize()) {

@@ -14,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -188,14 +189,24 @@ fun NearbyStopsScreen(
             interactionSource = refreshSource,
             modifier = Modifier.fillMaxWidth().pressScale(refreshSource)
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    strokeWidth = 2.dp
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+            Crossfade(
+                targetState = isLoading,
+                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                label = "refreshButtonState"
+            ) { loading ->
+                if (loading) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Loading...")
+                    }
+                } else {
+                    Text("Refresh")
+                }
             }
-            Text(if (isLoading) "Loading..." else "Refresh")
         }
 
         Spacer(modifier = Modifier.height(12.dp))

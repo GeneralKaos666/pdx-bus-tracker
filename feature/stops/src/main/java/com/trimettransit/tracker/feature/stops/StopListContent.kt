@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
-import com.trimettransit.tracker.ui.components.LoadingState
+import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 
@@ -60,7 +60,7 @@ internal fun <T> StopListContent(
         label = stateLabel
     ) { state ->
         when (state) {
-            0 -> LoadingState()
+            0 -> ListLoadingSkeleton()
             1 -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),

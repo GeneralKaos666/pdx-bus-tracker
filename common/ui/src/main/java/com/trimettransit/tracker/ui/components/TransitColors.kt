@@ -13,6 +13,19 @@ fun transitColor(type: String?, scheme: ColorScheme): Color = when (type) {
     else -> scheme.primary
 }
 
+/**
+ * Returns the M3 on-color that pairs with [transitColor] for a transit type, for painting a
+ * legible glyph/center inside a filled marker. In the light scheme these resolve to white (the
+ * prior behavior); in the dark scheme they become dark inks on the light pastel fills, so the
+ * icon no longer vanishes. WES is intentionally left white for now.
+ */
+fun transitOnColor(type: String?, scheme: ColorScheme): Color = when (type) {
+    "R" -> scheme.onTertiary              // Rail
+    "M" -> scheme.onSecondary             // MAX Light Rail
+    "W" -> Color.White                    // WES: unchanged for now
+    else -> scheme.onPrimary              // Bus, Streetcar
+}
+
 /** Returns the drawable resource ID for a transit-type icon. */
 fun transitIconResource(type: String?): Int = when (type) {
     "B" -> R.drawable.ic_transit_bus

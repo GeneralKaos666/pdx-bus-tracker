@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.ui.components.ContentEntrance
 
 @Composable
 fun RecentStopsScreen(
@@ -23,12 +24,14 @@ fun RecentStopsScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(
-            text = "Recent Stops",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        ContentEntrance {
+            Text(
+                text = "Recent Stops",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
 
         Box(modifier = Modifier.weight(1f)) {
             HomeStopListScreen(

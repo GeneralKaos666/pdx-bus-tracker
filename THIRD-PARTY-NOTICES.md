@@ -69,6 +69,19 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **Note:** The watch app is fully standalone — `com.google.android.gms:play-services-wearable`
   is no longer used.
 
+### AndroidX Glance (home-screen widget)
+- **Artifacts:** `androidx.glance:glance` 1.1.1, `androidx.glance:glance-appwidget` 1.1.1,
+  `androidx.glance:glance-material3` 1.1.1
+- **License:** Apache License 2.0
+- **Copyright:** Copyright The Android Open Source Project
+- **Project:** https://developer.android.com/jetpack/compose/layouts/glance
+
+### AndroidX WorkManager (widget background refresh)
+- **Artifact:** `androidx.work:work-runtime-ktx` 2.11.2
+- **License:** Apache License 2.0
+- **Copyright:** Copyright The Android Open Source Project
+- **Project:** https://developer.android.com/jetpack/libraries/work
+
 ### Launcher icon map imagery — USGS National Map
 - **Source:** [U.S. Geological Survey National Map](https://basemap.nationalmap.gov/) (USGSImageryTopo service), aerial imagery of Portland, Oregon.
 - **License / status:** Public domain — work of the U.S. federal government (no copyright; attribution not required). Credited here as a courtesy.

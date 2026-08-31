@@ -1,5 +1,18 @@
 # Changelog
 
+## What's New in v4.9.8
+
+### Animations & visual polish
+- **Shimmer loading states:** every list screen (Favorites, Stops, Arrivals, Nearby) and the What's Nearby map now show a translucent skeleton shimmer placeholder instead of a spinner while data loads, giving a smoother feel on slow connections.
+- **Animated theme transitions:** switching between System/Light/Dark theme now smoothly animates every M3 colour token (350 ms ease) instead of snapping instantly — the transition is visible across all screens including maps.
+- **Me-dot breathing halo:** on the What's Nearby map your current-location dot now pulses its halo ring with a cosine-stepped glow while the screen is visible, making it easier to spot.
+- **Sub-card crossfades:** Detour pills, nearby-stop refresh and the arrivals sub-card content all crossfade instead of snapping, and the recent-heading entrance fades in from below.
+
+### Home-screen widget ("Next Arrivals")
+- **All-favourites list widget:** add the "Next Arrivals" widget to your home screen to see the two soonest departures for every favourited stop at a glance, with route-number badges and a countdown (due / N min). Tap any row to open the app.
+- **Background refresh:** a WorkManager periodic worker keeps the widget snapshot fresh every ~30 minutes and also triggers a refresh when the app comes to the foreground, so the widget stays reasonably current without draining the battery.
+- **Dynamic theming:** the widget follows the system light/dark theme automatically via Glance's `DynamicThemeColorProviders`.
+
 ## What's New in v4.9.7
 
 ### Release & repo polish

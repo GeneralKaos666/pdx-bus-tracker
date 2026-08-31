@@ -1,6 +1,7 @@
 package com.trimettransit.tracker.feature.stops
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -21,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -46,6 +46,7 @@ import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.transit.ApiKeys
 import com.trimettransit.tracker.transit.TransitApi
+import com.trimettransit.tracker.ui.components.InlineSkeleton
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.pressScale
 
@@ -136,22 +137,34 @@ private fun DirectionsSubCard(
             .fillMaxWidth()
             .padding(8.dp)) {
             val safeDirections = directions
-            when {
-                isLoading -> InlineProgress(label = "Loading directions…")
-                isMissingApiKey -> InlineMessage("API key not configured.\nPlease check app settings.")
-                safeDirections == null -> InlineRetry(
-                    message = "Unable to load directions.\nCheck your connection.",
-                    onRetry = { retryKey++ }
-                )
-                safeDirections.isEmpty() -> InlineMessage("No directions available.")
-                else -> safeDirections.forEach { direction ->
-                    Column {
-                        DirectionItem(
-                            direction = direction,
-                            isExpanded = selectedDirection?.dir == direction.dir,
-                            onClick = { onDirectionToggle(direction) }
-                        )
-                        directionTrailingContent(direction)
+            Crossfade(
+                targetState = when {
+                    isLoading -> 0
+                    isMissingApiKey -> 1
+                    safeDirections == null -> 2
+                    safeDirections.isEmpty() -> 3
+                    else -> 4
+                },
+                animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+                label = "directionsSubCardState"
+            ) { state ->
+                when (state) {
+                    0 -> InlineSkeleton(rows = 2)
+                    1 -> InlineMessage("API key not configured.\nPlease check app settings.")
+                    2 -> InlineRetry(
+                        message = "Unable to load directions.\nCheck your connection.",
+                        onRetry = { retryKey++ }
+                    )
+                    3 -> InlineMessage("No directions available.")
+                    else -> safeDirections.orEmpty().forEach { direction ->
+                        Column {
+                            DirectionItem(
+                                direction = direction,
+                                isExpanded = selectedDirection?.dir == direction.dir,
+                                onClick = { onDirectionToggle(direction) }
+                            )
+                            directionTrailingContent(direction)
+                        }
                     }
                 }
             }
@@ -237,40 +250,34 @@ private fun StopsSubCard(
 
     Column(modifier = Modifier.fillMaxWidth()) {
         val safeStops = stops
-        when {
-            isLoading -> InlineProgress(label = "Loading stops…")
-            isMissingApiKey -> InlineMessage("API key not configured.\nPlease check app settings.")
-            safeStops == null -> InlineRetry(
-                message = "Unable to load stops.\nCheck your connection.",
-                onRetry = { retryKey++ }
-            )
-            safeStops.isEmpty() -> InlineMessage("No stops available.")
-            else -> safeStops.forEach { stop ->
-                StopListItem(
-                    stop = stop,
-                    onClick = { onStopSelected(stop) },
-                    zoomOnTap = true
+        Crossfade(
+            targetState = when {
+                isLoading -> 0
+                isMissingApiKey -> 1
+                safeStops == null -> 2
+                safeStops.isEmpty() -> 3
+                else -> 4
+            },
+            animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+            label = "stopsSubCardState"
+        ) { state ->
+            when (state) {
+                0 -> InlineSkeleton(rows = 2)
+                1 -> InlineMessage("API key not configured.\nPlease check app settings.")
+                2 -> InlineRetry(
+                    message = "Unable to load stops.\nCheck your connection.",
+                    onRetry = { retryKey++ }
                 )
+                3 -> InlineMessage("No stops available.")
+                else -> safeStops.orEmpty().forEach { stop ->
+                    StopListItem(
+                        stop = stop,
+                        onClick = { onStopSelected(stop) },
+                        zoomOnTap = true
+                    )
+                }
             }
         }
-    }
-}
-
-@Composable
-private fun InlineProgress(label: String) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        CircularProgressIndicator(modifier = Modifier.size(28.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp)
-        )
     }
 }
 

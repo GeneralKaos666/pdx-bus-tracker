@@ -110,6 +110,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.data.local.DatabaseHelper
+import com.trimettransit.tracker.widget.WidgetScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.trimettransit.tracker.model.Direction
@@ -391,6 +392,8 @@ private fun MainBottomBar(
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WidgetScheduler.schedulePeriodic(this)
+        WidgetScheduler.refreshNow(this)
         enableEdgeToEdge()
         setContent {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
@@ -426,6 +429,13 @@ class MainActivity : ComponentActivity() {
                 MainAppContent(isDark = isDark)
             }
         }
+    }
+
+    // Each foreground serves as a widget-refresh event so a favorite added/removed in the
+    // app shows up on the home screen without waiting for the full periodic cadence.
+    override fun onStart() {
+        super.onStart()
+        WidgetScheduler.refreshNow(this)
     }
 }
 

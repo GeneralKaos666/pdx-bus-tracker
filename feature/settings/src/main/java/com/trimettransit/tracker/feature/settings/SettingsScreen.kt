@@ -3,6 +3,7 @@ package com.trimettransit.tracker.feature.settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
@@ -244,11 +245,16 @@ fun SettingsScreen() {
                         )
                     }
                     Spacer(modifier = Modifier.width(16.dp))
+                    val chevronRotation by animateFloatAsState(
+                        targetValue = if (licensesExpanded) 180f else 0f,
+                        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+                        label = "licensesChevron"
+                    )
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowDown,
                         contentDescription = if (licensesExpanded) "Collapse" else "Expand",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.rotate(if (licensesExpanded) 180f else 0f)
+                        modifier = Modifier.rotate(chevronRotation)
                     )
                 }
                 AnimatedVisibility(visible = licensesExpanded) {
@@ -262,7 +268,8 @@ fun SettingsScreen() {
                         LicenseEntry("Joda-Time Android", "Apache License 2.0")
                         LicenseEntry("Timber", "Apache License 2.0")
                         LicenseEntry("Wear OS Compose (androidx.wear, Wear Compose)", "Apache License 2.0")
-                        LicenseEntry("Google Play services (wearable)", "Google APIs")
+                        LicenseEntry("AndroidX Glance (home-screen widget)", "Apache License 2.0")
+                        LicenseEntry("AndroidX WorkManager", "Apache License 2.0")
                         LicenseEntry(
                             "Full license texts: see THIRD-PARTY-NOTICES.md in the project repository.",
                             "",

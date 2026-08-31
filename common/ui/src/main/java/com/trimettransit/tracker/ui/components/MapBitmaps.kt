@@ -15,8 +15,18 @@ fun drawableBitmap(context: Context, resId: Int, sizePx: Int): Bitmap {
         ?: createBitmap(1, 1, Bitmap.Config.ARGB_8888)
 }
 
-/** Colored circle badge with a white transit glyph, used as the vehicle/bus marker image. */
-fun badgeBitmap(context: Context, fillColor: Int, glyphRes: Int, density: Float): Bitmap {
+/**
+ * Colored circle badge with a transit glyph, used as the vehicle/bus marker image. The glyph is
+ * tinted [glyphColor] (defaults to white) so it stays legible against the badge fill in both the
+ * light and dark map styles — pair it with the matching M3 on-color for the given transit type.
+ */
+fun badgeBitmap(
+    context: Context,
+    fillColor: Int,
+    glyphRes: Int,
+    density: Float,
+    glyphColor: Int = android.graphics.Color.WHITE
+): Bitmap {
     val size = (34 * density).toInt()
     val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val c = Canvas(out)
@@ -25,7 +35,13 @@ fun badgeBitmap(context: Context, fillColor: Int, glyphRes: Int, density: Float)
         size / 2f,
         size / 2f,
         Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
-    val glyph = drawableBitmap(context, glyphRes, (20 * density).toInt())
-    c.drawBitmap(glyph, (size - glyph.width) / 2f, (size - glyph.height) / 2f, null)
+    val glyphSize = (20 * density).toInt()
+    val tinted = ContextCompat.getDrawable(context, glyphRes)
+        ?.mutate()
+        ?.apply { setTint(glyphColor) }
+    val glyph = tinted?.toBitmap(glyphSize, glyphSize, Bitmap.Config.ARGB_8888)
+    if (glyph != null) {
+        c.drawBitmap(glyph, (size - glyph.width) / 2f, (size - glyph.height) / 2f, null)
+    }
     return out
 }

@@ -160,6 +160,11 @@ dependencies {
     // Maps (MapLibre GL Native, OpenGL backend — the plain `android-sdk` artifact is Vulkan-only since 13.0)
     implementation 'org.maplibre.gl:android-sdk-opengl:13.6.0'
 
+    // Home-screen widget (Glance) + its background refresh (WorkManager)
+    implementation 'androidx.glance:glance-appwidget:1.1.1'
+    implementation 'androidx.glance:glance-material3:1.1.1'
+    implementation 'androidx.work:work-runtime-ktx:2.11.2'
+
     // Logging (Timber tree planted in TrimetTransitTracker)
     implementation 'com.jakewharton.timber:timber:5.0.1'
 

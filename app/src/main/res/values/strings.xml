@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PDX Bus Tracker</string>
+    <string name="next_arrivals_widget_label">Next arrivals</string>
+    <string name="next_arrivals_widget_placeholder">Loading…</string>
+    <string name="widget_empty_no_favorites">No favorites yet — tap to add some</string>
+    <string name="widget_empty_refreshing">Refreshing — tap to open the app</string>
 </resources>

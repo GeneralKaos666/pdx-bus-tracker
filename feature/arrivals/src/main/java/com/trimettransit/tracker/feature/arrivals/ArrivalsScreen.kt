@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.view.MotionEvent
 import timber.log.Timber
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -14,7 +15,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -74,6 +80,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -94,7 +101,7 @@ import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.badgeBitmap
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
-import com.trimettransit.tracker.ui.components.LoadingState
+import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import com.trimettransit.tracker.ui.components.RememberOnResume
@@ -103,6 +110,7 @@ import com.trimettransit.tracker.ui.components.transitBadgeLetter
 import com.trimettransit.tracker.ui.components.transitBadgeLetters
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
+import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
 import com.trimettransit.tracker.util.formatDateTime
 import com.trimettransit.tracker.util.minutesUntil
@@ -341,16 +349,21 @@ fun ArrivalsScreen(
         }
     }
 
-    if (inPip) {
-        PipCountdownContent(arrivals = arrivals, stopName = stopName, tick = countdownTick)
-        return
-    }
+    Crossfade(
+        targetState = inPip,
+        animationSpec = tween(durationMillis = 200),
+        label = "pipMode"
+    ) { pip ->
+        if (pip) {
+            PipCountdownContent(arrivals = arrivals, stopName = stopName, tick = countdownTick)
+            return@Crossfade
+        }
 
-    // Bridge resolved coordinates to outer scaffold for favorite persistence
-    LaunchedEffect(stopLat, stopLng) {
-        NavState.arrivalsLat = stopLat
-        NavState.arrivalsLng = stopLng
-    }
+        // Bridge resolved coordinates to outer scaffold for favorite persistence
+        LaunchedEffect(stopLat, stopLng) {
+            NavState.arrivalsLat = stopLat
+            NavState.arrivalsLng = stopLng
+        }
 
     PullToRefreshBox(
         isRefreshing = isLoading,
@@ -369,7 +382,7 @@ fun ArrivalsScreen(
         ) { state ->
             when (state) {
                 0 -> {
-                    LoadingState()
+                    ListLoadingSkeleton()
                 }
 
                 1 -> {
@@ -505,6 +518,7 @@ fun ArrivalsScreen(
             }
         }
     }
+    }
 
     selectedDetours?.let { detoursForDialog ->
         AlertsDialog(
@@ -603,6 +617,9 @@ private fun StopMapCard(
     val badgeColors = remember(scheme) {
         transitBadgeLetters().associateWith { transitColor(it, scheme) }
     }
+    val badgeGlyphColors = remember(scheme) {
+        transitBadgeLetters().associateWith { transitOnColor(it, scheme) }
+    }
     val context = LocalContext.current
     val mapStyleUrl = if (isDark) STOP_MAP_STYLE_URL_DARK else STOP_MAP_STYLE_URL
     // MapLibre halo/text colors are chosen for legibility against the basemap: light basemap
@@ -615,7 +632,7 @@ private fun StopMapCard(
     fun applyStopMapStyle(style: Style) {
         style.addImage(
             "stop-dot",
-            stopDotBitmap(context, scheme.primary.toArgb(), density)
+            stopDotBitmap(context, scheme.primary.toArgb(), scheme.onPrimary.toArgb(), density)
         )
         badgeColors.forEach { (letter, color) ->
             style.addImage(
@@ -624,7 +641,8 @@ private fun StopMapCard(
                     context,
                     color.toArgb(),
                     transitIconResource(letter),
-                    density
+                    density,
+                    badgeGlyphColors[letter]?.toArgb() ?: android.graphics.Color.WHITE
                 )
             )
         }
@@ -858,8 +876,13 @@ private class MapState {
     }
 }
 
-/** Primary-colored dot with a white center, used as the stop marker image. */
-private fun stopDotBitmap(context: Context, fillColor: Int, density: Float): Bitmap {
+/** Primary-colored dot with a contrasting center, used as the stop marker image. */
+private fun stopDotBitmap(
+    context: Context,
+    fillColor: Int,
+    centerColor: Int = android.graphics.Color.WHITE,
+    density: Float
+): Bitmap {
     val size = (34 * density).toInt()
     val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val c = Canvas(out)
@@ -873,7 +896,7 @@ private fun stopDotBitmap(context: Context, fillColor: Int, density: Float): Bit
         size / 2f,
         size / 2f,
         dotRadius,
-        Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE })
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = centerColor })
     return out
 }
 
@@ -923,7 +946,6 @@ private fun ArrivalItem(
 
     val formattedTime = if (displayTime != null) formatDateTime(displayTime, context) else ""
     val minutesAway = if (displayTime != null) minutesUntil(displayTime) else 0L
-    val relativeText = if (minutesAway <= 0) "Due" else "${minutesAway} min"
     val isEstimated = arrival.status == "estimated"
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -978,29 +1000,35 @@ private fun ArrivalItem(
                 )
             }
 
-            if (lineDetours.isNotEmpty()) {
-                Spacer(modifier = Modifier.width(8.dp))
-                val alertInteractionSource = remember { MutableInteractionSource() }
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    modifier = Modifier
-                        .pressScale(alertInteractionSource)
-                        .clickable(
-                            interactionSource = alertInteractionSource,
-                            indication = LocalIndication.current
-                        ) { onShowAlerts(lineDetours) }
-                ) {
-                    Box(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
+            AnimatedVisibility(
+                visible = lineDetours.isNotEmpty(),
+                enter = fadeIn(tween(200)) + scaleIn(initialScale = 0.6f, animationSpec = tween(200)),
+                exit = fadeOut(tween(150)) + scaleOut(targetScale = 0.6f, animationSpec = tween(150))
+            ) {
+                Row {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    val alertInteractionSource = remember { MutableInteractionSource() }
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        modifier = Modifier
+                            .pressScale(alertInteractionSource)
+                            .clickable(
+                                interactionSource = alertInteractionSource,
+                                indication = LocalIndication.current
+                            ) { onShowAlerts(lineDetours) }
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_alert_warning),
-                            contentDescription = "Show alerts for route ${arrival.routeId}",
-                            tint = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        Box(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_alert_warning),
+                                contentDescription = "Show alerts for route ${arrival.routeId}",
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -1054,21 +1082,12 @@ private fun ArrivalItem(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
-                        Crossfade(
-                            targetState = relativeText,
-                            animationSpec = tween(
-                                durationMillis = 300,
-                                easing = FastOutSlowInEasing
-                            ),
-                            label = "countdownText"
-                        ) { text ->
-                            Text(
-                                text = text,
-                                color = Color.White,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = if (isEstimated) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
+                        AnimatedCountdownText(
+                            minutesAway = minutesAway,
+                            isEstimated = isEstimated,
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium
+                        )
                         val delayText = formatDelay(arrival)
                         if (delayText != null) {
                             Text(
@@ -1212,15 +1231,56 @@ private fun PipCountdownContent(
                             color = scheme.onSurfaceVariant
                         )
                     } else {
-                        Text(
-                            text = if (minutesAway <= 0) "Due" else "${minutesAway} min",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = color
+                        AnimatedCountdownText(
+                            minutesAway = minutesAway,
+                            isEstimated = arrival.status == "estimated",
+                            color = color,
+                            style = MaterialTheme.typography.titleSmall
                         )
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * Countdown "N min" / "Due" label that rolls with minute changes instead of snapping.
+ * The tick updates the minute bucket every ~30s; AnimatedContent slides the change in the
+ * direction of the countdown (decreasing rolls in from the right) and fades the swap.
+ */
+@Composable
+private fun AnimatedCountdownText(
+    minutesAway: Long,
+    isEstimated: Boolean,
+    color: Color,
+    style: TextStyle,
+    modifier: Modifier = Modifier
+) {
+    AnimatedContent(
+        targetState = minutesAway.coerceAtLeast(0L),
+        modifier = modifier,
+        transitionSpec = {
+            val decreasing = targetState < initialState
+            val enter = (if (decreasing) {
+                slideInHorizontally(tween(250)) { it / 3 }
+            } else {
+                slideInHorizontally(tween(250)) { -it / 3 }
+            }) + fadeIn(tween(250))
+            val exit = (if (decreasing) {
+                slideOutHorizontally(tween(180)) { -it / 3 }
+            } else {
+                slideOutHorizontally(tween(180)) { it / 3 }
+            }) + fadeOut(tween(180))
+            enter togetherWith exit
+        },
+        label = "countdownRoll"
+    ) { minutes ->
+        Text(
+            text = if (minutes <= 0) "Due" else "$minutes min",
+            color = color,
+            style = style,
+            fontWeight = if (isEstimated) FontWeight.Bold else FontWeight.Normal
+        )
     }
 }

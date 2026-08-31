@@ -13,7 +13,9 @@ import android.os.CancellationSignal
 import android.view.MotionEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -55,15 +57,18 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.VehiclePosition
 import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.components.ErrorState
+import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
 import com.trimettransit.tracker.ui.components.badgeBitmap
-import com.trimettransit.tracker.ui.components.LoadingState
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.transitBadgeLetter
 import com.trimettransit.tracker.ui.components.transitBadgeLetters
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
+import com.trimettransit.tracker.ui.components.transitOnColor
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import org.maplibre.android.camera.CameraUpdate
@@ -101,6 +106,7 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
 import org.maplibre.geojson.Polygon
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -118,6 +124,9 @@ private const val LOCATION_FIX_TIMEOUT_MS = 10_000L
 private const val LOCATION_REFRESH_INTERVAL_MS = 5 * 60_000L
 /** Tap forgiveness around a stop dot; roughly one Material touch target (48dp) across. */
 private const val STOP_TAP_SLOP_DP = 24f
+/** Frame interval of the me-dot halo "breathing" animation (~1800ms round trip at 20 steps). */
+private const val ME_PULSE_STEP_MS = 90L
+private const val ME_PULSE_STEPS = 20
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -312,6 +321,7 @@ fun WhatsNearbyScreen(
                 vehicles = vehicles ?: emptyList(),
                 onStopClick = { stop -> onNavigateToArrivals(stop, -1) },
                 isDark = isDark,
+                pageVisible = pageVisible,
                 modifier = Modifier.fillMaxSize()
             )
             androidx.compose.animation.AnimatedVisibility(
@@ -349,7 +359,15 @@ fun WhatsNearbyScreen(
             ) { state ->
                 when (state) {
                     0 -> {
-                        LoadingState()
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                                )
+                        ) {
+                            ListLoadingSkeleton(contentPadding = PaddingValues(0.dp))
+                        }
                     }
                     1 -> {
                         ErrorState(message = errorMessage ?: "Unknown error")
@@ -431,7 +449,8 @@ private fun VehicleMap(
     vehicles: List<VehiclePosition>,
     onStopClick: (Stop) -> Unit,
     modifier: Modifier = Modifier,
-    isDark: Boolean = false
+    isDark: Boolean = false,
+    pageVisible: Boolean = true
 ) {
     // Re-read the latest stop-click callback on every recomposition so the once-registered
     // map click listener never fires a stale lambda.
@@ -444,6 +463,30 @@ private fun VehicleMap(
     val scheme = MaterialTheme.colorScheme
     val badgeColors = remember(scheme) {
         transitBadgeLetters().associateWith { transitColor(it, scheme) }
+    }
+
+    // Breathe the "you are here" halo while the screen is visible: a cosine-stepped halo
+    // radius makes the marker pulse without moving its anchor or the camera. Waits for a
+    // fix rather than keying on one, so a late-arriving location still starts the pulse.
+    LaunchedEffect(pageVisible) {
+        if (!pageVisible) return@LaunchedEffect
+        var tick = 0
+        while (isActive) {
+            if (mapState.lastMe == null) {
+                tick = 0
+                delay(ME_PULSE_STEP_MS)
+                continue
+            }
+            val t = (tick % ME_PULSE_STEPS) / ME_PULSE_STEPS.toDouble()
+            mapState.meHaloScale = 1f + 0.35f * (0.5f - 0.5f * cos(2.0 * PI * t).toFloat())
+            mapState.updateMe()
+            tick++
+            delay(ME_PULSE_STEP_MS)
+        }
+    }
+
+    val badgeGlyphColors = remember(scheme) {
+        transitBadgeLetters().associateWith { transitOnColor(it, scheme) }
     }
     val context = LocalContext.current
     val mapStyleUrl = if (isDark) WHATS_NEARBY_MAP_STYLE_URL_DARK else WHATS_NEARBY_MAP_STYLE_URL
@@ -458,10 +501,19 @@ private fun VehicleMap(
         badgeColors.forEach { (letter, color) ->
             style.addImage(
                 "badge-$letter",
-                badgeBitmap(context, color.toArgb(), transitIconResource(letter), density)
+                badgeBitmap(
+                    context,
+                    color.toArgb(),
+                    transitIconResource(letter),
+                    density,
+                    badgeGlyphColors[letter]?.toArgb() ?: android.graphics.Color.WHITE
+                )
             )
         }
-        style.addImage("stop-dot", stopDotBitmap(context, scheme.secondary.toArgb(), density))
+        style.addImage(
+            "stop-dot",
+            stopDotBitmap(context, scheme.secondary.toArgb(), scheme.onSecondary.toArgb(), density)
+        )
         style.addImage("me-dot", meDotBitmap(context, scheme.primary.toArgb(), density))
         val radiusSource = GeoJsonSource("radius-source")
         style.addSource(radiusSource)
@@ -517,6 +569,10 @@ private fun VehicleMap(
         mapState.stopsSource = stopsSource
         mapState.vehiclesSource = vehiclesSource
         mapState.meSource = meSource
+        mapState.activeStyle = style
+        mapState.appContext = context.applicationContext
+        mapState.density = density
+        mapState.meFillColor = scheme.primary.toArgb()
     }
 
     AndroidView(
@@ -655,6 +711,31 @@ private class VehicleMapState {
     // (only when no location fix exists); later vehicle polls update markers but must
     // not yank the camera away from wherever the user has panned.
     var vehiclesFit = false
+    // Me-dot pulse state: the active style + info needed to re-render the marker image in
+    // place, plus the last fix so the pulse loop can re-apply both without a camera move.
+    var activeStyle: Style? = null
+    var appContext: Context? = null
+    var density: Float = 1f
+    var meFillColor: Int = android.graphics.Color.TRANSPARENT
+    var lastMe: LatLng? = null
+    var meHaloScale: Float = 1f
+
+    /** Re-renders the me-dot image at the current halo scale and re-applies its position.
+     *  No-op until the style is ready and a fix exists. */
+    fun updateMe() {
+        val style = activeStyle ?: return
+        val me = lastMe ?: return
+        val context = appContext ?: return
+        style.addImage(
+            "me-dot",
+            meDotBitmap(context, meFillColor, density, meHaloScale)
+        )
+        meSource?.setGeoJson(
+            FeatureCollection.fromFeatures(
+                listOf(Feature.fromGeometry(Point.fromLngLat(me.longitude, me.latitude)))
+            )
+        )
+    }
 
     /** Pushes the latest nearby stops into the stop-source (no-op until the style is ready). */
     fun applyStops() {
@@ -686,6 +767,7 @@ private class VehicleMapState {
     /** Drops the me-dot and the nearby-radius ring into their sources. */
     fun applyMe(lat: Double, lng: Double) {
         val center = LatLng(lat, lng)
+        lastMe = center
         meSource?.setGeoJson(
             FeatureCollection.fromFeatures(listOf(Feature.fromGeometry(Point.fromLngLat(lng, lat))))
         )
@@ -696,7 +778,12 @@ private class VehicleMapState {
 }
 
 /** Secondary-colored dot with a dark outline and white center, used as the nearby stop marker image. */
-private fun stopDotBitmap(context: Context, fillColor: Int, density: Float): Bitmap {
+private fun stopDotBitmap(
+    context: Context,
+    fillColor: Int,
+    centerColor: Int = android.graphics.Color.WHITE,
+    density: Float
+): Bitmap {
     val size = (44 * density).toInt()
     val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val c = Canvas(out)
@@ -707,18 +794,20 @@ private fun stopDotBitmap(context: Context, fillColor: Int, density: Float): Bit
     // Fill circle slightly smaller than outline for a ring effect.
     val fillRadius = size / 2f - (2 * density)
     c.drawCircle(center, center, fillRadius, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
-    // White center dot.
+    // Center dot.
     val dotRadius = (6 * density).toInt().toFloat()
-    c.drawCircle(center, center, dotRadius, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE })
+    c.drawCircle(center, center, dotRadius, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = centerColor })
     return out
 }
 
 /**
  * "You are here" marker: a primary-colored dot with a white ring inside a translucent
  * primary halo — larger and visually distinct from the flat secondary-colored stop dots
- * (and the vehicle badges) so the user's location stands out on the map.
+ * (and the vehicle badges) so the user's location stands out on the map. [haloScale]
+ * breathes the halo radius around the fixed dot so the whole marker pulses without
+ * changing its anchor point.
  */
-private fun meDotBitmap(context: Context, fillColor: Int, density: Float): Bitmap {
+private fun meDotBitmap(context: Context, fillColor: Int, density: Float, haloScale: Float = 1f): Bitmap {
     val size = (56 * density).toInt()
     val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val c = Canvas(out)
@@ -727,7 +816,7 @@ private fun meDotBitmap(context: Context, fillColor: Int, density: Float): Bitma
     val halo = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         this.color = (fillColor and 0x00FFFFFF) or (0x40 shl 24)
     }
-    c.drawCircle(center, center, size / 2f, halo)
+    c.drawCircle(center, center, (size / 2f) * haloScale, halo)
     // White ring separates the solid dot from the halo and from any nearby stop dots.
     val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE }
     c.drawCircle(center, center, (13 * density).toInt().toFloat(), ring)
