@@ -1037,7 +1037,7 @@ private fun ArrivalItem(
 
             Surface(
                 shape = RoundedCornerShape(50),
-                color = color
+                color = MaterialTheme.colorScheme.onSurface
             ) {
                 if (arrival.status == "canceled") {
                     Column(
@@ -1046,14 +1046,14 @@ private fun ArrivalItem(
                     ) {
                         Text(
                             text = context.getString(R.string.arrival_cancelled),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.surface,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         if (arrival.reason.isNotEmpty()) {
                             Text(
                                 text = arrival.reason,
-                                color = Color.White.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                                 style = MaterialTheme.typography.labelSmall
                             )
                         }
@@ -1065,14 +1065,14 @@ private fun ArrivalItem(
                     ) {
                         Text(
                             text = context.getString(R.string.arrival_dropoff_only),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.surface,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         if (arrival.reason.isNotEmpty()) {
                             Text(
                                 text = arrival.reason,
-                                color = Color.White.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                                 style = MaterialTheme.typography.labelSmall
                             )
                         }
@@ -1085,20 +1085,20 @@ private fun ArrivalItem(
                         AnimatedCountdownText(
                             minutesAway = minutesAway,
                             isEstimated = isEstimated,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.surface,
                             style = MaterialTheme.typography.titleMedium
                         )
                         val delayText = formatDelay(arrival)
                         if (delayText != null) {
                             Text(
                                 text = delayText,
-                                color = Color.White.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                                 style = MaterialTheme.typography.labelSmall
                             )
                         } else if (!isEstimated) {
                             Text(
                                 text = "scheduled",
-                                color = Color.White.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                                 style = MaterialTheme.typography.labelSmall
                             )
                         }
