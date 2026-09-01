@@ -263,11 +263,13 @@ fun ArrivalsScreen(
     val showExpandButton = arrivals.size > 5 || unfilteredArrivals.size > arrivals.size
     // Tracked positions: the tapped row's own vehicle when it reports a position,
     // otherwise that line's other live vehicles so the map is never empty.
+    fun arrivalFor(bp: BlockPosition): Arrival? =
+        unfilteredArrivals.firstOrNull { it.vehicleID == bp.vehicleID }
     val trackedPositions = if (trackingVehicleId > 0) {
         blockPositions.filter { it.vehicleID == trackingVehicleId }
-            .ifEmpty { blockPositions.filter { it.routeNumber == trackingRouteId } }
+            .ifEmpty { blockPositions.filter { arrivalFor(it)?.routeId == trackingRouteId } }
     } else {
-        blockPositions.filter { it.routeNumber == trackingRouteId }
+        blockPositions.filter { arrivalFor(it)?.routeId == trackingRouteId }
     }
 
     // Live position polling: only while the tracking dropdown is open
@@ -466,7 +468,7 @@ fun ArrivalsScreen(
                                             lng = stopLng,
                                             stopName = stopName,
                                             blockPositions = trackedPositions,
-                                            arrivals = arrivals,
+                                            arrivals = unfilteredArrivals,
                                             headerText = trackingSign.ifBlank { stopName },
                                             onClose = { trackingKey = null },
                                             isDark = isDark

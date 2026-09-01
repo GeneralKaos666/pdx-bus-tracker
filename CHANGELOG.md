@@ -1,5 +1,10 @@
 # Changelog
 
+## What's New in v4.10.1
+
+### Map countdown fix
+- **Every tracked bus now shows its countdown on the arrivals map:** some buses were appearing as a route badge with no "N min" label above it. This happened when a bus was part of an interlined or night-service block whose reported block route number differed from the line actually serving the stop. Buses on the map are now matched to their own arrival regardless of block routing, so each marker shows the correct time (or "Dropoff Only") — and the wrong line's buses no longer clutter the map either.
+
 ## What's New in v4.10.0
 
 ### Refresh & map polish

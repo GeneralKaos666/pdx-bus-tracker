@@ -31,3 +31,12 @@ jobs:
 
       - name: Build, lint and unit test
         run: ./gradlew clean test lint assembleDebug --stacktrace
+
+      - name: Changelog version matches app version
+        run: python3 - <<'EOF'
+import re
+hdr = re.compile(r"^## What's New in v([0-9.]+)", re.M).search(open('CHANGELOG.md').read())
+ver = re.compile(r'versionName = "([0-9.]+)"').search(open('app/build.gradle').read())
+if not hdr or not ver or hdr.group(1) != ver.group(1):
+    raise SystemExit("CHANGELOG top version must match app/build.gradle versionName")
+EOF
