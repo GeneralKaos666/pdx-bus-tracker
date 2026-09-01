@@ -1,5 +1,11 @@
 # Changelog
 
+## What's New in v4.10.0
+
+### Refresh & map polish
+- **Expressive pull-to-refresh:** the Arrivals screen now uses the new Material 3 Expressive loading indicator — the shape-morphing marker that spins up while you pull (Material 3 `1.5.0-alpha27`). It replaces the old circular spinner for a smoother, more distinctive refresh gesture.
+- **Snappier live bus tracking:** while you have an arrival row's live map open, the tracked bus positions now refresh every 15 seconds instead of 30, so the buses on the map move noticeably more responsively.
+
 ## What's New in v4.9.8
 
 ### Animations & visual polish
