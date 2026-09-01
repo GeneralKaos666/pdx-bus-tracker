@@ -39,22 +39,15 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        // Same applicationId as the phone app so both ship under one Play Store
-        // listing; this app is fully stand-alone and needs no companion.
         applicationId = 'com.trimettransit.tracker'
         minSdk = 31
         targetSdk = 37
-        // Independent version line from the phone app (phone is 496 / 4.9.6).
-        // 3: stand-alone + M3 Expressive + "Next departure" tile.
-        // 4: R8 code + resource shrinking enabled on release builds.
-        versionCode = 4
+        versionCode = 210
         versionName = "2.1.0"
     }
 
     signingConfigs {
         release {
-            // Anchor to the app module's keystore (the sole real keystore in the repo),
-            // since file(...) would otherwise resolve relative to wear/.
             storeFile = file(rootDir.absolutePath + '/app/' + (project.findProperty("STORE_FILE") ?: "release.keystore"))
             def storePw = project.findProperty("STORE_PASSWORD") ?: System.getenv("STORE_PASSWORD")
             def alias = project.findProperty("KEY_ALIAS") ?: System.getenv("KEY_ALIAS")
@@ -119,13 +112,10 @@ androidComponents {
 }
 
 dependencies {
-    // Shared data + transit client (same layers as the phone app)
     implementation project(':component:localdata')
     implementation project(':component:transit')
     implementation project(':common:model')
     implementation project(':common:utils')
-
-    // Wear OS + Compose for Wear (NOT the phone compose-material3 toolkit)
     implementation 'androidx.wear:wear:1.4.0'
     implementation platform('androidx.compose:compose-bom:2026.08.00')
     implementation 'androidx.compose.ui:ui'

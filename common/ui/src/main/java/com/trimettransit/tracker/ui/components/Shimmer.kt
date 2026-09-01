@@ -88,8 +88,8 @@ fun ShimmerBox(
 /** Full-screen skeleton of stop-row-shaped placeholders, fades in like the state branches. */
 @Composable
 fun ListLoadingSkeleton(
-    rows: Int = 6,
     modifier: Modifier = Modifier,
+    rows: Int = 6,
     contentPadding: PaddingValues = PaddingValues(vertical = 8.dp)
 ) {
     FadeInOnce(modifier = modifier.fillMaxSize()) {
@@ -109,8 +109,8 @@ fun ListLoadingSkeleton(
 /** Compact shimmer placeholder for inline (accordion) loading. */
 @Composable
 fun InlineSkeleton(
-    rows: Int = 2,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    rows: Int = 2
 ) {
     Column(
         modifier = modifier

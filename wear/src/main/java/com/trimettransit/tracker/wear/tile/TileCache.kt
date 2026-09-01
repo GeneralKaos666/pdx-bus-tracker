@@ -1,6 +1,7 @@
 package com.trimettransit.tracker.wear.tile
 
 import android.content.Context
+import androidx.core.content.edit
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Stop
 import org.json.JSONArray
@@ -36,12 +37,12 @@ object TileCache {
     }
 
     fun update(context: Context, stop: Stop, arrivals: List<Arrival>) {
-        prefs(context).edit()
-            .putString(KEY_STOP, stopToJson(stop))
-            .putString(KEY_ARRIVALS, arrivalsToJson(arrivals))
-            .putLong(KEY_UPDATED, System.currentTimeMillis())
-            .putInt(KEY_FEATURED_LOCID, stop.locId)
-            .apply()
+        prefs(context).edit {
+            putString(KEY_STOP, stopToJson(stop))
+            putString(KEY_ARRIVALS, arrivalsToJson(arrivals))
+            putLong(KEY_UPDATED, System.currentTimeMillis())
+            putInt(KEY_FEATURED_LOCID, stop.locId)
+        }
     }
 
     fun snapshot(context: Context): Snapshot? {
