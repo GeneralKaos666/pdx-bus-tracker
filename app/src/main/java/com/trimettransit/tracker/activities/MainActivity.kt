@@ -394,6 +394,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         WidgetScheduler.schedulePeriodic(this)
         WidgetScheduler.refreshNow(this)
+        // Play's "deprecated Android 15 edge-to-edge APIs" warning comes from
+        // androidx.activity's enableEdgeToEdge() backward-compat internals, not
+        // app code. Known/benign — don't reimplement edge-to-edge to "fix" it.
         enableEdgeToEdge()
         setContent {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
