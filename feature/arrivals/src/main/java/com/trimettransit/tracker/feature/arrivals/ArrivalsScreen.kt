@@ -46,16 +46,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -125,7 +122,6 @@ import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
-import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
@@ -178,7 +174,6 @@ fun ArrivalsScreen(
     var showAllArrivals by remember { mutableStateOf(false) }
     var trackingKey by remember { mutableStateOf<String?>(null) }
     var trackingRouteId by remember { mutableIntStateOf(-1) }
-    var trackingSign by remember { mutableStateOf("") }
     var trackingVehicleId by remember { mutableIntStateOf(0) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
     var onlySelectedRoute by remember { mutableStateOf(true) }
@@ -451,7 +446,6 @@ fun ArrivalsScreen(
                                                     trackingKey =
                                                         rowKey            // opens under this row; switches if another row is tracked
                                                     trackingRouteId = arrival.routeId
-                                                    trackingSign = arrival.shortSign
                                                     trackingVehicleId = arrival.vehicleID
                                                 }
                                             }
@@ -466,11 +460,9 @@ fun ArrivalsScreen(
                                         StopMapCard(
                                             lat = stopLat,
                                             lng = stopLng,
-                                            stopName = stopName,
                                             blockPositions = trackedPositions,
                                             arrivals = unfilteredArrivals,
-                                            headerText = trackingSign.ifBlank { stopName },
-                                            onClose = { trackingKey = null },
+                                            trackedVehicleId = trackingVehicleId,
                                             isDark = isDark
                                         )
                                     }
@@ -611,23 +603,16 @@ private fun arrivalKey(arrival: Arrival): String =
 private fun StopMapCard(
     lat: Double,
     lng: Double,
-    stopName: String,
     modifier: Modifier = Modifier,
     blockPositions: List<BlockPosition> = emptyList(),
     arrivals: List<Arrival> = emptyList(),
-    headerText: String? = null,
-    onClose: (() -> Unit)? = null,
-    showHeader: Boolean = true,
+    trackedVehicleId: Int = 0,
     isDark: Boolean = false
 ) {
     val mapState = remember { MapState() }
     // Resolve the drop-off label in the configuration-aware composable scope (the map's
     // getMapAsync callback is not configuration-aware, so it can't look the string up there).
     mapState.dropoffLabel = stringResource(R.string.arrival_dropoff_only)
-    // Size of the map view at the time of the last camera fit. Fitting the camera while
-    // the card is still expanding (0 x 0 or growing) yields a degenerate/never-converging
-    // fit, so only fit once the viewport size is stable.
-    val fitSize = remember { intArrayOf(-1, -1) }
     val density = LocalDensity.current.density
     val scheme = MaterialTheme.colorScheme
     val badgeColors = remember(scheme) {
@@ -715,45 +700,7 @@ private fun StopMapCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column {
-            if (showHeader) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.LocationOn,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = headerText ?: stopName.ifBlank { "Stop Location" },
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.weight(1f)
-                    )
-                    if (onClose != null) {
-                        val interactionSource = remember { MutableInteractionSource() }
-                        IconButton(
-                            onClick = onClose,
-                            interactionSource = interactionSource,
-                            modifier = Modifier.pressScale(interactionSource)
-                        ) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = "Close map",
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-            }
-            AndroidView(
+        AndroidView(
                 factory = { ctx ->
                     MapView(ctx).apply {
                         getMapAsync { map ->
@@ -802,35 +749,13 @@ private fun StopMapCard(
                     mapState.positions = blockPositions
                     mapState.arrivals = arrivals
                     mapState.applyPositions()
-                    // Keep stop + tracked buses in view; re-fit only once the map has a
-                    // stable, non-degenerate size and something is actually off-screen.
-                    val points = blockPositions
-                        .filter { it.lat != 0.0 || it.lng != 0.0 }
-                        .map { it.lat to it.lng }
-                    if (map != null && points.isNotEmpty()) {
-                        val settled = view.width > 0 && view.height > 0 &&
-                                view.width == fitSize[0] && view.height == fitSize[1]
-                        if (settled) {
-                            fitIfNeeded(map, lat, lng, points)
-                        } else {
-                            fitSize[0] = view.width
-                            fitSize[1] = view.height
-                            // The card is mid-expansion; wait for layout to settle, then fit
-                            // (retry once if it is still resizing). Guarded by isAttachedToWindow:
-                            // after disposal the view reads 0x0 and the native map is destroyed,
-                            // so any deferred fit must be dropped.
-                            view.postDelayed({
-                                if (!view.isAttachedToWindow) return@postDelayed
-                                if (view.width == fitSize[0] && view.height == fitSize[1]) {
-                                    fitIfNeeded(map, lat, lng, points)
-                                } else {
-                                    fitSize[0] = view.width
-                                    fitSize[1] = view.height
-                                    view.postDelayed({
-                                        if (view.isAttachedToWindow) fitIfNeeded(map, lat, lng, points)
-                                    }, 400)
-                                }
-                            }, 400)
+                    // Follow the tracked bus instead of framing the stop together with it,
+                    // so the camera stays centered on the vehicle and its "N min" label never
+                    // clips at the map's top edge. The stop marker still renders but simply
+                    // scrolls out of frame once a bus position is available.
+                    if (map != null && view.width > 0 && view.height > 0) {
+                        trackedTarget(blockPositions, trackedVehicleId)?.let { target ->
+                            keepBusCentered(map, target, view.width, view.height, density)
                         }
                     }
                 },
@@ -838,7 +763,6 @@ private fun StopMapCard(
                     .fillMaxWidth()
                     .height(180.dp)
             )
-        }
     }
 
     DisposableEffect(Unit) {
@@ -916,26 +840,37 @@ private fun stopDotBitmap(
     return out
 }
 
-private fun fitIfNeeded(
+/** The bus to follow: the tracked vehicle, else the first live position on that route. */
+private fun trackedTarget(
+    blockPositions: List<BlockPosition>,
+    trackedVehicleId: Int
+): LatLng? {
+    val valid = blockPositions.filter { it.lat != 0.0 || it.lng != 0.0 }
+    if (valid.isEmpty()) return null
+    return valid.firstOrNull { it.vehicleID == trackedVehicleId }
+        ?.let { LatLng(it.lat, it.lng) }
+        ?: LatLng(valid.first().lat, valid.first().lng)
+}
+
+/**
+ * Pans the camera back onto the bus only when it drifts outside a centered band.
+ * The top margin is larger so the "N min" label above the icon stays on screen;
+ * user zoom is preserved and the stop is no longer kept in frame.
+ */
+private fun keepBusCentered(
     map: MapLibreMap,
-    stopLat: Double,
-    stopLng: Double,
-    points: List<Pair<Double, Double>>
+    target: LatLng,
+    viewWidth: Int,
+    viewHeight: Int,
+    density: Float
 ) {
-    val all = listOf(LatLng(stopLat, stopLng)) + points.map { LatLng(it.first, it.second) }
-    val visible = map.projection.visibleRegion.latLngBounds
-    if (all.any { !visible.contains(it) }) {
-        val bounds = LatLngBounds.from(
-            all.maxOf { it.latitude }, all.maxOf { it.longitude },
-            all.minOf { it.latitude }, all.minOf { it.longitude }
-        )
-        val cam = map.getCameraForLatLngBounds(bounds, intArrayOf(48, 48, 48, 48)) ?: return
-        val target = cam.target ?: return
-        if (cam.zoom > 18.0) {
-            map.easeCamera(CameraUpdateFactory.newLatLngZoom(target, 18.0), 400)
-        } else {
-            map.easeCamera(CameraUpdateFactory.newCameraPosition(cam), 400)
-        }
+    val marginPx = (24 * density).toInt()
+    val topMarginPx = (72 * density).toInt()
+    val p = map.projection.toScreenLocation(target)
+    val outside = p.x < marginPx || p.x > viewWidth - marginPx ||
+            p.y < topMarginPx || p.y > viewHeight - marginPx
+    if (outside) {
+        map.easeCamera(CameraUpdateFactory.newLatLng(target), 400)
     }
 }
 

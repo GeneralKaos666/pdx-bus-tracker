@@ -1,5 +1,11 @@
 # Changelog
 
+## What's New in v4.11.0
+
+### Map cleanup
+- **Removed the header bar from the live map on the Arrivals screen:** the stop-name strip and close button are gone, so the map fills its card edge to edge. Tapping the tracked arrival row again still closes the map.
+- **The map now follows the tracked bus instead of framing the stop and bus together:** once a bus position arrives the camera stays centered on that vehicle, so its countdown label no longer gets clipped at the top edge and the empty area beyond the line is gone.
+
 ## What's New in v4.10.1
 
 ### Map countdown fix
