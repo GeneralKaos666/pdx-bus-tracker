@@ -113,7 +113,7 @@ import kotlin.math.sin
 private const val WHATS_NEARBY_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 private const val WHATS_NEARBY_MAP_STYLE_URL_DARK = "https://tiles.openfreemap.org/styles/dark"
 /** Nearby stop search + map radius around the user, in feet (1200 ft ≈ 366 m). */
-private const val NEARBY_RADIUS_FEET = 1200
+private const val NEARBY_RADIUS_FEET = 1800
 private const val FOOT_TO_METERS = 0.3048
 /** Derived so the stop search and the map radius circle can never drift apart. */
 private val NEARBY_RADIUS_METERS = NEARBY_RADIUS_FEET * FOOT_TO_METERS
