@@ -6,6 +6,11 @@
 - **Removed the header bar from the live map on the Arrivals screen:** the stop-name strip and close button are gone, so the map fills its card edge to edge. Tapping the tracked arrival row again still closes the map.
 - **The map now follows the tracked bus instead of framing the stop and bus together:** once a bus position arrives the camera stays centered on that vehicle, so its countdown label no longer gets clipped at the top edge and the empty area beyond the line is gone.
 
+### Fixes & polish
+- **Routes accordion layout fixed:** the direction list and stop list inside the Routes screen's expanded accordion sub-cards were not wrapped in a `Column`, so items could stack incorrectly. Both sub-cards now lay out properly.
+- **Wider nearby stops radius:** the What's Nearby map now searches up to 1,800 ft (~⅓ mile) from your location, up from 1,200 ft — more stops appear without leaving the screen.
+- **Theme-aware countdown chip:** the "N min" / "Due" countdown badge on each arrival row now follows the app's light/dark theme instead of using a fixed colour, so it stays legible on both basemaps.
+
 ## What's New in v4.10.1
 
 ### Map countdown fix
