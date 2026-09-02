@@ -156,8 +156,8 @@ private fun DirectionsSubCard(
                         onRetry = { retryKey++ }
                     )
                     3 -> InlineMessage("No directions available.")
-                    else -> safeDirections.orEmpty().forEach { direction ->
-                        Column {
+                    else -> Column {
+                        safeDirections.orEmpty().forEach { direction ->
                             DirectionItem(
                                 direction = direction,
                                 isExpanded = selectedDirection?.dir == direction.dir,
@@ -269,12 +269,14 @@ private fun StopsSubCard(
                     onRetry = { retryKey++ }
                 )
                 3 -> InlineMessage("No stops available.")
-                else -> safeStops.orEmpty().forEach { stop ->
-                    StopListItem(
-                        stop = stop,
-                        onClick = { onStopSelected(stop) },
-                        zoomOnTap = true
-                    )
+                else -> Column {
+                    safeStops.orEmpty().forEach { stop ->
+                        StopListItem(
+                            stop = stop,
+                            onClick = { onStopSelected(stop) },
+                            zoomOnTap = true
+                        )
+                    }
                 }
             }
         }
