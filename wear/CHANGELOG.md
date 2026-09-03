@@ -2,7 +2,12 @@
 
 Changelog for the standalone Wear OS companion app (independent version line from the phone app).
 
-## What's New in Wear v2.1.1
+## What's New in Wear v2.1.3
+
+### Animation polish
+- The "N min" / "Due" countdown on each arrivals row now rolls smoothly between minute values on refresh instead of snapping.
+
+## What's New in Wear v2.1.2
 
 ### Signing
 - **Debug builds now use the release keystore:** debug and release installs share the same signing identity, so switching between them no longer requires an uninstall. When release signing credentials aren't set, debug builds gracefully fall back to the default debug key.

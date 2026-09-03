@@ -1,6 +1,11 @@
 # Changelog
 
-## What's New in v4.11.1
+## What's New in v4.11.3
+
+### Animation polish
+- The open-source licenses section in Settings now expands and collapses with a smooth animated transition instead of a hard cut.
+
+## What's New in v4.11.2
 
 ### Signing
 - **Debug builds now use the release keystore:** debug and release installs of the app now share the same signing identity, so switching between them no longer requires an uninstall. When release signing credentials aren't set, debug builds gracefully fall back to the default debug key.

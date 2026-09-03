@@ -5,6 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -219,13 +227,51 @@ private fun ArrivalRow(arrival: Arrival) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+        WearCountdownText(
+            minutes = minutes,
+            style = MaterialTheme.typography.labelSmall
+        )
+    }
+}
+
+/**
+ * Countdown "N min" / "Due" label that rolls with minute changes instead of snapping.
+ * The arrivals loop refreshes every ~30s; this slides in the direction of the countdown
+ * (a decreasing value rolls in toward the earlier time) and fades the swap, matching the
+ * phone's [AnimatedCountdownText].
+ */
+@Composable
+private fun WearCountdownText(
+    minutes: Long?,
+    style: androidx.compose.ui.text.TextStyle
+) {
+    val target = minutes
+    AnimatedContent(
+        targetState = target,
+        modifier = Modifier,
+        transitionSpec = {
+            val decreasing = targetState != null && initialState != null && targetState!! < initialState!!
+            val enter = (if (decreasing) {
+                slideInHorizontally(tween(250)) { it / 3 }
+            } else {
+                slideInHorizontally(tween(250)) { -it / 3 }
+            }) + fadeIn(tween(250, easing = FastOutSlowInEasing))
+            val exit = (if (decreasing) {
+                slideOutHorizontally(tween(180)) { -it / 3 }
+            } else {
+                slideOutHorizontally(tween(180)) { it / 3 }
+            }) + fadeOut(tween(180, easing = FastOutSlowInEasing))
+            enter togetherWith exit
+        },
+        label = "wearCountdownRoll"
+    ) { mins ->
         Text(
             text = when {
-                minutes == null -> "No time info"
-                minutes <= 0L -> "Due"
-                else -> "$minutes min"
+                mins == null -> "No time info"
+                mins <= 0L -> "Due"
+                else -> "$mins min"
             },
-            style = MaterialTheme.typography.labelSmall
+            style = style
         )
     }
 }

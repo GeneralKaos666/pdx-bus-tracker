@@ -5,6 +5,10 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -257,7 +261,15 @@ fun SettingsScreen() {
                         modifier = Modifier.rotate(chevronRotation)
                     )
                 }
-                AnimatedVisibility(visible = licensesExpanded) {
+                AnimatedVisibility(
+                    visible = licensesExpanded,
+                    enter = expandVertically(
+                        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
+                    ) + fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)),
+                    exit = shrinkVertically(
+                        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)
+                    ) + fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing))
+                ) {
                     Column(
                         modifier = Modifier.padding(start = 72.dp, end = 16.dp, bottom = 16.dp)
                     ) {
