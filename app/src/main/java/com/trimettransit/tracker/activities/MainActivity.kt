@@ -110,6 +110,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.data.local.DatabaseHelper
+import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
+import com.trimettransit.tracker.data.local.RecentStopsRepositoryImpl
+import com.trimettransit.tracker.transit.TransitRepositoryImpl
 import com.trimettransit.tracker.widget.WidgetScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -123,7 +126,6 @@ import com.trimettransit.tracker.feature.settings.SettingsScreen
 import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
 import com.trimettransit.tracker.feature.vehicles.WhatsNearbyScreen
-import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
 import android.net.Uri
 
@@ -456,6 +458,12 @@ private fun MainAppContent(
     val refreshRotation = remember { Animatable(0f) }
     val currentRoute = currentBackStackEntry?.destination?.route ?: ""
     val isTopLevel = currentRoute == "home"
+
+    // Manual dependency wiring: one shared DatabaseHelper drives both local-data repos.
+    val appContext = context.applicationContext
+    val favoritesRepository = remember { FavoritesRepositoryImpl(DatabaseHelper(appContext)) }
+    val recentStopsRepository = remember { RecentStopsRepositoryImpl(DatabaseHelper(appContext)) }
+    val transitRepository = remember { TransitRepositoryImpl(appContext) }
     // Sub-screens brand the collapsed pill with their own icon instead of
     // whichever Home page was last open; pageIndex -1 makes it inert (back bubble navigates).
     val collapsedNavItem = when {
@@ -472,9 +480,9 @@ private fun MainAppContent(
     var selectedStopsDirection by remember { mutableStateOf<Direction?>(null) }
 
     fun navigateToArrivals(stop: Stop, routeId: Int) {
-        if (routeId > 0) stop.routeNum = routeId
+        val stopToRecord = if (routeId > 0) stop.copy(routeNum = routeId) else stop
         scope.launch(Dispatchers.IO) {
-            DatabaseHelper(context.applicationContext).addRecentStop(stop)
+            DatabaseHelper(context.applicationContext).addRecentStop(stopToRecord)
         }
         navController.navigate(
             "arrivals/${stop.locId}?stopName=${Uri.encode(stop.desc)}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
@@ -590,12 +598,12 @@ private fun MainAppContent(
                                         if (!NavState.arrivalsIsFavorite && lat == 0.0 && lng == 0.0) {
                                             // Coords not resolved yet (fetch still in flight or offline):
                                             // resolve them now so the favorite isn't parked at 0,0.
-                                            TransitApi.fetchStopById(context, locId)?.let {
+                                            transitRepository.getStopById(locId)?.let {
                                                 lat = it.latitude
                                                 lng = it.longitude
                                             }
                                         }
-                                        val result = toggleFavorite(context, locId, stopName, NavState.arrivalsIsFavorite, routeId, lat, lng)
+                                        val result = toggleFavorite(favoritesRepository, context, locId, stopName, NavState.arrivalsIsFavorite, routeId, lat, lng)
                                         if (result.first) {
                                             NavState.arrivalsIsFavorite = !NavState.arrivalsIsFavorite
                                         }
@@ -710,16 +718,20 @@ private fun MainAppContent(
                     ) { page ->
                         when (page) {
                             0 -> FavoritesScreen(
+                                favoritesRepository = favoritesRepository,
+                                transitRepository = transitRepository,
                                 onNavigateToArrivals = { stop: Stop ->
                                     navigateToArrivals(stop, stop.routeNum)
                                 }
                             )
                             1 -> RecentStopsScreen(
+                                recentStopsRepository = recentStopsRepository,
                                 onNavigateToArrivals = { stop: Stop ->
                                     navigateToArrivals(stop, stop.routeNum)
                                 }
                             )
                             2 -> StopsScreen(
+                                transitRepository = transitRepository,
                                 selectedRoute = selectedStopsRoute,
                                 selectedDirection = selectedStopsDirection,
                                 onRouteToggle = { route ->
@@ -734,6 +746,7 @@ private fun MainAppContent(
                                 }
                             )
                             3 -> WhatsNearbyScreen(
+                                transitRepository = transitRepository,
                                 pageVisible = topPagerState.currentPage == 3,
                                 onNavigateToArrivals = { stop: Stop, _: Int ->
                                     navigateToArrivals(stop, -1)
@@ -748,6 +761,7 @@ private fun MainAppContent(
                 }
                 composable("nearby_stops") {
                     NearbyStopsScreen(
+                        transitRepository = transitRepository,
                         onNavigateToArrivals = { stop: Stop, routeId: Int ->
                             navigateToArrivals(stop, routeId)
                         }
@@ -765,6 +779,8 @@ private fun MainAppContent(
                     enterTransition = { navEnterArrivals }
                 ) { backStackEntry ->
                     ArrivalsScreen(
+                        transitRepository = transitRepository,
+                        favoritesRepository = favoritesRepository,
                         stopId = backStackEntry.arguments?.getString("stopId") ?: "",
                         stopName = backStackEntry.arguments?.getString("stopName") ?: "",
                         routeId = backStackEntry.arguments?.getInt("routeId") ?: -1,

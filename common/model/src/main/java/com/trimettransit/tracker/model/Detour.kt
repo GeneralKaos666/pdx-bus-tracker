@@ -4,15 +4,15 @@ import android.os.Parcel
 import android.os.Parcelable
 
 data class Detour(
-    var id: Int = 0,
-    var desc: String = "",
-    var routes: MutableList<Int>? = mutableListOf()
+    val id: Int = 0,
+    val desc: String = "",
+    val routes: List<Int>? = null
 ) : Parcelable {
 
     constructor(parcel: Parcel) : this(
         parcel.readInt(),
         parcel.readString() ?: "",
-        parcel.createIntArray()?.toMutableList() ?: mutableListOf()
+        parcel.createIntArray()?.toList()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {

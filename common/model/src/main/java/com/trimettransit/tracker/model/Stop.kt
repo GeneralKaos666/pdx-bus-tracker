@@ -1,31 +1,28 @@
 package com.trimettransit.tracker.model
 
 data class Stop(
-    var desc: String = "",
-    var dirDesc: String = "",
-    var latitude: Double = 0.0,
-    var longitude: Double = 0.0,
-    var transitType: String = "",
-    var routeNum: Int = 0,
-    var locId: Int = 0,
-    var routes: MutableList<Route>? = null
-) {
-    fun computeTransitType() {
-        routes?.forEach { route ->
-            if (transitType.isNullOrEmpty()) {
-                when {
-                    route.isStreetcar -> transitType = "S"
-                    route.isBus && !route.desc.contains("Shuttle") -> transitType = "B"
-                    route.isMax || route.desc.contains("Vintage Trolley") -> transitType = "M"
-                    route.isWes -> transitType = "W"
-                }
-            }
-        }
-        if (transitType.isNullOrEmpty()) transitType = "Z"
-    }
+    val desc: String = "",
+    val dirDesc: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val transitType: String = "",
+    val routeNum: Int = 0,
+    val locId: Int = 0,
+    val routes: List<Route> = emptyList()
+)
 
-    fun addRoute(route: Route) {
-        val list = routes ?: mutableListOf<Route>().also { routes = it }
-        list.add(route)
+/**
+ * Derives a stop's transit type letter from its routes, matching the behavior of
+ * the former `Stop.computeTransitType()`. Returns "Z" (unknown) if no route matches.
+ */
+fun computeTransitType(routes: List<Route>): String {
+    for (route in routes) {
+        when {
+            route.isStreetcar -> return "S"
+            route.isBus && !route.desc.contains("Shuttle") -> return "B"
+            route.isMax || route.desc.contains("Vintage Trolley") -> return "M"
+            route.isWes -> return "W"
+        }
     }
+    return "Z"
 }

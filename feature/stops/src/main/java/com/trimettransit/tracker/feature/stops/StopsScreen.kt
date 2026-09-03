@@ -37,15 +37,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.transit.ApiKeys
-import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.components.InlineSkeleton
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.pressScale
@@ -57,6 +56,7 @@ import com.trimettransit.tracker.ui.components.pressScale
  */
 @Composable
 fun StopsScreen(
+    transitRepository: TransitRepository,
     selectedRoute: Route?,
     selectedDirection: Direction?,
     onRouteToggle: (Route) -> Unit,
@@ -64,6 +64,7 @@ fun StopsScreen(
     onNavigateToArrivals: (Stop, routeId: Int) -> Unit
 ) {
     StopsRouteList(
+        transitRepository = transitRepository,
         selectedRoute = selectedRoute,
         onRouteToggle = onRouteToggle,
         routeTrailingContent = { route ->
@@ -74,6 +75,7 @@ fun StopsScreen(
             ) {
                 DirectionsSubCard(
                     route = route,
+                    transitRepository = transitRepository,
                     selectedDirection = selectedDirection,
                     onDirectionToggle = onDirectionToggle,
                     directionTrailingContent = { direction ->
@@ -85,6 +87,7 @@ fun StopsScreen(
                             StopsSubCard(
                                 routeId = route.routeId,
                                 directionId = direction.dir,
+                                transitRepository = transitRepository,
                                 onStopSelected = { stop -> onNavigateToArrivals(stop, route.routeId) }
                             )
                         }
@@ -98,12 +101,11 @@ fun StopsScreen(
 @Composable
 private fun DirectionsSubCard(
     route: Route,
+    transitRepository: TransitRepository,
     selectedDirection: Direction?,
     onDirectionToggle: (Direction) -> Unit,
     directionTrailingContent: @Composable (Direction) -> Unit
 ) {
-    val context = LocalContext.current
-    val baseRouteUrl = stringResource(com.trimettransit.tracker.transit.R.string.base_route_url)
     var directions by remember { mutableStateOf<List<Direction>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
@@ -112,13 +114,11 @@ private fun DirectionsSubCard(
     LaunchedEffect(route.routeId, retryKey) {
         isLoading = true
         isMissingApiKey = false
-        val key = ApiKeys.getTrimetApiKey()
-        if (key.isBlank()) {
+        if (ApiKeys.getTrimetApiKey().isBlank()) {
             isMissingApiKey = true
             directions = null
         } else {
-            val url = "$baseRouteUrl/appID/$key/route/${route.routeId}/dir/true"
-            directions = TransitApi.fetchDirections(context, url)
+            directions = transitRepository.getDirections(route.routeId)
         }
         isLoading = false
     }
@@ -225,10 +225,9 @@ private fun DirectionItem(
 private fun StopsSubCard(
     routeId: Int,
     directionId: Int,
+    transitRepository: TransitRepository,
     onStopSelected: (Stop) -> Unit
 ) {
-    val context = LocalContext.current
-    val baseRouteUrl = stringResource(com.trimettransit.tracker.transit.R.string.base_route_url)
     var stops by remember { mutableStateOf<List<Stop>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
@@ -237,13 +236,11 @@ private fun StopsSubCard(
     LaunchedEffect(routeId, directionId, retryKey) {
         isLoading = true
         isMissingApiKey = false
-        val key = ApiKeys.getTrimetApiKey()
-        if (key.isBlank()) {
+        if (ApiKeys.getTrimetApiKey().isBlank()) {
             isMissingApiKey = true
             stops = null
         } else {
-            val url = "$baseRouteUrl/appID/$key/route/$routeId/dir/$directionId/stops/true"
-            stops = TransitApi.fetchStops(context, url)
+            stops = transitRepository.getStops(routeId, directionId)
         }
         isLoading = false
     }

@@ -32,26 +32,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Route
+import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.transit.ApiKeys
-import com.trimettransit.tracker.transit.TransitApi
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
 
 @Composable
 fun StopsRouteList(
+    transitRepository: TransitRepository,
     selectedRoute: Route?,
     onRouteToggle: (Route) -> Unit,
     routeTrailingContent: @Composable LazyItemScope.(Route) -> Unit
 ) {
-    val context = LocalContext.current
-    val baseRouteUrl = stringResource(com.trimettransit.tracker.transit.R.string.base_route_url)
     var routes by remember { mutableStateOf<List<Route>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
@@ -61,13 +58,11 @@ fun StopsRouteList(
     LaunchedEffect(retryKey) {
         isLoading = true
         isMissingApiKey = false
-        val key = ApiKeys.getTrimetApiKey()
-        if (key.isBlank()) {
+        if (ApiKeys.getTrimetApiKey().isBlank()) {
             isMissingApiKey = true
             routes = null
         } else {
-            val url = "$baseRouteUrl/appID/$key"
-            routes = TransitApi.fetchRoutes(context, url)
+            routes = transitRepository.getRoutes()
         }
         isLoading = false
     }

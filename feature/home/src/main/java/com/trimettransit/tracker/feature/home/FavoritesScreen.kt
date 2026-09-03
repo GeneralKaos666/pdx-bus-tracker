@@ -5,15 +5,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.repository.FavoritesRepository
+import com.trimettransit.tracker.model.repository.TransitRepository
 
 @Composable
 fun FavoritesScreen(
+    favoritesRepository: FavoritesRepository,
+    transitRepository: TransitRepository,
     onNavigateToArrivals: (Stop) -> Unit
 ) {
-    val favorites = rememberStopListLoader(read = { it.favorites })
+    val favorites = rememberStopListLoader(read = { favoritesRepository.getFavorites() })
 
     Column(modifier = Modifier.fillMaxSize()) {
-        HomeSearchBar(onStopSelected = onNavigateToArrivals) {
+        HomeSearchBar(transitRepository = transitRepository, onStopSelected = onNavigateToArrivals) {
             HomeStopListScreen(
                 stops = favorites.stops,
                 isLoading = favorites.isLoading,

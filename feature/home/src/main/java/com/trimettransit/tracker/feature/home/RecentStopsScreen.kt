@@ -11,13 +11,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.ui.components.ContentEntrance
 
 @Composable
 fun RecentStopsScreen(
+    recentStopsRepository: RecentStopsRepository,
     onNavigateToArrivals: (Stop) -> Unit
 ) {
-    val recent = rememberStopListLoader(read = { it.recentStops })
+    val recent = rememberStopListLoader(read = { recentStopsRepository.getRecentStops() })
 
     Column(
         modifier = Modifier

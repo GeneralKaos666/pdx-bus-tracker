@@ -3,6 +3,7 @@ package com.trimettransit.tracker.wear
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.wear.compose.material3.AppScaffold
@@ -40,6 +41,9 @@ fun WearApp(startStop: Stop? = null) {
     WearBusTheme {
         AppScaffold {
             val navController = rememberSwipeDismissableNavController()
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val transitRepository =
+                remember { com.trimettransit.tracker.transit.TransitRepositoryImpl(context.applicationContext) }
             // The stand-alone Tile launches the app with a stop in its extras.
             LaunchedEffect(startStop) {
                 startStop?.let { navController.navigate(Routes.arrivals(it)) }
@@ -71,6 +75,7 @@ fun WearApp(startStop: Stop? = null) {
                 }
                 composable(Routes.ROUTES_LIST) {
                     RoutesScreen(
+                        transitRepository = transitRepository,
                         level = RoutesLevel.ROUTES,
                         onRouteClick = { route -> navController.navigate(Routes.routeDirs(route)) }
                     )
@@ -84,6 +89,7 @@ fun WearApp(startStop: Stop? = null) {
                 ) { entry ->
                     val routeId = entry.arguments?.getInt("routeId") ?: 0
                     RoutesScreen(
+                        transitRepository = transitRepository,
                         level = RoutesLevel.DIRECTIONS,
                         routeId = routeId,
                         routeName = entry.arguments?.getString("name") ?: "",
@@ -104,6 +110,7 @@ fun WearApp(startStop: Stop? = null) {
                     val routeId = entry.arguments?.getInt("routeId") ?: 0
                     val dirId = entry.arguments?.getInt("dir") ?: 0
                     RoutesScreen(
+                        transitRepository = transitRepository,
                         level = RoutesLevel.STOPS,
                         routeId = routeId,
                         dirId = dirId,

@@ -18,8 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,7 +34,7 @@ import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.transit.ApiKeys
-import com.trimettransit.tracker.transit.TransitApi
+import com.trimettransit.tracker.model.repository.TransitRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -52,6 +50,7 @@ enum class RoutesLevel {
  */
 @Composable
 fun RoutesScreen(
+    transitRepository: TransitRepository,
     level: RoutesLevel,
     routeId: Int = 0,
     routeName: String = "",
@@ -61,13 +60,11 @@ fun RoutesScreen(
     onRouteClick: (Route) -> Unit = {},
     onDirectionClick: (Direction) -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val baseRouteUrl = stringResource(com.trimettransit.tracker.transit.R.string.base_route_url)
     val apiKey = remember { ApiKeys.getTrimetApiKey() }
 
     var retryKey by remember { mutableIntStateOf(0) }
 
-    val state = rememberRoutesState(context, baseRouteUrl, apiKey, level, routeId, dirId, retryKey)
+    val state = rememberRoutesState(transitRepository, apiKey, level, routeId, dirId, retryKey)
 
     val header = when (level) {
         RoutesLevel.ROUTES -> "Routes"
@@ -149,8 +146,7 @@ fun RoutesScreen(
 @Suppress("UNCHECKED_CAST")
 @Composable
 private fun rememberRoutesState(
-    context: android.content.Context,
-    baseRouteUrl: String,
+    transitRepository: TransitRepository,
     apiKey: String,
     level: RoutesLevel,
     routeId: Int,
@@ -169,16 +165,11 @@ private fun rememberRoutesState(
         if (apiKey.isBlank()) {
             isMissingApiKey = true
         } else {
-            val url = when (level) {
-                RoutesLevel.ROUTES -> "$baseRouteUrl/appID/$apiKey"
-                RoutesLevel.DIRECTIONS -> "$baseRouteUrl/appID/$apiKey/route/$routeId/dir/true"
-                RoutesLevel.STOPS -> "$baseRouteUrl/appID/$apiKey/route/$routeId/dir/$dirId/stops/true"
-            }
             val result = withContext(Dispatchers.IO) {
                 when (level) {
-                    RoutesLevel.ROUTES -> TransitApi.fetchRoutes(context, url) as List<Any>?
-                    RoutesLevel.DIRECTIONS -> TransitApi.fetchDirections(context, url) as List<Any>?
-                    RoutesLevel.STOPS -> TransitApi.fetchStops(context, url) as List<Any>?
+                    RoutesLevel.ROUTES -> transitRepository.getRoutes() as List<Any>?
+                    RoutesLevel.DIRECTIONS -> transitRepository.getDirections(routeId) as List<Any>?
+                    RoutesLevel.STOPS -> transitRepository.getStops(routeId, dirId) as List<Any>?
                 }
             }
             if (result != null) items = result else failed = true

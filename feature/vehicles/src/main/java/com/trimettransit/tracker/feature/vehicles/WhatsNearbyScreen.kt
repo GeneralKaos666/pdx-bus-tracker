@@ -55,7 +55,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.VehiclePosition
-import com.trimettransit.tracker.transit.TransitApi
+import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
 import com.trimettransit.tracker.ui.components.badgeBitmap
@@ -131,6 +131,7 @@ private const val ME_PULSE_STEPS = 20
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WhatsNearbyScreen(
+    transitRepository: TransitRepository,
     pageVisible: Boolean,
     onNavigateToArrivals: (Stop, Int) -> Unit,
     isDark: Boolean = false
@@ -198,8 +199,7 @@ fun WhatsNearbyScreen(
         isLoading = true
         errorMessage = null
         vehiclesJob = coroutineScope.launch {
-            val result = TransitApi.fetchVehicles(
-                context = context,
+            val result = transitRepository.getVehicles(
                 routes = null,
                 onRouteOnly = true,
                 showStale = false
@@ -222,8 +222,7 @@ fun WhatsNearbyScreen(
         // Cancel any in-flight fetch first so a slow older response can't overwrite newer stops.
         stopsJob?.cancel()
         stopsJob = coroutineScope.launch {
-            val result = TransitApi.fetchStopsByLocation(
-                context = context,
+            val result = transitRepository.getStopsByLocation(
                 ll = "${location.latitude},${location.longitude}",
                 feet = NEARBY_RADIUS_FEET
             )

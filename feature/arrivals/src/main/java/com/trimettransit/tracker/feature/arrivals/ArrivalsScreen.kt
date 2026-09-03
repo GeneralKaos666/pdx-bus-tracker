@@ -90,12 +90,16 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.preference.PreferenceManager
-import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.transit.TransitApi
+import com.trimettransit.tracker.model.domain.arrivalKey
+import com.trimettransit.tracker.model.domain.dedupeArrivals
+import com.trimettransit.tracker.model.domain.detoursForLine
+import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
+import com.trimettransit.tracker.model.repository.FavoritesRepository
+import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.badgeBitmap
@@ -157,6 +161,8 @@ private const val STOP_MAP_STYLE_URL_DARK = "https://tiles.openfreemap.org/style
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ArrivalsScreen(
+    transitRepository: TransitRepository,
+    favoritesRepository: FavoritesRepository,
     stopId: String,
     stopName: String,
     routeId: Int,
@@ -192,7 +198,7 @@ fun ArrivalsScreen(
     LaunchedEffect(stopId) {
         if (locId > 0) {
             NavState.arrivalsIsFavorite = withContext(Dispatchers.IO) {
-                DatabaseHelper(context.applicationContext).isFavorite(locId)
+                favoritesRepository.isFavorite(locId)
             }
         }
     }
@@ -200,7 +206,7 @@ fun ArrivalsScreen(
     LaunchedEffect(locId) {
         if ((stopLat == 0.0 || stopLng == 0.0) && locId > 0) {
             isLoadingStop = true
-            TransitApi.fetchStopById(context, locId)?.let { stop ->
+            transitRepository.getStopById(locId)?.let { stop ->
                 stopLat = stop.latitude
                 stopLng = stop.longitude
             }
@@ -216,26 +222,23 @@ fun ArrivalsScreen(
         arrivalsJob?.cancel()
         arrivalsJob = coroutineScope.launch {
             isLoading = true
-            val result = TransitApi.fetchArrivals(
-                context = context,
+            val result = transitRepository.getArrivals(
                 locIds = listOf(locId),
                 showPosition = true,
                 minutes = 30,
                 maxArrivals = 15
             )
             if (result != null) {
-                val seenKeys = HashSet<String>()
-                val allArrivals = (result.arrivals ?: emptyList()).filter { seenKeys.add(arrivalKey(it)) }
+                val allArrivals = dedupeArrivals(result.arrivals)
                 unfilteredArrivals = allArrivals
                 val prefs = PreferenceManager.getDefaultSharedPreferences(context)
                 onlySelectedRoute = prefs.getBoolean("pref_key_only_show_route_selected", true)
-                arrivals = if (onlySelectedRoute && routeId > 0) {
-                    allArrivals.filter { it.routeId == routeId }
-                } else {
-                    allArrivals
-                }
-                detours = result.detours ?: emptyList()
-                blockPositions = result.blockPositions ?: emptyList()
+                arrivals = filterArrivalsByRoute(
+                    allArrivals,
+                    if (onlySelectedRoute && routeId > 0) routeId else 0
+                )
+                detours = result.detours
+                blockPositions = result.blockPositions
                 // Resolve stop coordinates from arrivals response if not yet known
                 if (stopLat == 0.0 || stopLng == 0.0) {
                     if (result.stopLat != 0.0 && result.stopLng != 0.0) {
@@ -293,15 +296,14 @@ fun ArrivalsScreen(
         positionRefreshInFlight = true
         coroutineScope.launch {
             try {
-                val result = TransitApi.fetchArrivals(
-                    context = context,
+                val result = transitRepository.getArrivals(
                     locIds = listOf(locId),
                     showPosition = true,
                     minutes = 30,
                     maxArrivals = 15
                 )
                 if (result != null) {
-                    blockPositions = result.blockPositions ?: emptyList()
+                    blockPositions = result.blockPositions
                 }
             } finally {
                 positionRefreshInFlight = false
@@ -427,7 +429,7 @@ fun ArrivalsScreen(
                                 visibleArrivals,
                                 key = { arrivalKey(it) },
                                 contentType = { "arrival" }) { arrival ->
-                                val lineDetours = detours.filter { it.routes?.contains(arrival.routeId) == true }
+                                val lineDetours = detoursForLine(detours, arrival.routeId)
                                 val rowKey =
                                     "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}_${arrival.blockID}_${arrival.vehicleID}"
                                 Column {
@@ -595,9 +597,6 @@ private fun formatDelay(arrival: Arrival): String? {
         else -> "On time"
     }
 }
-
-private fun arrivalKey(arrival: Arrival): String =
-    "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}_${arrival.blockID}_${arrival.vehicleID}"
 
 @Composable
 private fun StopMapCard(
@@ -1061,6 +1060,7 @@ private fun ArrivalItem(
 }
 
 suspend fun toggleFavorite(
+    favoritesRepository: FavoritesRepository,
     context: Context,
     locId: Int,
     stopName: String,
@@ -1071,22 +1071,22 @@ suspend fun toggleFavorite(
 ): Pair<Boolean, String> {
     return withContext(Dispatchers.IO) {
         try {
-            val db = DatabaseHelper(context.applicationContext)
             if (currentlyFavorite) {
-                if (db.removeFavorite(locId)) {
+                if (favoritesRepository.removeFavorite(locId)) {
                     true to context.getString(R.string.favorite_deleted_text)
                 } else {
                     // Stop was already absent — the DB already matches the unfavorited UI state.
                     true to context.getString(R.string.favorite_does_not_exist_text)
                 }
             } else {
-                val stop = Stop()
-                stop.desc = stopName
-                stop.locId = locId
-                stop.latitude = lat
-                stop.longitude = lng
-                if (routeId > 0) stop.routeNum = routeId
-                if (db.addFavorite(stop)) {
+                val stop = Stop(
+                    desc = stopName,
+                    latitude = lat,
+                    longitude = lng,
+                    routeNum = if (routeId > 0) routeId else 0,
+                    locId = locId
+                )
+                if (favoritesRepository.addFavorite(stop)) {
                     true to context.getString(R.string.favorite_added_text)
                 } else {
                     // Already a favorite — the DB already matches the favorited UI state.

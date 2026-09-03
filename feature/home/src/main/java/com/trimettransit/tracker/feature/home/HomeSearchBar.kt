@@ -46,19 +46,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.transit.ApiKeys
-import com.trimettransit.tracker.transit.TransitApi
+import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitTypeLabel
-import com.trimettransit.tracker.util.ConnectionUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Locale
@@ -73,11 +69,10 @@ private const val MAX_RESULTS = 250
  */
 @Composable
 fun HomeSearchBar(
+    transitRepository: TransitRepository,
     onStopSelected: (Stop) -> Unit,
     content: @Composable () -> Unit
 ) {
-    val context = LocalContext.current
-    val baseRouteUrl = stringResource(com.trimettransit.tracker.transit.R.string.base_route_url)
     var query by remember { mutableStateOf("") }
     var allStops by remember { mutableStateOf<List<Stop>?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -89,19 +84,11 @@ fun HomeSearchBar(
     // network call while the list is still loading.
     LaunchedEffect(allStops == null, query.isNotBlank()) {
         if (allStops == null && query.isNotBlank()) {
-            val key = ApiKeys.getTrimetApiKey()
-            if (key.isNotBlank() && ConnectionUtils.isOnline(context)) {
-                isLoading = true
-                hasError = false
-                val url = "$baseRouteUrl/appID/$key/dir/true/stops/true"
-                allStops = TransitApi.fetchSearchStops(context, url)
-                isLoading = false
-                if (allStops == null) hasError = true
-            } else {
-                // Offline (or no API key): surface the connection message instead of
-                // pretending the search simply found nothing.
-                hasError = true
-            }
+            isLoading = true
+            hasError = false
+            allStops = transitRepository.searchStops()
+            isLoading = false
+            if (allStops == null) hasError = true
         }
     }
 

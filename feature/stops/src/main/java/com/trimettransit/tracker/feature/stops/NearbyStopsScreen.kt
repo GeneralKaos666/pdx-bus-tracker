@@ -49,7 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.transit.TransitApi
+import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.EmptyState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.trimettransit.tracker.ui.components.ContentEntrance
@@ -69,6 +69,7 @@ import kotlin.coroutines.resume
 
 @Composable
 fun NearbyStopsScreen(
+    transitRepository: TransitRepository,
     onNavigateToArrivals: (Stop, Int) -> Unit
 ) {
     val context = LocalContext.current
@@ -93,6 +94,7 @@ fun NearbyStopsScreen(
             val me = coroutineContext[Job]!!
             loadNearbyStops(
                 context = context,
+                transitRepository = transitRepository,
                 isCurrent = { loadJob == me },
                 setStops = { stops = it },
                 setLoading = { isLoading = it },
@@ -293,6 +295,7 @@ fun NearbyStopsScreen(
 @android.annotation.SuppressLint("MissingPermission")
 private suspend fun loadNearbyStops(
     context: Context,
+    transitRepository: TransitRepository,
     isCurrent: () -> Boolean,
     setStops: (List<Stop>?) -> Unit,
     setLoading: (Boolean) -> Unit,
@@ -329,8 +332,7 @@ private suspend fun loadNearbyStops(
             return
         }
 
-        val stops = TransitApi.fetchStopsByLocation(
-            context = context,
+        val stops = transitRepository.getStopsByLocation(
             ll = "${location.latitude},${location.longitude}",
             feet = 500,
             showRoutes = true

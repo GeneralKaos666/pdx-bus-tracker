@@ -3,19 +3,19 @@ package com.trimettransit.tracker.model
 import org.joda.time.DateTime
 
 data class Arrival(
-    var fullSign: String = "",
-    var shortSign: String = "",
-    var estimated: DateTime? = null,
-    var scheduled: DateTime? = null,
-    var routeId: Int = 0,
-    var status: String = "",
-    var dropOffOnly: Boolean = false,
-    var reason: String = "",
-    var tripID: String = "",
-    var blockID: Int = 0,
-    var vehicleID: Int = 0,
-    var feet: Int = 0,
-    var dir: Int = 0,
-    var estimatedMillis: Long = 0,
-    var scheduledMillis: Long = 0
+    val fullSign: String = "",
+    val shortSign: String = "",
+    val estimated: DateTime? = null,
+    val scheduled: DateTime? = null,
+    val routeId: Int = 0,
+    val status: String = "",
+    val dropOffOnly: Boolean = false,
+    val reason: String = "",
+    val tripID: String = "",
+    val blockID: Int = 0,
+    val vehicleID: Int = 0,
+    val feet: Int = 0,
+    val dir: Int = 0,
+    val estimatedMillis: Long = 0,
+    val scheduledMillis: Long = 0
 )
