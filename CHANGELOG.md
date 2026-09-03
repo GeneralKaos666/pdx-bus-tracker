@@ -1,5 +1,10 @@
 # Changelog
 
+## What's New in v4.11.1
+
+### Signing
+- **Debug builds now use the release keystore:** debug and release installs of the app now share the same signing identity, so switching between them no longer requires an uninstall. When release signing credentials aren't set, debug builds gracefully fall back to the default debug key.
+
 ## What's New in v4.11.0
 
 ### Map cleanup

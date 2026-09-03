@@ -2,6 +2,11 @@
 
 Changelog for the standalone Wear OS companion app (independent version line from the phone app).
 
+## What's New in Wear v2.1.1
+
+### Signing
+- **Debug builds now use the release keystore:** debug and release installs share the same signing identity, so switching between them no longer requires an uninstall. When release signing credentials aren't set, debug builds gracefully fall back to the default debug key.
+
 ## What's New in Wear v2.1.0
 
 - **Smaller release builds:** the watch app now ships with R8 code shrinking and resource shrinking enabled on release builds, trimming APK size.
