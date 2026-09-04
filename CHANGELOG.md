@@ -7,7 +7,14 @@
 - **Settings is always one tap away:** the Settings button now stays in the bar on every screen, including Arrivals, Nearby Stops, and Settings itself, instead of vanishing on sub-screens.
 - **Sliding indicator:** the active tab is marked with a filled capsule that glides between tabs as you switch screens.
 - **Labels adapt to narrow screens:** tab labels hide automatically on compact-width devices so the bar always fits without crowding.
-- **What's Nearby removed from the bar:** the live nearby map is temporarily taken out of the bottom navigation (a richer version is planned to return later).
+- **What's Nearby replaced by Trip Planner:** the live nearby map leaves the bottom bar, making room for the new from-A-to-B Trip Planner tab described below.
+
+### Trip Planner
+- **Plan trips on a map:** the new Trips tab lets you pick an origin and destination by tapping the map, searching stops by name or ID, or using your current location — then it plans your trip across the TriMet network.
+- **Depart now or arrive by:** choose whether to leave immediately or arrive by a time you pick, and compare up to three itinerary options side by side.
+- **Routes drawn right on the map:** each itinerary's transit legs and walking segments are drawn over the basemap with mode-colored lines, boarding badges, and stop dots, and the camera frames your whole route automatically.
+- **Itinerary details:** every option shows its total time, walk/transit split, number of transfers, "transfer to another line" vs. "stay on board" continuations, and the fare, with per-leg departure times and places.
+- **Swap in one tap:** a swap button flips your origin and destination instantly.
 - **Indicator tracks swipes in real time:** the capsule follows the screen as you swipe from tab to tab, not just after the swipe settles.
 - **Indicator covers the whole tab:** the capsule tracks the label as it springs open, so the highlighted tab's label never sticks out past the highlight, and it appears right away on launch.
 

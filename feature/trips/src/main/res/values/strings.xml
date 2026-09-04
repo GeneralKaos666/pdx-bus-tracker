@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="use_your_location_question">Use your location?</string>
+    <string name="location_explainer">PDX Bus Tracker uses your location only when you ask it to find TriMet stops and trips near you. Your location is never stored by this app and is not used for anything else.</string>
+    <string name="continue_">Continue</string>
+    <string name="not_now">Not now</string>
+    <string name="location_permission_off">Location permission is off — tap to grant</string>
+
+    <string name="trip_planner_title">Trip Planner</string>
+    <string name="origin_field_hint">Origin</string>
+    <string name="destination_field_hint">Destination</string>
+    <string name="depart_now">Depart now</string>
+    <string name="arrive_by">Arrive by</string>
+    <string name="find_trips">Find trips</string>
+    <string name="planning_trips">Planning…</string>
+    <string name="no_trips_found">No trips found</string>
+    <string name="use_my_location">Use my location</string>
+    <string name="swap_origin_destination">Swap origin and destination</string>
+    <string name="my_location">My location</string>
+    <string name="pinned_location">Pinned on map</string>
+    <string name="tap_map_to_set_origin">Tap the map to set origin</string>
+    <string name="tap_map_to_set_destination">Tap the map to set destination</string>
+    <string name="cancel">Cancel</string>
+    <string name="clear">Clear</string>
+    <string name="add_origin">Add origin</string>
+    <string name="add_destination">Add destination</string>
+    <string name="search_stops_tab">Search stops</string>
+    <string name="map_pin_tab">Map pin</string>
+    <string name="map_pin_origin_hint">Choose a spot on the map for your origin</string>
+    <string name="map_pin_dest_hint">Choose a spot on the map for your destination</string>
+    <string name="pick_on_map">Pick on map</string>
+    <string name="search_stops_hint">Search stops</string>
+    <string name="search_stops_prompt">Search a stop name or ID to set an endpoint</string>
+    <string name="no_connection">Can\'t reach TriMet right now</string>
+    <string name="no_stops_found">No stops match that search</string>
+    <string name="fare_label">Fare: %1$s</string>
+    <string name="walk_transit_fmt">Walk %1$s · Transit %2$s</string>
+    <string name="walk_between_fmt">%1$s to %2$s</string>
+    <string name="route_label">Transit</string>
+    <string name="leg_transit_fmt">%1$s · %2$s → %3$s · %4$s</string>
+    <string name="walk">Walk</string>
+    <plurals name="transfers_count">
+        <item quantity="one">%1$d transfer</item>
+        <item quantity="other">%1$d transfers</item>
+    </plurals>
+    <string name="stay_on_board">Stay on board</string>
+    <string name="itinerary_1">Fastest</string>
+    <string name="itinerary_2">Alternative</string>
+    <string name="itinerary_3">Last resort</string>
+    <string name="trip_planner_error_no_stops">No TriMet stops near that point</string>
+    <string name="trip_planner_error_no_service">No service at that point</string>
+    <string name="trip_planner_error_not_possible">No trip possible between those points</string>
+    <string name="trip_planner_error_ambiguous_origin">More than one place matches the origin</string>
+    <string name="trip_planner_error_ambiguous_destination">More than one place matches the destination</string>
+    <string name="trip_planner_error_not_found">Couldn\'t find that place</string>
+    <string name="trip_planner_error_trivial">Points are too close to plan</string>
+    <string name="trip_planner_error_outside_district">That trip leaves the TriMet service area</string>
+    <string name="trip_planner_error_outage">Trip Planner is temporarily unavailable</string>
+    <string name="trip_planner_error_unknown">Trip Planner couldn\'t plan that trip</string>
+</resources>

@@ -1,10 +1,19 @@
 package com.trimettransit.tracker.transit
 
 import android.content.Context
+import android.net.Uri
 import timber.log.Timber
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.TripItinerary
+import com.trimettransit.tracker.model.TripLeg
+import com.trimettransit.tracker.model.TripLegMode
+import com.trimettransit.tracker.model.TripPlan
+import com.trimettransit.tracker.model.TripPlannerError
+import com.trimettransit.tracker.model.TripPlanResult
+import com.trimettransit.tracker.model.TripPoint
+import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.util.ConnectionUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,6 +24,12 @@ import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.VehiclePosition
 import com.trimettransit.tracker.model.computeTransitType
 import org.json.JSONObject
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
+import org.w3c.dom.Element
+import org.xml.sax.InputSource
+import java.io.StringReader
+import javax.xml.parsers.DocumentBuilderFactory
 
 object TransitApi {
     private val parser = JSONParser
@@ -529,4 +544,169 @@ object TransitApi {
             null
         }
     }
+
+    suspend fun fetchTripPlan(
+        context: Context,
+        from: TripPoint,
+        to: TripPoint,
+        time: TripRequestTime
+    ): TripPlanResult? = withContext(Dispatchers.IO) {
+        if (!ConnectionUtils.isOnline(context)) return@withContext null
+        val apiKey = ApiKeys.getTrimetApiKey()
+        if (apiKey.isBlank()) {
+            Timber.w("TriMet API key not configured")
+            return@withContext null
+        }
+        try {
+            val now = DateTime.now()
+            val requested = time.timeMillis?.let { DateTime(it) } ?: now
+            val date = DateTimeFormat.forPattern("M-d-yyyy").print(requested)
+            val clock = DateTimeFormat.forPattern("h:mm a").print(requested)
+            val baseUrl = context.getString(R.string.base_trip_planner_url)
+            val url = buildString {
+                append(baseUrl)
+                append("/fromPlace/").append(Uri.encode(from.description))
+                append("/fromCoord/").append("${from.longitude},${from.latitude}")
+                append("/toPlace/").append(Uri.encode(to.description))
+                append("/toCoord/").append("${to.longitude},${to.latitude}")
+                append("/date/").append(date)
+                append("/time/").append(Uri.encode(clock))
+                append("/arr/").append(if (time.arriveBy) "A" else "D")
+                append("/min/T")
+                append("/mode/A")
+                append("/walk/0.5")
+                append("/maxIntineraries/3")
+                append("/format/xml")
+                append("/appID/").append(apiKey)
+            }
+            val xml = parser.fetchXml(url)
+            parseTripPlanResponse(xml)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to fetch trip plan")
+            TripPlanResult.Error(TripPlannerError.SYSTEM_OUTAGE)
+        }
+    }
+
+    private fun parseTripPlanResponse(xml: String): TripPlanResult? {
+        val response = try {
+            val factory = DocumentBuilderFactory.newInstance()
+            factory.isNamespaceAware = false
+            factory.newDocumentBuilder()
+                .parse(InputSource(StringReader(xml)))
+                .documentElement
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to parse trip planner XML")
+            return TripPlanResult.Error(TripPlannerError.SYSTEM_OUTAGE)
+        }
+        if (response.tagName != "response") return null
+
+        response.directChild("error")?.let { error ->
+            val code = error.getAttribute("code")
+            val msg = error.textContent?.trim() ?: ""
+            Timber.w("Trip planner error [$code]: $msg")
+            return TripPlanResult.Error(TripPlannerError.fromCode(code))
+        }
+
+        val itineraries = response.directChild("itineraries")
+            ?.directChildren("itinerary")
+            .orEmpty()
+            .mapNotNull { parseItinerary(it) }
+        return TripPlanResult.Success(
+            TripPlan(
+                from = parsePoint(response.directChild("from")),
+                to = parsePoint(response.directChild("to")),
+                itineraries = itineraries
+            )
+        )
+    }
+
+    private const val TRIP_TIME_12H = "M/d/yy h:mm a"
+    private const val TRIP_TIME_24H = "M/d/yy HH:mm"
+
+    private fun parseMillis(date: String, timeValue: String): Long {
+        val t = timeValue.trim()
+        val patterns = listOf(
+            TRIP_TIME_12H, "M-d-yy h:mm a", "M/d/yyyy h:mm a", "M-d-yyyy h:mm a",
+            TRIP_TIME_24H, "M/d/yyyy HH:mm", "M-d-yyyy HH:mm"
+        )
+        for (pattern in patterns) {
+            try {
+                return DateTime.parse("$date $t", DateTimeFormat.forPattern(pattern)).millis
+            } catch (_: Exception) {
+            }
+        }
+        return DateTime.now().millis
+    }
+
+    private fun parsePoint(obj: Element?): TripPoint {
+        if (obj == null) return TripPoint(0.0, 0.0)
+        val pos = obj.directChild("pos")
+        return TripPoint(
+            latitude = pos?.textOf("lat")?.toDoubleOrNull() ?: 0.0,
+            longitude = pos?.textOf("lon")?.toDoubleOrNull() ?: 0.0,
+            description = obj.textOf("description")
+        )
+    }
+
+    private fun parseItinerary(obj: Element): TripItinerary? {
+        val timeDistance = obj.directChild("time-distance") ?: return null
+        val date = timeDistance.textOf("date")
+        val start = parseMillis(date, timeDistance.textOf("startTime"))
+        val end = parseMillis(date, timeDistance.textOf("endTime"))
+        val legs = obj.directChildren("leg").mapNotNull { parseLeg(it, date) }
+        if (legs.isEmpty()) return null
+        val fare = obj.directChild("fare")?.textOf("regular")?.takeIf { it.isNotBlank() }
+        val durationSecs = timeDistance.textOf("duration").toLongOrNull() ?: ((end - start) / 1000L)
+        return TripItinerary(
+            id = obj.getAttribute("id"),
+            departure = DateTime(start),
+            arrival = DateTime(end),
+            durationMillis = durationSecs * 1000L,
+            distanceMeters = timeDistance.textOf("distance").toDoubleOrNull()?.let { it * 1609.344 } ?: 0.0,
+            numberOfTransfers = timeDistance.textOf("numberOfTransfers").toIntOrNull() ?: 0,
+            walkTimeMillis = (timeDistance.textOf("walkingTime").toLongOrNull() ?: 0L) * 1000L,
+            transitTimeMillis = (timeDistance.textOf("transitTime").toLongOrNull() ?: 0L) * 1000L,
+            waitingTimeMillis = (timeDistance.textOf("waitingTime").toLongOrNull() ?: 0L) * 1000L,
+            fare = fare,
+            legs = legs
+        )
+    }
+
+    private fun parseLeg(obj: Element, date: String): TripLeg? {
+        val timeDistance = obj.directChild("time-distance")
+        val start = parseMillis(date, timeDistance?.textOf("startTime").orEmpty())
+        val end = parseMillis(date, timeDistance?.textOf("endTime").orEmpty())
+        val from = parsePoint(obj.directChild("from"))
+        val to = parsePoint(obj.directChild("to"))
+        var routeNumber: String? = null
+        var routeName: String? = null
+        var direction = ""
+        obj.directChild("route")?.let { route ->
+            routeNumber = route.textOf("number").takeIf { it.isNotBlank() }
+            routeName = route.textOf("name").takeIf { it.isNotBlank() }
+            direction = route.textOf("direction")
+        }
+        if (direction.isBlank()) direction = obj.textOf("direction")
+        return TripLeg(
+            mode = TripLegMode.fromCode(obj.getAttribute("mode")),
+            routeNumber = routeNumber,
+            routeName = routeName,
+            direction = direction,
+            from = from,
+            to = to,
+            departure = DateTime(start),
+            arrival = DateTime(end),
+            stayOnBoard = obj.getAttribute("order") == "thru-route"
+        )
+    }
+
+    private fun Element.directChild(name: String): Element? = directChildren(name).firstOrNull()
+
+    private fun Element.directChildren(name: String): List<Element> =
+        (0 until childNodes.length)
+            .mapNotNull { childNodes.item(it) as? Element }
+            .filter { it.tagName == name }
+
+    private fun Element.textOf(name: String): String =
+        directChild(name)?.textContent?.trim() ?: ""
 }

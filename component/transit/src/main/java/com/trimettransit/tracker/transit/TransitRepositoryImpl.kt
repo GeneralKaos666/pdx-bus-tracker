@@ -5,6 +5,9 @@ import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.TripPoint
+import com.trimettransit.tracker.model.TripPlanResult
+import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.model.VehiclePosition
 import com.trimettransit.tracker.model.repository.TransitRepository
 
@@ -58,4 +61,10 @@ class TransitRepositoryImpl(
     override suspend fun getStopById(locId: Int): Stop? = TransitApi.fetchStopById(context, locId)
 
     override suspend fun searchStops(): List<Stop>? = TransitApi.fetchSearchStops(context)
+
+    override suspend fun planTrip(
+        from: TripPoint,
+        to: TripPoint,
+        time: TripRequestTime
+    ): TripPlanResult? = TransitApi.fetchTripPlan(context, from, to, time)
 }

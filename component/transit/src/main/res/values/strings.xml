@@ -6,5 +6,6 @@
     <!-- routeConfig base URL; consumed by feature:home and feature:stops via
          com.trimettransit.tracker.transit.R (single owner for all TriMet API bases). -->
     <string name="base_route_url" tools:ignore="UnusedResources">https://developer.trimet.org/ws/V1/routeConfig/json/true/streetcar/true</string>
+    <string name="base_trip_planner_url" tools:ignore="UnusedResources">https://developer.trimet.org/ws/V1/trips/tripplanner</string>
     <string name="stop_bidirectional_text">Bidirectional</string>
 </resources>

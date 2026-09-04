@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = 'com.trimettransit.tracker.feature.vehicles'
+    namespace = 'com.trimettransit.tracker.feature.trips'
     compileSdk = 37
 
     defaultConfig {
@@ -35,4 +35,5 @@ dependencies {
     implementation 'androidx.core:core:1.19.0'
     implementation 'androidx.core:core-ktx:1.19.0'
     implementation 'org.maplibre.gl:android-sdk-opengl:13.6.0'
+    implementation 'net.danlew:android.joda:2.14.2.1'
 }

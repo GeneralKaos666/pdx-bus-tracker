@@ -4,6 +4,9 @@ import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.TripPoint
+import com.trimettransit.tracker.model.TripPlanResult
+import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.model.VehiclePosition
 
 /**
@@ -40,4 +43,11 @@ interface TransitRepository {
     ): List<Stop>?
     suspend fun getStopById(locId: Int): Stop?
     suspend fun searchStops(): List<Stop>?
+
+    /** Plans a from→to trip via the TriMet Trip Planner WS. Null = offline or missing API key. */
+    suspend fun planTrip(
+        from: TripPoint,
+        to: TripPoint,
+        time: TripRequestTime = TripRequestTime()
+    ): TripPlanResult?
 }

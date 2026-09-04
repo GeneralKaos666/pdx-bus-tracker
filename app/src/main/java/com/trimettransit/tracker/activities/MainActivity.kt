@@ -38,6 +38,7 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
@@ -136,6 +137,7 @@ import com.trimettransit.tracker.feature.home.RecentStopsScreen
 import com.trimettransit.tracker.feature.settings.SettingsScreen
 import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
+import com.trimettransit.tracker.feature.trips.TripPlannerScreen
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
 import androidx.annotation.StringRes
 import com.trimettransit.tracker.R
@@ -215,6 +217,7 @@ private val bottomNavItems = listOf(
     BottomNavItem(0, R.string.nav_favorites, Icons.Filled.Favorite),
     BottomNavItem(1, R.string.nav_recent, Icons.Filled.History),
     BottomNavItem(2, R.string.nav_routes, Icons.Filled.Map),
+    BottomNavItem(3, R.string.nav_trips, Icons.Filled.Directions)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -846,22 +849,27 @@ private fun MainAppContent(
                                     navigateToArrivals(stop, stop.routeNum)
                                 }
                             )
-                            2 -> StopsScreen(
-                                transitRepository = transitRepository,
-                                selectedRoute = selectedStopsRoute,
-                                selectedDirection = selectedStopsDirection,
-                                onRouteToggle = { route ->
-                                    selectedStopsRoute = if (selectedStopsRoute?.routeId == route.routeId) null else route
-                                    selectedStopsDirection = null
-                                },
-                                onDirectionToggle = { direction ->
-                                    selectedStopsDirection = if (selectedStopsDirection?.dir == direction.dir) null else direction
-                                },
-                                onNavigateToArrivals = { stop: Stop, routeId: Int ->
-                                    navigateToArrivals(stop, routeId)
-                                }
-                            )
-                        }
+2 -> StopsScreen(
+                                    transitRepository = transitRepository,
+                                    selectedRoute = selectedStopsRoute,
+                                    selectedDirection = selectedStopsDirection,
+                                    onRouteToggle = { route ->
+                                        selectedStopsRoute = if (selectedStopsRoute?.routeId == route.routeId) null else route
+                                        selectedStopsDirection = null
+                                    },
+                                    onDirectionToggle = { direction ->
+                                        selectedStopsDirection = if (selectedStopsDirection?.dir == direction.dir) null else direction
+                                    },
+                                    onNavigateToArrivals = { stop: Stop, routeId: Int ->
+                                        navigateToArrivals(stop, routeId)
+                                    }
+                                )
+                                3 -> TripPlannerScreen(
+                                    transitRepository = transitRepository,
+                                    pageVisible = topPagerState.currentPage == page,
+                                    isDark = isDark
+                                )
+                            }
                     }
                 }
                 composable("settings") {

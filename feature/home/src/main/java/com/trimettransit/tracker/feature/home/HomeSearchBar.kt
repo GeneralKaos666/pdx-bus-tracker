@@ -53,14 +53,10 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
-import com.trimettransit.tracker.ui.components.transitColor
-import com.trimettransit.tracker.ui.components.transitIconResource
-import com.trimettransit.tracker.ui.components.transitTypeLabel
+import com.trimettransit.tracker.ui.components.searchStops
+import com.trimettransit.tracker.ui.components.StopSearchItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.Locale
-
-private const val MAX_RESULTS = 250
 
 /**
  * Search field pinned to the top of the Favorites screen. Typing a query opens a
@@ -243,69 +239,4 @@ private fun SearchPanelMessage(message: String) {
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
     }
-}
-
-@Composable
-private fun StopSearchItem(
-    stop: Stop,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .pressScale(interactionSource)
-            .clickable(interactionSource = interactionSource, indication = LocalIndication.current, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val colorScheme = MaterialTheme.colorScheme
-        val typeColor = remember(stop.transitType, colorScheme) {
-            transitColor(stop.transitType, colorScheme)
-        }
-        Surface(
-            modifier = Modifier.size(40.dp),
-            shape = CircleShape,
-            color = typeColor
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = painterResource(id = transitIconResource(stop.transitType)),
-                    contentDescription = transitTypeLabel(stop.transitType),
-                    tint = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stop.desc,
-                style = MaterialTheme.typography.titleSmall
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = stop.dirDesc,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-private fun searchStops(allStops: List<Stop>, query: String): List<Stop> {
-    val trimmed = query.trim().lowercase(Locale.US)
-    if (trimmed.isEmpty()) return emptyList()
-
-    val queryAsInt = trimmed.toIntOrNull()
-
-    return allStops.filter { stop ->
-        val matchDesc = stop.desc.lowercase(Locale.US).contains(trimmed)
-        val matchDir = stop.dirDesc.lowercase(Locale.US).contains(trimmed)
-        val matchId = queryAsInt != null && stop.locId.toString().contains(queryAsInt.toString())
-        matchDesc || matchDir || matchId
-    }.take(MAX_RESULTS)
 }

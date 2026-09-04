@@ -7,12 +7,12 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 ## Features
 
 - **Real-time arrivals** — live departure countdowns at any stop, per-run bus positions on a map card, pull-to-refresh, and auto-refresh when the app returns to the foreground
-- **Live "What's Nearby" map** — MapLibre GL map of nearby vehicles, stops, and your location on OpenFreeMap vector tiles (no API key required)
+- **Trip Planner** — plan a from-A-to-B trip right on the map: pick an origin and destination by tapping the map, searching stops, or using your current location; choose depart-now or arrive-by and compare itinerary options whose routes are drawn over the basemap
 - **Route & stop browser** — routes → directions → stops in an animated accordion drill-down
 - **Nearby stops** — find stops around your current GPS location
 - **Stop search** — instant client-side search by name, right on the Home screen
 - **Favorites & recent stops** — saved locally in SQLite; the Favorites pill always lands on the Favorites tab
-- **Floating pill navigation** — a Material 3 Expressive pill bottom bar with a fixed Favorites / Recent / Routes / What's Nearby item set, swipeable screens, and a trailing Settings button (becomes a Back button on Settings)
+- **Floating pill navigation** — a Material 3 Expressive pill bottom bar with a fixed Favorites / Recent / Routes / Trips item set, swipeable screens, and a trailing Settings button (becomes a Back button on Settings)
 - **Service alerts & detours** — active TriMet alerts for the stop and its routes
 - **Picture-in-picture** — mini-window countdown on the arrivals screen (2:3 PiP)
 - **Dynamic theming** — Material 3 with Android 12+ dynamic color; system/light/dark override in Settings
@@ -49,8 +49,8 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 |---|---|
 | `app` | single Activity, Compose Navigation graph, floating pill nav + trailing Settings/Back button, PiP |
 | `wear` | Wear OS companion — Wear Compose UI mirroring the phone's Favorites/Recent stops with live arrivals; non-standalone, synced from the phone over the Wearable Data Layer |
-| `feature/*` | `home`, `stops`, `vehicles`, `arrivals`, `settings` — one screen area per module |
-| `component/*` | `transit` (TriMet API client: OkHttp + JSON parsing), `localdata` (SQLite favorites/recent stops) |
+| `feature/*` | `home`, `stops`, `trips`, `arrivals`, `settings` — one screen area per module |
+| `component/*` | `transit` (TriMet API client: OkHttp + JSON/XML parsing, including the Trip Planner web service), `localdata` (SQLite favorites/recent stops) |
 | `common/*` | `model` (domain models), `utils` (connectivity, date helpers), `ui` (theme, shared Compose components, cross-screen state) |
 
 No ViewModels, no DI framework, no Room — screens own state with `remember { mutableStateOf(...) }` and call suspend API functions.
@@ -106,7 +106,7 @@ For a local smoke test without real credentials you can build with a debug fallb
 
 ## Privacy Policy
 
-PDX Bus Tracker collects no accounts, no analytics, and no advertising data. Location is used on-device and, when you browse nearby stops or vehicles, sent as coordinates to TriMet's public API to look up stops near you. Full details: [Privacy Policy](docs/privacy-policy.md).
+PDX Bus Tracker collects no accounts, no analytics, and no advertising data. Location is used on-device and, when you browse nearby stops or plan a trip from your current location, sent as coordinates to TriMet's public API to look up stops and routes near you. Full details: [Privacy Policy](docs/privacy-policy.md).
 
 ## License
 

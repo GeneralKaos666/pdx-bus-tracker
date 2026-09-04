@@ -57,4 +57,42 @@ object JSONParser {
             throw e
         }
     }
+
+    @Throws(IllegalArgumentException::class, IOException::class)
+    fun fetchXml(url: String): String {
+        val uri = URI.create(url)
+        val scheme = uri.scheme
+        if (scheme == null || !"https".equals(scheme, ignoreCase = true)) {
+            throw IllegalArgumentException("Only HTTPS endpoints are allowed.")
+        }
+
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("Accept", "application/xml")
+            .build()
+
+        try {
+            httpClient.newCall(request).execute().use { response ->
+                // The client follows redirects, so response.request.url is the FINAL url
+                // after any chain — re-enforce HTTPS there too, otherwise a redirect to
+                // http:// would silently downgrade the caller's data in transit.
+                if (!response.request.url.isHttps) {
+                    throw IOException(
+                        "Only HTTPS endpoints are allowed; final URL was ${response.request.url}"
+                    )
+                }
+                if (!response.isSuccessful) {
+                    throw IOException("Unsuccessful response code: ${response.code}")
+                }
+                val responseBody = response.body.string()
+                if (responseBody.trim().isEmpty()) {
+                    throw IOException("Response body is empty.")
+                }
+                return responseBody
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to fetch XML")
+            throw e
+        }
+    }
 }

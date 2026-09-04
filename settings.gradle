@@ -16,7 +16,7 @@ include ':component:transit'
 include ':component:localdata'
 include ':feature:home'
 include ':feature:stops'
-include ':feature:vehicles'
+include ':feature:trips'
 include ':feature:arrivals'
 include ':feature:settings'
 
