@@ -742,6 +742,11 @@ private fun EndpointPickerSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .pressScale(myLocSource)
+                    .clickable(
+                        interactionSource = myLocSource,
+                        indication = LocalIndication.current,
+                        onClick = onMyLocationPicked
+                    )
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
