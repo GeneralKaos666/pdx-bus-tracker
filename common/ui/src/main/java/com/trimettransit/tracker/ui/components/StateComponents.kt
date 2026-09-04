@@ -49,7 +49,9 @@ fun LoadingState(
 fun ErrorState(
     message: String,
     modifier: Modifier = Modifier,
-    icon: ImageVector = Icons.Default.Warning
+    icon: ImageVector = Icons.Default.Warning,
+    onRetry: (() -> Unit)? = null,
+    retryLabel: String = "Try Again"
 ) {
     FadeInOnce(modifier = modifier.fillMaxSize()) {
         Box(
@@ -70,6 +72,12 @@ fun ErrorState(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (onRetry != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    androidx.compose.material3.OutlinedButton(onClick = onRetry) {
+                        Text(retryLabel)
+                    }
+                }
             }
         }
     }

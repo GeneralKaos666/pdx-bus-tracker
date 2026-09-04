@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,11 +37,13 @@ import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import androidx.wear.tiles.TileService
+import com.trimettransit.tracker.R
 import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.transit.TransitApi
+import com.trimettransit.tracker.util.ConnectionUtils
 import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.wear.tile.FavoriteArrivalsTileService
 import com.trimettransit.tracker.wear.tile.TileCache
@@ -55,10 +58,14 @@ import org.joda.time.DateTime
 @Composable
 fun ArrivalsScreen(stop: Stop) {
     val context = LocalContext.current
-    val displayName = stop.desc.ifBlank { "Stop ${stop.locId}" }
+    val displayName = stop.desc.ifBlank { stringResource(R.string.stop_format, stop.locId) }
     var result by remember { mutableStateOf<ArrivalsResult?>(null) }
     var isFavorite by remember { mutableStateOf(false) }
     var favoriteBusy by remember { mutableStateOf(true) }
+    var failed by remember { mutableStateOf(false) }
+    // Enriched stop fetched once from the API (coords/desc), reused for the recent-stop
+    // and favorite DB writes so toggling a heart never triggers a network round-trip.
+    var enriched by remember { mutableStateOf(stop) }
     val scope = rememberCoroutineScope()
 
     // Standalone setup: load favorite state and record this stop as a recent stop
@@ -68,15 +75,18 @@ fun ArrivalsScreen(stop: Stop) {
         withContext(Dispatchers.IO) {
             val db = DatabaseHelper(context.applicationContext)
             isFavorite = db.isFavorite(stop.locId)
-            db.addRecentStop(enrichedOrStop(stop, context))
+            enriched = enrichedOrStop(stop, context)
+            db.addRecentStop(enriched)
         }
         favoriteBusy = false
     }
 
     LaunchedEffect(stop.locId) {
+        var consecutiveFailures = 0
         while (true) {
             val fresh = withContext(Dispatchers.IO) {
-                TransitApi.fetchArrivals(
+                if (!ConnectionUtils.isOnline(context)) null
+                else TransitApi.fetchArrivals(
                     context,
                     listOf(stop.locId),
                     minutes = 30,
@@ -84,6 +94,8 @@ fun ArrivalsScreen(stop: Stop) {
                 )
             }
             if (fresh != null) {
+                consecutiveFailures = 0
+                failed = false
                 result = fresh
                 // Keep the stand-alone "next departure" Tile fresh when this stop is
                 // the one it features, then nudge the system to swap in the new countdown.
@@ -93,8 +105,13 @@ fun ArrivalsScreen(stop: Stop) {
                             .requestUpdate(FavoriteArrivalsTileService::class.java)
                     }
                 }
+                delay(30_000)
+            } else {
+                // Back off on failure/offline so we don't hammer the API every 30s.
+                consecutiveFailures++
+                if (result == null) failed = true
+                delay(minOf(30_000L * consecutiveFailures, 120_000L))
             }
-            delay(30_000)
         }
     }
 
@@ -102,6 +119,18 @@ fun ArrivalsScreen(stop: Stop) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         when {
+            result == null && failed -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    WearFadeInOnce {
+                        Text(stringResource(R.string.unable_to_load_arrivals), textAlign = TextAlign.Center)
+                    }
+                }
+            }
             result == null -> {
                 Box(
                     modifier = Modifier
@@ -120,7 +149,7 @@ fun ArrivalsScreen(stop: Stop) {
                     contentAlignment = Alignment.Center
                 ) {
                     WearFadeInOnce {
-                        Text("No arrivals right now", textAlign = TextAlign.Center)
+                        Text(stringResource(R.string.no_arrivals), textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -137,8 +166,7 @@ fun ArrivalsScreen(stop: Stop) {
                         val ok = withContext(Dispatchers.IO) {
                             runCatching {
                                 val db = DatabaseHelper(context.applicationContext)
-                                val embedded = enrichedOrStop(stop, context)
-                                if (checked) db.addFavorite(embedded) else db.removeFavorite(stop.locId)
+                                if (checked) db.addFavorite(enriched) else db.removeFavorite(stop.locId)
                                 // Repoint the tile at the new first favorite (i.e. this
                                 // stop when favoriting) and refresh its timeline.
                                 if (checked) TileScheduler.refreshNow(context)
@@ -250,7 +278,9 @@ private fun WearCountdownText(
         targetState = target,
         modifier = Modifier,
         transitionSpec = {
-            val decreasing = targetState != null && initialState != null && targetState!! < initialState!!
+            val t = targetState
+            val i = initialState
+            val decreasing = t != null && i != null && t < i
             val enter = (if (decreasing) {
                 slideInHorizontally(tween(250)) { it / 3 }
             } else {
@@ -267,9 +297,9 @@ private fun WearCountdownText(
     ) { mins ->
         Text(
             text = when {
-                mins == null -> "No time info"
-                mins <= 0L -> "Due"
-                else -> "$mins min"
+                mins == null -> stringResource(R.string.no_time_info)
+                mins <= 0L -> stringResource(R.string.due)
+                else -> stringResource(R.string.countdown_min, mins)
             },
             style = style
         )

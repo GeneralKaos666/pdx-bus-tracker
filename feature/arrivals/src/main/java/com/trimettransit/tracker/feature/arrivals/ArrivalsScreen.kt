@@ -79,6 +79,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -189,6 +190,7 @@ fun ArrivalsScreen(
     var countdownTick by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     val locId = stopId.toIntOrNull() ?: 0
+    val stopNumberLabel = stringResource(R.string.stop_number, stopId)
     var stopLat by remember { mutableDoubleStateOf(latitude) }
     var stopLng by remember { mutableDoubleStateOf(longitude) }
     var isLoadingStop by remember { mutableStateOf(false) }
@@ -217,7 +219,7 @@ fun ArrivalsScreen(
         }
     }
 
-    var arrivalsJob: Job? = null
+    var arrivalsJob by remember { mutableStateOf<Job?>(null) }
     fun loadArrivals() {
         arrivalsJob?.cancel()
         arrivalsJob = coroutineScope.launch {
@@ -323,7 +325,7 @@ fun ArrivalsScreen(
 
     // Populate NavState for outer scaffold's top bar
     LaunchedEffect(Unit) {
-        NavState.arrivalsStopName = stopName.ifBlank { "Stop #$stopId" }
+        NavState.arrivalsStopName = stopName.ifBlank { stopNumberLabel }
     }
 
     DisposableEffect(Unit) {
@@ -346,7 +348,14 @@ fun ArrivalsScreen(
             selectedDetours = null
             while (true) {
                 delay(PIP_REFRESH_MS)
-                loadArrivals()
+                try {
+                    loadArrivals()
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "PiP arrivals refresh failed")
+                    isError = true
+                }
             }
         }
     }
@@ -399,14 +408,14 @@ fun ArrivalsScreen(
                 }
 
                 1 -> {
-                    ErrorState(message = "Unable to load arrivals.\nPull to retry.")
+                    ErrorState(message = stringResource(R.string.arrivals_load_error))
                 }
 
                 2 -> {
                     EmptyState(
                         message = if (unfilteredArrivals.isNotEmpty())
-                            "No upcoming arrivals for this route.\nArrivals from other routes are hidden — disable the filter in Settings."
-                        else "No upcoming arrivals."
+                            stringResource(R.string.no_upcoming_for_route)
+                        else stringResource(R.string.empty_no_arrivals)
                     )
                 }
 
@@ -419,7 +428,8 @@ fun ArrivalsScreen(
                             contentPadding = PaddingValues(
                                 start = 12.dp,
                                 end = 12.dp,
-                                top = 8.dp
+                                top = 8.dp,
+                                bottom = 8.dp
                             ),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -427,7 +437,7 @@ fun ArrivalsScreen(
                                 if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
                             items(
                                 visibleArrivals,
-                                key = { arrivalKey(it) },
+                                key = { "${if (showAllArrivals) "all_" else "top_"}${arrivalKey(it)}" },
                                 contentType = { "arrival" }) { arrival ->
                                 val lineDetours = detoursForLine(detours, arrival.routeId)
                                 val rowKey =
@@ -495,8 +505,8 @@ fun ArrivalsScreen(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(
-                                                text = if (showAllArrivals) "Show fewer"
-                                                else "Show all arrivals (${unfilteredArrivals.size - visibleCount} more)",
+                                                text = if (showAllArrivals) stringResource(R.string.show_fewer)
+                                                else pluralStringResource(R.plurals.show_all_arrivals, unfilteredArrivals.size - visibleCount, unfilteredArrivals.size - visibleCount),
                                                 style = MaterialTheme.typography.labelLarge,
                                                 color = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.weight(1f)
@@ -510,8 +520,8 @@ fun ArrivalsScreen(
                                             )
                                             Icon(
                                                 imageVector = Icons.Default.KeyboardArrowDown,
-                                                contentDescription = if (showAllArrivals) "Collapse arrivals"
-                                                else "Expand arrivals",
+                                                contentDescription = if (showAllArrivals) stringResource(R.string.collapse_arrivals)
+                                                else stringResource(R.string.expand_arrivals),
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.rotate(
                                                     showAllArrowRotation
@@ -547,7 +557,7 @@ private fun AlertsDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Alerts (${detours.size})",
+                text = stringResource(R.string.alerts_count, detours.size),
                 style = MaterialTheme.typography.titleLarge
             )
         },
@@ -566,7 +576,7 @@ private fun AlertsDialog(
                         verticalAlignment = Alignment.Top
                     ) {
                         Text(
-                            text = "\u2022",
+                            text = stringResource(R.string.bullet),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(end = 8.dp)
@@ -582,7 +592,7 @@ private fun AlertsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close")
+                Text(stringResource(R.string.close))
             }
         }
     )
@@ -974,7 +984,7 @@ private fun ArrivalItem(
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_alert_warning),
-                                contentDescription = "Show alerts for route ${arrival.routeId}",
+                                contentDescription = stringResource(R.string.show_alerts_for_route, arrival.routeId),
                                 tint = MaterialTheme.colorScheme.onErrorContainer,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -1047,7 +1057,7 @@ private fun ArrivalItem(
                             )
                         } else if (!isEstimated) {
                             Text(
-                                text = "scheduled",
+                                text = stringResource(R.string.scheduled),
                                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                                 style = MaterialTheme.typography.labelSmall
                             )
@@ -1095,7 +1105,7 @@ suspend fun toggleFavorite(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to toggle favorite")
-            false to "Failed to update favorite"
+            false to context.getString(R.string.failed_to_update_favorite)
         }
     }
 }
@@ -1115,7 +1125,7 @@ private fun PipCountdownContent(
             .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
         Text(
-            text = stopName.ifBlank { "Stop" },
+            text = stopName.ifBlank { stringResource(R.string.stop) },
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
@@ -1124,7 +1134,7 @@ private fun PipCountdownContent(
         Spacer(Modifier.height(8.dp))
         if (arrivals.isEmpty()) {
             Text(
-                text = "No upcoming arrivals",
+                text = stringResource(R.string.no_upcoming_arrivals),
                 style = MaterialTheme.typography.bodyMedium,
                 color = scheme.onSurfaceVariant
             )
@@ -1169,14 +1179,14 @@ private fun PipCountdownContent(
                     Spacer(Modifier.width(8.dp))
                     if (arrival.status == "canceled") {
                         Text(
-                            text = "Canceled",
+                            text = stringResource(R.string.canceled),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = scheme.error
                         )
                     } else if (arrival.dropOffOnly) {
                         Text(
-                            text = "Dropoff Only",
+                            text = stringResource(R.string.dropoff_only),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = scheme.onSurfaceVariant
@@ -1228,7 +1238,7 @@ private fun AnimatedCountdownText(
         label = "countdownRoll"
     ) { minutes ->
         Text(
-            text = if (minutes <= 0) "Due" else "$minutes min",
+            text = if (minutes <= 0) stringResource(R.string.due) else stringResource(R.string.minutes, minutes),
             color = color,
             style = style,
             fontWeight = if (isEstimated) FontWeight.Bold else FontWeight.Normal

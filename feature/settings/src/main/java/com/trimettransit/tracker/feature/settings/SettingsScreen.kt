@@ -55,6 +55,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -84,12 +85,12 @@ fun SettingsScreen() {
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            SectionHeader(title = "Appearance")
+            SectionHeader(title = stringResource(R.string.section_appearance))
 
             SettingsCard {
                 SettingsRadioOption(
-                    label = "System default",
-                    subtitle = "Follow your device's theme",
+                    label = stringResource(R.string.theme_system),
+                    subtitle = stringResource(R.string.theme_system_subtitle),
                     icon = Icons.Filled.BrightnessAuto,
                     selected = selectedTheme == "system",
                     onClick = {
@@ -98,8 +99,8 @@ fun SettingsScreen() {
                     }
                 )
                 SettingsRadioOption(
-                    label = "Light",
-                    subtitle = "Always use the light theme",
+                    label = stringResource(R.string.theme_light),
+                    subtitle = stringResource(R.string.theme_light_subtitle),
                     icon = Icons.Filled.LightMode,
                     selected = selectedTheme == "light",
                     onClick = {
@@ -108,8 +109,8 @@ fun SettingsScreen() {
                     }
                 )
                 SettingsRadioOption(
-                    label = "Dark",
-                    subtitle = "Always use the dark theme",
+                    label = stringResource(R.string.theme_dark),
+                    subtitle = stringResource(R.string.theme_dark_subtitle),
                     icon = Icons.Filled.DarkMode,
                     selected = selectedTheme == "dark",
                     onClick = {
@@ -121,8 +122,8 @@ fun SettingsScreen() {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
 
                 SettingsSwitchOption(
-                    label = "Dynamic colors",
-                    subtitle = "Use your wallpaper's colors",
+                    label = stringResource(R.string.dynamic_colors),
+                    subtitle = stringResource(R.string.dynamic_colors_subtitle),
                     icon = Icons.Filled.Palette,
                     checked = dynamicColor,
                     onCheckedChange = {
@@ -132,12 +133,12 @@ fun SettingsScreen() {
                 )
             }
 
-            SectionHeader(title = "Arrivals")
+            SectionHeader(title = stringResource(R.string.section_arrivals))
 
             SettingsCard {
                 SettingsSwitchOption(
-                    label = "Only show selected route's arrivals",
-                    subtitle = "Filters the arrivals list when opened from a route",
+                    label = stringResource(R.string.only_show_selected_route),
+                    subtitle = stringResource(R.string.only_show_selected_route_subtitle),
                     icon = Icons.Filled.Route,
                     checked = onlyShowSelectedRoute,
                     onCheckedChange = {
@@ -147,7 +148,7 @@ fun SettingsScreen() {
                 )
             }
 
-            SectionHeader(title = "About")
+            SectionHeader(title = stringResource(R.string.section_about))
 
             SettingsCard {
                 val appIcon = remember {
@@ -191,31 +192,31 @@ fun SettingsScreen() {
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "PDX Bus Tracker",
+                            text = stringResource(R.string.app_title),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = "Version $versionName · MIT License",
+                            text = stringResource(R.string.version_license, versionName),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
                 Text(
-                    text = "Unofficial app — not affiliated with, sponsored by, or endorsed by TriMet.",
+                    text = stringResource(R.string.unofficial_disclaimer),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
                 )
                 Text(
-                    text = "Data provided by TriMet's public Developer API (developer.trimet.org).",
+                    text = stringResource(R.string.data_provider),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
                 )
             }
 
-            SectionHeader(title = "Open source licenses")
+            SectionHeader(title = stringResource(R.string.open_source_licenses))
 
             SettingsCard {
                 var licensesExpanded by remember { mutableStateOf(false) }
@@ -235,13 +236,13 @@ fun SettingsScreen() {
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Open source licenses",
+                            text = stringResource(R.string.open_source_licenses),
                             style = MaterialTheme.typography.bodyLarge,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "Libraries used by this app and their terms",
+                            text = stringResource(R.string.libraries_terms),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 2,
@@ -256,7 +257,7 @@ fun SettingsScreen() {
                     )
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = if (licensesExpanded) "Collapse" else "Expand",
+                        contentDescription = if (licensesExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.rotate(chevronRotation)
                     )
@@ -273,17 +274,17 @@ fun SettingsScreen() {
                     Column(
                         modifier = Modifier.padding(start = 72.dp, end = 16.dp, bottom = 16.dp)
                     ) {
-                        LicenseEntry("AndroidX / Jetpack Compose (UI, Foundation, Material 3, Navigation, Activity, AppCompat, Preference)", "Apache License 2.0")
-                        LicenseEntry("Kotlin Standard Library & Coroutines", "Apache License 2.0")
-                        LicenseEntry("OkHttp", "Apache License 2.0")
-                        LicenseEntry("MapLibre Native (Android, OpenGL backend)", "BSD 2-Clause License")
-                        LicenseEntry("Joda-Time Android", "Apache License 2.0")
-                        LicenseEntry("Timber", "Apache License 2.0")
-                        LicenseEntry("Wear OS Compose (androidx.wear, Wear Compose)", "Apache License 2.0")
-                        LicenseEntry("AndroidX Glance (home-screen widget)", "Apache License 2.0")
-                        LicenseEntry("AndroidX WorkManager", "Apache License 2.0")
+                        LicenseEntry(stringResource(R.string.license_androidx), stringResource(R.string.license_apache_2))
+                        LicenseEntry(stringResource(R.string.license_kotlin), stringResource(R.string.license_apache_2))
+                        LicenseEntry(stringResource(R.string.license_okhttp), stringResource(R.string.license_apache_2))
+                        LicenseEntry(stringResource(R.string.license_maplibre), stringResource(R.string.license_bsd_2))
+                        LicenseEntry(stringResource(R.string.license_joda), stringResource(R.string.license_apache_2))
+                        LicenseEntry(stringResource(R.string.license_timber), stringResource(R.string.license_apache_2))
+                        LicenseEntry(stringResource(R.string.license_wear), stringResource(R.string.license_apache_2))
+                        LicenseEntry(stringResource(R.string.license_glance), stringResource(R.string.license_apache_2))
+                        LicenseEntry(stringResource(R.string.license_workmanager), stringResource(R.string.license_apache_2))
                         LicenseEntry(
-                            "Full license texts: see THIRD-PARTY-NOTICES.md in the project repository.",
+                            stringResource(R.string.license_full_texts),
                             "",
                             isNote = true
                         )

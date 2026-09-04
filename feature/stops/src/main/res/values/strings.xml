@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="try_again">Try Again</string>
+    <string name="api_key_not_configured">API key not configured.\nPlease check app settings.</string>
+    <string name="unable_to_load_directions">Unable to load directions.\nCheck your connection.</string>
+    <string name="no_directions_available">No directions available.</string>
+    <string name="unable_to_load_stops">Unable to load stops.\nCheck your connection.</string>
+    <string name="no_stops_available">No stops available.</string>
+    <string name="collapse">Collapse</string>
+    <string name="expand">Expand</string>
+    <string name="use_your_location_question">Use your location?</string>
+    <string name="location_explainer">PDX Bus Tracker uses your location only when you ask it to find TriMet stops near you. Your location is never stored by this app and is not used for anything else.</string>
+    <string name="continue_">Continue</string>
+    <string name="not_now">Not now</string>
+    <string name="nearby_stops_list_title">Nearby Stops</string>
+    <string name="loading">Loading...</string>
+    <string name="refresh">Refresh</string>
+    <string name="finding_nearby_stops">Finding nearby stops...</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="no_stops_found_nearby">No stops found nearby</string>
+    <string name="tap_refresh_to_find">Tap Refresh to find nearby stops</string>
+    <string name="tap_refresh_using_location">Tap Refresh to find nearby stops using your current location</string>
+    <string name="location_permission_required">Location permission is required to find nearby stops</string>
+    <string name="location_services_disabled">Location services are disabled.\nPlease enable location services.</string>
+    <string name="location_permission_required_short">Location permission is required.</string>
+    <string name="unable_to_get_location">Unable to get current location.\nPlease try again.</string>
+    <string name="unable_to_find_nearby_stops">Unable to find nearby stops.\nPlease try again.</string>
+</resources>

@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
@@ -28,7 +29,7 @@ fun RecentStopsScreen(
     ) {
         ContentEntrance {
             Text(
-                text = "Recent Stops",
+                text = stringResource(R.string.recent_stops_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -40,7 +41,7 @@ fun RecentStopsScreen(
                 stops = recent.stops,
                 isLoading = recent.isLoading,
                 isError = recent.isError,
-                emptyText = "No recent stops.",
+                emptyText = stringResource(R.string.no_recent_stops),
                 onNavigateToArrivals = onNavigateToArrivals
             )
         }

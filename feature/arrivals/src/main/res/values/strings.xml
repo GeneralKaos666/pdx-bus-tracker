@@ -6,4 +6,27 @@
     <string name="favorite_deleted_text">Favorite deleted.</string>
     <string name="favorite_does_not_exist_text">Favorite does not exist.</string>
     <string name="favorite_exists_text">Favorite already exists.</string>
+    <string name="alerts_count">Alerts (%1$d)</string>
+    <string name="bullet">\u2022</string>
+    <string name="close">Close</string>
+    <string name="show_alerts_for_route">Show alerts for route %1$s</string>
+    <string name="scheduled">scheduled</string>
+    <string name="no_upcoming_arrivals">No upcoming arrivals</string>
+    <string name="canceled">Canceled</string>
+    <string name="dropoff_only">Dropoff Only</string>
+    <string name="arrivals_load_error">Unable to load arrivals.\nPull to retry.</string>
+    <string name="no_upcoming_for_route">No upcoming arrivals for this route.\nArrivals from other routes are hidden — disable the filter in Settings.</string>
+    <string name="empty_no_arrivals">No upcoming arrivals.</string>
+    <string name="show_fewer">Show fewer</string>
+    <plurals name="show_all_arrivals">
+        <item quantity="one">Show all arrivals (%1$d more)</item>
+        <item quantity="other">Show all arrivals (%1$d more)</item>
+    </plurals>
+    <string name="collapse_arrivals">Collapse arrivals</string>
+    <string name="expand_arrivals">Expand arrivals</string>
+    <string name="stop">Stop</string>
+    <string name="stop_number">Stop #%1$s</string>
+    <string name="due">Due</string>
+    <string name="minutes">%1$d min</string>
+    <string name="failed_to_update_favorite">Failed to update favorite</string>
 </resources>

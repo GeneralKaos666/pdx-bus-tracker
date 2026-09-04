@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
@@ -114,9 +115,9 @@ fun HomeSearchBar(
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                placeholder = { Text("Search stops by name or ID") },
+                placeholder = { Text(stringResource(R.string.search_stops_hint)) },
                 leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = "Search")
+                    Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search))
                 },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
@@ -126,7 +127,7 @@ fun HomeSearchBar(
                             interactionSource = clearSource,
                             modifier = Modifier.pressScale(clearSource)
                         ) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear search")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear_search))
                         }
                     }
                 },
@@ -192,9 +193,9 @@ private fun SearchResultsDropdown(
             when {
                 isLoading && allStops == null -> SearchPanelLoading()
                 hasError && allStops == null -> SearchPanelMessage(
-                    "No connection.\nPlease check your internet."
+                    stringResource(R.string.no_connection)
                 )
-                results.isEmpty() -> SearchPanelMessage("No stops found.")
+                results.isEmpty() -> SearchPanelMessage(stringResource(R.string.no_stops_found))
                 else -> {
                     val listState = rememberLazyListState()
                     val smoothFling = rememberSmoothFlingBehavior()
@@ -224,7 +225,7 @@ private fun SearchPanelLoading() {
             CircularProgressIndicator(modifier = Modifier.size(32.dp))
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Loading stops…",
+                text = stringResource(R.string.loading_stops),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

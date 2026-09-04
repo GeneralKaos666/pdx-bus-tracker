@@ -6,7 +6,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import androidx.compose.ui.res.stringResource
 import androidx.wear.compose.material3.AppScaffold
+import com.trimettransit.tracker.R
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
@@ -46,7 +48,11 @@ fun WearApp(startStop: Stop? = null) {
                 remember { com.trimettransit.tracker.transit.TransitRepositoryImpl(context.applicationContext) }
             // The stand-alone Tile launches the app with a stop in its extras.
             LaunchedEffect(startStop) {
-                startStop?.let { navController.navigate(Routes.arrivals(it)) }
+                startStop?.let {
+                    navController.navigate(Routes.arrivals(it)) {
+                        popUpTo(Routes.MAIN)
+                    }
+                }
             }
             SwipeDismissableNavHost(navController, startDestination = Routes.MAIN) {
                 composable(Routes.MAIN) {
@@ -59,17 +65,17 @@ fun WearApp(startStop: Stop? = null) {
                 }
                 composable(Routes.FAVORITES) {
                     StopListScreen(
-                        header = "Favorites",
+                        header = stringResource(R.string.favorites),
                         read = { it.favorites },
-                        emptyText = "No favorites yet.\nTap the heart on any stop.",
+                        emptyText = stringResource(R.string.no_favorites),
                         onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
                     )
                 }
                 composable(Routes.RECENT) {
                     StopListScreen(
-                        header = "Recent Stops",
+                        header = stringResource(R.string.recent_stops_title),
                         read = { it.recentStops },
-                        emptyText = "No recent stops yet.\nStop by to get started.",
+                        emptyText = stringResource(R.string.no_recent_stops),
                         onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
                     )
                 }

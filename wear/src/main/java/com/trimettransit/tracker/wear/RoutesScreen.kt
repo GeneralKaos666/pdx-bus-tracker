@@ -18,9 +18,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.trimettransit.tracker.R
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
@@ -67,7 +69,7 @@ fun RoutesScreen(
     val state = rememberRoutesState(transitRepository, apiKey, level, routeId, dirId, retryKey)
 
     val header = when (level) {
-        RoutesLevel.ROUTES -> "Routes"
+        RoutesLevel.ROUTES -> stringResource(R.string.routes)
         RoutesLevel.DIRECTIONS -> routeName
         RoutesLevel.STOPS -> dirName
     }
@@ -75,9 +77,13 @@ fun RoutesScreen(
     val listState = rememberTransformingLazyColumnState()
 
     ScreenScaffold(scrollState = listState) { contentPadding ->
-        val t = state
+        val isEmpty = when (level) {
+            RoutesLevel.ROUTES -> state.routes.isEmpty()
+            RoutesLevel.DIRECTIONS -> state.directions.isEmpty()
+            RoutesLevel.STOPS -> state.stops.isEmpty()
+        }
         when {
-            t.isLoading -> {
+            state.isLoading -> {
                 Box(
                     modifier = Modifier.fillMaxSize().padding(contentPadding),
                     contentAlignment = Alignment.Center
@@ -85,30 +91,30 @@ fun RoutesScreen(
                     WearFadeInOnce { CircularProgressIndicator() }
                 }
             }
-            t.isMissingApiKey -> {
+            state.isMissingApiKey -> {
                 CenteredMessageWithRetry(
-                    message = "API key not configured.\nPlease check app settings.",
+                    message = stringResource(R.string.api_key_not_configured),
                     contentPadding = contentPadding,
                     onRetry = { retryKey++ }
                 )
             }
-            t.failed -> {
+            state.failed -> {
                 CenteredMessageWithRetry(
                     message = when (level) {
-                        RoutesLevel.ROUTES -> "Unable to load routes.\nCheck your connection."
-                        RoutesLevel.DIRECTIONS -> "Unable to load directions.\nCheck your connection."
-                        RoutesLevel.STOPS -> "Unable to load stops.\nCheck your connection."
+                        RoutesLevel.ROUTES -> stringResource(R.string.unable_to_load_routes)
+                        RoutesLevel.DIRECTIONS -> stringResource(R.string.unable_to_load_directions)
+                        RoutesLevel.STOPS -> stringResource(R.string.unable_to_load_stops)
                     },
                     contentPadding = contentPadding,
                     onRetry = { retryKey++ }
                 )
             }
-            t.items.isEmpty() -> {
+            isEmpty -> {
                 CenteredMessageWithRetry(
                     message = when (level) {
-                        RoutesLevel.ROUTES -> "No routes available."
-                        RoutesLevel.DIRECTIONS -> "No directions available."
-                        RoutesLevel.STOPS -> "No stops available."
+                        RoutesLevel.ROUTES -> stringResource(R.string.no_routes)
+                        RoutesLevel.DIRECTIONS -> stringResource(R.string.no_directions)
+                        RoutesLevel.STOPS -> stringResource(R.string.no_stops)
                     },
                     contentPadding = contentPadding,
                     onRetry = { retryKey++ }
@@ -124,15 +130,15 @@ fun RoutesScreen(
                         }
                         when (level) {
                             RoutesLevel.ROUTES ->
-                                items(t.items as List<Route>, key = { it.routeId }) { route ->
+                                items(state.routes, key = { it.routeId }) { route ->
                                     RouteRow(route, onClick = { onRouteClick(route) })
                                 }
                             RoutesLevel.DIRECTIONS ->
-                                items(t.items as List<Direction>, key = { it.dir }) { dir ->
+                                items(state.directions, key = { it.dir }) { dir ->
                                     DirectionRow(dir, onClick = { onDirectionClick(dir) })
                                 }
                             RoutesLevel.STOPS ->
-                                items(t.items as List<Stop>, key = { it.locId }) { stop ->
+                                items(state.stops, key = { it.locId }) { stop ->
                                     StopRow(stop, onClick = { onStopClick(stop) })
                                 }
                         }
@@ -143,7 +149,6 @@ fun RoutesScreen(
     }
 }
 
-@Suppress("UNCHECKED_CAST")
 @Composable
 private fun rememberRoutesState(
     transitRepository: TransitRepository,
@@ -153,7 +158,9 @@ private fun rememberRoutesState(
     dirId: Int,
     retryKey: Int
 ): RoutesListState {
-    var items by remember { mutableStateOf<List<Any>?>(null) }
+    var routes by remember { mutableStateOf<List<Route>?>(null) }
+    var directions by remember { mutableStateOf<List<Direction>?>(null) }
+    var stops by remember { mutableStateOf<List<Stop>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
@@ -165,20 +172,28 @@ private fun rememberRoutesState(
         if (apiKey.isBlank()) {
             isMissingApiKey = true
         } else {
-            val result = withContext(Dispatchers.IO) {
+            val ok = withContext(Dispatchers.IO) {
                 when (level) {
-                    RoutesLevel.ROUTES -> transitRepository.getRoutes() as List<Any>?
-                    RoutesLevel.DIRECTIONS -> transitRepository.getDirections(routeId) as List<Any>?
-                    RoutesLevel.STOPS -> transitRepository.getStops(routeId, dirId) as List<Any>?
+                    RoutesLevel.ROUTES -> {
+                        transitRepository.getRoutes()?.also { routes = it } != null
+                    }
+                    RoutesLevel.DIRECTIONS -> {
+                        transitRepository.getDirections(routeId)?.also { directions = it } != null
+                    }
+                    RoutesLevel.STOPS -> {
+                        transitRepository.getStops(routeId, dirId)?.also { stops = it } != null
+                    }
                 }
             }
-            if (result != null) items = result else failed = true
+            if (!ok) failed = true
         }
         isLoading = false
     }
 
     return RoutesListState(
-        items = items ?: emptyList(),
+        routes = routes ?: emptyList(),
+        directions = directions ?: emptyList(),
+        stops = stops ?: emptyList(),
         isLoading = isLoading,
         isMissingApiKey = isMissingApiKey,
         failed = failed
@@ -186,7 +201,9 @@ private fun rememberRoutesState(
 }
 
 private class RoutesListState(
-    val items: List<Any>,
+    val routes: List<Route>,
+    val directions: List<Direction>,
+    val stops: List<Stop>,
     val isLoading: Boolean,
     val isMissingApiKey: Boolean,
     val failed: Boolean
@@ -218,7 +235,7 @@ private fun CenteredMessageWithRetry(
                     onClick = onRetry,
                     interactionSource = retrySource,
                     modifier = Modifier.wearPressScale(retrySource),
-                    label = { Text("Retry") }
+                    label = { Text(stringResource(R.string.retry)) }
                 )
             }
         }

@@ -2,6 +2,17 @@
 
 Changelog for the standalone Wear OS companion app (independent version line from the phone app).
 
+## What's New in Wear v2.1.4
+
+### Offline & error handling
+- **Arrivals no longer go blank when coverage drops:** while offline the watch skips pointless polling, and a failed load now shows an "Unable to load arrivals" message with a retry instead of an empty screen.
+- **Smarter refresh backoff:** consecutive failures wait increasingly longer before retrying, so a bad connection doesn't hammer the TriMet API from your wrist.
+
+### Performance & polish
+- **Stop details are now cached after the first load,** so favoriting and recent-stop updates stop making redundant network calls every time you tap the heart.
+- **Cleaner countdown animation:** the "N min" / "Due" roll between values no longer relies on a null-forcing shortcut.
+- **All watch and tile text is now in standard string resources**, ready for localization.
+
 ## What's New in Wear v2.1.3
 
 ### Animation polish

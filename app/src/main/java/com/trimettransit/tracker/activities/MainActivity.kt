@@ -100,6 +100,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
@@ -127,6 +128,8 @@ import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
 import com.trimettransit.tracker.feature.vehicles.WhatsNearbyScreen
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
+import androidx.annotation.StringRes
+import com.trimettransit.tracker.R
 import android.net.Uri
 
 private val AnimatedContentTransitionScope<*>.navEnter: EnterTransition
@@ -194,16 +197,16 @@ private val AnimatedContentTransitionScope<*>.navExitQuick: ExitTransition
 
 private data class BottomNavItem(
     val pageIndex: Int,
-    val label: String,
+    @StringRes val labelRes: Int,
     val icon: ImageVector,
     val iconSize: Dp = 24.dp
 )
 
 private val bottomNavItems = listOf(
-    BottomNavItem(0, "Favorites", Icons.Filled.Favorite),
-    BottomNavItem(1, "Recent", Icons.Filled.History),
-    BottomNavItem(2, "Routes", Icons.Filled.Map),
-    BottomNavItem(3, "What's Nearby", Icons.Filled.DirectionsBus),
+    BottomNavItem(0, R.string.nav_favorites, Icons.Filled.Favorite),
+    BottomNavItem(1, R.string.nav_recent, Icons.Filled.History),
+    BottomNavItem(2, R.string.nav_routes, Icons.Filled.Map),
+    BottomNavItem(3, R.string.nav_whats_nearby, Icons.Filled.DirectionsBus),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -337,7 +340,7 @@ private fun MainBottomBar(
                                 ) {
                                     Icon(
                                         imageVector = item.icon,
-                                        contentDescription = item.label,
+                                        contentDescription = stringResource(item.labelRes),
                                         tint = if (isSelected) {
                                             MaterialTheme.colorScheme.onSurface
                                         } else {
@@ -348,7 +351,7 @@ private fun MainBottomBar(
                                     if (isSelected && !shouldHideLabel) {
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = item.label,
+                                            text = stringResource(item.labelRes),
                                             style = MaterialTheme.typography.labelLarge,
                                             maxLines = 1,
                                             color = MaterialTheme.colorScheme.onSurface
@@ -381,7 +384,7 @@ private fun MainBottomBar(
                     ) {
                         Icon(
                             Icons.Default.Settings,
-                            contentDescription = "Settings",
+                            contentDescription = stringResource(R.string.settings),
                             tint = MaterialTheme.colorScheme.onTertiaryContainer
                         )
                     }
@@ -467,9 +470,9 @@ private fun MainAppContent(
     // Sub-screens brand the collapsed pill with their own icon instead of
     // whichever Home page was last open; pageIndex -1 makes it inert (back bubble navigates).
     val collapsedNavItem = when {
-        currentRoute.startsWith("arrivals/") -> BottomNavItem(-1, "Arrivals", Icons.Filled.Schedule)
-        currentRoute == "nearby_stops" -> BottomNavItem(-1, "Nearby Stops", Icons.Filled.NearMe)
-        currentRoute == "settings" -> BottomNavItem(-1, "Settings", Icons.Default.Settings)
+        currentRoute.startsWith("arrivals/") -> BottomNavItem(-1, R.string.nav_arrivals, Icons.Filled.Schedule)
+        currentRoute == "nearby_stops" -> BottomNavItem(-1, R.string.nearby_stops_title, Icons.Filled.NearMe)
+        currentRoute == "settings" -> BottomNavItem(-1, R.string.settings, Icons.Default.Settings)
         else -> null
     }
     val outerSnackbarHostState = remember { SnackbarHostState() }
@@ -524,7 +527,7 @@ private fun MainAppContent(
                 ) { route ->
                     when {
                         route == "nearby_stops" -> TopAppBar(
-                        title = { Text("Nearby Stops") },
+                        title = { Text(stringResource(R.string.nearby_stops_title)) },
                         navigationIcon = {
                             val backSource = remember { MutableInteractionSource() }
                             IconButton(
@@ -532,9 +535,10 @@ private fun MainAppContent(
                                 interactionSource = backSource,
                                 modifier = Modifier.pressScale(backSource)
                             ) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                             }
                         },
+                        windowInsets = TopAppBarDefaults.windowInsets,
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                             titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -542,7 +546,7 @@ private fun MainAppContent(
                         )
                     )
                     route.startsWith("arrivals/") && !inPip -> TopAppBar(
-                        title = { Text(NavState.arrivalsStopName.ifBlank { "Stop" }) },
+                        title = { Text(NavState.arrivalsStopName.ifBlank { stringResource(R.string.stop) }) },
                         navigationIcon = {
                             val backSource = remember { MutableInteractionSource() }
                             IconButton(
@@ -550,9 +554,10 @@ private fun MainAppContent(
                                 interactionSource = backSource,
                                 modifier = Modifier.pressScale(backSource)
                             ) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                             }
                         },
+                        windowInsets = TopAppBarDefaults.windowInsets,
                         actions = {
                             val pipSource = remember { MutableInteractionSource() }
                             var pipButtonRect by remember { mutableStateOf<android.graphics.Rect?>(null) }
@@ -581,7 +586,7 @@ private fun MainAppContent(
                             ) {
                                 Icon(
                                     Icons.Outlined.PictureInPictureAlt,
-                                    contentDescription = "Mini window",
+                                    contentDescription = stringResource(R.string.mini_window),
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
@@ -620,7 +625,7 @@ private fun MainAppContent(
                                 ) { isFav ->
                                     Icon(
                                         imageVector = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                        contentDescription = if (isFav) "Remove favorite" else "Add favorite",
+                                        contentDescription = if (isFav) stringResource(R.string.remove_favorite) else stringResource(R.string.add_favorite),
                                         tint = if (isFav) MaterialTheme.colorScheme.error
                                                 else MaterialTheme.colorScheme.onPrimaryContainer
                                     )
@@ -637,7 +642,7 @@ private fun MainAppContent(
                             ) {
                                 Icon(
                                     Icons.Default.Refresh,
-                                    contentDescription = "Refresh",
+                                    contentDescription = stringResource(R.string.refresh),
                                     modifier = Modifier.rotate(refreshRotation.value)
                                 )
                             }

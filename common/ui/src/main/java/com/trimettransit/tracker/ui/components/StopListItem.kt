@@ -82,6 +82,9 @@ fun StopListItem(
             val transitTypeColor = remember(stop.transitType, colorScheme) {
                 transitColor(stop.transitType, colorScheme)
             }
+            val transitGlyphColor = remember(stop.transitType, colorScheme) {
+                transitOnColor(stop.transitType, colorScheme)
+            }
             // Transit type indicator
             Surface(
                 modifier = Modifier.size(40.dp),
@@ -95,19 +98,19 @@ fun StopListItem(
                     when {
                         stop.routeNum > 0 -> Text(
                             text = stop.routeNum.toString(),
-                            color = MaterialTheme.colorScheme.surface,
+                            color = transitGlyphColor,
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold
                         )
                         !stop.transitType.isNullOrBlank() -> Icon(
                             painter = painterResource(id = transitIconResource(stop.transitType)),
                             contentDescription = transitTypeLabel(stop.transitType),
-                            tint = MaterialTheme.colorScheme.surface,
+                            tint = transitGlyphColor,
                             modifier = Modifier.size(24.dp)
                         )
                         else -> Text(
                             text = stop.locId.toString(),
-                            color = MaterialTheme.colorScheme.surface,
+                            color = transitGlyphColor,
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold
                         )

@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.trimettransit.tracker.R
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.Button
@@ -40,7 +42,7 @@ fun HomeScreen(
                             .transformedHeight(this, transformationSpec),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {
-                        Text("PDX Bus")
+                        Text(stringResource(R.string.app_name))
                     }
                 }
                 item {
@@ -54,7 +56,7 @@ fun HomeScreen(
                             .wearPressScale(interactionSource),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {
-                        Text("Favorites")
+                        Text(stringResource(R.string.favorites))
                     }
                 }
                 item {
@@ -68,7 +70,7 @@ fun HomeScreen(
                             .wearPressScale(interactionSource),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {
-                        Text("Recent stops")
+                        Text(stringResource(R.string.recent_stops))
                     }
                 }
                 item {
@@ -82,7 +84,7 @@ fun HomeScreen(
                             .wearPressScale(interactionSource),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {
-                        Text("Routes")
+                        Text(stringResource(R.string.routes))
                     }
                 }
                 item {
@@ -96,7 +98,7 @@ fun HomeScreen(
                             .wearPressScale(interactionSource),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {
-                        Text("About")
+                        Text(stringResource(R.string.about))
                     }
                 }
             }

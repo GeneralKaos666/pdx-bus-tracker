@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -150,12 +151,12 @@ private fun DirectionsSubCard(
             ) { state ->
                 when (state) {
                     0 -> InlineSkeleton(rows = 2)
-                    1 -> InlineMessage("API key not configured.\nPlease check app settings.")
+                    1 -> InlineMessage(stringResource(R.string.api_key_not_configured))
                     2 -> InlineRetry(
-                        message = "Unable to load directions.\nCheck your connection.",
+                        message = stringResource(R.string.unable_to_load_directions),
                         onRetry = { retryKey++ }
                     )
-                    3 -> InlineMessage("No directions available.")
+                    3 -> InlineMessage(stringResource(R.string.no_directions_available))
                     else -> Column {
                         safeDirections.orEmpty().forEach { direction ->
                             DirectionItem(
@@ -213,7 +214,7 @@ private fun DirectionItem(
             Spacer(modifier = Modifier.width(8.dp))
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                contentDescription = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.rotate(chevronRotation)
             )
@@ -260,12 +261,12 @@ private fun StopsSubCard(
         ) { state ->
             when (state) {
                 0 -> InlineSkeleton(rows = 2)
-                1 -> InlineMessage("API key not configured.\nPlease check app settings.")
+                1 -> InlineMessage(stringResource(R.string.api_key_not_configured))
                 2 -> InlineRetry(
-                    message = "Unable to load stops.\nCheck your connection.",
+                    message = stringResource(R.string.unable_to_load_stops),
                     onRetry = { retryKey++ }
                 )
-                3 -> InlineMessage("No stops available.")
+                3 -> InlineMessage(stringResource(R.string.no_stops_available))
                 else -> Column {
                     safeStops.orEmpty().forEach { stop ->
                         StopListItem(
@@ -314,7 +315,7 @@ private fun InlineRetry(message: String, onRetry: () -> Unit) {
                 .padding(top = 8.dp)
                 .pressScale(retrySource)
         ) {
-            Text("Try Again")
+            Text(stringResource(R.string.try_again))
         }
     }
 }

@@ -4,11 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
-import android.location.LocationListener
 import android.location.LocationManager
-import android.location.LocationRequest
-import android.os.Bundle
-import java.util.concurrent.Executor
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -29,7 +25,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,6 +40,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -63,9 +59,7 @@ import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.coroutines.resume
 
 @Composable
 fun NearbyStopsScreen(
@@ -74,6 +68,7 @@ fun NearbyStopsScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val locationPermissionRequired = stringResource(R.string.location_permission_required)
 
     var locationPermissionGranted by remember {
         mutableStateOf(
@@ -112,7 +107,7 @@ fun NearbyStopsScreen(
         if (granted) {
             launchLoadNearbyStops()
         } else {
-            errorMessage = "Location permission is required to find nearby stops"
+            errorMessage = locationPermissionRequired
         }
     }
 
@@ -121,22 +116,20 @@ fun NearbyStopsScreen(
     if (showLocationExplainer) {
         AlertDialog(
             onDismissRequest = { showLocationExplainer = false },
-            title = { Text("Use your location?") },
+            title = { Text(stringResource(R.string.use_your_location_question)) },
             text = {
                 Text(
-                    "PDX Bus Tracker uses your location only when you ask it to find TriMet " +
-                        "stops near you. Your location is never stored by this app and is not " +
-                        "used for anything else."
+                    stringResource(R.string.location_explainer)
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     showLocationExplainer = false
                     permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                }) { Text("Continue") }
+                }) { Text(stringResource(R.string.continue_)) }
             },
             dismissButton = {
-                TextButton(onClick = { showLocationExplainer = false }) { Text("Not now") }
+                TextButton(onClick = { showLocationExplainer = false }) { Text(stringResource(R.string.not_now)) }
             }
         )
     }
@@ -145,7 +138,7 @@ fun NearbyStopsScreen(
         if (locationPermissionGranted) {
             launchLoadNearbyStops()
         } else {
-            errorMessage = "Location permission is required to find nearby stops"
+            errorMessage = locationPermissionRequired
         }
     }
 
@@ -178,7 +171,7 @@ fun NearbyStopsScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "Nearby Stops",
+            text = stringResource(R.string.nearby_stops_list_title),
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -203,10 +196,10 @@ fun NearbyStopsScreen(
                             strokeWidth = 2.dp
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Loading...")
+                        Text(stringResource(R.string.loading))
                     }
                 } else {
-                    Text("Refresh")
+                    Text(stringResource(R.string.refresh))
                 }
             }
         }
@@ -227,39 +220,18 @@ fun NearbyStopsScreen(
         ) { state ->
             when (state) {
                 0 -> {
-                    LoadingState(message = "Finding nearby stops...")
+                    LoadingState(message = stringResource(R.string.finding_nearby_stops))
                 }
                 1 -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(32.dp)
-                        ) {
-                            Text(
-                                text = errorMessage ?: "Unknown error",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.error,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            val retrySource = remember { MutableInteractionSource() }
-                            OutlinedButton(
-                                onClick = { promptForPermissionAndLoad() },
-                                interactionSource = retrySource,
-                                modifier = Modifier.pressScale(retrySource)
-                            ) {
-                                Text("Try Again")
-                            }
-                        }
-                    }
+                    ErrorState(
+                        message = errorMessage ?: stringResource(R.string.unknown_error),
+                        onRetry = { promptForPermissionAndLoad() }
+                    )
                 }
                 2 -> {
                     EmptyState(
-                        message = if (hasLoaded) "No stops found nearby"
-                                  else "Tap Refresh to find nearby stops"
+                        message = if (hasLoaded) stringResource(R.string.no_stops_found_nearby)
+                                  else stringResource(R.string.tap_refresh_to_find)
                     )
                 }
                 3 -> {
@@ -284,7 +256,7 @@ fun NearbyStopsScreen(
                 }
                 else -> {
                     EmptyState(
-                        message = "Tap Refresh to find nearby stops using your current location"
+                        message = stringResource(R.string.tap_refresh_using_location)
                     )
                 }
             }
@@ -311,7 +283,7 @@ private suspend fun loadNearbyStops(
         val hasGps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
         val hasNetwork = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
         if (!hasGps && !hasNetwork) {
-            setError("Location services are disabled.\nPlease enable location services.")
+            setError(context.getString(R.string.location_services_disabled))
             return
         }
 
@@ -319,7 +291,7 @@ private suspend fun loadNearbyStops(
             context, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
         if (!hasFineLocation) {
-            setError("Location permission is required.")
+            setError(context.getString(R.string.location_permission_required_short))
             return
         }
 
@@ -328,7 +300,7 @@ private suspend fun loadNearbyStops(
             ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
 
         if (location == null) {
-            setError("Unable to get current location.\nPlease try again.")
+            setError(context.getString(R.string.unable_to_get_location))
             return
         }
 
@@ -340,13 +312,13 @@ private suspend fun loadNearbyStops(
         if (stops != null) {
             setStops(stops)
         } else {
-            setError("Unable to find nearby stops.\nPlease try again.")
+            setError(context.getString(R.string.unable_to_find_nearby_stops))
         }
     } catch (e: CancellationException) {
         // A newer load superseded this one — don't paint an error for a cancelled fetch.
         throw e
     } catch (e: Exception) {
-        setError("Unable to find nearby stops.\nPlease try again.")
+        setError(context.getString(R.string.unable_to_find_nearby_stops))
     } finally {
         // Only the current job may clear the loading state; a superseded job must not
         // clobber the newer load's spinner.
@@ -354,54 +326,37 @@ private suspend fun loadNearbyStops(
     }
 }
 
-/** Requests a fresh single fix; resumes with null if permission is missing. */
+/** Requests a fresh single fix; resumes with null if permission is missing. Uses the
+ *  non-deprecated [LocationManager.getCurrentLocation] API, probing GPS then network. */
 @android.annotation.SuppressLint("MissingPermission")
 private suspend fun requestFreshLocation(locationManager: LocationManager): Location? {
-    var updatesRemoved = false
-    fun removeUpdatesIfNeeded(listener: LocationListener) {
-        if (!updatesRemoved) {
-            updatesRemoved = true
-            locationManager.removeUpdates(listener)
-        }
-    }
-    return suspendCancellableCoroutine { cont ->
-        if (cont.isCancelled) return@suspendCancellableCoroutine
-        val listener = object : LocationListener {
-            override fun onLocationChanged(location: Location) {
-                if (cont.isActive) {
-                    cont.resume(location)
-                    // Success path: drop the one-shot registration so we don't leak a
-                    // live GPS/network listener (and battery drain) per refresh.
-                    removeUpdatesIfNeeded(this)
-                }
-            }
-
-            @Deprecated("Deprecated in Java")
-            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
-
-            @Deprecated("Deprecated in Java")
-            override fun onProviderEnabled(provider: String) {}
-
-            @Deprecated("Deprecated in Java")
-            override fun onProviderDisabled(provider: String) {}
-        }
-        val request = LocationRequest.Builder(0L)
-            .setQuality(LocationRequest.QUALITY_HIGH_ACCURACY)
-            .build()
-        val executor = Executor { command -> command.run() }
-        val provider = if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            LocationManager.GPS_PROVIDER
-        } else {
+    val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+    return try {
+        for (provider in listOf(
+            LocationManager.GPS_PROVIDER,
             LocationManager.NETWORK_PROVIDER
+        )) {
+            if (!locationManager.isProviderEnabled(provider)) continue
+            val deferred = kotlinx.coroutines.CompletableDeferred<Location?>()
+            val signal = android.os.CancellationSignal()
+            try {
+                locationManager.getCurrentLocation(provider, signal, executor) { location ->
+                    deferred.complete(location)
+                }
+            } catch (e: SecurityException) {
+                signal.cancel()
+                deferred.complete(null)
+            } catch (e: IllegalArgumentException) {
+                signal.cancel()
+                deferred.complete(null)
+                continue
+            }
+            val fix = withTimeoutOrNull(10_000L) { deferred.await() }
+            signal.cancel()
+            if (fix != null) return fix
         }
-        try {
-            locationManager.requestLocationUpdates(provider, request, executor, listener)
-        } catch (e: SecurityException) {
-            if (cont.isActive) cont.resume(null)
-            return@suspendCancellableCoroutine
-        }
-        cont.invokeOnCancellation {
-            removeUpdatesIfNeeded(listener)
-        }
+        null
+    } finally {
+        executor.shutdown()
     }
 }

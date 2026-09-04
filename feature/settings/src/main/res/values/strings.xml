@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_title">PDX Bus Tracker</string>
+    <string name="version_license">Version %1$s · MIT License</string>
+    <string name="unofficial_disclaimer">Unofficial app — not affiliated with, sponsored by, or endorsed by TriMet.</string>
+    <string name="data_provider">Data provided by TriMet\'s public Developer API (developer.trimet.org).</string>
+    <string name="open_source_licenses">Open source licenses</string>
+    <string name="libraries_terms">Libraries used by this app and their terms</string>
+    <string name="section_appearance">Appearance</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_system_subtitle">Follow your device\'s theme</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_light_subtitle">Always use the light theme</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_dark_subtitle">Always use the dark theme</string>
+    <string name="dynamic_colors">Dynamic colors</string>
+    <string name="dynamic_colors_subtitle">Use your wallpaper\'s colors</string>
+    <string name="section_arrivals">Arrivals</string>
+    <string name="only_show_selected_route">Only show selected route\'s arrivals</string>
+    <string name="only_show_selected_route_subtitle">Filters the arrivals list when opened from a route</string>
+    <string name="section_about">About</string>
+    <string name="collapse">Collapse</string>
+    <string name="expand">Expand</string>
+    <string name="license_androidx">AndroidX / Jetpack Compose (UI, Foundation, Material 3, Navigation, Activity, AppCompat, Preference)</string>
+    <string name="license_apache_2">Apache License 2.0</string>
+    <string name="license_kotlin">Kotlin Standard Library &amp; Coroutines</string>
+    <string name="license_okhttp">OkHttp</string>
+    <string name="license_maplibre">MapLibre Native (Android, OpenGL backend)</string>
+    <string name="license_bsd_2">BSD 2-Clause License</string>
+    <string name="license_joda">Joda-Time Android</string>
+    <string name="license_timber">Timber</string>
+    <string name="license_wear">Wear OS Compose (androidx.wear, Wear Compose)</string>
+    <string name="license_glance">AndroidX Glance (home-screen widget)</string>
+    <string name="license_workmanager">AndroidX WorkManager</string>
+    <string name="license_full_texts">Full license texts: see THIRD-PARTY-NOTICES.md in the project repository.</string>
+</resources>

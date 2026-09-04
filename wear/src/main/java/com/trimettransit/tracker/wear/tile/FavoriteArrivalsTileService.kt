@@ -15,6 +15,7 @@ import androidx.wear.tiles.TileBuilders.Tile
 import androidx.wear.tiles.tile
 import androidx.wear.tiles.timeline
 import androidx.wear.tiles.timelineEntry
+import com.trimettransit.tracker.R
 import com.trimettransit.tracker.wear.WearMainActivity
 import java.time.Instant
 import java.time.ZoneId
@@ -52,7 +53,7 @@ class FavoriteArrivalsTileService : Material3TileService() {
                 layout = primaryLayout(
                     mainSlot = {
                         text(
-                            text = LayoutString("PDX Bus"),
+                            text = LayoutString(context.getString(R.string.app_name)),
                             typography = Typography.TITLE_MEDIUM,
                             maxLines = 1
                         )
@@ -68,7 +69,7 @@ class FavoriteArrivalsTileService : Material3TileService() {
                 layout = primaryLayout(
                     mainSlot = {
                         text(
-                            text = LayoutString("Open PDX Bus\nand add a favorite stop"),
+                            text = LayoutString(context.getString(R.string.tile_fallback_title)),
                             typography = Typography.TITLE_MEDIUM,
                             maxLines = 2
                         )
@@ -88,7 +89,7 @@ class FavoriteArrivalsTileService : Material3TileService() {
     ): Tile {
         val windowEnd = now + 12 * 60_000
         val entryCount = ((windowEnd - now + 59_999) / 60_000).toInt().coerceIn(1, 15)
-        val stopName = snapshot.stop.desc.ifBlank { "Stop ${snapshot.stop.locId}" }
+        val stopName = snapshot.stop.desc.ifBlank { context.getString(R.string.stop_format, snapshot.stop.locId) }
         val subline = "${next.sign} · ${hourMinute(next.arrivalTimeMillis)}"
 
         val entries = (0 until entryCount).map { i ->
@@ -105,7 +106,7 @@ class FavoriteArrivalsTileService : Material3TileService() {
                     mainSlot = {
                         val countdown = next.minutesFrom(start)
                         text(
-                            text = LayoutString(if (countdown <= 0) "DUE" else "$countdown MIN"),
+                            text = LayoutString(if (countdown <= 0) context.getString(R.string.tile_due) else context.getString(R.string.tile_countdown_min, countdown)),
                             typography = Typography.DISPLAY_LARGE,
                             maxLines = 1
                         )

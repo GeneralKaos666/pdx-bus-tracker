@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="use_your_location_question">Use your location?</string>
+    <string name="location_explainer">PDX Bus Tracker uses your location only when you ask it to find TriMet stops and vehicles near you. Your location is never stored by this app and is not used for anything else.</string>
+    <string name="continue_">Continue</string>
+    <string name="not_now">Not now</string>
+    <string name="whats_nearby_title">What\'s Nearby</string>
+    <string name="location_permission_off">Location permission is off — tap to grant</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="unable_to_load_vehicle_positions">Unable to load vehicle positions</string>
+</resources>

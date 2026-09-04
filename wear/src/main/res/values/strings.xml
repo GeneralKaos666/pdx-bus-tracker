@@ -2,4 +2,31 @@
 <resources>
     <string name="app_name">PDX Bus</string>
     <string name="tile_label">Next departure</string>
+    <string name="about">About</string>
+    <string name="version_format">Version %1$s</string>
+    <string name="about_description">Unofficial real-time TriMet transit tracker for Portland, OR.</string>
+    <string name="mit_license">MIT License</string>
+    <string name="favorites">Favorites</string>
+    <string name="recent_stops">Recent stops</string>
+    <string name="recent_stops_title">Recent Stops</string>
+    <string name="routes">Routes</string>
+    <string name="retry">Retry</string>
+    <string name="no_favorites">No favorites yet.\nTap the heart on any stop.</string>
+    <string name="no_recent_stops">No recent stops yet.\nStop by to get started.</string>
+    <string name="unable_to_load_arrivals">Unable to load arrivals.\nCheck your connection.</string>
+    <string name="no_arrivals">No arrivals right now</string>
+    <string name="no_time_info">No time info</string>
+    <string name="due">Due</string>
+    <string name="countdown_min">%1$dm</string>
+    <string name="stop_format">Stop %1$d</string>
+    <string name="api_key_not_configured">API key not configured.\nPlease check app settings.</string>
+    <string name="unable_to_load_routes">Unable to load routes.\nCheck your connection.</string>
+    <string name="unable_to_load_directions">Unable to load directions.\nCheck your connection.</string>
+    <string name="unable_to_load_stops">Unable to load stops.\nCheck your connection.</string>
+    <string name="no_routes">No routes available.</string>
+    <string name="no_directions">No directions available.</string>
+    <string name="no_stops">No stops available.</string>
+    <string name="tile_fallback_title">Open PDX Bus\nand add a favorite stop</string>
+    <string name="tile_due">DUE</string>
+    <string name="tile_countdown_min">%1$d MIN</string>
 </resources>

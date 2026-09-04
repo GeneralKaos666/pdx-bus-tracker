@@ -195,6 +195,8 @@ private fun animatedColorScheme(target: ColorScheme): ColorScheme {
     val surfaceContainer by animateColorAsState(target.surfaceContainer, spec, label = "sfc")
     val surfaceContainerHigh by animateColorAsState(target.surfaceContainerHigh, spec, label = "sfcHigh")
     val surfaceContainerHighest by animateColorAsState(target.surfaceContainerHighest, spec, label = "sfcHighest")
+    val surfaceBright by animateColorAsState(target.surfaceBright, spec, label = "sfcBright")
+    val surfaceDim by animateColorAsState(target.surfaceDim, spec, label = "sfcDim")
     return target.copy(
         background = background,
         onBackground = onBackground,
@@ -224,6 +226,8 @@ private fun animatedColorScheme(target: ColorScheme): ColorScheme {
         surfaceContainerLowest = surfaceContainerLowest,
         surfaceContainer = surfaceContainer,
         surfaceContainerHigh = surfaceContainerHigh,
-        surfaceContainerHighest = surfaceContainerHighest
+        surfaceContainerHighest = surfaceContainerHighest,
+        surfaceBright = surfaceBright,
+        surfaceDim = surfaceDim
     )
 }

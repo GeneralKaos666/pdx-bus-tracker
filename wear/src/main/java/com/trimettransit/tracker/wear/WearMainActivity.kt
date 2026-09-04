@@ -17,6 +17,16 @@ class WearMainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        // A fresh tile launch (e.g. the app is already in the foreground) must be
+        // handled now; onCreate's readTileStop won't run again.
+        setContent {
+            WearApp(startStop = readTileStop())
+        }
+    }
+
     /** The Tile opens the app with a stop in the intent extras (deep link). */
     private fun readTileStop(): Stop? {
         val locId = intent?.getIntExtra(TileExtras.KEY_LOC_ID, 0) ?: 0

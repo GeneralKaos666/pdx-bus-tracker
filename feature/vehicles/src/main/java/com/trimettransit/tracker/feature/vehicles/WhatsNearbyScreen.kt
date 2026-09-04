@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -138,6 +139,7 @@ fun WhatsNearbyScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val unableToLoadVehiclePositions = stringResource(R.string.unable_to_load_vehicle_positions)
     var vehicles by remember { mutableStateOf<List<VehiclePosition>?>(null) }
     var stops by remember { mutableStateOf<List<Stop>?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -172,22 +174,20 @@ fun WhatsNearbyScreen(
     if (showLocationExplainer) {
         AlertDialog(
             onDismissRequest = { showLocationExplainer = false },
-            title = { Text("Use your location?") },
+            title = { Text(stringResource(R.string.use_your_location_question)) },
             text = {
                 Text(
-                    "PDX Bus Tracker uses your location only when you ask it to find TriMet " +
-                        "stops and vehicles near you. Your location is never stored by this app " +
-                        "and is not used for anything else."
+                    stringResource(R.string.location_explainer)
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     showLocationExplainer = false
                     permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                }) { Text("Continue") }
+                }) { Text(stringResource(R.string.continue_)) }
             },
             dismissButton = {
-                TextButton(onClick = { showLocationExplainer = false }) { Text("Not now") }
+                TextButton(onClick = { showLocationExplainer = false }) { Text(stringResource(R.string.not_now)) }
             }
         )
     }
@@ -212,7 +212,7 @@ fun WhatsNearbyScreen(
             isLoading = false
             hasLoaded = true
             if (result == null && vehicles == null) {
-                errorMessage = "Unable to load vehicle positions"
+                errorMessage = unableToLoadVehiclePositions
             }
         }
     }
@@ -307,7 +307,7 @@ fun WhatsNearbyScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "What's Nearby",
+            text = stringResource(R.string.whats_nearby_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -340,7 +340,7 @@ fun WhatsNearbyScreen(
                         .padding(top = 8.dp)
                 ) {
                     Text(
-                        text = "Location permission is off — tap to grant",
+                        text = stringResource(R.string.location_permission_off),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
@@ -369,7 +369,7 @@ fun WhatsNearbyScreen(
                         }
                     }
                     1 -> {
-                        ErrorState(message = errorMessage ?: "Unknown error")
+                        ErrorState(message = errorMessage ?: stringResource(R.string.unknown_error))
                     }
                     else -> {}
                 }

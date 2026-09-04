@@ -1,5 +1,17 @@
 # Changelog
 
+## What's New in v4.11.4
+
+### Reliability & error handling
+- **Arrivals screen now survives network blips:** if a live-data refresh fails while the screen is open, it shows a clear error message and keeps retrying with a growing wait between attempts, instead of dropping into a broken state during a stretch of bad coverage.
+- **Retry buttons on every error screen:** the "Try Again" / "Refresh" actions on the Favorites, Stop lists, What's Nearby, and Nearby Stops screens now reliably restart a failed load, so a hiccup is one tap from resolving.
+- **What's Nearby location handling modernized:** your location is resolved through the current Android location services instead of the deprecated callback approach, and permission-denied messages now point you straight to granting access.
+
+### Polish & accessibility
+- **Localized navigation labels:** the Favorites, Recent, Routes, and What's Nearby buttons in the bottom bar (and their descriptions for screen readers) are now proper, translatable strings instead of hardcoded text.
+- **Consistent descriptions for the back, refresh, and mini-window buttons** so screen readers announce them the same way across screens.
+- **All user-facing text is now in standard string resources**, ready for localization into other languages.
+
 ## What's New in v4.11.3
 
 ### Animation polish

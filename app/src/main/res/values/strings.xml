@@ -5,4 +5,22 @@
     <string name="next_arrivals_widget_placeholder">Loading…</string>
     <string name="widget_empty_no_favorites">No favorites yet — tap to add some</string>
     <string name="widget_empty_refreshing">Refreshing — tap to open the app</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_recent">Recent</string>
+    <string name="nav_routes">Routes</string>
+    <string name="nav_whats_nearby">What\'s Nearby</string>
+    <string name="nav_arrivals">Arrivals</string>
+
+    <!-- Top bar -->
+    <string name="back">Back</string>
+    <string name="settings">Settings</string>
+    <string name="nearby_stops_title">Nearby Stops</string>
+    <string name="stop">Stop</string>
+    <string name="stop_num">Stop #%1$d</string>
+    <string name="mini_window">Mini window</string>
+    <string name="add_favorite">Add favorite</string>
+    <string name="remove_favorite">Remove favorite</string>
+    <string name="refresh">Refresh</string>
 </resources>
