@@ -12,6 +12,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.SideEffect
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
@@ -32,7 +34,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Schedule
@@ -72,6 +73,8 @@ import com.trimettransit.tracker.ui.components.findActivity
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
@@ -93,10 +96,14 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -126,7 +133,6 @@ import com.trimettransit.tracker.feature.home.RecentStopsScreen
 import com.trimettransit.tracker.feature.settings.SettingsScreen
 import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
-import com.trimettransit.tracker.feature.vehicles.WhatsNearbyScreen
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
 import androidx.annotation.StringRes
 import com.trimettransit.tracker.R
@@ -206,7 +212,6 @@ private val bottomNavItems = listOf(
     BottomNavItem(0, R.string.nav_favorites, Icons.Filled.Favorite),
     BottomNavItem(1, R.string.nav_recent, Icons.Filled.History),
     BottomNavItem(2, R.string.nav_routes, Icons.Filled.Map),
-    BottomNavItem(3, R.string.nav_whats_nearby, Icons.Filled.DirectionsBus),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -217,21 +222,15 @@ private fun MainBottomBar(
     onSettingsClick: () -> Unit,
     showBack: Boolean = false,
     onBackClick: () -> Unit = {},
-    compact: Boolean = false,
-    collapsed: Boolean = false,
-    collapsedItem: BottomNavItem? = null
+    contextLabelRes: Int? = null,
+    contextIcon: ImageVector? = null
 ) {
     val windowInfo = LocalWindowInfo.current
     val density = LocalDensity.current
     val fontScale = density.fontScale
-    val itemHeight by animateDpAsState(
-        targetValue = if (compact) 44.dp else 48.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "nav_item_height"
-    )
+    val itemHeight = 40.dp
+    val shouldHideLabel = fontScale > 1.25f ||
+            windowInfo.containerSize.width < with(density) { 360.dp.roundToPx() }
 
     Box(
         modifier = Modifier
@@ -245,27 +244,15 @@ private fun MainBottomBar(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (showBack) {
-                Surface(
+                PillActionButton(
+                    onClick = onBackClick,
+                    icon = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
                     shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    shadowElevation = 8.dp,
-                    tonalElevation = 4.dp
-                ) {
-                    val backSource = remember { MutableInteractionSource() }
-                    IconButton(
-                        onClick = onBackClick,
-                        interactionSource = backSource,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .pressScale(backSource, 0.92f)
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    }
-                }
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    size = itemHeight
+                )
             }
             Surface(
                 shape = RoundedCornerShape(28.dp),
@@ -274,122 +261,224 @@ private fun MainBottomBar(
                 tonalElevation = 4.dp
             ) {
                 AnimatedContent(
-                    targetState = collapsed,
+                    targetState = contextLabelRes == null,
                     transitionSpec = {
                         (fadeIn(spring()) + scaleIn(initialScale = 0.85f, animationSpec = spring())) togetherWith
                             (fadeOut(spring()) + scaleOut(targetScale = 0.85f, animationSpec = spring()))
                     },
                     label = "nav_collapse"
-                ) { collapsedState ->
-                    val items = when {
-                        !collapsedState -> bottomNavItems
-                        collapsedItem != null -> listOf(collapsedItem)
-                        else -> listOf(bottomNavItems[topPage.coerceIn(0, bottomNavItems.lastIndex)])
-                    }
-                    val shouldHideLabel = fontScale > 1.25f ||
-                            (windowInfo.containerSize.width < with(density) { 400.dp.roundToPx() } && items.size > 3)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(8.dp)
-                    ) {
-                        items.forEachIndexed { index, item ->
-                            val isSelected = (collapsedState && items.size == 1) || topPage == item.pageIndex
-
-                            val labelWidth by animateDpAsState(
-                                targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
-                                animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessLow
-                                ),
-                                label = "label_width_$index"
-                            )
-
-                            val spacerWidth by animateDpAsState(
-                                targetValue = if (index < items.size - 1) 8.dp else 0.dp,
-                                animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessLow
-                                ),
-                                label = "spacer_width_$index"
-                            )
-
-                            IconButton(
-                                onClick = {
-                                    if (item.pageIndex >= 0 && (collapsed || item.pageIndex != topPage)) {
-                                        onNavigate(item.pageIndex)
-                                    }
-                                },
-                                modifier = Modifier
-                                    .width(48.dp + labelWidth)
-                                    .height(itemHeight),
-                                colors = if (isSelected) {
-                                    IconButtonDefaults.filledIconButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.onSurface,
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                    )
-                                } else {
-                                    IconButtonDefaults.iconButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.padding(horizontal = 8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = stringResource(item.labelRes),
-                                        tint = if (isSelected) {
-                                            MaterialTheme.colorScheme.onSurface
-                                        } else {
-                                            MaterialTheme.colorScheme.onPrimaryContainer
-                                        },
-                                        modifier = Modifier.size(item.iconSize)
-                                    )
-                                    if (isSelected && !shouldHideLabel) {
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = stringResource(item.labelRes),
-                                            style = MaterialTheme.typography.labelLarge,
-                                            maxLines = 1,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                }
-                            }
-
-                            if (index < items.size - 1) {
-                                Spacer(modifier = Modifier.width(spacerWidth))
-                            }
-                        }
-                    }
-                }
-            }
-            if (!showBack) {
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    shadowElevation = 8.dp,
-                    tonalElevation = 4.dp
-                ) {
-                    val bubbleSource = remember { MutableInteractionSource() }
-                    IconButton(
-                        onClick = onSettingsClick,
-                        interactionSource = bubbleSource,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .pressScale(bubbleSource, 0.92f)
-                    ) {
-                        Icon(
-                            Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.settings),
-                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                ) { isTopLevel ->
+                    if (isTopLevel) {
+                        MainTabRow(
+                            topPage = topPage,
+                            items = bottomNavItems,
+                            itemHeight = itemHeight,
+                            shouldHideLabel = shouldHideLabel,
+                            onNavigate = onNavigate
+                        )
+                    } else {
+                        ContextPill(
+                            contextLabelRes = contextLabelRes ?: R.string.nav_arrivals,
+                            contextIcon = contextIcon,
+                            itemHeight = itemHeight,
+                            shouldHideLabel = shouldHideLabel
                         )
                     }
                 }
             }
+            PillActionButton(
+                onClick = onSettingsClick,
+                icon = Icons.Default.Settings,
+                contentDescription = stringResource(R.string.settings),
+                shape = RoundedCornerShape(28.dp),
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                size = itemHeight
+            )
+        }
+    }
+}
+
+private data class PillBounds(val x: Int, val width: Int)
+
+@Composable
+private fun PillActionButton(
+    onClick: () -> Unit,
+    icon: ImageVector,
+    contentDescription: String,
+    shape: Shape,
+    containerColor: Color,
+    contentColor: Color,
+    size: Dp
+) {
+    Surface(
+        shape = shape,
+        color = containerColor,
+        shadowElevation = 8.dp,
+        tonalElevation = 4.dp
+    ) {
+        val source = remember { MutableInteractionSource() }
+        IconButton(
+            onClick = onClick,
+            interactionSource = source,
+            modifier = Modifier
+                .size(size)
+                .pressScale(source, 0.92f)
+        ) {
+            Icon(icon, contentDescription = contentDescription, tint = contentColor)
+        }
+    }
+}
+
+@Composable
+private fun MainTabRow(
+    topPage: Int,
+    items: List<BottomNavItem>,
+    itemHeight: Dp,
+    shouldHideLabel: Boolean,
+    onNavigate: (Int) -> Unit
+) {
+    val bounds = remember { mutableStateMapOf<Int, PillBounds>() }
+    val indicatorOffset = remember { Animatable(0f) }
+    val indicatorWidth = remember { Animatable(0f) }
+    var boxLeft by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(topPage) {
+        bounds[topPage]?.let { b ->
+            launch {
+                indicatorOffset.animateTo(
+                    b.x.toFloat(),
+                    tween(durationMillis = 260, easing = FastOutSlowInEasing)
+                )
+            }
+            launch {
+                indicatorWidth.animateTo(
+                    b.width.toFloat(),
+                    tween(durationMillis = 260, easing = FastOutSlowInEasing)
+                )
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .padding(8.dp)
+            .onGloballyPositioned { coords ->
+                boxLeft = coords.positionInWindow().x.roundToInt()
+            }
+    ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .offset { IntOffset(indicatorOffset.value.roundToInt(), 0) }
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(with(LocalDensity.current) { indicatorWidth.value.toDp() })
+                    .height(itemHeight)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            items.forEachIndexed { index, item ->
+                val isSelected = topPage == item.pageIndex
+                val icon = item.icon
+                val labelRes = item.labelRes
+
+                val labelWidth by animateDpAsState(
+                    targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    ),
+                    label = "label_width_$index"
+                )
+
+                val itemSource = remember { MutableInteractionSource() }
+                IconButton(
+                    onClick = {
+                        if (item.pageIndex != topPage) onNavigate(item.pageIndex)
+                    },
+                    interactionSource = itemSource,
+                    modifier = Modifier
+                        .width(48.dp + labelWidth)
+                        .height(itemHeight)
+                        .onGloballyPositioned { coords ->
+                            val pos = coords.positionInWindow()
+                            bounds[index] = PillBounds(
+                                x = pos.x.roundToInt() - boxLeft,
+                                width = coords.size.width
+                            )
+                        }
+                        .pressScale(itemSource, 0.92f),
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = if (isSelected) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        }
+                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = stringResource(labelRes),
+                            tint = if (isSelected) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            },
+                            modifier = Modifier.size(item.iconSize)
+                        )
+                        if (isSelected && !shouldHideLabel) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(labelRes),
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContextPill(
+    contextLabelRes: Int,
+    contextIcon: ImageVector?,
+    itemHeight: Dp,
+    shouldHideLabel: Boolean
+) {
+    val showLabel = contextIcon != null && !shouldHideLabel
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .height(itemHeight)
+            .padding(horizontal = 12.dp)
+    ) {
+        Icon(
+            imageVector = contextIcon ?: Icons.Default.Settings,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(24.dp)
+        )
+        if (showLabel) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(contextLabelRes),
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
         }
     }
 }
@@ -467,13 +556,22 @@ private fun MainAppContent(
     val favoritesRepository = remember { FavoritesRepositoryImpl(DatabaseHelper(appContext)) }
     val recentStopsRepository = remember { RecentStopsRepositoryImpl(DatabaseHelper(appContext)) }
     val transitRepository = remember { TransitRepositoryImpl(appContext) }
-    // Sub-screens brand the collapsed pill with their own icon instead of
-    // whichever Home page was last open; pageIndex -1 makes it inert (back bubble navigates).
-    val collapsedNavItem = when {
-        currentRoute.startsWith("arrivals/") -> BottomNavItem(-1, R.string.nav_arrivals, Icons.Filled.Schedule)
-        currentRoute == "nearby_stops" -> BottomNavItem(-1, R.string.nearby_stops_title, Icons.Filled.NearMe)
-        currentRoute == "settings" -> BottomNavItem(-1, R.string.settings, Icons.Default.Settings)
-        else -> null
+    // Sub-screens brand the collapsed pill with their own icon and name.
+    var contextLabelRes: Int? = null
+    var contextIcon: ImageVector? = null
+    when {
+        currentRoute.startsWith("arrivals/") -> {
+            contextLabelRes = R.string.nav_arrivals
+            contextIcon = Icons.Filled.Schedule
+        }
+        currentRoute == "nearby_stops" -> {
+            contextLabelRes = R.string.nearby_stops_title
+            contextIcon = Icons.Filled.NearMe
+        }
+        currentRoute == "settings" -> {
+            contextLabelRes = R.string.settings
+            contextIcon = Icons.Default.Settings
+        }
     }
     val outerSnackbarHostState = remember { SnackbarHostState() }
 
@@ -671,14 +769,12 @@ private fun MainAppContent(
                         topPage = topPagerState.currentPage,
                         onNavigate = ::navigateToTopPage,
                         onSettingsClick = {
-                            // launchSingleTop: a fast double-tap must not push two settings entries.
                             navController.navigate("settings") { launchSingleTop = true }
                         },
                         showBack = !isTopLevel,
                         onBackClick = { navController.popBackStack() },
-                        compact = currentRoute.startsWith("arrivals/"),
-                        collapsed = !isTopLevel,
-                        collapsedItem = collapsedNavItem
+                        contextLabelRes = contextLabelRes,
+                        contextIcon = contextIcon
                     )
                 }
             },
@@ -749,14 +845,6 @@ private fun MainAppContent(
                                 onNavigateToArrivals = { stop: Stop, routeId: Int ->
                                     navigateToArrivals(stop, routeId)
                                 }
-                            )
-                            3 -> WhatsNearbyScreen(
-                                transitRepository = transitRepository,
-                                pageVisible = topPagerState.currentPage == 3,
-                                onNavigateToArrivals = { stop: Stop, _: Int ->
-                                    navigateToArrivals(stop, -1)
-                                },
-                                isDark = isDark
                             )
                         }
                     }

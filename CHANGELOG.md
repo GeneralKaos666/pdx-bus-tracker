@@ -1,5 +1,14 @@
 # Changelog
 
+## What's New in v4.12.0
+
+### Navigation revamp
+- **A sleeker, shorter bottom pill:** the floating navigation bar is now a more compact 40 dp pill with three tabs — Favorites, Recent, and Routes.
+- **Settings is always one tap away:** the Settings button now stays in the bar on every screen, including Arrivals, Nearby Stops, and Settings itself, instead of vanishing on sub-screens.
+- **Sliding indicator:** the active tab is marked with a filled capsule that glides between tabs as you switch screens.
+- **Labels adapt to narrow screens:** tab labels hide automatically on compact-width devices so the bar always fits without crowding.
+- **What's Nearby removed from the bar:** the live nearby map is temporarily taken out of the bottom navigation (a richer version is planned to return later).
+
 ## What's New in v4.11.4
 
 ### Reliability & error handling
