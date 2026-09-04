@@ -8,6 +8,8 @@
 - **Sliding indicator:** the active tab is marked with a filled capsule that glides between tabs as you switch screens.
 - **Labels adapt to narrow screens:** tab labels hide automatically on compact-width devices so the bar always fits without crowding.
 - **What's Nearby removed from the bar:** the live nearby map is temporarily taken out of the bottom navigation (a richer version is planned to return later).
+- **Indicator tracks swipes in real time:** the capsule follows the screen as you swipe from tab to tab, not just after the swipe settles.
+- **Indicator covers the whole tab:** the capsule tracks the label as it springs open, so the highlighted tab's label never sticks out past the highlight, and it appears right away on launch.
 
 ## What's New in v4.11.4
 

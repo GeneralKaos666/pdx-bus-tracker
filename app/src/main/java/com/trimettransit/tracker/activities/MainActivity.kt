@@ -1,6 +1,7 @@
 package com.trimettransit.tracker.activities
 
 import android.app.PictureInPictureParams
+import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Rational
@@ -32,6 +33,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Map
@@ -218,6 +221,7 @@ private val bottomNavItems = listOf(
 @Composable
 private fun MainBottomBar(
     topPage: Int,
+    pagePosition: Float = topPage.toFloat(),
     onNavigate: (Int) -> Unit,
     onSettingsClick: () -> Unit,
     showBack: Boolean = false,
@@ -275,7 +279,8 @@ private fun MainBottomBar(
                             items = bottomNavItems,
                             itemHeight = itemHeight,
                             shouldHideLabel = shouldHideLabel,
-                            onNavigate = onNavigate
+                            onNavigate = onNavigate,
+                            pagePosition = pagePosition
                         )
                     } else {
                         CompactContextPill(
@@ -337,29 +342,33 @@ private fun MainTabRow(
     items: List<BottomNavItem>,
     itemHeight: Dp,
     shouldHideLabel: Boolean,
-    onNavigate: (Int) -> Unit
+    onNavigate: (Int) -> Unit,
+    pagePosition: Float = topPage.toFloat()
 ) {
     val bounds = remember { mutableStateMapOf<Int, PillBounds>() }
-    val indicatorOffset = remember { Animatable(0f) }
-    val indicatorWidth = remember { Animatable(0f) }
     var boxLeft by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
 
-    LaunchedEffect(topPage) {
-        bounds[topPage]?.let { b ->
-            launch {
-                indicatorOffset.animateTo(
-                    b.x.toFloat(),
-                    tween(durationMillis = 260, easing = FastOutSlowInEasing)
-                )
-            }
-            launch {
-                indicatorWidth.animateTo(
-                    b.width.toFloat(),
-                    tween(durationMillis = 260, easing = FastOutSlowInEasing)
-                )
-            }
-        }
+    // Continuous page position (currentPage + drag/fling offset fraction) drives the
+    // pill so it tracks finger swipes frame-by-frame instead of snapping on settle.
+    val maxIndex = items.lastIndex
+    val position = pagePosition.coerceIn(0f, maxIndex.toFloat())
+    val fromPage = floor(position).toInt().coerceIn(0, maxIndex)
+    val toPage = ceil(position).toInt().coerceIn(0, maxIndex)
+    val fraction = position - fromPage
+    val fromBounds = bounds[fromPage]
+    val toBounds = bounds[toPage]
+    val pillTarget = when {
+        fromBounds == null -> toBounds
+        toBounds == null -> fromBounds
+        else -> PillBounds(
+            x = fromBounds.x + ((toBounds.x - fromBounds.x) * fraction).roundToInt(),
+            width = fromBounds.width + ((toBounds.width - fromBounds.width) * fraction).roundToInt()
+        )
     }
+
+    val indicatorOffset = with(density) { (pillTarget?.x ?: 0).toDp() }
+    val indicatorWidth = with(density) { (pillTarget?.width ?: 0).toDp() }
 
     Box(
         modifier = Modifier
@@ -368,18 +377,20 @@ private fun MainTabRow(
                 boxLeft = coords.positionInWindow().x.roundToInt()
             }
     ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .offset { IntOffset(indicatorOffset.value.roundToInt(), 0) }
-        ) {
+        if (pillTarget != null) {
             Box(
                 modifier = Modifier
-                    .width(with(LocalDensity.current) { indicatorWidth.value.toDp() })
-                    .height(itemHeight)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-            )
+                    .matchParentSize()
+                    .offset { IntOffset(indicatorOffset.roundToPx(), 0) }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(indicatorWidth)
+                        .height(itemHeight)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                )
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             items.forEachIndexed { index, item ->
@@ -391,7 +402,7 @@ private fun MainTabRow(
                     targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow
+                        stiffness = Spring.StiffnessMedium
                     ),
                     label = "label_width_$index"
                 )
@@ -405,6 +416,13 @@ private fun MainTabRow(
                     modifier = Modifier
                         .width(48.dp + labelWidth)
                         .height(itemHeight)
+                        .onGloballyPositioned { coords ->
+                            val pos = coords.positionInWindow()
+                            bounds[index] = PillBounds(
+                                x = pos.x.roundToInt() - boxLeft,
+                                width = coords.size.width
+                            )
+                        }
                         .pressScale(itemSource, 0.92f),
                     colors = IconButtonDefaults.iconButtonColors(
                         contentColor = if (isSelected) {
@@ -416,14 +434,7 @@ private fun MainTabRow(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.onGloballyPositioned { coords ->
-                            val pos = coords.positionInWindow()
-                            bounds[index] = PillBounds(
-                                x = pos.x.roundToInt() - boxLeft,
-                                width = coords.size.width
-                            )
-                        }
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(
                             imageVector = icon,
@@ -764,8 +775,12 @@ private fun MainAppContent(
                     exit = slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it } +
                         fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing))
                 ) {
+                    @SuppressLint("FrequentlyChangingValue")
+                    val pagePosition = topPagerState.currentPage +
+                        topPagerState.currentPageOffsetFraction
                     MainBottomBar(
                         topPage = topPagerState.currentPage,
+                        pagePosition = pagePosition,
                         onNavigate = ::navigateToTopPage,
                         onSettingsClick = {
                             navController.navigate("settings") { launchSingleTop = true }
