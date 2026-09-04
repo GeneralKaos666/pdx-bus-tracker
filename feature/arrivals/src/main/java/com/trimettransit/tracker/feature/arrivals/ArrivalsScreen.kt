@@ -328,15 +328,21 @@ fun ArrivalsScreen(
         NavState.arrivalsStopName = stopName.ifBlank { stopNumberLabel }
     }
 
+    val smoothFling = rememberSmoothFlingBehavior()
+    val listState = rememberLazyListState()
+
     DisposableEffect(Unit) {
         // Must use a stable lambda — loadArrivals is a local fun, always the same behavior
         NavState.arrivalsOnRefresh = { loadArrivals() }
+        // Collapsed bottom-bar pill: scroll back to the top and refresh.
+        NavState.onScrollToTop = {
+            coroutineScope.launch { listState.animateScrollToItem(0) }
+            loadArrivals()
+        }
         onDispose {
             NavState.clearArrivals()
         }
     }
-    val smoothFling = rememberSmoothFlingBehavior()
-    val listState = rememberLazyListState()
 
     val inPip = rememberIsInPipMode()
 

@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
+import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.EmptyState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.trimettransit.tracker.ui.components.ContentEntrance
@@ -82,6 +84,16 @@ fun NearbyStopsScreen(
     var hasLoaded by remember { mutableStateOf(false) }
     // In-flight load, deduped so resume/re-entry can't stack overlapping fetches.
     var loadJob by remember { mutableStateOf<Job?>(null) }
+
+    val listState = rememberLazyListState()
+
+    // Collapsed bottom-bar pill: scroll the nearby-stops list back to the top.
+    DisposableEffect(Unit) {
+        NavState.onScrollToTop = {
+            coroutineScope.launch { listState.animateScrollToItem(0) }
+        }
+        onDispose { NavState.onScrollToTop = null }
+    }
 
     fun launchLoadNearbyStops() {
         loadJob?.cancel()
@@ -236,7 +248,6 @@ fun NearbyStopsScreen(
                 }
                 3 -> {
                     ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                        val listState = rememberLazyListState()
                         val smoothFling = rememberSmoothFlingBehavior()
                         LazyColumn(
                             state = listState,

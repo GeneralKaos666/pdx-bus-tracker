@@ -222,6 +222,7 @@ private fun MainBottomBar(
     onSettingsClick: () -> Unit,
     showBack: Boolean = false,
     onBackClick: () -> Unit = {},
+    onContextClick: () -> Unit = {},
     contextLabelRes: Int? = null,
     contextIcon: ImageVector? = null
 ) {
@@ -277,11 +278,11 @@ private fun MainBottomBar(
                             onNavigate = onNavigate
                         )
                     } else {
-                        ContextPill(
+                        CompactContextPill(
                             contextLabelRes = contextLabelRes ?: R.string.nav_arrivals,
                             contextIcon = contextIcon,
-                            itemHeight = itemHeight,
-                            shouldHideLabel = shouldHideLabel
+                            onClick = onContextClick,
+                            itemHeight = itemHeight
                         )
                     }
                 }
@@ -404,13 +405,6 @@ private fun MainTabRow(
                     modifier = Modifier
                         .width(48.dp + labelWidth)
                         .height(itemHeight)
-                        .onGloballyPositioned { coords ->
-                            val pos = coords.positionInWindow()
-                            bounds[index] = PillBounds(
-                                x = pos.x.roundToInt() - boxLeft,
-                                width = coords.size.width
-                            )
-                        }
                         .pressScale(itemSource, 0.92f),
                     colors = IconButtonDefaults.iconButtonColors(
                         contentColor = if (isSelected) {
@@ -423,7 +417,13 @@ private fun MainTabRow(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.onGloballyPositioned { coords ->
+                            val pos = coords.positionInWindow()
+                            bounds[index] = PillBounds(
+                                x = pos.x.roundToInt() - boxLeft,
+                                width = coords.size.width
+                            )
+                        }
                     ) {
                         Icon(
                             imageVector = icon,
@@ -452,32 +452,31 @@ private fun MainTabRow(
 }
 
 @Composable
-private fun ContextPill(
+private fun CompactContextPill(
     contextLabelRes: Int,
     contextIcon: ImageVector?,
-    itemHeight: Dp,
-    shouldHideLabel: Boolean
+    onClick: () -> Unit,
+    itemHeight: Dp
 ) {
-    val showLabel = contextIcon != null && !shouldHideLabel
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .height(itemHeight)
-            .padding(horizontal = 12.dp)
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shadowElevation = 8.dp,
+        tonalElevation = 4.dp
     ) {
-        Icon(
-            imageVector = contextIcon ?: Icons.Default.Settings,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(24.dp)
-        )
-        if (showLabel) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(contextLabelRes),
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+        val source = remember { MutableInteractionSource() }
+        IconButton(
+            onClick = onClick,
+            interactionSource = source,
+            modifier = Modifier
+                .size(itemHeight)
+                .pressScale(source, 0.92f)
+        ) {
+            Icon(
+                imageVector = contextIcon ?: Icons.Default.Settings,
+                contentDescription = stringResource(contextLabelRes),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(24.dp)
             )
         }
     }
@@ -773,6 +772,7 @@ private fun MainAppContent(
                         },
                         showBack = !isTopLevel,
                         onBackClick = { navController.popBackStack() },
+                        onContextClick = { NavState.onScrollToTop?.invoke() },
                         contextLabelRes = contextLabelRes,
                         contextIcon = contextIcon
                     )

@@ -13,6 +13,11 @@ object NavState {
     var arrivalsLng by mutableDoubleStateOf(0.0)
     var arrivalsOnRefresh by mutableStateOf<(() -> Unit)?>(null)
 
+    // Scroll-to-top bridge — written by whichever sub-screen is active, invoked
+    // by the collapsed bottom-bar context pill. Scrolls the list back to the top
+    // (and refreshes, on Arrivals).
+    var onScrollToTop by mutableStateOf<(() -> Unit)?>(null)
+
     // Bottom bar visibility — reset on route change by MainActivity, read by the
     // outer scaffold's AnimatedVisibility
     var bottomBarVisible by mutableStateOf(true)
@@ -21,6 +26,7 @@ object NavState {
         arrivalsStopName = ""
         arrivalsIsFavorite = false
         arrivalsOnRefresh = null
+        onScrollToTop = null
         arrivalsLat = 0.0
         arrivalsLng = 0.0
     }

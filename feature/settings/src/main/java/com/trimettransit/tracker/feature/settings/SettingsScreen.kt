@@ -45,9 +45,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,8 +66,11 @@ import android.os.Build
 import androidx.core.content.edit
 import androidx.core.graphics.drawable.toBitmap
 import androidx.preference.PreferenceManager
+import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.pressScale
+
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen() {
@@ -78,8 +83,18 @@ fun SettingsScreen() {
         mutableStateOf(prefs.getBoolean("pref_key_only_show_route_selected", true))
     }
 
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
+    // Collapsed bottom-bar pill: scroll Settings back to the top.
+    DisposableEffect(Unit) {
+        NavState.onScrollToTop = {
+            coroutineScope.launch { scrollState.scrollTo(0) }
+        }
+        onDispose { NavState.onScrollToTop = null }
+    }
+
     ContentEntrance(modifier = Modifier.fillMaxSize()) {
-        val scrollState = rememberScrollState()
         Column(
             modifier = Modifier
                 .fillMaxSize()
