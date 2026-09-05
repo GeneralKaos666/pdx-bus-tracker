@@ -34,11 +34,19 @@ class FavoriteArrivalsTileService : Material3TileService() {
     override suspend fun MaterialScope.tileResponse(requestParams: TileRequest): Tile {
         return try {
             val snapshot = TileCache.snapshot(context)
-            val next = snapshot?.arrivals?.sortedBy { it.arrivalTimeMillis }?.firstOrNull()
-            if (snapshot == null || next == null) {
+            if (snapshot == null) {
                 noDeparturesTile(System.currentTimeMillis())
             } else {
-                countdownTile(snapshot, next, System.currentTimeMillis())
+                // Skip drop-off-only (non-boarding) arrivals — the tile counts down to
+                // the next departure the user can actually catch.
+                val next = snapshot.arrivals
+                    .sortedBy { it.arrivalTimeMillis }
+                    .firstOrNull { !it.dropOffOnly }
+                if (next == null) {
+                    noDeparturesTile(System.currentTimeMillis())
+                } else {
+                    countdownTile(snapshot, next, System.currentTimeMillis())
+                }
             }
         } catch (t: Throwable) {
             Timber.e(t, "Tile build failed, showing fallback")

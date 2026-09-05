@@ -156,6 +156,7 @@ import org.maplibre.geojson.Point
 
 private const val POSITION_REFRESH_MS = 15_000L
 private const val PIP_REFRESH_MS = 20_000L
+private const val ARRIVALS_REFRESH_MS = 30_000L
 private const val STOP_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 private const val STOP_MAP_STYLE_URL_DARK = "https://tiles.openfreemap.org/styles/dark"
 
@@ -220,10 +221,16 @@ fun ArrivalsScreen(
     }
 
     var arrivalsJob by remember { mutableStateOf<Job?>(null) }
-    fun loadArrivals() {
+
+    /**
+     * Re-fetches arrivals. [showLoading] toggles the loading UI; silent refreshes
+     * (background cadence) keep the last good data if a fetch fails so the screen
+     * the user is looking at never blinks into an error state.
+     */
+    fun refreshArrivals(showLoading: Boolean) {
         arrivalsJob?.cancel()
         arrivalsJob = coroutineScope.launch {
-            isLoading = true
+            if (showLoading) isLoading = true
             val result = transitRepository.getArrivals(
                 locIds = listOf(locId),
                 showPosition = true,
@@ -249,13 +256,15 @@ fun ArrivalsScreen(
                     }
                 }
                 isError = false
-            } else {
+            } else if (showLoading) {
                 arrivals = emptyList()
                 isError = true
             }
-            isLoading = false
+            if (showLoading) isLoading = false
         }
     }
+
+    fun loadArrivals() = refreshArrivals(showLoading = true)
 
     // Re-fetch arrivals on app re-entry (and initial composition via lifecycle observer)
     RememberOnResume { loadArrivals() }
@@ -363,6 +372,17 @@ fun ArrivalsScreen(
                     isError = true
                 }
             }
+        }
+    }
+
+    // Foreground silent refresh: re-fetch while the user watches so a bus flipping
+    // to drop-off-only (or a canceled/delayed status) shows up without a manual
+    // pull-to-refresh. PiP skips this — it already refreshes on its own loop.
+    LaunchedEffect(inPip) {
+        if (inPip) return@LaunchedEffect
+        while (true) {
+            delay(ARRIVALS_REFRESH_MS)
+            if (isAppResumed) refreshArrivals(showLoading = false)
         }
     }
 

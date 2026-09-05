@@ -115,7 +115,10 @@ fun ArrivalsScreen(stop: Stop) {
         }
     }
 
-    val arrivals = result?.arrivals.orEmpty()
+    // Boardable arrivals only — drop-off-only (non-boarding) buses are skipped so the
+    // watch never counts down to a ride the user can't catch. The tile cache below still
+    // gets the raw list; the Tile does its own skip when picking the next departure.
+    val arrivals = result?.arrivals.orEmpty().filterNot { it.dropOffOnly }
 
     Box(modifier = Modifier.fillMaxSize()) {
         when {

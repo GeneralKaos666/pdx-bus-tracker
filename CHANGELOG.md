@@ -1,5 +1,12 @@
 # Changelog
 
+## What's New
+
+### Drop-off-only arrivals handled everywhere
+- **Phone arrivals stay live:** the arrivals screen now silently re-fetches every 30 seconds while open, so a bus flipping to drop-off-only (or canceled/delayed) updates the row and map label without a manual pull-to-refresh. Those rows keep showing "Dropoff Only".
+- **Watch skips non-boarding buses:** the watch arrivals list and the "Next departure" countdown tile now skip drop-off-only trips entirely and count down to the next bus you can actually catch.
+- **Home-screen widget labels them:** the widget shows "Dropoff Only" in place of the countdown for non-boarding arrivals.
+
 ## What's New in v4.12.0
 
 ### Navigation revamp

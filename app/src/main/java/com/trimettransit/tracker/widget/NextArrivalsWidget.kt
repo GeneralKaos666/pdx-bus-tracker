@@ -86,6 +86,7 @@ private fun StopList(snapshot: WidgetSnapshotCache.Snapshot) {
 @Composable
 private fun StopRow(row: WidgetSnapshotCache.Row, now: Long) {
     val c = GlanceTheme.colors
+    val context = LocalContext.current
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
@@ -112,7 +113,11 @@ private fun StopRow(row: WidgetSnapshotCache.Row, now: Long) {
             )
             Text(
                 text = row.arrivals.joinToString("  \u00b7  ") { a ->
-                    countdownLabel(row.minutesFrom(now, a))
+                    if (a.dropOffOnly) {
+                        context.getString(R.string.widget_dropoff_only)
+                    } else {
+                        countdownLabel(row.minutesFrom(now, a))
+                    }
                 },
                 style = TextStyle(color = c.onBackground),
                 maxLines = 1,

@@ -5,6 +5,7 @@
     <string name="next_arrivals_widget_placeholder">Loading…</string>
     <string name="widget_empty_no_favorites">No favorites yet — tap to add some</string>
     <string name="widget_empty_refreshing">Refreshing — tap to open the app</string>
+    <string name="widget_dropoff_only">Dropoff Only</string>
 
     <!-- Bottom navigation -->
     <string name="nav_favorites">Favorites</string>

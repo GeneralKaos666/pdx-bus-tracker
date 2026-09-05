@@ -61,7 +61,7 @@ object TileCache {
         val updatedAtMillis: Long
     )
 
-    data class TileArrival(val sign: String, val arrivalTimeMillis: Long) {
+    data class TileArrival(val sign: String, val arrivalTimeMillis: Long, val dropOffOnly: Boolean = false) {
         /** Whole minutes until this arrival relative to [now]; 0 means "now/due". */
         fun minutesFrom(nowMillis: Long): Long {
             val remaining = arrivalTimeMillis - nowMillis
@@ -95,6 +95,7 @@ object TileCache {
                 JSONObject()
                     .put("sign", a.shortSign.ifBlank { a.fullSign })
                     .put("at", at)
+                    .put("dropOffOnly", a.dropOffOnly)
             )
         }
         return arr.toString()
@@ -106,7 +107,8 @@ object TileCache {
             val o = arr.getJSONObject(i)
             TileArrival(
                 sign = o.optString("sign", ""),
-                arrivalTimeMillis = o.optLong("at", 0L)
+                arrivalTimeMillis = o.optLong("at", 0L),
+                dropOffOnly = o.optBoolean("dropOffOnly", false)
             )
         }
     }

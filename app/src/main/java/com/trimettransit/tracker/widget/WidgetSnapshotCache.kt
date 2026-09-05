@@ -19,7 +19,7 @@ object WidgetSnapshotCache {
     private const val KEY_JSON = "widget_snapshot"
 
     /** Per-stop widget row, ready to render. */
-    data class ArrivalOnScreen(val sign: String, val atMillis: Long)
+    data class ArrivalOnScreen(val sign: String, val atMillis: Long, val dropOffOnly: Boolean = false)
 
     data class Row(
         val stop: Stop,
@@ -75,7 +75,12 @@ object WidgetSnapshotCache {
             "arrivals",
             JSONArray().apply {
                 row.arrivals.forEach { a ->
-                    put(JSONObject().put("sign", a.sign).put("at", a.atMillis))
+                    put(
+                        JSONObject()
+                            .put("sign", a.sign)
+                            .put("at", a.atMillis)
+                            .put("dropOffOnly", a.dropOffOnly)
+                    )
                 }
             }
         )
@@ -91,7 +96,11 @@ object WidgetSnapshotCache {
         val arr = o.optJSONArray("arrivals") ?: JSONArray()
         val arrivals = (0 until arr.length()).map { i ->
             val a = arr.getJSONObject(i)
-            ArrivalOnScreen(a.optString("sign", ""), a.optLong("at", 0L))
+            ArrivalOnScreen(
+                    a.optString("sign", ""),
+                    a.optLong("at", 0L),
+                    a.optBoolean("dropOffOnly", false)
+                )
         }
         return Row(stop, arrivals)
     }
@@ -104,7 +113,7 @@ object WidgetSnapshotCache {
         result
             .mapNotNull { a ->
                 val at = a.estimatedMillis.takeIf { it > 0L } ?: a.scheduledMillis.takeIf { it > 0L }
-                at?.let { ArrivalOnScreen(a.shortSign.ifBlank { a.fullSign }, it) }
+                at?.let { ArrivalOnScreen(a.shortSign.ifBlank { a.fullSign }, it, a.dropOffOnly) }
             }
             .distinctBy { it.atMillis }
             .sortedBy { it.atMillis }
