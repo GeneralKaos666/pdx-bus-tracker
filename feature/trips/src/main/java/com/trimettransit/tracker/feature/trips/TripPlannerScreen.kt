@@ -123,6 +123,7 @@ import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
+import org.joda.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
 
@@ -955,7 +956,7 @@ private fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mod
     Column(modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = timePattern.print(itinerary.departure),
+                text = itinerary.departure.printTime(timePattern),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -966,7 +967,7 @@ private fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mod
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
             Text(
-                text = timePattern.print(itinerary.arrival),
+                text = itinerary.arrival.printTime(timePattern),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -1086,9 +1087,9 @@ private fun LegRow(leg: TripLeg) {
                 Text(
                     text = stringResource(
                         R.string.leg_transit_fmt,
-                        timePattern.print(leg.departure),
+                        leg.departure.printTime(timePattern),
                         leg.from.description,
-                        timePattern.print(leg.arrival),
+                        leg.arrival.printTime(timePattern),
                         leg.to.description
                     ),
                     style = MaterialTheme.typography.bodySmall,
@@ -1149,6 +1150,10 @@ private fun formatDurationMillis(ms: Long): String {
         else -> "${m}m"
     }
 }
+
+/** Formats a scheduled time, or an em dash when the WS returned none (walk legs/itineraries). */
+private fun DateTime?.printTime(pattern: DateTimeFormatter): String =
+    this?.let(pattern::print) ?: "—"
 
 /**
  * MapLibre view for the trip planner: origin/destination markers, route "stick" lines

@@ -42,8 +42,8 @@ android {
         applicationId = 'com.trimettransit.tracker'
         minSdk = 31
         targetSdk = 37
-        versionCode = 506
-        versionName = "4.12.0"
+        versionCode = 507
+        versionName = "4.12.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

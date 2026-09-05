@@ -18,6 +18,10 @@
 - **Indicator tracks swipes in real time:** the capsule follows the screen as you swipe from tab to tab, not just after the swipe settles.
 - **Indicator covers the whole tab:** the capsule tracks the label as it springs open, so the highlighted tab's label never sticks out past the highlight, and it appears right away on launch.
 
+### Trip Planner fixes
+- **Duration figures were wrong on the Trips tab:** itinerary chips and the walk/transit split read as "0m" even though the plan had real travel times. Trip lengths are now counted in minutes as the data source intends.
+- **Walk-only trips no longer show "now" as a scheduled time:** when a plan is purely a walk (no scheduled transit), its header shows a dash instead of pretending you catch a bus at the current time.
+
 ## What's New in v4.11.4
 
 ### Reliability & error handling

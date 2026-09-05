@@ -54,8 +54,10 @@ data class TripLeg(
     val direction: String = "",
     val from: TripPoint,
     val to: TripPoint,
-    val departure: DateTime,
-    val arrival: DateTime,
+    /** Null when the WS omits scheduled times (walk legs have none). */
+    val departure: DateTime?,
+    /** Null when the WS omits scheduled times (walk legs have none). */
+    val arrival: DateTime?,
     /** True when this leg continues aboard the same vehicle as the previous one (interline). */
     val stayOnBoard: Boolean = false
 ) {
@@ -65,8 +67,10 @@ data class TripLeg(
 /** A single itinerary option returned by the Trip Planner WS. */
 data class TripItinerary(
     val id: String = "",
-    val departure: DateTime,
-    val arrival: DateTime,
+    /** Null for walk-only itineraries, which the WS returns without scheduled times. */
+    val departure: DateTime?,
+    /** Null for walk-only itineraries, which the WS returns without scheduled times. */
+    val arrival: DateTime?,
     val durationMillis: Long,
     val distanceMeters: Double,
     val numberOfTransfers: Int,

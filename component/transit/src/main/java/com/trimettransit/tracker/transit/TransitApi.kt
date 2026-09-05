@@ -623,8 +623,9 @@ object TransitApi {
     private const val TRIP_TIME_12H = "M/d/yy h:mm a"
     private const val TRIP_TIME_24H = "M/d/yy HH:mm"
 
-    private fun parseMillis(date: String, timeValue: String): Long {
+    private fun parseMillis(date: String, timeValue: String): Long? {
         val t = timeValue.trim()
+        if (t.isEmpty()) return null
         val patterns = listOf(
             TRIP_TIME_12H, "M-d-yy h:mm a", "M/d/yyyy h:mm a", "M-d-yyyy h:mm a",
             TRIP_TIME_24H, "M/d/yyyy HH:mm", "M-d-yyyy HH:mm"
@@ -635,7 +636,7 @@ object TransitApi {
             } catch (_: Exception) {
             }
         }
-        return DateTime.now().millis
+        return null
     }
 
     private fun parsePoint(obj: Element?): TripPoint {
@@ -656,17 +657,25 @@ object TransitApi {
         val legs = obj.directChildren("leg").mapNotNull { parseLeg(it, date) }
         if (legs.isEmpty()) return null
         val fare = obj.directChild("fare")?.textOf("regular")?.takeIf { it.isNotBlank() }
-        val durationSecs = timeDistance.textOf("duration").toLongOrNull() ?: ((end - start) / 1000L)
+        // time-distance's duration/walking/transit/waiting values are in MINUTES.
+        val walkTimeMillis = (timeDistance.textOf("walkingTime").toLongOrNull() ?: 0L) * 60_000L
+        val transitTimeMillis = (timeDistance.textOf("transitTime").toLongOrNull() ?: 0L) * 60_000L
+        val waitingTimeMillis = (timeDistance.textOf("waitingTime").toLongOrNull() ?: 0L) * 60_000L
+        val durationMillis = timeDistance.textOf("duration").toLongOrNull()?.let { it * 60_000L }
+            ?: when {
+                start != null && end != null -> end - start
+                else -> walkTimeMillis + transitTimeMillis
+            }
         return TripItinerary(
             id = obj.getAttribute("id"),
-            departure = DateTime(start),
-            arrival = DateTime(end),
-            durationMillis = durationSecs * 1000L,
+            departure = start?.let(::DateTime),
+            arrival = end?.let(::DateTime),
+            durationMillis = durationMillis,
             distanceMeters = timeDistance.textOf("distance").toDoubleOrNull()?.let { it * 1609.344 } ?: 0.0,
             numberOfTransfers = timeDistance.textOf("numberOfTransfers").toIntOrNull() ?: 0,
-            walkTimeMillis = (timeDistance.textOf("walkingTime").toLongOrNull() ?: 0L) * 1000L,
-            transitTimeMillis = (timeDistance.textOf("transitTime").toLongOrNull() ?: 0L) * 1000L,
-            waitingTimeMillis = (timeDistance.textOf("waitingTime").toLongOrNull() ?: 0L) * 1000L,
+            walkTimeMillis = walkTimeMillis,
+            transitTimeMillis = transitTimeMillis,
+            waitingTimeMillis = waitingTimeMillis,
             fare = fare,
             legs = legs
         )
@@ -694,8 +703,8 @@ object TransitApi {
             direction = direction,
             from = from,
             to = to,
-            departure = DateTime(start),
-            arrival = DateTime(end),
+            departure = start?.let(::DateTime),
+            arrival = end?.let(::DateTime),
             stayOnBoard = obj.getAttribute("order") == "thru-route"
         )
     }
