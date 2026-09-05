@@ -98,7 +98,7 @@ class FavoriteArrivalsTileService : Material3TileService() {
         val windowEnd = now + 12 * 60_000
         val entryCount = ((windowEnd - now + 59_999) / 60_000).toInt().coerceIn(1, 15)
         val stopName = snapshot.stop.desc.ifBlank { context.getString(R.string.stop_format, snapshot.stop.locId) }
-        val subline = "${next.sign} · ${hourMinute(next.arrivalTimeMillis)}"
+        val subline = context.getString(R.string.tile_subline_format, next.sign, hourMinute(next.arrivalTimeMillis))
 
         val entries = (0 until entryCount).map { i ->
             val start = now + i * 60_000L

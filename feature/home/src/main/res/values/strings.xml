@@ -5,6 +5,8 @@
     <string name="clear_search">Clear search</string>
     <string name="loading_stops">Loading stops…</string>
     <string name="no_connection">No connection.\nPlease check your internet.</string>
+    <string name="unable_to_load">Unable to load.\nCheck your connection.</string>
+    <string name="no_favorite_stops">No favorite stops yet.\nTap the heart on arrivals to add one.</string>
     <string name="no_stops_found">No stops found.</string>
     <string name="recent_stops_title">Recent Stops</string>
     <string name="no_recent_stops">No recent stops.</string>

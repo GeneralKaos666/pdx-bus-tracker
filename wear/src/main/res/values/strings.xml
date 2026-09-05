@@ -29,4 +29,7 @@
     <string name="tile_fallback_title">Open PDX Bus\nand add a favorite stop</string>
     <string name="tile_due">DUE</string>
     <string name="tile_countdown_min">%1$d MIN</string>
+    <string name="tile_subline_format">%1$s \u00b7 %2$s</string>
+    <string name="route_row_format">%1$s %2$d \u00b7 %3$s</string>
+    <string name="heart">\u2665</string>
 </resources>

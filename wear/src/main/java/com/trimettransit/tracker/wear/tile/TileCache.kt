@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.core.content.edit
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.util.minutesUntil
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -62,11 +63,9 @@ object TileCache {
     )
 
     data class TileArrival(val sign: String, val arrivalTimeMillis: Long, val dropOffOnly: Boolean = false) {
-        /** Whole minutes until this arrival relative to [now]; 0 means "now/due". */
-        fun minutesFrom(nowMillis: Long): Long {
-            val remaining = arrivalTimeMillis - nowMillis
-            return if (remaining <= 0) 0L else (remaining + 59_999) / 60_000
-        }
+        /** Whole minutes until this arrival (floor, matching the phone); 0 means "due". */
+        fun minutesFrom(nowMillis: Long): Long =
+            minutesUntil(arrivalTimeMillis, nowMillis).coerceAtLeast(0L)
     }
 
     private fun prefs(context: Context) =

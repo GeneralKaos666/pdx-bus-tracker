@@ -25,6 +25,6 @@ data class VehiclePosition(
     val isInCongestion: Boolean = false,
     val loadPercentage: Int = 0,
     val garage: String = "",
-    val extrablockID: String = "",
+    val extraBlockID: String = "",
     val isOffRoute: Boolean = false
 )

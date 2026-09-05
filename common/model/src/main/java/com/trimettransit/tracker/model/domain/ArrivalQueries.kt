@@ -30,10 +30,3 @@ fun filterArrivalsByRoute(arrivals: List<Arrival>, routeId: Int): List<Arrival> 
 /** Alerts that apply to a specific [routeId]. */
 fun detoursForLine(detours: List<Detour>?, routeId: Int): List<Detour> =
     detours.orEmpty().filter { it.routes?.contains(routeId) == true }
-
-/**
- * Dedupes and optionally filters arrivals in one pass — the exact funnel the
- * arrivals screen applies on each fetch.
- */
-fun shapeArrivals(arrivals: List<Arrival>, routeId: Int = 0): List<Arrival> =
-    filterArrivalsByRoute(dedupeArrivals(arrivals), routeId)

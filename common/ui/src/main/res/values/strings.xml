@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_try_again">Try Again</string>
+    <string name="common_stop_number">Stop #%1$d</string>
+
+    <!-- Transit type labels (accessibility + inline labels shared across modules) -->
+    <string name="transit_type_bus">Bus</string>
+    <string name="transit_type_max_light_rail">MAX Light Rail</string>
+    <string name="transit_type_streetcar">Streetcar</string>
+    <string name="transit_type_wes_commuter_rail">WES Commuter Rail</string>
+    <string name="transit_type_transit">Transit</string>
+</resources>

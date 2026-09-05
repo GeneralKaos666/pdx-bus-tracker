@@ -7,7 +7,4 @@ object ApiKeys {
     fun getTrimetApiKey(): String {
         return BuildConfig.TRIMET_API_KEY.trim()
     }
-
-    @JvmStatic
-    fun hasTrimetApiKey(): Boolean = getTrimetApiKey().isNotEmpty()
 }

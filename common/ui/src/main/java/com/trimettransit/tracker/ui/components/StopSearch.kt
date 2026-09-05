@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import java.util.Locale
@@ -75,7 +76,7 @@ fun StopSearchItem(
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     painter = painterResource(id = transitIconResource(stop.transitType)),
-                    contentDescription = transitTypeLabel(stop.transitType),
+                    contentDescription = stringResource(transitTypeLabel(stop.transitType)),
                     tint = MaterialTheme.colorScheme.surface,
                     modifier = Modifier.size(24.dp)
                 )

@@ -112,11 +112,11 @@ private fun StopRow(row: WidgetSnapshotCache.Row, now: Long) {
                 maxLines = 1
             )
             Text(
-                text = row.arrivals.joinToString("  \u00b7  ") { a ->
+                text = row.arrivals.joinToString(context.getString(R.string.widget_arrival_separator)) { a ->
                     if (a.dropOffOnly) {
                         context.getString(R.string.widget_dropoff_only)
                     } else {
-                        countdownLabel(row.minutesFrom(now, a))
+                        countdownLabel(row.minutesFrom(now, a), context)
                     }
                 },
                 style = TextStyle(color = c.onBackground),
@@ -146,8 +146,7 @@ private fun EmptyState(hint: String, ctx: Context) {
 
 private fun routeBadgeText(routeNum: Int): String = if (routeNum > 0) routeNum.toString() else "B"
 
-private fun countdownLabel(minutes: Long): String = when {
-    minutes <= 0L -> "Due"
-    minutes == 1L -> "1 min"
-    else -> "$minutes min"
+private fun countdownLabel(minutes: Long, context: Context): String = when {
+    minutes <= 0L -> context.getString(R.string.widget_due)
+    else -> context.getString(R.string.widget_countdown_min, minutes)
 }

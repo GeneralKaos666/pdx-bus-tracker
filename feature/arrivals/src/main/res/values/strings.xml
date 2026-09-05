@@ -28,5 +28,8 @@
     <string name="stop_number">Stop #%1$s</string>
     <string name="due">Due</string>
     <string name="minutes">%1$d min</string>
+    <string name="arrival_delay_late">%1$d min late</string>
+    <string name="arrival_delay_early">%1$d min early</string>
+    <string name="arrival_on_time">On time</string>
     <string name="failed_to_update_favorite">Failed to update favorite</string>
 </resources>

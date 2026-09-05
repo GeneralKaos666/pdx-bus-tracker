@@ -25,7 +25,6 @@ import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
-import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.model.Stop
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,16 +36,17 @@ private class WatchStopListState(
 
 /**
  * Watch-flavored stop list loader: reads the stop list straight from this
- * device's local database (standalone — no phone sync involved).
+ * device's local database via the repository boundary (standalone — no phone
+ * sync involved).
  */
 @Composable
-private fun rememberWatchStopList(read: (DatabaseHelper) -> List<Stop>): WatchStopListState {
+private fun rememberWatchStopList(read: suspend () -> List<Stop>): WatchStopListState {
     val context = LocalContext.current
     var stops by remember { mutableStateOf<List<Stop>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        stops = withContext(Dispatchers.IO) { read(DatabaseHelper(context)) }
+        stops = withContext(Dispatchers.IO) { read() }
         isLoading = false
     }
 
@@ -56,7 +56,7 @@ private fun rememberWatchStopList(read: (DatabaseHelper) -> List<Stop>): WatchSt
 @Composable
 fun StopListScreen(
     header: String,
-    read: (DatabaseHelper) -> List<Stop>,
+    read: suspend () -> List<Stop>,
     emptyText: String,
     onStopClick: (Stop) -> Unit
 ) {

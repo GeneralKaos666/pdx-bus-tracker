@@ -12,6 +12,9 @@ import com.trimettransit.tracker.R
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import com.trimettransit.tracker.data.local.DatabaseHelper
+import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
+import com.trimettransit.tracker.data.local.RecentStopsRepositoryImpl
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
@@ -24,7 +27,7 @@ private object Routes {
 
     const val ROUTES_LIST = "routes"
     const val ROUTE_DIRS = "routes/{routeId}?name={name}"
-    const val ROUTE_STOPS = "stops/{routeId}/{dir}?routeName={routeName}&dirName={dirName}"
+    const val ROUTE_STOPS = "stops/{routeId}/{dir}?dirName={dirName}"
     const val ABOUT = "about"
 
     fun arrivals(stop: Stop) =
@@ -34,8 +37,7 @@ private object Routes {
         "routes/${route.routeId}?name=${Uri.encode(route.desc)}"
 
     fun routeStops(routeId: Int, direction: Direction) =
-        "stops/$routeId/${direction.dir}?routeName=${Uri.encode(routeId.toString())}" +
-            "&dirName=${Uri.encode(direction.desc)}"
+        "stops/$routeId/${direction.dir}?dirName=${Uri.encode(direction.desc)}"
 }
 
 @Composable
@@ -46,6 +48,12 @@ fun WearApp(startStop: Stop? = null) {
             val context = androidx.compose.ui.platform.LocalContext.current
             val transitRepository =
                 remember { com.trimettransit.tracker.transit.TransitRepositoryImpl(context.applicationContext) }
+            val favoritesRepository = remember {
+                FavoritesRepositoryImpl(DatabaseHelper(context.applicationContext))
+            }
+            val recentStopsRepository = remember {
+                RecentStopsRepositoryImpl(DatabaseHelper(context.applicationContext))
+            }
             // The stand-alone Tile launches the app with a stop in its extras.
             LaunchedEffect(startStop) {
                 startStop?.let {
@@ -66,7 +74,7 @@ fun WearApp(startStop: Stop? = null) {
                 composable(Routes.FAVORITES) {
                     StopListScreen(
                         header = stringResource(R.string.favorites),
-                        read = { it.favorites },
+                        read = { favoritesRepository.getFavorites() },
                         emptyText = stringResource(R.string.no_favorites),
                         onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
                     )
@@ -74,7 +82,7 @@ fun WearApp(startStop: Stop? = null) {
                 composable(Routes.RECENT) {
                     StopListScreen(
                         header = stringResource(R.string.recent_stops_title),
-                        read = { it.recentStops },
+                        read = { recentStopsRepository.getRecentStops() },
                         emptyText = stringResource(R.string.no_recent_stops),
                         onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
                     )
@@ -104,12 +112,11 @@ fun WearApp(startStop: Stop? = null) {
                         }
                     )
                 }
-                composable(
+composable(
                     route = Routes.ROUTE_STOPS,
                     arguments = listOf(
                         navArgument("routeId") { type = NavType.IntType },
                         navArgument("dir") { type = NavType.IntType },
-                        navArgument("routeName") { type = NavType.StringType; defaultValue = "" },
                         navArgument("dirName") { type = NavType.StringType; defaultValue = "" }
                     )
                 ) { entry ->

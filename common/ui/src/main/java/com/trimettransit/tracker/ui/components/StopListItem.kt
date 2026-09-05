@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.ui.R
 import kotlinx.coroutines.launch
 
 @Composable
@@ -104,7 +106,7 @@ fun StopListItem(
                         )
                         !stop.transitType.isNullOrBlank() -> Icon(
                             painter = painterResource(id = transitIconResource(stop.transitType)),
-                            contentDescription = transitTypeLabel(stop.transitType),
+                            contentDescription = stringResource(transitTypeLabel(stop.transitType)),
                             tint = transitGlyphColor,
                             modifier = Modifier.size(24.dp)
                         )
@@ -139,7 +141,7 @@ fun StopListItem(
                     )
                 }
                 Text(
-                    text = "Stop #${stop.locId}",
+                    text = stringResource(R.string.common_stop_number, stop.locId),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )

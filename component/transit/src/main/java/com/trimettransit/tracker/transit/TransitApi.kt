@@ -195,8 +195,8 @@ object TransitApi {
                     val arrival = Arrival(
                         fullSign = obj.optString("fullSign", ""),
                         shortSign = obj.optString("shortSign", ""),
-                        estimated = if (estimatedMs != -1L) org.joda.time.DateTime(estimatedMs) else null,
-                        scheduled = if (scheduledMs != -1L) org.joda.time.DateTime(scheduledMs) else null,
+                        estimated = if (estimatedMs != -1L) DateTime(estimatedMs) else null,
+                        scheduled = if (scheduledMs != -1L) DateTime(scheduledMs) else null,
                         routeId = obj.optInt("route", 0),
                         status = obj.optString("status", ""),
                         dropOffOnly = obj.optBoolean("dropOffOnly", false),
@@ -357,7 +357,7 @@ object TransitApi {
                     isInCongestion = obj.optBoolean("inCongestion", false),
                     loadPercentage = obj.optInt("loadPercentage", 0),
                     garage = obj.optString("garage", ""),
-                    extrablockID = obj.optString("extrablockID", ""),
+                    extraBlockID = obj.optString("extrablockID", ""),
                     isOffRoute = obj.optBoolean("offRoute", false)
                 )
                 vehicles.add(vp)

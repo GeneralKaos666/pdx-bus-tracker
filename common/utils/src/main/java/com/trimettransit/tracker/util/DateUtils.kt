@@ -18,3 +18,8 @@ fun formatDateTime(dateTime: DateTime, context: Context): String {
 fun minutesUntil(dateTime: DateTime): Long {
     return (dateTime.millis - DateTime.now().millis) / 60000
 }
+
+/** Whole minutes until an arrival at [epochMillis] (floor: 0 until the minute is up). */
+fun minutesUntil(epochMillis: Long, nowMillis: Long = System.currentTimeMillis()): Long {
+    return (epochMillis - nowMillis) / 60000
+}

@@ -135,6 +135,7 @@ dependencies {
     implementation project(':feature:settings')
     implementation project(':common:ui')
     implementation project(':common:model')
+    implementation project(':common:utils')
     implementation project(':component:transit')
     implementation project(':component:localdata')
 

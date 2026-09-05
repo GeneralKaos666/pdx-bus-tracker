@@ -61,8 +61,8 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **Artifacts:** `androidx.wear:wear` 1.4.0, `androidx.wear.compose:compose-foundation` /
   `compose-material3` / `compose-navigation` / `compose-ui-tooling` (all 1.6.2),
   `androidx.wear.tiles:tiles` 1.6.2, `androidx.wear.protolayout:protolayout`,
-  `protolayout-material3`, `protolayout-expression` (1.4.2), `androidx.work:work-runtime-ktx`
-  2.11.2, `androidx.wear.tiles:tiles-renderer` 1.6.2 (debug builds only)
+  `protolayout-material3`, `protolayout-expression` (1.4.2), `androidx.wear.tiles:tiles-renderer`
+  1.6.2 (debug builds only)
 - **License:** Apache License 2.0
 - **Copyright:** Copyright The Android Open Source Project
 - **Project:** https://developer.android.com/jetpack/androidx/releases/wear-compose

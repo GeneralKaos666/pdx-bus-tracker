@@ -18,10 +18,6 @@ object NavState {
     // (and refreshes, on Arrivals).
     var onScrollToTop by mutableStateOf<(() -> Unit)?>(null)
 
-    // Bottom bar visibility — reset on route change by MainActivity, read by the
-    // outer scaffold's AnimatedVisibility
-    var bottomBarVisible by mutableStateOf(true)
-
     fun clearArrivals() {
         arrivalsStopName = ""
         arrivalsIsFavorite = false

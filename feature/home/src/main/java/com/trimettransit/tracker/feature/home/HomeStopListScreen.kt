@@ -7,10 +7,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
+import com.trimettransit.tracker.feature.home.R
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.EmptyState
@@ -39,7 +41,7 @@ fun HomeStopListScreen(
     ) { state ->
         when (state) {
             0 -> ListLoadingSkeleton()
-            1 -> ErrorState(message = "Unable to load.\nCheck your connection.")
+            1 -> ErrorState(message = stringResource(R.string.unable_to_load))
             2 -> EmptyState(message = emptyText)
             else -> ContentEntrance(modifier = Modifier.fillMaxSize()) {
                 val listState = rememberLazyListState()

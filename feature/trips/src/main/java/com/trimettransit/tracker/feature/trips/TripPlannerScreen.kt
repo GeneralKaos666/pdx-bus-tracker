@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -941,7 +942,7 @@ private fun ItineraryResultsSheet(
                         .fillMaxWidth()
                         .heightIn(max = 360.dp)
                 ) {
-                    items(selected.legs, key = { it.hashCode() }, contentType = { "leg" }) { leg ->
+                    itemsIndexed(selected.legs, key = { index, _ -> index }, contentType = { _, _ -> "leg" }) { _, leg ->
                         LegRow(leg = leg)
                     }
                 }

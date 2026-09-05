@@ -17,8 +17,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.trimettransit.tracker.ui.R
 
 @Composable
 fun LoadingState(
@@ -51,7 +53,7 @@ fun ErrorState(
     modifier: Modifier = Modifier,
     icon: ImageVector = Icons.Default.Warning,
     onRetry: (() -> Unit)? = null,
-    retryLabel: String = "Try Again"
+    retryLabel: String? = null
 ) {
     FadeInOnce(modifier = modifier.fillMaxSize()) {
         Box(
@@ -75,7 +77,7 @@ fun ErrorState(
                 if (onRetry != null) {
                     Spacer(modifier = Modifier.height(16.dp))
                     androidx.compose.material3.OutlinedButton(onClick = onRetry) {
-                        Text(retryLabel)
+                        Text(retryLabel ?: stringResource(R.string.common_try_again))
                     }
                 }
             }

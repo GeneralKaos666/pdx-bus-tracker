@@ -1,6 +1,5 @@
 package com.trimettransit.tracker.transit
 
-import timber.log.Timber
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONException
@@ -19,7 +18,6 @@ object JSONParser {
         .callTimeout(20, TimeUnit.SECONDS)
         .build()
 
-
     @Throws(IllegalArgumentException::class, IOException::class, JSONException::class)
     fun fetch(url: String): JSONObject {
         val uri = URI.create(url)
@@ -33,28 +31,23 @@ object JSONParser {
             .addHeader("Accept", "application/json")
             .build()
 
-        try {
-            httpClient.newCall(request).execute().use { response ->
-                // The client follows redirects, so response.request.url is the FINAL url
-                // after any chain — re-enforce HTTPS there too, otherwise a redirect to
-                // http:// would silently downgrade the caller's data in transit.
-                if (!response.request.url.isHttps) {
-                    throw IOException(
-                        "Only HTTPS endpoints are allowed; final URL was ${response.request.url}"
-                    )
-                }
-                if (!response.isSuccessful) {
-                    throw IOException("Unsuccessful response code: ${response.code}")
-                }
-                val responseBody = response.body.string()
-                if (responseBody.trim().isEmpty()) {
-                    throw JSONException("Response body is empty.")
-                }
-                return JSONObject(responseBody)
+        httpClient.newCall(request).execute().use { response ->
+            // The client follows redirects, so response.request.url is the FINAL url
+            // after any chain — re-enforce HTTPS there too, otherwise a redirect to
+            // http:// would silently downgrade the caller's data in transit.
+            if (!response.request.url.isHttps) {
+                throw IOException(
+                    "Only HTTPS endpoints are allowed; final URL was ${response.request.url}"
+                )
             }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch JSON")
-            throw e
+            if (!response.isSuccessful) {
+                throw IOException("Unsuccessful response code: ${response.code}")
+            }
+            val responseBody = response.body.string()
+            if (responseBody.trim().isEmpty()) {
+                throw JSONException("Response body is empty.")
+            }
+            return JSONObject(responseBody)
         }
     }
 
@@ -71,28 +64,23 @@ object JSONParser {
             .addHeader("Accept", "application/xml")
             .build()
 
-        try {
-            httpClient.newCall(request).execute().use { response ->
-                // The client follows redirects, so response.request.url is the FINAL url
-                // after any chain — re-enforce HTTPS there too, otherwise a redirect to
-                // http:// would silently downgrade the caller's data in transit.
-                if (!response.request.url.isHttps) {
-                    throw IOException(
-                        "Only HTTPS endpoints are allowed; final URL was ${response.request.url}"
-                    )
-                }
-                if (!response.isSuccessful) {
-                    throw IOException("Unsuccessful response code: ${response.code}")
-                }
-                val responseBody = response.body.string()
-                if (responseBody.trim().isEmpty()) {
-                    throw IOException("Response body is empty.")
-                }
-                return responseBody
+        httpClient.newCall(request).execute().use { response ->
+            // The client follows redirects, so response.request.url is the FINAL url
+            // after any chain — re-enforce HTTPS there too, otherwise a redirect to
+            // http:// would silently downgrade the caller's data in transit.
+            if (!response.request.url.isHttps) {
+                throw IOException(
+                    "Only HTTPS endpoints are allowed; final URL was ${response.request.url}"
+                )
             }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch XML")
-            throw e
+            if (!response.isSuccessful) {
+                throw IOException("Unsuccessful response code: ${response.code}")
+            }
+            val responseBody = response.body.string()
+            if (responseBody.trim().isEmpty()) {
+                throw IOException("Response body is empty.")
+            }
+            return responseBody
         }
     }
 }

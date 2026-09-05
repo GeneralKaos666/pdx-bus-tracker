@@ -13,10 +13,15 @@ data class Stop(
 
 /**
  * Derives a stop's transit type letter from its routes, matching the behavior of
- * the former `Stop.computeTransitType()`. Returns "Z" (unknown) if no route matches.
+ * the former `Stop.computeTransitType()`. A shuttle bus never masks a real rail
+ * type, but a stop served only by a shuttle still reads "B" (matching the route's
+ * own [Route.typeLetter]) instead of the generic "Z". Returns "Z" when no route
+ * matches.
  */
 fun computeTransitType(routes: List<Route>): String {
+    var hasShuttleBus = false
     for (route in routes) {
+        hasShuttleBus = hasShuttleBus || route.isBus
         when {
             route.isStreetcar -> return "S"
             route.isBus && !route.desc.contains("Shuttle") -> return "B"
@@ -24,5 +29,5 @@ fun computeTransitType(routes: List<Route>): String {
             route.isWes -> return "W"
         }
     }
-    return "Z"
+    return if (hasShuttleBus) "B" else "Z"
 }

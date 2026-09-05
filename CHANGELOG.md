@@ -1,11 +1,19 @@
 # Changelog
 
-## What's New
+## What's New in v4.12.1
 
 ### Drop-off-only arrivals handled everywhere
 - **Phone arrivals stay live:** the arrivals screen now silently re-fetches every 30 seconds while open, so a bus flipping to drop-off-only (or canceled/delayed) updates the row and map label without a manual pull-to-refresh. Those rows keep showing "Dropoff Only".
 - **Watch skips non-boarding buses:** the watch arrivals list and the "Next departure" countdown tile now skip drop-off-only trips entirely and count down to the next bus you can actually catch.
 - **Home-screen widget labels them:** the widget shows "Dropoff Only" in place of the countdown for non-boarding arrivals.
+
+### Reliability, localization & cleanup
+- **Trip Planner can no longer crash on identical legs:** duplicate itinerary legs no longer collide on the same list key, so planning a trip can't throw a duplicate-key exception.
+- **The watch tile and its background refresh are crash-proof against missing keys:** a blank or expired API key is handled gracefully, and transient fetch failures retry with a bounded limit instead of running forever.
+- **One countdown rule everywhere:** "Due" now shows during the final minute on the phone, the home-screen widget, and the watch tile — every countdown rounds down consistently.
+- **More accurate routing data:** shuttle-only stops are labeled as buses, and the live vehicle feed's block-ID field is parsed under its correct name again.
+- **Repositories used app-wide:** the phone, widget, watch, and watch tile all reach transit, favorites, and recent-stops data through the shared repository layer.
+- **Localization-ready text:** every remaining user-facing string — stop-type labels, countdowns, delay text, and widget/watch-tile labels — now lives in standard Android string resources.
 
 ## What's New in v4.12.0
 
@@ -108,7 +116,7 @@
 - **Smaller release builds:** the blanket keep-all-app-classes R8 rule was removed (OkHttp, MapLibre, Compose and AndroidX ship their own rules), so `minifyEnabled` actually shrinks the release APK/AAB now; Joda-Time keeps retained. Unused bundled icon fonts (Font Awesome 4.7 + Ionicons 2.0.1, ~354 KB of dead assets) were deleted, as was the unused `viewBinding` build flag.
   (`app/proguard-rules.pro`, `app/build.gradle`)
 - **Repo cleanup:** internal planning notes (`nav-pill-collapse-plan.md`, `.opencode/plans/…`) are no longer tracked in git; `.opencode/` is ignored.
-- **Docs:** README corrections (JDK version, Gradle wrapper version, duplicated architecture row) plus a new Release builds section covering signed APKs and the Play-required AAB; added `docs/play-store-checklist.md` with the full Google Play submission walkthrough (data-safety answers, listing assets, trademark guardrails).
+- **Docs:** README corrections (JDK version, Gradle wrapper version, duplicated architecture row) plus a new Release builds section covering signed APKs and the Play-required AAB. Google Play submission guidance (data-safety answers, listing assets, trademark guardrails) is kept out of the repo and lives locally on the device.
 
 ## What's New in v4.9.4
 

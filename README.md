@@ -17,7 +17,7 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 - **Picture-in-picture** — mini-window countdown on the arrivals screen (2:3 PiP)
 - **Dynamic theming** — Material 3 with Android 12+ dynamic color; system/light/dark override in Settings
 - **Route-pinned mode** — optional setting to show only the arrivals for the route you opened the stop from
-- **Wear OS companion** — optional watch app mirroring your Favorites & Recent stops (synced automatically over the paired connection) with tap-through to live arrivals on the watch
+- **Wear OS companion** — optional standalone watch app with its own Favorites & Recent stops and live arrivals directly from the TriMet API, plus a live "Next departure" Tile that counts down to the soonest ride
 
 ## Screenshots
 
@@ -43,12 +43,12 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 
 ## Architecture
 
-12 Gradle modules — in five app-level modules plus three strictly downward layers (no module→app or feature→feature edges):
+12 Gradle modules in five layers with strictly downward dependencies (no module→app or feature→feature edges):
 
 | Layer | Modules |
 |---|---|
 | `app` | single Activity, Compose Navigation graph, floating pill nav + trailing Settings/Back button, PiP |
-| `wear` | Wear OS companion — Wear Compose UI mirroring the phone's Favorites/Recent stops with live arrivals; non-standalone, synced from the phone over the Wearable Data Layer |
+| `wear` | Wear OS companion — fully standalone Wear Compose UI with its own SQLite Favorites/Recent stops, direct TriMet API access, and a live "Next departure" Tile |
 | `feature/*` | `home`, `stops`, `trips`, `arrivals`, `settings` — one screen area per module |
 | `component/*` | `transit` (TriMet API client: OkHttp + JSON/XML parsing, including the Trip Planner web service), `localdata` (SQLite favorites/recent stops) |
 | `common/*` | `model` (domain models), `utils` (connectivity, date helpers), `ui` (theme, shared Compose components, cross-screen state) |
@@ -70,7 +70,7 @@ No ViewModels, no DI framework, no Room — screens own state with `remember { m
    ./gradlew assembleDebug
    ```
 5. **APK location:** `app/build/outputs/apk/debug/`
-6. **Build the Wear OS companion:** `./gradlew :wear:assembleDebug` (a renamed `PdxBusTracker-wear-debug-1.0.0.apk` lands in `wear/build/outputs/renamed_apks/debug/`). The companion is a build preview — not yet distributed on the Play Store.
+6. **Build the Wear OS companion:** `./gradlew :wear:assembleDebug` (a renamed `PdxBusTracker-wear-debug-2.1.4.apk` lands in `wear/build/outputs/renamed_apks/debug/`). The companion is a build preview — not yet distributed on the Play Store.
 7. **Run the checks** (exactly what CI runs):
    ```sh
    ./gradlew clean test lint assembleDebug --stacktrace
@@ -96,13 +96,12 @@ For a local smoke test without real credentials you can build with a debug fallb
 |---|---|
 | Gradle / AGP | 9.7.1 / 9.3.1 |
 | Kotlin / Compose compiler plugin | 2.4.10 |
-| Jetpack Compose | BOM 2026.08.00 (Material 3 1.4.0, Navigation 2.9.8) |
+| Jetpack Compose | BOM 2026.08.00 (Material 3 1.5.0-alpha27, Navigation 2.9.8) |
 | OkHttp | 5.5.0 |
 | Joda-Time (android.joda) | 2.14.2.1 |
 | Kotlin coroutines | 1.11.0 |
 | MapLibre GL Native (OpenGL backend) | 13.6.0 + OpenFreeMap tiles |
 | Wear Compose / `androidx.wear` | 1.6.2 / 1.4.0 |
-| Google Play services (wearable) | 20.0.1 |
 
 ## Privacy Policy
 

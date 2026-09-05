@@ -5,6 +5,8 @@
     <string name="unable_to_load_directions">Unable to load directions.\nCheck your connection.</string>
     <string name="no_directions_available">No directions available.</string>
     <string name="unable_to_load_stops">Unable to load stops.\nCheck your connection.</string>
+    <string name="unable_to_load_routes">Unable to load routes.\nCheck your connection.</string>
+    <string name="no_routes_available">No routes available.</string>
     <string name="no_stops_available">No stops available.</string>
     <string name="collapse">Collapse</string>
     <string name="expand">Expand</string>

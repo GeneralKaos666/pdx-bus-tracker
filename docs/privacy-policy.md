@@ -1,6 +1,6 @@
 # Privacy Policy — PDX Bus Tracker
 
-**Effective date:** September 4, 2026
+**Effective date:** September 5, 2026
 
 PDX Bus Tracker is a free, open-source, unofficial transit tracker for the Portland,
 Oregon area. This policy describes what information the app handles and where it goes.
@@ -31,12 +31,19 @@ stops, favorites, and arrivals by name.
   device (including stop names/IDs and their map coordinates). This data never leaves
   your device and is removed if you uninstall the app or clear its data.
 - **Settings** (theme, display preferences) are stored in local app preferences.
+- **Wear OS companion:** when installed, the standalone watch app keeps its own
+  Favorites and Recent stops in a local SQLite database on the watch, and stores a
+  short "Next departure" snapshot (stop, route, and countdown time) in local
+  preferences to power the watch Tile. Like the phone data, it stays on the watch and
+  never leaves your device.
 
 ## 3. Network requests
 
 - **TriMet API** (`developer.trimet.org`): arrival times, vehicle positions, routes,
   stop lists, service alerts, and trip-planning requests. Requests include your API key
-  registration ID and standard server log data such as your IP address.
+  registration ID and standard server log data such as your IP address. The Wear OS
+  companion and its background Tile refresh make the same direct TriMet API requests
+  from the watch.
 - **Map tiles:** the in-app maps use [MapLibre Native](https://maplibre.org/) with
   vector tiles from [OpenFreeMap](https://openfreemap.org/) (built on OpenStreetMap
   data). Requesting tiles necessarily reveals your IP address and the approximate area
@@ -64,7 +71,8 @@ stops, favorites, and arrivals by name.
 ## 6. Data deletion
 
 Uninstalling the app (or clearing its storage from Android Settings → Apps) deletes all
-favorites, recent stops, and settings stored on the device. There is no server-side
+favorites, recent stops, and settings stored on the device — on the watch, uninstalling
+the companion (or clearing its storage) does the same there. There is no server-side
 account or stored profile to delete.
 
 ## 7. Open source

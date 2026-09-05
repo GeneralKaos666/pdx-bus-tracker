@@ -39,10 +39,13 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.tiles.TileService
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.data.local.DatabaseHelper
+import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
+import com.trimettransit.tracker.data.local.RecentStopsRepositoryImpl
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.transit.TransitApi
+import com.trimettransit.tracker.model.repository.TransitRepository
+import com.trimettransit.tracker.transit.TransitRepositoryImpl
 import com.trimettransit.tracker.util.ConnectionUtils
 import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.wear.tile.FavoriteArrivalsTileService
@@ -59,6 +62,10 @@ import org.joda.time.DateTime
 fun ArrivalsScreen(stop: Stop) {
     val context = LocalContext.current
     val displayName = stop.desc.ifBlank { stringResource(R.string.stop_format, stop.locId) }
+    val appContext = context.applicationContext
+    val transitRepository = remember { TransitRepositoryImpl(appContext) }
+    val favoritesRepository = remember { FavoritesRepositoryImpl(DatabaseHelper(appContext)) }
+    val recentStopsRepository = remember { RecentStopsRepositoryImpl(DatabaseHelper(appContext)) }
     var result by remember { mutableStateOf<ArrivalsResult?>(null) }
     var isFavorite by remember { mutableStateOf(false) }
     var favoriteBusy by remember { mutableStateOf(true) }
@@ -73,10 +80,9 @@ fun ArrivalsScreen(stop: Stop) {
     LaunchedEffect(stop.locId) {
         favoriteBusy = true
         withContext(Dispatchers.IO) {
-            val db = DatabaseHelper(context.applicationContext)
-            isFavorite = db.isFavorite(stop.locId)
-            enriched = enrichedOrStop(stop, context)
-            db.addRecentStop(enriched)
+            isFavorite = favoritesRepository.isFavorite(stop.locId)
+            enriched = enrichedOrStop(stop, transitRepository)
+            recentStopsRepository.addRecentStop(enriched)
         }
         favoriteBusy = false
     }
@@ -86,8 +92,7 @@ fun ArrivalsScreen(stop: Stop) {
         while (true) {
             val fresh = withContext(Dispatchers.IO) {
                 if (!ConnectionUtils.isOnline(context)) null
-                else TransitApi.fetchArrivals(
-                    context,
+                else transitRepository.getArrivals(
                     listOf(stop.locId),
                     minutes = 30,
                     maxArrivals = 4
@@ -99,7 +104,7 @@ fun ArrivalsScreen(stop: Stop) {
                 result = fresh
                 // Keep the stand-alone "next departure" Tile fresh when this stop is
                 // the one it features, then nudge the system to swap in the new countdown.
-                if (TileCache.updateIfFeatured(context, stop, fresh.arrivals.orEmpty())) {
+                if (TileCache.updateIfFeatured(context, enriched, fresh.arrivals.orEmpty())) {
                     runCatching {
                         TileService.getUpdater(context)
                             .requestUpdate(FavoriteArrivalsTileService::class.java)
@@ -168,8 +173,11 @@ fun ArrivalsScreen(stop: Stop) {
                     scope.launch {
                         val ok = withContext(Dispatchers.IO) {
                             runCatching {
-                                val db = DatabaseHelper(context.applicationContext)
-                                if (checked) db.addFavorite(enriched) else db.removeFavorite(stop.locId)
+                                if (checked) {
+                                    favoritesRepository.addFavorite(enriched)
+                                } else {
+                                    favoritesRepository.removeFavorite(stop.locId)
+                                }
                                 // Repoint the tile at the new first favorite (i.e. this
                                 // stop when favoriting) and refresh its timeline.
                                 if (checked) TileScheduler.refreshNow(context)
@@ -186,9 +194,9 @@ fun ArrivalsScreen(stop: Stop) {
 }
 
 /** Returns a full [Stop] (enriched via the API when only nav-arg fields exist). */
-private suspend fun enrichedOrStop(stop: Stop, context: android.content.Context): Stop =
+private suspend fun enrichedOrStop(stop: Stop, transitRepository: TransitRepository): Stop =
     if (stop.latitude == 0.0 && stop.longitude == 0.0 && stop.desc.isNotBlank()) {
-        TransitApi.fetchStopById(context, stop.locId) ?: stop
+        transitRepository.getStopById(stop.locId) ?: stop
     } else {
         stop
     }
@@ -223,7 +231,7 @@ private fun ArrivalList(
                             modifier = Modifier.padding(start = 4.dp)
                         ) {
                             Text(
-                                text = "♥",
+                                text = stringResource(R.string.heart),
                                 color = if (isFavorite) {
                                     MaterialTheme.colorScheme.error
                                 } else {

@@ -57,8 +57,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("CREATE TABLE IF NOT EXISTS favorites(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER)")
         db.execSQL("CREATE TABLE IF NOT EXISTS recent_stops(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER)")
-        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_favorites_loc_id ON favorites(loc_id)")
-        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_recent_stops_loc_id ON recent_stops(loc_id)")
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {

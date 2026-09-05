@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -71,9 +72,9 @@ fun StopsRouteList(
     StopListContent(
         isLoading = isLoading,
         items = safeRoutes,
-        errorMessage = if (isMissingApiKey) "API key not configured.\nPlease check app settings."
-                       else "Unable to load routes.\nCheck your connection.",
-        emptyMessage = "No routes available.",
+        errorMessage = if (isMissingApiKey) stringResource(R.string.api_key_not_configured)
+                       else stringResource(R.string.unable_to_load_routes),
+        emptyMessage = stringResource(R.string.no_routes_available),
         stateLabel = "routesState",
         key = { it.routeId },
         contentType = { "route" },
@@ -147,7 +148,7 @@ private fun RouteListItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = transitTypeLabel(route.typeLetter),
+                    text = stringResource(transitTypeLabel(route.typeLetter)),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
@@ -158,7 +159,7 @@ private fun RouteListItem(
             )
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                contentDescription = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .padding(start = 8.dp)

@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.ui.components
 
+import androidx.annotation.StringRes
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import com.trimettransit.tracker.ui.R
@@ -35,13 +36,14 @@ fun transitIconResource(type: String?): Int = when (type) {
     else -> R.drawable.ic_transit_bus
 }
 
-/** Returns a human-readable label for a transit type (for accessibility). */
-fun transitTypeLabel(type: String?): String = when (type) {
-    "B" -> "Bus"
-    "M", "R" -> "MAX Light Rail"
-    "S", "T" -> "Streetcar"
-    "W" -> "WES Commuter Rail"
-    else -> "Transit"
+/** Returns the string resource ID of a human-readable label for a transit type (for accessibility). */
+@StringRes
+fun transitTypeLabel(type: String?): Int = when (type) {
+    "B" -> R.string.transit_type_bus
+    "M", "R" -> R.string.transit_type_max_light_rail
+    "S", "T" -> R.string.transit_type_streetcar
+    "W" -> R.string.transit_type_wes_commuter_rail
+    else -> R.string.transit_type_transit
 }
 
 /**

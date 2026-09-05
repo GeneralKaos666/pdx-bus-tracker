@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.core.content.edit
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.util.minutesUntil
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -25,11 +26,9 @@ object WidgetSnapshotCache {
         val stop: Stop,
         val arrivals: List<ArrivalOnScreen>
     ) {
-        /** Whole minutes until this arrival relative to [nowMillis]; 0 means "now/due". */
-        fun minutesFrom(nowMillis: Long, arrival: ArrivalOnScreen): Long {
-            val remaining = arrival.atMillis - nowMillis
-            return if (remaining <= 0) 0L else (remaining + 59_999) / 60_000
-        }
+        /** Whole minutes until this arrival (floor, matching the phone); 0 means "due". */
+        fun minutesFrom(nowMillis: Long, arrival: ArrivalOnScreen): Long =
+            minutesUntil(arrival.atMillis, nowMillis).coerceAtLeast(0L)
     }
 
     data class Snapshot(
@@ -37,9 +36,6 @@ object WidgetSnapshotCache {
         val hasFavorites: Boolean,
         val updatedAtMillis: Long
     )
-
-    /** True until the cache holds at least one snapshot written after the app was installed. */
-    fun isEmpty(context: Context): Boolean = !prefs(context).contains(KEY_JSON)
 
     fun snapshot(context: Context): Snapshot {
         val json = prefs(context).getString(KEY_JSON, null) ?: return Snapshot(emptyList(), false, 0L)

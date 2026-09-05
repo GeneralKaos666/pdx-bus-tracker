@@ -11,8 +11,9 @@ import com.trimettransit.tracker.model.VehiclePosition
 
 /**
  * Data-access boundary for the TriMet live transit API. Implementations live in
- * `component:transit`. Screens depend on this interface (not on the concrete
- * `TransitApi` object) so the data source can be substituted or tested.
+ * `component:transit`. App code (phone screens, Wear screen, widget and tile
+ * workers) depends on this interface rather than on the concrete [TransitApi]
+ * object so the data source can be substituted or tested.
  */
 interface TransitRepository {
     suspend fun getRoutes(): List<Route>?

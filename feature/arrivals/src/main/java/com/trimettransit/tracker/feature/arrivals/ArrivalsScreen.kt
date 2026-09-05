@@ -624,13 +624,13 @@ private fun AlertsDialog(
     )
 }
 
-private fun formatDelay(arrival: Arrival): String? {
+private fun formatDelay(arrival: Arrival, context: Context): String? {
     if (arrival.status != "estimated" || arrival.estimatedMillis == 0L || arrival.scheduledMillis == 0L) return null
     val delayMin = (arrival.estimatedMillis - arrival.scheduledMillis) / 60000.0
     return when {
-        delayMin >= 1.0 -> "${delayMin.roundToInt()} min late"
-        delayMin <= -1.0 -> "${-delayMin.roundToInt()} min early"
-        else -> "On time"
+        delayMin >= 1.0 -> context.getString(R.string.arrival_delay_late, delayMin.roundToInt())
+        delayMin <= -1.0 -> context.getString(R.string.arrival_delay_early, -delayMin.roundToInt())
+        else -> context.getString(R.string.arrival_on_time)
     }
 }
 
@@ -648,6 +648,8 @@ private fun StopMapCard(
     // Resolve the drop-off label in the configuration-aware composable scope (the map's
     // getMapAsync callback is not configuration-aware, so it can't look the string up there).
     mapState.dropoffLabel = stringResource(R.string.arrival_dropoff_only)
+    mapState.countdownDue = stringResource(R.string.due)
+    mapState.countdownMinFormat = stringResource(R.string.minutes)
     val density = LocalDensity.current.density
     val scheme = MaterialTheme.colorScheme
     val badgeColors = remember(scheme) {
@@ -817,7 +819,11 @@ private class MapState {
     var arrivals: List<Arrival> = emptyList()
 
     /** Resolved "Dropoff Only" label, set when the map is configured. */
-    var dropoffLabel: String = "Dropoff Only"
+    var dropoffLabel: String = ""
+
+    /** Resolved countdown labels, set when the map is configured. */
+    var countdownDue: String = ""
+    var countdownMinFormat: String = ""
 
     /** Pushes the latest bus positions into the GeoJsonSource (no-op until style is ready). */
     fun applyPositions() {
@@ -841,7 +847,7 @@ private class MapState {
                 }
                 if (displayTime != null) {
                     val mins = minutesUntil(displayTime)
-                    if (mins <= 0) "Due" else "$mins min"
+                    if (mins <= 0) countdownDue else countdownMinFormat.format(mins)
                 } else ""
             }
             feature.addStringProperty("countdown", label)
@@ -965,7 +971,7 @@ private fun ArrivalItem(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         painter = painterResource(id = transitIconResource(type)),
-                        contentDescription = transitTypeLabel(type),
+                        contentDescription = stringResource(transitTypeLabel(type)),
                         tint = MaterialTheme.colorScheme.surface,
                         modifier = Modifier.size(24.dp)
                     )
@@ -1074,7 +1080,7 @@ private fun ArrivalItem(
                             color = MaterialTheme.colorScheme.surface,
                             style = MaterialTheme.typography.titleMedium
                         )
-                        val delayText = formatDelay(arrival)
+                        val delayText = formatDelay(arrival, context)
                         if (delayText != null) {
                             Text(
                                 text = delayText,

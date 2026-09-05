@@ -251,7 +251,7 @@ private fun RouteRow(route: Route, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth().wearPressScale(interactionSource),
         label = {
             Text(
-                text = "${route.typeLetter} ${route.routeId} · ${route.desc}",
+                text = stringResource(R.string.route_row_format, route.typeLetter, route.routeId, route.desc),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Start

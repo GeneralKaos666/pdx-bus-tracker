@@ -19,6 +19,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -101,7 +102,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -588,15 +588,14 @@ private fun MainAppContent(
     }
     val outerSnackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(currentRoute) { NavState.bottomBarVisible = true }
     val topPagerState = rememberPagerState(pageCount = { bottomNavItems.size })
     var selectedStopsRoute by remember { mutableStateOf<Route?>(null) }
     var selectedStopsDirection by remember { mutableStateOf<Direction?>(null) }
 
     fun navigateToArrivals(stop: Stop, routeId: Int) {
         val stopToRecord = if (routeId > 0) stop.copy(routeNum = routeId) else stop
-        scope.launch(Dispatchers.IO) {
-            DatabaseHelper(context.applicationContext).addRecentStop(stopToRecord)
+        scope.launch {
+            recentStopsRepository.addRecentStop(stopToRecord)
         }
         navController.navigate(
             "arrivals/${stop.locId}?stopName=${Uri.encode(stop.desc)}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
@@ -649,6 +648,7 @@ private fun MainAppContent(
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                             }
                         },
+                        contentPadding = PaddingValues(0.dp),
                         windowInsets = TopAppBarDefaults.windowInsets,
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -668,6 +668,7 @@ private fun MainAppContent(
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                             }
                         },
+                        contentPadding = PaddingValues(0.dp),
                         windowInsets = TopAppBarDefaults.windowInsets,
                         actions = {
                             val pipSource = remember { MutableInteractionSource() }
@@ -772,7 +773,7 @@ private fun MainAppContent(
             },
             bottomBar = {
                 AnimatedVisibility(
-                    visible = !inPip && NavState.bottomBarVisible,
+                    visible = !inPip,
                     enter = slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { it } +
                         fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)),
                     exit = slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it } +
