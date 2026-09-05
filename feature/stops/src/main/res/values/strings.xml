@@ -13,9 +13,9 @@
     <string name="continue_">Continue</string>
     <string name="not_now">Not now</string>
     <string name="nearby_stops_list_title">Nearby Stops</string>
-    <string name="loading">Loading...</string>
+    <string name="loading">Loading…</string>
     <string name="refresh">Refresh</string>
-    <string name="finding_nearby_stops">Finding nearby stops...</string>
+    <string name="finding_nearby_stops">Finding nearby stops…</string>
     <string name="unknown_error">Unknown error</string>
     <string name="no_stops_found_nearby">No stops found nearby</string>
     <string name="tap_refresh_to_find">Tap Refresh to find nearby stops</string>

@@ -1,26 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <issues format="6" by="lint 9.3.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.3.1)" variant="all" version="9.3.1">
 
-    <issue
-        id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;loading&quot;>Loading...&lt;/string>"
-        errorLine2="                           ~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="16"
-            column="28"/>
-    </issue>
-
-    <issue
-        id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;finding_nearby_stops&quot;>Finding nearby stops...&lt;/string>"
-        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="18"
-            column="41"/>
-    </issue>
-
 </issues>
