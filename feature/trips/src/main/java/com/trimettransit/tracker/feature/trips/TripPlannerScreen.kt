@@ -13,9 +13,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,6 +64,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -672,36 +673,56 @@ private fun EndpointRow(
     onClear: () -> Unit
 ) {
     val source = remember { MutableInteractionSource() }
-    Row(
+    Surface(
+        onClick = onClick,
+        interactionSource = source,
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 48.dp)
             .pressScale(source)
-            .clickable(interactionSource = source, indication = LocalIndication.current, onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically
+            .semantics { role = Role.Button }
     ) {
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .background(accentColor, CircleShape)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = point?.description?.takeIf { it.isNotBlank() } ?: label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (point != null) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
-        if (point != null) {
-            IconButton(onClick = onClear, modifier = Modifier.size(48.dp)) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = stringResource(R.string.clear),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp)
+        Row(
+            modifier = Modifier.padding(start = 16.dp, top = 10.dp, bottom = 10.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .background(accentColor, CircleShape)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Crossfade(
+                targetState = point,
+                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                label = "endpointContent",
+                modifier = Modifier.weight(1f)
+            ) { currentPoint ->
+                Text(
+                    text = currentPoint?.description?.takeIf { it.isNotBlank() } ?: label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (currentPoint != null) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
                 )
+            }
+            AnimatedVisibility(
+                visible = point != null,
+                enter = fadeIn(tween(durationMillis = 200, easing = FastOutSlowInEasing)),
+                exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing))
+            ) {
+                IconButton(onClick = onClear, modifier = Modifier.size(48.dp)) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = stringResource(R.string.clear),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
         }
     }
