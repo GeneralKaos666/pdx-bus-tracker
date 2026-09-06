@@ -104,7 +104,7 @@ internal fun TripMap(
             onClick(label = pinAtCenterLabel) {
                 onMapTap(
                     mapState.map?.cameraPosition?.target
-                        ?: LatLng(45.5189, -122.6795)
+                        ?: FALLBACK_MAP_CENTER
                 )
                 true
             }
@@ -232,9 +232,7 @@ internal fun TripMap(
                         appliedStyleUrl = mapStyleUrl
                         mapState.push(origin, dest, itinerary)
                         map.moveCamera(
-                            CameraUpdateFactory.newLatLngZoom(
-                                LatLng(45.5189, -122.6795), 12.0
-                            )
+                            CameraUpdateFactory.newLatLngZoom(FALLBACK_MAP_CENTER, DEFAULT_MAP_ZOOM)
                         )
                     }
                     map.addOnMapClickListener { latLng ->

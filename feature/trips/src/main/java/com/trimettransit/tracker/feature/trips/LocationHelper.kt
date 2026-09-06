@@ -12,6 +12,12 @@ import org.maplibre.android.geometry.LatLng
 
 internal const val LOCATION_FIX_TIMEOUT_MS = 10_000L
 
+/** City-center camera position shown until a plan or located position is available. */
+internal val FALLBACK_MAP_CENTER = LatLng(45.5189, -122.6795)
+
+/** Zoom level used for the fallback camera position. */
+internal const val DEFAULT_MAP_ZOOM = 12.0
+
 /** Last-known fix from any provider, with the device-time timestamp of the fix; null when
  *  the device has no stored fix yet. Comparing the timestamp against the current time lets
  *  the screen refresh a stale cached fix instead of trusting it forever. */
