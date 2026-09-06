@@ -322,7 +322,8 @@ fun TripPlannerScreen(
         }
         invalidatePlan()
         isPlanning = true
-        planJob = coroutineScope.launch {
+        var launchedJob: Job? = null
+        launchedJob = coroutineScope.launch {
             try {
                 val time = TripRequestTime(
                     arriveBy = arriveBy,
@@ -341,9 +342,15 @@ fun TripPlannerScreen(
             } catch (e: CancellationException) {
                 throw e
             } finally {
-                isPlanning = false
+                // A superseded request's cleanup must not clobber the state of the newer
+                // request that replaced it (invalidatePlan() + planIt() can run back to back).
+                if (planJob === launchedJob) {
+                    isPlanning = false
+                    planJob = null
+                }
             }
         }
+        planJob = launchedJob
     }
 
     // Re-plan on app re-entry only if a plan already exists (keeps the map fresh without
@@ -1025,7 +1032,7 @@ private fun ItineraryResultsSheet(
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(plan.itineraries.size) { index ->
+                items(plan.itineraries.size, key = { it }) { index ->
                     val itinerary = plan.itineraries[index]
                     val label = stringResource(
                         when (index % 3) {
@@ -1292,6 +1299,12 @@ private fun TripMap(
     val mapStyleUrl = if (isDark) TRIP_MAP_STYLE_URL_DARK else TRIP_MAP_STYLE_URL
     var appliedStyleUrl by remember { mutableStateOf<String?>(null) }
 
+    // Guarantee the route markers and lines track the selected itinerary even if the
+    // AndroidView update pass is skipped on a future recomposition.
+    LaunchedEffect(origin, dest, itinerary) {
+        mapState.push(origin, dest, itinerary)
+    }
+
     // Expose the map to assistive tech: a plain label when idle, plus an action that drops a
     // pin at the map center while a slot is being picked (the tap-only flow has no keyboard
     // equivalent otherwise).
@@ -1538,6 +1551,13 @@ private fun fitPlanCameraIfReady(
         }, 150)
         return
     }
+
+    // The camera belongs to the user once it has been fitted: location fixes, endpoint
+    // picker toggles, and theme changes all recompose the map, but none of them should
+    // yank the view back to the plan. Only re-fit when the trip itself changed.
+    val planTag = TripMapState.FitTag(origin, dest, itinerary)
+    if (state.lastFitTag == planTag) return
+    state.lastFitTag = planTag
 
     if (points.size == 1) {
         map.easeCamera(

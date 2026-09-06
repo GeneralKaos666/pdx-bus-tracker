@@ -30,6 +30,11 @@ internal class TripMapState {
     var boardSource: GeoJsonSource? = null
     var meSource: GeoJsonSource? = null
     var lastMe: LatLng? = null
+    var lastFitTag: FitTag? = null
+
+    /** Identity of the plan the camera was last fitted to; lets the composable skip re-fitting
+     *  on recompositions that don't change the trip (location fixes, picker toggles, theme). */
+    data class FitTag(val origin: TripPoint?, val dest: TripPoint?, val itinerary: TripItinerary?)
 
     fun applyMe(lat: Double, lng: Double) {
         lastMe = LatLng(lat, lng)

@@ -645,7 +645,9 @@ object TransitApi {
         return TripPoint(
             latitude = pos?.textOf("lat")?.toDoubleOrNull() ?: 0.0,
             longitude = pos?.textOf("lon")?.toDoubleOrNull() ?: 0.0,
-            description = obj.textOf("description")
+            // TriMet echoes back the URL-encoded fromPlace/toPlace label we sent as the
+            // leg/trip description, so undo that encoding (bear minimum: decode %HH only).
+            description = Uri.decode(obj.textOf("description"))
         )
     }
 
