@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.view.MotionEvent
 import timber.log.Timber
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -85,12 +84,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.preference.PreferenceManager
+import com.trimettransit.tracker.map.MapLibreMapHost
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.Detour
@@ -664,8 +663,6 @@ private fun StopMapCard(
     // wants a light halo over dark glyphs, the dark basemap wants a dark halo over light glyphs.
     val countdownTextColor = scheme.onSurface.toArgb()
     val countdownHaloColor = if (isDark) scheme.surface.toArgb() else android.graphics.Color.WHITE
-    // Track which basemap is currently loaded so a theme change re-applies the style in place.
-    var appliedStyleUrl by remember { mutableStateOf<String?>(null) }
 
     fun applyStopMapStyle(style: Style) {
         style.addImage(
@@ -737,77 +734,36 @@ private fun StopMapCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        AndroidView(
-                factory = { ctx ->
-                    MapView(ctx).apply {
-                        getMapAsync { map ->
-                            mapState.map = map
-                            map.uiSettings.isCompassEnabled = false
-                            map.uiSettings.isAttributionEnabled = true
-                            map.setMaxZoomPreference(18.0)
-                            map.setStyle(mapStyleUrl) { style ->
-                                applyStopMapStyle(style)
-                                map.moveCamera(
-                                    CameraUpdateFactory.newLatLngZoom(
-                                        LatLng(lat, lng),
-                                        16.0
-                                    )
-                                )
-                                appliedStyleUrl = mapStyleUrl
-                                mapState.applyPositions()   // in case update ran before style load
-                            }
-                        }
-                        // Consume single-finger touches at View level to prevent
-                        // propagation to Compose parent gesture handlers
-                        // (pull-to-refresh, nav drawer). Multi-touch zoom unaffected.
-                        setOnTouchListener { _, event ->
-                            if (event.actionMasked == MotionEvent.ACTION_UP) performClick()
-                            event.pointerCount < 2
-                        }
-                        // MapLibre requires onStart() before it activates its file source
-                        // (network). post() guarantees the view is attached first.
-                        post { onStart() }
-                        mapState.mapView = this
+        MapLibreMapHost(
+            styleUrl = mapStyleUrl,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp),
+            consumeSingleFingerTouches = true,
+            onStyleReady = { map, style, isReapply ->
+                applyStopMapStyle(style)
+                if (!isReapply) {
+                    map.moveCamera(
+                        CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 16.0)
+                    )
+                }
+                mapState.applyPositions()   // in case update ran before style load
+            },
+            onUpdate = { view, map ->
+                mapState.positions = blockPositions
+                mapState.arrivals = arrivals
+                mapState.applyPositions()
+                // Follow the tracked bus instead of framing the stop together with it,
+                // so the camera stays centered on the vehicle and its "N min" label never
+                // clips at the map's top edge. The stop marker still renders but simply
+                // scrolls out of frame once a bus position is available.
+                if (map != null && view.width > 0 && view.height > 0) {
+                    trackedTarget(blockPositions, trackedVehicleId)?.let { target ->
+                        keepBusCentered(map, target, view.width, view.height, density)
                     }
-                },
-                update = { view ->
-                    view.onStart()   // idempotent; also covers the factory's post() ordering
-                    view.onResume()
-                    // If the resolved basemap (light/dark) changed since it was last applied,
-                    // reload the style and re-add our images/sources/layers before pushing data.
-                    val map = mapState.map
-                    if (map != null && appliedStyleUrl != mapStyleUrl) {
-                        appliedStyleUrl = mapStyleUrl
-                        map.setStyle(mapStyleUrl) { style ->
-                            applyStopMapStyle(style)
-                            mapState.applyPositions()
-                        }
-                    }
-                    mapState.positions = blockPositions
-                    mapState.arrivals = arrivals
-                    mapState.applyPositions()
-                    // Follow the tracked bus instead of framing the stop together with it,
-                    // so the camera stays centered on the vehicle and its "N min" label never
-                    // clips at the map's top edge. The stop marker still renders but simply
-                    // scrolls out of frame once a bus position is available.
-                    if (map != null && view.width > 0 && view.height > 0) {
-                        trackedTarget(blockPositions, trackedVehicleId)?.let { target ->
-                            keepBusCentered(map, target, view.width, view.height, density)
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-            )
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            mapState.mapView?.onStop()
-            mapState.mapView?.onPause()
-            mapState.mapView?.onDestroy()
-        }
+                }
+            }
+        )
     }
 }
 

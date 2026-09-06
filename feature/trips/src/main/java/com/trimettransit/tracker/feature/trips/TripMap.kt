@@ -1,15 +1,11 @@
 package com.trimettransit.tracker.feature.trips
 
-import android.view.MotionEvent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -20,7 +16,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.viewinterop.AndroidView
+import com.trimettransit.tracker.map.MapLibreMapHost
 import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.ui.components.badgeBitmap
@@ -31,7 +27,6 @@ import com.trimettransit.tracker.ui.components.transitOnColor
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
-import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
@@ -75,7 +70,6 @@ internal fun TripMap(
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val mapStyleUrl = if (isDark) TRIP_MAP_STYLE_URL_DARK else TRIP_MAP_STYLE_URL
-    var appliedStyleUrl by remember { mutableStateOf<String?>(null) }
 
     // Guarantee the route markers and lines track the selected itinerary even if the
     // AndroidView update pass is skipped on a future recomposition.
@@ -219,74 +213,37 @@ internal fun TripMap(
         )
     }
 
-    AndroidView(
-        factory = { ctx ->
-            MapView(ctx).apply {
-                getMapAsync { map ->
-                    mapState.map = map
-                    map.uiSettings.isCompassEnabled = false
-                    map.uiSettings.isAttributionEnabled = true
-                    map.setMaxZoomPreference(18.0)
-                    map.setStyle(mapStyleUrl) { style ->
-                        applyTripStyle(style)
-                        appliedStyleUrl = mapStyleUrl
-                        mapState.push(origin, dest, itinerary)
-                        map.moveCamera(
-                            CameraUpdateFactory.newLatLngZoom(FALLBACK_MAP_CENTER, DEFAULT_MAP_ZOOM)
-                        )
-                    }
-                    map.addOnMapClickListener { latLng ->
-                        if (currentPickingActive) {
-                            currentOnMapTap(latLng)
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                }
-                setOnTouchListener { v, event ->
-                    if (event.pointerCount < 2) {
-                        v.parent?.requestDisallowInterceptTouchEvent(true)
-                    }
-                    if (event.actionMasked == MotionEvent.ACTION_UP) {
-                        v.performClick()
-                    }
-                    false
-                }
-                post { onStart() }
-                mapState.mapView = this
-            }
-        },
-        update = { view ->
-            view.onStart()
-            view.onResume()
-            val vmap = mapState.map
-            if (vmap != null && appliedStyleUrl != mapStyleUrl) {
-                appliedStyleUrl = mapStyleUrl
-                vmap.setStyle(mapStyleUrl) { style ->
-                    applyTripStyle(style)
-                    mapState.push(origin, dest, itinerary)
-                }
-            }
+    MapLibreMapHost(
+        styleUrl = mapStyleUrl,
+        modifier = modifier.then(mapSemantics),
+        consumeSingleFingerTouches = false,
+        onStyleReady = { map, style, isReapply ->
+            mapState.map = map
+            applyTripStyle(style)
             mapState.push(origin, dest, itinerary)
-            val location = myLocation
-            if (location != null) {
-                mapState.applyMe(location.latitude, location.longitude)
+            if (!isReapply) {
+                // Tap-to-drop-pin and the falling-back camera only need setup once; style
+                // re-applies reuse the existing listener and camera position.
+                map.addOnMapClickListener { latLng ->
+                    if (currentPickingActive) {
+                        currentOnMapTap(latLng)
+                        true
+                    } else {
+                        false
+                    }
+                }
+                map.moveCamera(
+                    CameraUpdateFactory.newLatLngZoom(FALLBACK_MAP_CENTER, DEFAULT_MAP_ZOOM)
+                )
             }
-            fitPlanCameraIfReady(view, mapState, origin, dest, itinerary, fitSize)
         },
-        modifier = modifier.then(mapSemantics)
-    )
-
-    DisposableEffect(Unit) {
-        onDispose {
-            mapState.mapView?.onStop()
-            mapState.mapView?.onPause()
-            mapState.mapView?.onDestroy()
-            mapState.map = null
-            mapState.mapView = null
+        onUpdate = { view, map ->
+            mapState.mapView = view
+            mapState.push(origin, dest, itinerary)
+            myLocation?.let { mapState.applyMe(it.latitude, it.longitude) }
+            fitPlanCameraIfReady(view, mapState, origin, dest, itinerary, fitSize)
         }
-    }
+    )
 }
 
 /** Fits the camera to the current plan once the viewport size has settled. */
