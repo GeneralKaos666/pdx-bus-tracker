@@ -1,5 +1,17 @@
 # Changelog
 
+## What's New in v4.12.2
+
+### Trip Planner polish
+- **The map is accessible to every user:** when picking an endpoint, screen-reader users can now drop the origin or destination pin at the center of the map instead of needing a physical tap, and the map announces which point it's waiting for.
+- **Bigger tap targets:** the swap, clear, and cancel buttons on the trip planner now meet the recommended 48 dp touch-target size.
+- **Your draft survives a screen flip:** rotating the device (or the OS reclaiming the app) no longer wipes your chosen origin, destination, and departure time.
+- **No more late plans overwriting your changes:** editing endpoints or schedule options while a plan is loading cancels the stale request instead of letting it land on top of your new choices.
+- **Your results don't vanish when closed:** tapping "Find trips" again reopens the itinerary sheet for the same trip without re-querying TriMet.
+- **The planner card can hide:** a collapse button tucks the endpoint and schedule controls away so you can see more of the map, and large font sizes scroll inside the card instead of clipping.
+- **A proper Material time picker:** "Arrive by" now uses the Material 3 time picker instead of the older system dialog.
+- **Crisper results:** itinerary tabs scroll horizontally so short screens aren't squeezed, and route badges are a touch bigger for legibility.
+
 ## What's New in v4.12.1
 
 ### Drop-off-only arrivals handled everywhere

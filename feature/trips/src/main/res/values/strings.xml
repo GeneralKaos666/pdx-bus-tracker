@@ -7,6 +7,13 @@
     <string name="location_permission_off">Location permission is off — tap to grant</string>
 
     <string name="trip_planner_title">Trip Planner</string>
+    <string name="trip_map">Trip map</string>
+    <string name="set_pin_origin_at_center">Set origin at center of map</string>
+    <string name="set_pin_destination_at_center">Set destination at center of map</string>
+    <string name="expand_planner">Expand trip controls</string>
+    <string name="collapse_planner">Collapse trip controls</string>
+    <string name="arrive_by_time_title">Arrive by time</string>
+    <string name="done">Done</string>
     <string name="origin_field_hint">Origin</string>
     <string name="destination_field_hint">Destination</string>
     <string name="depart_now">Depart now</string>

@@ -1,7 +1,6 @@
 package com.trimettransit.tracker.feature.trips
 
 import android.Manifest
-import android.app.TimePickerDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.view.MotionEvent
@@ -22,6 +21,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,14 +32,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
@@ -59,7 +64,9 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -69,6 +76,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,6 +87,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -136,6 +150,22 @@ private const val MAX_CAMERA_FIT_ATTEMPTS = 3
 
 private enum class PickSlot { NONE, ORIGIN, DEST }
 
+/** Saves a trip endpoint across configuration changes (rotation/process death). */
+private val tripPointSaver = listSaver<TripPoint?, Any>(
+    save = {
+        it?.let { point -> listOf(point.latitude, point.longitude, point.description) }
+            ?: emptyList()
+    },
+    restore = { saved ->
+        if (saved.isEmpty()) null
+        else TripPoint(
+            latitude = saved[0] as Double,
+            longitude = saved[1] as Double,
+            description = saved[2] as String
+        )
+    }
+)
+
 /**
  * Map-first from→to trip planner (the "Trips" tab). Tap the map (or search) to pick an
  * origin and destination, then plan; the resulting itinerary options and their legs are
@@ -155,11 +185,12 @@ fun TripPlannerScreen(
     val myLocationLabel = stringResource(R.string.my_location)
     val pinnedLocationLabel = stringResource(R.string.pinned_location)
 
-    var origin by remember { mutableStateOf<TripPoint?>(null) }
-    var dest by remember { mutableStateOf<TripPoint?>(null) }
+    var origin by rememberSaveable(stateSaver = tripPointSaver) { mutableStateOf<TripPoint?>(null) }
+    var dest by rememberSaveable(stateSaver = tripPointSaver) { mutableStateOf<TripPoint?>(null) }
     var picking by remember { mutableStateOf(PickSlot.NONE) }
     var pickerSlot by remember { mutableStateOf<PickSlot?>(null) }
     var showResults by remember { mutableStateOf(false) }
+    var plannerExpanded by rememberSaveable { mutableStateOf(true) }
 
     var myLocation by remember { mutableStateOf<LatLng?>(null) }
     var locationPermissionGranted by remember {
@@ -172,8 +203,9 @@ fun TripPlannerScreen(
     var showLocationExplainer by remember { mutableStateOf(false) }
     var pendingMyLocationOrigin by remember { mutableStateOf(false) }
 
-    var arriveBy by remember { mutableStateOf(false) }
-    var arriveByTimeMillis by remember { mutableStateOf<Long?>(null) }
+    var arriveBy by rememberSaveable { mutableStateOf(false) }
+    var arriveByTimeMillis by rememberSaveable { mutableStateOf<Long?>(null) }
+    var showTimePicker by remember { mutableStateOf(false) }
 
     var planResult by remember { mutableStateOf<TripPlanResult?>(null) }
     var selectedIndex by remember { mutableIntStateOf(0) }
@@ -214,6 +246,15 @@ fun TripPlannerScreen(
         }
     }
 
+    /** Cancels any in-flight plan request and drops the current results. */
+    fun invalidatePlan() {
+        planJob?.cancel()
+        planJob = null
+        planResult = null
+        showResults = false
+        isPlanning = false
+    }
+
     // Ask for location once, and only while this page is visible (the pager pre-composes
     // adjacent pages). The explainer dialog is shown before the system permission dialog.
     LaunchedEffect(pageVisible, locationPermissionGranted) {
@@ -237,6 +278,7 @@ fun TripPlannerScreen(
             if (location != null) {
                 origin = TripPoint(location.latitude, location.longitude, myLocationLabel)
                 pendingMyLocationOrigin = false
+                invalidatePlan()
             }
         }
     }
@@ -262,30 +304,45 @@ fun TripPlannerScreen(
             PickSlot.NONE -> return
         }
         picking = PickSlot.NONE
+        invalidatePlan()
     }
 
-    fun planIt() {
+    fun planIt(refresh: Boolean = false) {
         val from = origin ?: return
         val to = dest ?: return
-        planJob?.cancel()
-        planResult = null
+        // "Find trips" with an already-matching plan just reopens the results sheet; the
+        // resume path forces a fresh request to keep the map current.
+        val current = planResult
+        if (!refresh && current is TripPlanResult.Success) {
+            val existingPlan = current.plan
+            if (existingPlan != null && existingPlan.from == from && existingPlan.to == to) {
+                showResults = true
+                return
+            }
+        }
+        invalidatePlan()
         isPlanning = true
         planJob = coroutineScope.launch {
-            val time = TripRequestTime(
-                arriveBy = arriveBy,
-                timeMillis = if (arriveBy) {
-                    arriveByTimeMillis ?: (System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS)
-                } else null
-            )
-            val result = transitRepository.planTrip(from, to, time)
-            val successPlan = (result as? TripPlanResult.Success)?.plan
-            if (successPlan?.itineraries?.isNotEmpty() == true) {
-                selectedIndex = 0
+            try {
+                val time = TripRequestTime(
+                    arriveBy = arriveBy,
+                    timeMillis = if (arriveBy) {
+                        arriveByTimeMillis ?: (System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS)
+                    } else null
+                )
+                val result = transitRepository.planTrip(from, to, time)
+                val successPlan = (result as? TripPlanResult.Success)?.plan
+                if (successPlan?.itineraries?.isNotEmpty() == true) {
+                    selectedIndex = 0
+                }
+                planResult = result
+                showResults = result is TripPlanResult.Success &&
+                    successPlan?.itineraries?.isNotEmpty() == true
+            } catch (e: CancellationException) {
+                throw e
+            } finally {
+                isPlanning = false
             }
-            planResult = result
-            showResults = result is TripPlanResult.Success &&
-                successPlan?.itineraries?.isNotEmpty() == true
-            isPlanning = false
         }
     }
 
@@ -293,7 +350,7 @@ fun TripPlannerScreen(
     // surprising the user with a new request before they've picked anything).
     RememberOnResume {
         if (planResult != null && origin != null && dest != null) {
-            planIt()
+            planIt(refresh = true)
         }
     }
 
@@ -318,7 +375,7 @@ fun TripPlannerScreen(
             dest = dest,
             itinerary = selectedItinerary,
             myLocation = myLocation,
-            pickingActive = picking != PickSlot.NONE,
+            picking = picking,
             onMapTap = { onMapTap(it) },
             isDark = isDark,
             pageVisible = pageVisible,
@@ -366,115 +423,130 @@ fun TripPlannerScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        text = stringResource(R.string.trip_planner_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    EndpointRow(
-                        label = stringResource(R.string.origin_field_hint),
-                        point = origin,
-                        accentColor = MaterialTheme.colorScheme.primary,
-                        onClick = {
-                            pickerSlot = PickSlot.ORIGIN
-                            picking = PickSlot.NONE
-                        },
-                        onClear = { origin = null; planResult = null }
-                    )
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 2.dp),
-                        horizontalArrangement = Arrangement.End
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        val swapSource = remember { MutableInteractionSource() }
+                        Text(
+                            text = stringResource(R.string.trip_planner_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        val collapseSource = remember { MutableInteractionSource() }
                         IconButton(
-                            onClick = {
-                                val from = origin
-                                origin = dest
-                                dest = from
-                                planResult = null
-                            },
-                            enabled = origin != null || dest != null,
-                            interactionSource = swapSource,
-                            modifier = Modifier
-                                .size(28.dp)
-                                .pressScale(swapSource)
+                            onClick = { plannerExpanded = !plannerExpanded },
+                            interactionSource = collapseSource,
+                            modifier = Modifier.pressScale(collapseSource)
                         ) {
                             Icon(
-                                Icons.Default.SwapVert,
-                                contentDescription = stringResource(R.string.swap_origin_destination),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
+                                imageVector = if (plannerExpanded) {
+                                    Icons.Default.ExpandLess
+                                } else {
+                                    Icons.Default.ExpandMore
+                                },
+                                contentDescription = stringResource(
+                                    if (plannerExpanded) R.string.collapse_planner else R.string.expand_planner
+                                ),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
-                    EndpointRow(
-                        label = stringResource(R.string.destination_field_hint),
-                        point = dest,
-                        accentColor = MaterialTheme.colorScheme.tertiary,
-                        onClick = {
-                            pickerSlot = PickSlot.DEST
-                            picking = PickSlot.NONE
-                        },
-                        onClear = { dest = null; planResult = null }
-                    )
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilterChip(
-                            selected = !arriveBy,
-                            onClick = {
-                                arriveBy = false
-                                planResult = null
-                            },
-                            label = { Text(stringResource(R.string.depart_now)) }
-                        )
-                        FilterChip(
-                            selected = arriveBy,
-                            onClick = {
-                                arriveBy = true
-                                if (arriveByTimeMillis == null) {
-                                    arriveByTimeMillis = System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS
-                                }
-                                planResult = null
-                            },
-                            label = { Text(stringResource(R.string.arrive_by)) }
-                        )
-                        if (arriveBy) {
-                            TextButton(onClick = {
-                                val cal = Calendar.getInstance()
-                                val initial = arriveByTimeMillis ?: (System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS)
-                                cal.timeInMillis = initial
-                                TimePickerDialog(
-                                    context,
-                                    { _, hour, minute ->
-                                        cal.set(Calendar.HOUR_OF_DAY, hour)
-                                        cal.set(Calendar.MINUTE, minute)
-                                        arriveByTimeMillis = cal.timeInMillis
-                                        planResult = null
+                    AnimatedVisibility(visible = plannerExpanded) {
+                        Column(
+                            modifier = Modifier
+                                .heightIn(max = 320.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            EndpointRow(
+                                label = stringResource(R.string.origin_field_hint),
+                                point = origin,
+                                accentColor = MaterialTheme.colorScheme.primary,
+                                onClick = {
+                                    pickerSlot = PickSlot.ORIGIN
+                                    picking = PickSlot.NONE
+                                },
+                                onClear = { origin = null; invalidatePlan() }
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                val swapSource = remember { MutableInteractionSource() }
+                                IconButton(
+                                    onClick = {
+                                        val from = origin
+                                        origin = dest
+                                        dest = from
+                                        invalidatePlan()
                                     },
-                                    cal.get(Calendar.HOUR_OF_DAY),
-                                    cal.get(Calendar.MINUTE),
-                                    false
-                                ).show()
-                            }) {
-                                Text(
-                                    DateTimeFormat.forPattern("h:mm a")
-                                        .print(DateTime(arriveByTimeMillis ?: (System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS)))
-                                )
+                                    enabled = origin != null || dest != null,
+                                    interactionSource = swapSource,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .pressScale(swapSource)
+                                ) {
+                                    Icon(
+                                        Icons.Default.SwapVert,
+                                        contentDescription = stringResource(R.string.swap_origin_destination),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
                             }
-                        }
-                    }
+                            EndpointRow(
+                                label = stringResource(R.string.destination_field_hint),
+                                point = dest,
+                                accentColor = MaterialTheme.colorScheme.tertiary,
+                                onClick = {
+                                    pickerSlot = PickSlot.DEST
+                                    picking = PickSlot.NONE
+                                },
+                                onClear = { dest = null; invalidatePlan() }
+                            )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                FilterChip(
+                                    selected = !arriveBy,
+                                    onClick = {
+                                        arriveBy = false
+                                        invalidatePlan()
+                                    },
+                                    label = { Text(stringResource(R.string.depart_now)) }
+                                )
+                                FilterChip(
+                                    selected = arriveBy,
+                                    onClick = {
+                                        arriveBy = true
+                                        if (arriveByTimeMillis == null) {
+                                            arriveByTimeMillis = System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS
+                                        }
+                                        invalidatePlan()
+                                    },
+                                    label = { Text(stringResource(R.string.arrive_by)) }
+                                )
+                                if (arriveBy) {
+                                    TextButton(onClick = { showTimePicker = true }) {
+                                        Text(
+                                            DateTimeFormat.forPattern("h:mm a")
+                                                .print(DateTime(arriveByTimeMillis ?: (System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS)))
+                                        )
+                                    }
+                                }
+                            }
 
-                    val planSource = remember { MutableInteractionSource() }
-                    FilledTonalButton(
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            val planSource = remember { MutableInteractionSource() }
+                            FilledTonalButton(
                         onClick = { planIt() },
                         enabled = origin != null && dest != null && !isPlanning,
                         interactionSource = planSource,
@@ -501,7 +573,9 @@ fun TripPlannerScreen(
                             }
                         }
                     }
+                    }
                 }
+            }
             }
 
             // Map-pin hint when a slot is awaiting a map tap.
@@ -533,7 +607,7 @@ fun TripPlannerScreen(
                         )
                         IconButton(
                             onClick = { picking = PickSlot.NONE },
-                            modifier = Modifier.size(32.dp).pressScale(remember { MutableInteractionSource() })
+                            modifier = Modifier.size(48.dp).pressScale(remember { MutableInteractionSource() })
                         ) {
                             Icon(
                                 Icons.Default.Close,
@@ -576,6 +650,41 @@ fun TripPlannerScreen(
         }
     }
 
+    // Arrive-by time picker (Material 3).
+    if (showTimePicker) {
+        val initial = arriveByTimeMillis ?: (System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS)
+        val cal = Calendar.getInstance().apply { timeInMillis = initial }
+        val timeState = rememberTimePickerState(
+            initialHour = cal.get(Calendar.HOUR_OF_DAY),
+            initialMinute = cal.get(Calendar.MINUTE),
+            is24Hour = false
+        )
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            title = { Text(stringResource(R.string.arrive_by_time_title)) },
+            text = {
+                TimePicker(
+                    state = timeState,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showTimePicker = false
+                    cal.set(Calendar.HOUR_OF_DAY, timeState.hour)
+                    cal.set(Calendar.MINUTE, timeState.minute)
+                    arriveByTimeMillis = cal.timeInMillis
+                    invalidatePlan()
+                }) { Text(stringResource(R.string.done)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
     // Endpoint picker sheet
     pickerSlot?.let { slot ->
         EndpointPickerSheet(
@@ -584,7 +693,7 @@ fun TripPlannerScreen(
             onStopPicked = { stop ->
                 val point = TripPoint(stop.latitude, stop.longitude, stop.desc)
                 if (slot == PickSlot.ORIGIN) origin = point else dest = point
-                planResult = null
+                invalidatePlan()
                 pickerSlot = null
             },
             onMyLocationPicked = {
@@ -648,7 +757,7 @@ private fun EndpointRow(
             modifier = Modifier.weight(1f)
         )
         if (point != null) {
-            IconButton(onClick = onClear, modifier = Modifier.size(28.dp)) {
+            IconButton(onClick = onClear, modifier = Modifier.size(48.dp)) {
                 Icon(
                     Icons.Default.Close,
                     contentDescription = stringResource(R.string.clear),
@@ -911,13 +1020,13 @@ private fun ItineraryResultsSheet(
         sheetState = sheetState
     ) {
         Column(modifier = Modifier.padding(bottom = 24.dp)) {
-            Row(
+            LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 6.dp)
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                plan.itineraries.forEachIndexed { index, itinerary ->
+                items(plan.itineraries.size) { index ->
+                    val itinerary = plan.itineraries[index]
                     val label = stringResource(
                         when (index % 3) {
                             0 -> R.string.itinerary_1
@@ -1023,7 +1132,7 @@ private fun RouteBadge(leg: TripLeg) {
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(28.dp)
         ) {
             Text(
                 text = (leg.routeNumber?.takeIf { it.isNotEmpty() && letter == "B" }) ?: letter,
@@ -1166,13 +1275,14 @@ private fun TripMap(
     dest: TripPoint?,
     itinerary: TripItinerary?,
     myLocation: LatLng?,
-    pickingActive: Boolean,
+    picking: PickSlot,
     onMapTap: (LatLng) -> Unit,
     modifier: Modifier = Modifier,
     isDark: Boolean = false,
     pageVisible: Boolean = true
 ) {
     val currentOnMapTap by rememberUpdatedState(onMapTap)
+    val pickingActive = picking != PickSlot.NONE
     val currentPickingActive by rememberUpdatedState(pickingActive)
     val mapState = remember { TripMapState() }
     val fitSize = remember { intArrayOf(-1, -1) }
@@ -1181,6 +1291,39 @@ private fun TripMap(
     val context = LocalContext.current
     val mapStyleUrl = if (isDark) TRIP_MAP_STYLE_URL_DARK else TRIP_MAP_STYLE_URL
     var appliedStyleUrl by remember { mutableStateOf<String?>(null) }
+
+    // Expose the map to assistive tech: a plain label when idle, plus an action that drops a
+    // pin at the map center while a slot is being picked (the tap-only flow has no keyboard
+    // equivalent otherwise).
+    val mapLabel = stringResource(R.string.trip_map)
+    val pickingHint = when (picking) {
+        PickSlot.ORIGIN -> stringResource(R.string.tap_map_to_set_origin)
+        PickSlot.DEST -> stringResource(R.string.tap_map_to_set_destination)
+        PickSlot.NONE -> null
+    }
+    val pinAtCenterLabel = when (picking) {
+        PickSlot.ORIGIN -> stringResource(R.string.set_pin_origin_at_center)
+        PickSlot.DEST -> stringResource(R.string.set_pin_destination_at_center)
+        PickSlot.NONE -> null
+    }
+    val mapSemantics = if (pickingActive) {
+        Modifier.semantics(mergeDescendants = true) {
+            role = Role.Image
+            contentDescription = pickingHint.orEmpty()
+            onClick(label = pinAtCenterLabel) {
+                onMapTap(
+                    mapState.map?.cameraPosition?.target
+                        ?: LatLng(45.5189, -122.6795)
+                )
+                true
+            }
+        }
+    } else {
+        Modifier.semantics(mergeDescendants = true) {
+            role = Role.Image
+            contentDescription = mapLabel
+        }
+    }
 
     fun applyTripStyle(style: Style) {
         val letters = transitBadgeLetters()
@@ -1343,7 +1486,7 @@ private fun TripMap(
             }
             fitPlanCameraIfReady(view, mapState, origin, dest, itinerary, fitSize)
         },
-        modifier = modifier
+        modifier = modifier.then(mapSemantics)
     )
 
     DisposableEffect(Unit) {

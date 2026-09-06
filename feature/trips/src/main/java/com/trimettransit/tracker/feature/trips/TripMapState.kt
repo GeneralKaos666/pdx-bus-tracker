@@ -74,7 +74,11 @@ internal class TripMapState {
         stopSource?.let { source ->
             source.setGeoJson(
                 FeatureCollection.fromFeatures(
-                    legs.flatMap { listOf(it.from, it.to) }
+                    legs.flatMap { leg ->
+                        // Boarding points carry a badge marker, so only walk segments and
+                        // alighting points need the plain stop dot.
+                        if (leg.isWalk) listOf(leg.from, leg.to) else listOf(leg.to)
+                    }
                         .filter { it.latitude != 0.0 || it.longitude != 0.0 }
                         .map { pointFeature(it.longitude, it.latitude) }
                 )
