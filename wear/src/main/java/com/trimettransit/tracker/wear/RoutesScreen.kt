@@ -27,11 +27,17 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ListHeaderDefaults
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.ScrollIndicator
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
@@ -75,8 +81,12 @@ fun RoutesScreen(
     }
 
     val listState = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
 
-    ScreenScaffold(scrollState = listState) { contentPadding ->
+    ScreenScaffold(
+        scrollState = listState,
+        scrollIndicator = { ScrollIndicator(listState) }
+    ) { contentPadding ->
         val isEmpty = when (level) {
             RoutesLevel.ROUTES -> state.routes.isEmpty()
             RoutesLevel.DIRECTIONS -> state.directions.isEmpty()
@@ -121,25 +131,55 @@ fun RoutesScreen(
                 )
             }
             else -> {
-                WearContentEntrance(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
-                    TransformingLazyColumn(state = listState) {
+                WearContentEntrance(modifier = Modifier.fillMaxSize()) {
+                    TransformingLazyColumn(
+                        state = listState,
+                        contentPadding = contentPadding
+                    ) {
                         item {
-                            ListHeader {
+                            ListHeader(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .transformedHeight(this, transformationSpec)
+                                    .minimumVerticalContentPadding(ListHeaderDefaults.minimumTopListContentPadding),
+                                transformation = SurfaceTransformation(transformationSpec)
+                            ) {
                                 Text(header, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                         }
                         when (level) {
                             RoutesLevel.ROUTES ->
                                 items(state.routes, key = { it.routeId }) { route ->
-                                    RouteRow(route, onClick = { onRouteClick(route) })
+                                    RouteRow(
+                                        route = route,
+                                        onClick = { onRouteClick(route) },
+                                        modifier = Modifier
+                                            .transformedHeight(this, transformationSpec)
+                                            .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding),
+                                        transformation = SurfaceTransformation(transformationSpec)
+                                    )
                                 }
                             RoutesLevel.DIRECTIONS ->
                                 items(state.directions, key = { it.dir }) { dir ->
-                                    DirectionRow(dir, onClick = { onDirectionClick(dir) })
+                                    DirectionRow(
+                                        direction = dir,
+                                        onClick = { onDirectionClick(dir) },
+                                        modifier = Modifier
+                                            .transformedHeight(this, transformationSpec)
+                                            .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding),
+                                        transformation = SurfaceTransformation(transformationSpec)
+                                    )
                                 }
                             RoutesLevel.STOPS ->
                                 items(state.stops, key = { it.locId }) { stop ->
-                                    StopRow(stop, onClick = { onStopClick(stop) })
+                                    StopRow(
+                                        stop = stop,
+                                        onClick = { onStopClick(stop) },
+                                        modifier = Modifier
+                                            .transformedHeight(this, transformationSpec)
+                                            .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding),
+                                        transformation = SurfaceTransformation(transformationSpec)
+                                    )
                                 }
                         }
                     }
@@ -243,12 +283,20 @@ private fun CenteredMessageWithRetry(
 }
 
 @Composable
-private fun RouteRow(route: Route, onClick: () -> Unit) {
+private fun RouteRow(
+    route: Route,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    transformation: SurfaceTransformation
+) {
     val interactionSource = remember { MutableInteractionSource() }
     Button(
         onClick = onClick,
         interactionSource = interactionSource,
-        modifier = Modifier.fillMaxWidth().wearPressScale(interactionSource),
+        modifier = modifier
+            .fillMaxWidth()
+            .wearPressScale(interactionSource),
+        transformation = transformation,
         label = {
             Text(
                 text = stringResource(R.string.route_row_format, route.typeLetter, route.routeId, route.desc),
@@ -261,12 +309,20 @@ private fun RouteRow(route: Route, onClick: () -> Unit) {
 }
 
 @Composable
-private fun DirectionRow(direction: Direction, onClick: () -> Unit) {
+private fun DirectionRow(
+    direction: Direction,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    transformation: SurfaceTransformation
+) {
     val interactionSource = remember { MutableInteractionSource() }
     Button(
         onClick = onClick,
         interactionSource = interactionSource,
-        modifier = Modifier.fillMaxWidth().wearPressScale(interactionSource),
+        modifier = modifier
+            .fillMaxWidth()
+            .wearPressScale(interactionSource),
+        transformation = transformation,
         label = {
             Text(
                 text = direction.desc,
@@ -279,12 +335,20 @@ private fun DirectionRow(direction: Direction, onClick: () -> Unit) {
 }
 
 @Composable
-private fun StopRow(stop: Stop, onClick: () -> Unit) {
+private fun StopRow(
+    stop: Stop,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    transformation: SurfaceTransformation
+) {
     val interactionSource = remember { MutableInteractionSource() }
     Button(
         onClick = onClick,
         interactionSource = interactionSource,
-        modifier = Modifier.fillMaxWidth().wearPressScale(interactionSource),
+        modifier = modifier
+            .fillMaxWidth()
+            .wearPressScale(interactionSource),
+        transformation = transformation,
         label = {
             Text(
                 text = stop.desc,

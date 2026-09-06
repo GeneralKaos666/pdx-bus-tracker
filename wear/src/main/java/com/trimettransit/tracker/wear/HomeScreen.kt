@@ -12,8 +12,11 @@ import com.trimettransit.tracker.R
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ListHeaderDefaults
 import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.ScrollIndicator
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
@@ -30,7 +33,10 @@ fun HomeScreen(
     val transformationSpec = rememberTransformationSpec()
 
     WearContentEntrance(modifier = Modifier.fillMaxSize()) {
-        ScreenScaffold(scrollState = listState) { contentPadding ->
+        ScreenScaffold(
+            scrollState = listState,
+            scrollIndicator = { ScrollIndicator(listState) }
+        ) { contentPadding ->
             TransformingLazyColumn(
                 state = listState,
                 contentPadding = contentPadding
@@ -39,7 +45,8 @@ fun HomeScreen(
                     ListHeader(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .transformedHeight(this, transformationSpec),
+                            .transformedHeight(this, transformationSpec)
+                            .minimumVerticalContentPadding(ListHeaderDefaults.minimumTopListContentPadding),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {
                         Text(stringResource(R.string.app_name))
@@ -53,6 +60,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .transformedHeight(this, transformationSpec)
+                            .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding)
                             .wearPressScale(interactionSource),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {
@@ -67,6 +75,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .transformedHeight(this, transformationSpec)
+                            .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding)
                             .wearPressScale(interactionSource),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {
@@ -81,6 +90,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .transformedHeight(this, transformationSpec)
+                            .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding)
                             .wearPressScale(interactionSource),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {
@@ -95,6 +105,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .transformedHeight(this, transformationSpec)
+                            .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding)
                             .wearPressScale(interactionSource),
                         transformation = SurfaceTransformation(transformationSpec)
                     ) {

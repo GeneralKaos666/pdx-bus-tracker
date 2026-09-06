@@ -30,12 +30,18 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.itemsIndexed
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.IconToggleButton
 import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ListHeaderDefaults
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.ScrollIndicator
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.tiles.TileService
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.data.local.DatabaseHelper
@@ -210,14 +216,25 @@ private fun ArrivalList(
     onFavoriteToggle: (Boolean) -> Unit
 ) {
     val listState = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
 
-    ScreenScaffold(scrollState = listState) { contentPadding ->
-        WearContentEntrance(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
+    ScreenScaffold(
+        scrollState = listState,
+        scrollIndicator = { ScrollIndicator(listState) }
+    ) { contentPadding ->
+        WearContentEntrance(modifier = Modifier.fillMaxSize()) {
             TransformingLazyColumn(
-                state = listState
+                state = listState,
+                contentPadding = contentPadding
             ) {
                 item {
-                    ListHeader {
+                    ListHeader(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .transformedHeight(this, transformationSpec)
+                            .minimumVerticalContentPadding(ListHeaderDefaults.minimumTopListContentPadding),
+                        transformation = SurfaceTransformation(transformationSpec)
+                    ) {
                         Text(
                             text = displayName,
                             maxLines = 1,
@@ -242,7 +259,12 @@ private fun ArrivalList(
                     }
                 }
                 itemsIndexed(arrivals) { _, arrival ->
-                    ArrivalRow(arrival)
+                    ArrivalRow(
+                        arrival = arrival,
+                        modifier = Modifier
+                            .transformedHeight(this, transformationSpec)
+                            .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding)
+                    )
                 }
             }
         }
@@ -250,14 +272,17 @@ private fun ArrivalList(
 }
 
 @Composable
-private fun ArrivalRow(arrival: Arrival) {
+private fun ArrivalRow(
+    arrival: Arrival,
+    modifier: Modifier = Modifier
+) {
     val displayTime: DateTime? =
         if (arrival.status == "estimated" && arrival.estimated != null) arrival.estimated
         else arrival.scheduled
     val minutes = displayTime?.let { minutesUntil(it) }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 6.dp, vertical = 4.dp)
     ) {

@@ -17,8 +17,13 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ListHeaderDefaults
 import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.ScrollIndicator
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 
 /** Minimal watch About screen — version info + license. No TriMet logo/branding. */
 @Composable
@@ -26,11 +31,23 @@ fun AboutScreen() {
     val context = LocalContext.current
     val version = remember { versionName(context) }
     val listState = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
 
-    ScreenScaffold(scrollState = listState) { contentPadding ->
-        WearContentEntrance(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
+    ScreenScaffold(
+        scrollState = listState,
+        scrollIndicator = { ScrollIndicator(listState) }
+    ) { contentPadding ->
+        WearContentEntrance(modifier = Modifier.fillMaxSize()) {
             TransformingLazyColumn(state = listState, contentPadding = contentPadding) {
-                item { ListHeader { Text(stringResource(R.string.about)) } }
+                item {
+                    ListHeader(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .transformedHeight(this, transformationSpec)
+                            .minimumVerticalContentPadding(ListHeaderDefaults.minimumTopListContentPadding),
+                        transformation = SurfaceTransformation(transformationSpec)
+                    ) { Text(stringResource(R.string.about)) }
+                }
                 item {
                     Text(
                         text = stringResource(R.string.app_name),
