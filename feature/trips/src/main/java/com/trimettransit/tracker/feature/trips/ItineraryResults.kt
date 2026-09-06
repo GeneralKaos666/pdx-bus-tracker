@@ -146,7 +146,11 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
                     Spacer(modifier = Modifier.width(6.dp))
                 }
             Text(
-                text = contextWalkTransitSummary(itinerary),
+                text = stringResource(
+                    R.string.walk_transit_fmt,
+                    formatDurationMillis(itinerary.walkTimeMillis),
+                    formatDurationMillis(itinerary.transitTimeMillis)
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
@@ -266,12 +270,6 @@ internal fun LegRow(leg: TripLeg) {
     }
 }
 
-@Composable
-internal fun contextWalkTransitSummary(itinerary: TripItinerary): String {
-    val walk = formatDurationMillis(itinerary.walkTimeMillis)
-    val transit = formatDurationMillis(itinerary.transitTimeMillis)
-    return stringResource(R.string.walk_transit_fmt, walk, transit)
-}
 internal fun formatDurationMillis(ms: Long): String {
     val totalMin = (ms / 60_000L).coerceAtLeast(0)
     val h = totalMin / 60
