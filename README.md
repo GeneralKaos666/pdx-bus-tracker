@@ -23,10 +23,10 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 
 | | | | |
 |---|---|---|---|
-| <img src="docs/screenshots/play-phone-01-arrivals-hero.png" width="190" alt="Real-time arrivals"> | <img src="docs/screenshots/play-phone-02-live-map.png" width="190" alt="What's Nearby live map"> | <img src="docs/screenshots/play-phone-03-search-stops.png" width="190" alt="Search stops"> | <img src="docs/screenshots/play-phone-04-route-browser.png" width="190" alt="Route & stop browser"> |
-| Real-time arrivals | What's Nearby live map | Search stops | Route & stop browser |
-| <img src="docs/screenshots/play-phone-05-favorites-recents.png" width="190" alt="Favorites & recent stops"> | <img src="docs/screenshots/play-phone-06-detour-alerts.png" width="190" alt="Detour alerts"> | <img src="docs/screenshots/play-phone-07-free-no-ads.png" width="190" alt="Free, no ads"> | <img src="docs/screenshots/play-phone-08-feature-wall.png" width="190" alt="Everything in one place"> |
-| Favorites & recent stops | Detour alerts | Free, no ads | Everything in one place |
+| <img src="docs/screenshots/play-phone-01-arrivals-hero.png" width="190" alt="Real-time arrivals"> | <img src="docs/screenshots/play-phone-02-trip-planner.png" width="190" alt="Trip Planner"> | <img src="docs/screenshots/play-phone-03-search-stops.png" width="190" alt="Search stops"> | <img src="docs/screenshots/play-phone-04-route-browser.png" width="190" alt="Route & stop browser"> |
+| Real-time arrivals | Trip Planner | Search stops | Route & stop browser |
+| <img src="docs/screenshots/play-phone-05-favorites.png" width="190" alt="Favorites in light and dark"> | <img src="docs/screenshots/play-phone-06-recent-stops.png" width="190" alt="Recent stops"> | <img src="docs/screenshots/play-phone-07-trip-results.png" width="190" alt="Trip results"> | |
+| Favorites (light & dark) | Recent stops | Trip results | |
 
 ### Wear OS companion
 
