@@ -34,6 +34,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -113,7 +116,7 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
             )
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.walk),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
@@ -142,7 +145,12 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
             itinerary.legs.filter { !it.isWalk }
                 .distinctBy { it.routeNumber to it.routeName }
                 .forEach { leg ->
-                    RouteBadge(leg = leg)
+                    RouteBadge(
+                        leg = leg,
+                        contentDescription = leg.routeName?.takeIf { it.isNotBlank() }
+                            ?: leg.direction.takeIf { it.isNotBlank() }
+                            ?: leg.mode.transitTypeLetter()
+                    )
                     Spacer(modifier = Modifier.width(6.dp))
                 }
             Text(
@@ -168,16 +176,28 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
 }
 
 @Composable
-internal fun RouteBadge(leg: TripLeg) {
+internal fun RouteBadge(
+    leg: TripLeg,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = null
+) {
     val scheme = MaterialTheme.colorScheme
     val letter = leg.mode.transitTypeLetter()
+    val badgeDescription = contentDescription
     Surface(
         shape = CircleShape,
-        color = transitColor(letter, scheme)
+        color = transitColor(letter, scheme),
+        modifier = if (badgeDescription != null) {
+            modifier.semantics { this.contentDescription = badgeDescription }
+        } else {
+            modifier
+        }
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier
+                .size(28.dp)
+                .clearAndSetSemantics { }
         ) {
             Text(
                 text = (leg.routeNumber?.takeIf { it.isNotEmpty() && letter == "B" }) ?: letter,
