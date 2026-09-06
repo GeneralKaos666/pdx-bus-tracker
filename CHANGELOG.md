@@ -11,6 +11,7 @@
 - **The planner card can hide:** a collapse button tucks the endpoint and schedule controls away so you can see more of the map, and large font sizes scroll inside the card instead of clipping.
 - **A proper Material time picker:** "Arrive by" now uses the Material 3 time picker instead of the older system dialog.
 - **Crisper results:** itinerary tabs scroll horizontally so short screens aren't squeezed, and route badges are a touch bigger for legibility.
+- **Clearer voice-over on the trip planner:** the endpoint search field, route badges, and the walk icon now announce their meaning to screen reader users instead of appearing unlabeled or vague.
 
 ## What's New in v4.12.1
 
