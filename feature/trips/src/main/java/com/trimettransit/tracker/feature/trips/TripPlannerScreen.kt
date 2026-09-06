@@ -78,6 +78,7 @@ import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
+import com.trimettransit.tracker.util.SingleJobRunner
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -145,7 +146,7 @@ fun TripPlannerScreen(
     var planResult by remember { mutableStateOf<TripPlanResult?>(null) }
     var selectedIndex by remember { mutableIntStateOf(0) }
     var isPlanning by remember { mutableStateOf(false) }
-    var planJob by remember { mutableStateOf<Job?>(null) }
+    val planRunner = remember { SingleJobRunner(coroutineScope) }
     var locationJob by remember { mutableStateOf<Job?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -183,8 +184,8 @@ fun TripPlannerScreen(
 
     /** Cancels any in-flight plan request and drops the current results. */
     fun invalidatePlan() {
-        planJob?.cancel()
-        planJob = null
+        planRunner.current.value?.cancel()
+        planRunner.current.value = null
         planResult = null
         showResults = false
         isPlanning = false
@@ -257,8 +258,7 @@ fun TripPlannerScreen(
         }
         invalidatePlan()
         isPlanning = true
-        var launchedJob: Job? = null
-        launchedJob = coroutineScope.launch {
+        planRunner.launch {
             try {
                 val time = TripRequestTime(
                     arriveBy = arriveBy,
@@ -277,15 +277,13 @@ fun TripPlannerScreen(
             } catch (e: CancellationException) {
                 throw e
             } finally {
-                // A superseded request's cleanup must not clobber the state of the newer
-                // request that replaced it (invalidatePlan() + planIt() can run back to back).
-                if (planJob === launchedJob) {
+                // Only the current request may clear the planning state; a superseded
+                // request's cleanup must not clobber the newer request's state.
+                if (planRunner.isCurrent(coroutineContext[Job]!!)) {
                     isPlanning = false
-                    planJob = null
                 }
             }
         }
-        planJob = launchedJob
     }
 
     // Re-plan on app re-entry only if a plan already exists (keeps the map fresh without
