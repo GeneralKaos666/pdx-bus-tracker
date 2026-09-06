@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -220,7 +221,8 @@ internal fun StopSearchPanel(
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.clearAndSetSemantics { }
                         )
                     }
                 }
@@ -232,10 +234,8 @@ internal fun StopSearchPanel(
                     cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
                     modifier = Modifier
                         .matchParentSize()
-                        .semantics(mergeDescendants = true) {
-                            contentDescription = searchHint
-                        }
                         .padding(start = 44.dp, top = 14.dp, bottom = 14.dp, end = 12.dp)
+                        .semantics { contentDescription = searchHint }
                 )
             }
         }
