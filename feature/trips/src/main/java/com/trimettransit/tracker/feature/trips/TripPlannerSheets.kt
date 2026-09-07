@@ -31,11 +31,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,7 +71,10 @@ internal fun EndpointPickerSheet(
     onMapPinPicked: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
     var tab by remember { mutableIntStateOf(0) }
 
     ModalBottomSheet(
@@ -86,7 +90,7 @@ internal fun EndpointPickerSheet(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
         )
 
-        TabRow(selectedTabIndex = tab) {
+        PrimaryTabRow(selectedTabIndex = tab) {
             Tab(
                 selected = tab == 0,
                 onClick = { tab = 0 },

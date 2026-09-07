@@ -567,7 +567,7 @@ fun TripPlannerScreen(
             if (statusText != null) {
                 Surface(
                     shape = MaterialTheme.shapes.large,
-                    color = if (resolvedError != null && planResult is TripPlanResult.Error) {
+                    color = if (planResult is TripPlanResult.Error) {
                         MaterialTheme.colorScheme.errorContainer
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerHigh
@@ -580,7 +580,7 @@ fun TripPlannerScreen(
                     Text(
                         text = statusText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (resolvedError != null && planResult is TripPlanResult.Error) {
+                        color = if (planResult is TripPlanResult.Error) {
                             MaterialTheme.colorScheme.onErrorContainer
                         } else {
                             MaterialTheme.colorScheme.onSurface
