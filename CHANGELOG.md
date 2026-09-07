@@ -1,5 +1,9 @@
 # Changelog
 
+## Privacy & compliance
+
+- **Privacy policy link in Settings:** the About card now includes a "Privacy Policy" row that opens the full policy, and the policy itself now documents the home-screen widget's periodic background refresh of arrival data.
+
 ## What's New in v4.12.3
 
 ### Expressive motion everywhere

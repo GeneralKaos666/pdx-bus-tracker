@@ -36,6 +36,11 @@ stops, favorites, and arrivals by name.
   short "Next departure" snapshot (stop, route, and countdown time) in local
   preferences to power the watch Tile. Like the phone data, it stays on the watch and
   never leaves your device.
+- **Home-screen widget:** the optional "Next arrivals" widget stores a short arrival
+  snapshot (stop, route, and countdown time) in local preferences to display the next
+  departures for your favorited stops. This snapshot stays on your device; it is
+  refreshed periodically in the background (see Section 3) and is removed if you
+  uninstall the app or clear its data.
 
 ## 3. Network requests
 
@@ -43,7 +48,8 @@ stops, favorites, and arrivals by name.
   stop lists, service alerts, and trip-planning requests. Requests include your API key
   registration ID and standard server log data such as your IP address. The Wear OS
   companion and its background Tile refresh make the same direct TriMet API requests
-  from the watch.
+  from the watch, and the phone's home-screen widget makes them periodically in the
+  background to keep its arrivals snapshot fresh.
 - **Map tiles:** the in-app maps use [MapLibre Native](https://maplibre.org/) with
   vector tiles from [OpenFreeMap](https://openfreemap.org/) (built on OpenStreetMap
   data). Requesting tiles necessarily reveals your IP address and the approximate area

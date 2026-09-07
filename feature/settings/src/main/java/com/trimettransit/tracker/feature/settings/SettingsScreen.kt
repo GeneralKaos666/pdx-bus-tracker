@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
@@ -59,9 +60,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.core.graphics.drawable.toBitmap
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.ui.NavState
@@ -231,6 +234,40 @@ fun SettingsScreen() {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
                 )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+                val policyInteractionSource = remember { MutableInteractionSource() }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pressScale(policyInteractionSource)
+                        .clickable(
+                            interactionSource = policyInteractionSource,
+                            indication = LocalIndication.current
+                        ) {
+                            val intent = Intent(
+                                Intent.ACTION_VIEW,
+                                "https://github.com/GeneralKaos666/pdx-bus-tracker/blob/master/docs/privacy-policy.md".toUri()
+                            )
+                            context.startActivity(intent)
+                        }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SettingsIconCircle(icon = Icons.Filled.Info, highlighted = false)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = stringResource(R.string.privacy_policy),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             SectionHeader(title = stringResource(R.string.open_source_licenses))
