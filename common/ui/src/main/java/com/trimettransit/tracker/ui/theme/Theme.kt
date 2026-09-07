@@ -2,12 +2,12 @@ package com.trimettransit.tracker.ui.theme
 
 import android.graphics.Color as AndroidColor
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -132,6 +132,7 @@ private fun androidx.compose.material3.ColorScheme.withVibrantColors(): androidx
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TriMetGoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -151,6 +152,7 @@ fun TriMetGoTheme(
 
     MaterialTheme(
         colorScheme = animatedColorScheme(colorScheme),
+        motionScheme = MotionScheme.expressive(),
         typography = TriMetGoTypography,
         shapes = TriMetGoShapes,
         content = content
@@ -165,7 +167,7 @@ fun TriMetGoTheme(
  */
 @Composable
 private fun animatedColorScheme(target: ColorScheme): ColorScheme {
-    val spec = tween<Color>(durationMillis = 350, easing = FastOutSlowInEasing)
+    val spec = m3EffectsSlow<Color>()
     val background by animateColorAsState(target.background, spec, label = "bg")
     val onBackground by animateColorAsState(target.onBackground, spec, label = "onBg")
     val surface by animateColorAsState(target.surface, spec, label = "sf")

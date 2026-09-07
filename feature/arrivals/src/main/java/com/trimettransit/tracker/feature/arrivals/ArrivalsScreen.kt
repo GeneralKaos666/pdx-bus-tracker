@@ -8,9 +8,7 @@ import timber.log.Timber
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -116,6 +114,10 @@ import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
+import com.trimettransit.tracker.ui.theme.m3EffectsFast
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import com.trimettransit.tracker.util.formatDateTime
 import com.trimettransit.tracker.util.minutesUntil
 import kotlinx.coroutines.Dispatchers
@@ -387,7 +389,7 @@ fun ArrivalsScreen(
 
     Crossfade(
         targetState = inPip,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = m3EffectsDefault(),
         label = "pipMode"
     ) { pip ->
         if (pip) {
@@ -424,7 +426,7 @@ fun ArrivalsScreen(
                 arrivals.isEmpty() -> 2
                 else -> 3
             },
-            animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+            animationSpec = m3EffectsDefault(),
             label = "arrivalsState"
         ) { state ->
             when (state) {
@@ -538,10 +540,7 @@ fun ArrivalsScreen(
                                             )
                                             val showAllArrowRotation by animateFloatAsState(
                                                 targetValue = if (showAllArrivals) 180f else 0f,
-                                                animationSpec = tween(
-                                                    durationMillis = 350,
-                                                    easing = FastOutSlowInEasing
-                                                )
+                                                animationSpec = m3SpatialDefault()
                                             )
                                             Icon(
                                                 imageVector = Icons.Default.KeyboardArrowDown,
@@ -950,8 +949,8 @@ private fun ArrivalItem(
 
             AnimatedVisibility(
                 visible = lineDetours.isNotEmpty(),
-                enter = fadeIn(tween(200)) + scaleIn(initialScale = 0.6f, animationSpec = tween(200)),
-                exit = fadeOut(tween(150)) + scaleOut(targetScale = 0.6f, animationSpec = tween(150))
+                enter = fadeIn(m3EffectsDefault()) + scaleIn(initialScale = 0.6f, animationSpec = m3SpatialDefault()),
+                exit = fadeOut(m3EffectsFast()) + scaleOut(targetScale = 0.6f, animationSpec = m3SpatialFast())
             ) {
                 Row {
                     Spacer(modifier = Modifier.width(8.dp))
@@ -1212,15 +1211,15 @@ private fun AnimatedCountdownText(
         transitionSpec = {
             val decreasing = targetState < initialState
             val enter = (if (decreasing) {
-                slideInHorizontally(tween(250)) { it / 3 }
+                slideInHorizontally(m3SpatialDefault()) { it / 3 }
             } else {
-                slideInHorizontally(tween(250)) { -it / 3 }
-            }) + fadeIn(tween(250))
+                slideInHorizontally(m3SpatialDefault()) { -it / 3 }
+            }) + fadeIn(m3EffectsDefault())
             val exit = (if (decreasing) {
-                slideOutHorizontally(tween(180)) { -it / 3 }
+                slideOutHorizontally(m3SpatialFast()) { -it / 3 }
             } else {
-                slideOutHorizontally(tween(180)) { it / 3 }
-            }) + fadeOut(tween(180))
+                slideOutHorizontally(m3SpatialFast()) { it / 3 }
+            }) + fadeOut(m3EffectsFast())
             enter togetherWith exit
         },
         label = "countdownRoll"

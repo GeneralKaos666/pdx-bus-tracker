@@ -2,9 +2,7 @@ package com.trimettransit.tracker.feature.settings
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -69,6 +67,10 @@ import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
+import com.trimettransit.tracker.ui.theme.m3EffectsFast
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.ui.theme.m3SpatialFast
 
 import kotlinx.coroutines.launch
 
@@ -267,7 +269,7 @@ fun SettingsScreen() {
                     Spacer(modifier = Modifier.width(16.dp))
                     val chevronRotation by animateFloatAsState(
                         targetValue = if (licensesExpanded) 180f else 0f,
-                        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+                        animationSpec = m3SpatialDefault(),
                         label = "licensesChevron"
                     )
                     Icon(
@@ -280,11 +282,11 @@ fun SettingsScreen() {
                 AnimatedVisibility(
                     visible = licensesExpanded,
                     enter = expandVertically(
-                        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
-                    ) + fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)),
+                        animationSpec = m3SpatialDefault()
+                    ) + fadeIn(m3EffectsDefault()),
                     exit = shrinkVertically(
-                        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)
-                    ) + fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing))
+                        animationSpec = m3SpatialFast()
+                    ) + fadeOut(m3EffectsFast())
                 ) {
                     Column(
                         modifier = Modifier.padding(start = 72.dp, end = 16.dp, bottom = 16.dp)
@@ -344,13 +346,13 @@ private fun SettingsIconCircle(icon: ImageVector, highlighted: Boolean) {
     val containerColor by animateColorAsState(
         targetValue = if (highlighted) MaterialTheme.colorScheme.primaryContainer
                       else MaterialTheme.colorScheme.surfaceContainerHighest,
-        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+        animationSpec = m3EffectsDefault(),
         label = "settingsIconContainer"
     )
     val contentColor by animateColorAsState(
         targetValue = if (highlighted) MaterialTheme.colorScheme.onPrimaryContainer
                       else MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+        animationSpec = m3EffectsDefault(),
         label = "settingsIconContent"
     )
     Surface(

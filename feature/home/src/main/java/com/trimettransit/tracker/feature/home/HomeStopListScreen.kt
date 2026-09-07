@@ -10,8 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
 import com.trimettransit.tracker.feature.home.R
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.components.ContentEntrance
@@ -20,6 +18,7 @@ import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 
 @Composable
 fun HomeStopListScreen(
@@ -36,7 +35,7 @@ fun HomeStopListScreen(
             stops.isEmpty() -> 2
             else -> 3
         },
-        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+        animationSpec = m3EffectsDefault(),
         label = "homeStopList"
     ) { state ->
         when (state) {

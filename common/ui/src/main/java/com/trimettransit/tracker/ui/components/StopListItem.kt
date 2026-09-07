@@ -1,8 +1,6 @@
 package com.trimettransit.tracker.ui.components
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,6 +31,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.R
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import kotlinx.coroutines.launch
 
 @Composable
@@ -49,9 +49,9 @@ fun StopListItem(
         onClick = {
             if (zoomOnTap && !zoom.isRunning) {
                 scope.launch {
-                    zoom.animateTo(1.08f, tween(durationMillis = 200, easing = FastOutSlowInEasing))
+                    zoom.animateTo(1.08f, m3SpatialDefault())
                     onClick()
-                    zoom.animateTo(1f, tween(durationMillis = 200, easing = FastOutSlowInEasing))
+                    zoom.animateTo(1f, m3SpatialFast())
                 }
             } else {
                 onClick()

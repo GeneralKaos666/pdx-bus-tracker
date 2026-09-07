@@ -7,8 +7,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -79,6 +77,10 @@ import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
+import com.trimettransit.tracker.ui.theme.m3EffectsFast
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import com.trimettransit.tracker.util.SingleJobRunner
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -325,10 +327,10 @@ fun TripPlannerScreen(
         // "Location permission is off" chip (mirrors the other location screens).
         AnimatedVisibility(
             visible = pageVisible && !locationPermissionGranted && hasAskedPermission,
-            enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
-                slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { -it },
-            exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
-                slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { -it / 3 }
+            enter = fadeIn(m3EffectsDefault()) +
+                slideInVertically(m3SpatialDefault()) { -it },
+            exit = fadeOut(m3EffectsFast()) +
+                slideOutVertically(m3SpatialFast()) { -it / 3 }
         ) {
             Surface(
                 onClick = { showLocationExplainer = true },
@@ -496,7 +498,7 @@ fun TripPlannerScreen(
                     ) {
                         Crossfade(
                             targetState = isPlanning,
-                            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                            animationSpec = m3EffectsDefault(),
                             label = "planButtonState"
                         ) { loading ->
                             if (loading) {
@@ -521,10 +523,10 @@ fun TripPlannerScreen(
             // Map-pin hint when a slot is awaiting a map tap.
             AnimatedVisibility(
                 visible = picking != PickSlot.NONE,
-                enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
-                    slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { -it },
-                exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
-                    slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { -it / 3 }
+                enter = fadeIn(m3EffectsDefault()) +
+                    slideInVertically(m3SpatialDefault()) { -it },
+                exit = fadeOut(m3EffectsFast()) +
+                    slideOutVertically(m3SpatialFast()) { -it / 3 }
             ) {
                 Surface(
                     shape = MaterialTheme.shapes.large,
@@ -696,7 +698,7 @@ private fun EndpointRow(
             Spacer(modifier = Modifier.width(10.dp))
             Crossfade(
                 targetState = point,
-                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                animationSpec = m3EffectsDefault(),
                 label = "endpointContent",
                 modifier = Modifier.weight(1f)
             ) { currentPoint ->
@@ -712,8 +714,8 @@ private fun EndpointRow(
             }
             AnimatedVisibility(
                 visible = point != null,
-                enter = fadeIn(tween(durationMillis = 200, easing = FastOutSlowInEasing)),
-                exit = fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing))
+                enter = fadeIn(m3EffectsDefault()),
+                exit = fadeOut(m3EffectsFast())
             ) {
                 IconButton(onClick = onClear, modifier = Modifier.size(48.dp)) {
                     Icon(

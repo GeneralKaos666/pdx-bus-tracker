@@ -90,10 +90,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.AnimatedContent
@@ -139,6 +135,11 @@ import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
 import com.trimettransit.tracker.feature.trips.TripPlannerScreen
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
+import com.trimettransit.tracker.ui.theme.m3EffectsFast
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.ui.theme.m3SpatialFast
+import com.trimettransit.tracker.ui.theme.m3SpatialSlow
 import androidx.annotation.StringRes
 import com.trimettransit.tracker.R
 import android.net.Uri
@@ -146,64 +147,63 @@ import android.net.Uri
 private val AnimatedContentTransitionScope<*>.navEnter: EnterTransition
     get() = slideInHorizontally(
         initialOffsetX = { it },
-        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+        animationSpec = m3SpatialDefault()
     ) + fadeIn(
         initialAlpha = 0.7f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+        animationSpec = m3EffectsDefault()
     )
 
 private val AnimatedContentTransitionScope<*>.navExit: ExitTransition
     get() = slideOutHorizontally(
         targetOffsetX = { -it },
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+        animationSpec = m3SpatialFast()
     ) + fadeOut(
         targetAlpha = 0.7f,
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+        animationSpec = m3EffectsFast()
     )
 
 private val AnimatedContentTransitionScope<*>.navPopEnter: EnterTransition
     get() = slideInHorizontally(
         initialOffsetX = { -it },
-        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+        animationSpec = m3SpatialDefault()
     ) + fadeIn(
         initialAlpha = 0.7f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+        animationSpec = m3EffectsDefault()
     )
 
 private val AnimatedContentTransitionScope<*>.navPopExit: ExitTransition
     get() = slideOutHorizontally(
         targetOffsetX = { it },
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+        animationSpec = m3SpatialFast()
     ) + fadeOut(
         targetAlpha = 0.7f,
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
+        animationSpec = m3EffectsFast()
     )
 
 /**
- * Enter transition for the Arrivals destination: a stiffer spring than the
- * default [navEnter] so pushing to Arrivals from Home/Routes feels a hair
- * snappier (settles well under the 300ms [navExitQuick] that bounds it).
+ * Enter transition for the Arrivals destination: the fast spatial spring so pushing to
+ * Arrivals from Home/Routes reads tighter/snappier than the default [navEnter].
  */
 private val AnimatedContentTransitionScope<*>.navEnterArrivals: EnterTransition
     get() = slideInHorizontally(
         initialOffsetX = { it },
-        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+        animationSpec = m3SpatialFast()
     ) + fadeIn(
         initialAlpha = 0.7f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+        animationSpec = m3EffectsFast()
     )
 
 /**
- * Slightly shorter exit (350 → 300ms) for the Home and Routes destinations so
- * the push to Arrivals reads tighter; same slide+fade shape as [navExit].
+ * Quick variant of [navExit] (fast effects/spatial springs) for the Home and Routes
+ * destinations so the push to Arrivals reads tighter; same slide+fade shape.
  */
 private val AnimatedContentTransitionScope<*>.navExitQuick: ExitTransition
     get() = slideOutHorizontally(
         targetOffsetX = { -it },
-        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+        animationSpec = m3SpatialFast()
     ) + fadeOut(
         targetAlpha = 0.7f,
-        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+        animationSpec = m3EffectsFast()
     )
 
 private data class BottomNavItem(
@@ -271,8 +271,8 @@ private fun MainBottomBar(
                 AnimatedContent(
                     targetState = contextLabelRes == null,
                     transitionSpec = {
-                        (fadeIn(spring()) + scaleIn(initialScale = 0.85f, animationSpec = spring())) togetherWith
-                            (fadeOut(spring()) + scaleOut(targetScale = 0.85f, animationSpec = spring()))
+                        (fadeIn(m3EffectsDefault()) + scaleIn(initialScale = 0.85f, animationSpec = m3SpatialDefault())) togetherWith
+                            (fadeOut(m3EffectsFast()) + scaleOut(targetScale = 0.85f, animationSpec = m3SpatialFast()))
                     },
                     label = "nav_collapse"
                 ) { isTopLevel ->
@@ -403,10 +403,7 @@ private fun MainTabRow(
 
                 val labelWidth by animateDpAsState(
                     targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    ),
+                    animationSpec = m3SpatialSlow(),
                     label = "label_width_$index"
                 )
 
@@ -626,11 +623,11 @@ private fun MainAppContent(
                 AnimatedContent(
                     targetState = currentRoute,
                     transitionSpec = {
-                        (fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)) +
-                            slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { -it })
+                        (fadeIn(m3EffectsDefault()) +
+                            slideInVertically(m3SpatialDefault()) { -it })
                             .togetherWith(
-                                fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing)) +
-                                    slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { -it / 3 }
+                                fadeOut(m3EffectsFast()) +
+                                    slideOutVertically(m3SpatialFast()) { -it / 3 }
                             )
                     },
                     label = "topBar"
@@ -732,7 +729,7 @@ private fun MainAppContent(
                             ) {
                                 AnimatedContent(
                                     targetState = NavState.arrivalsIsFavorite,
-                                    transitionSpec = { fadeIn(tween(durationMillis = 300, easing = FastOutSlowInEasing)) togetherWith fadeOut(tween(durationMillis = 300, easing = FastOutSlowInEasing)) },
+                                    transitionSpec = { fadeIn(m3EffectsDefault()) togetherWith fadeOut(m3EffectsFast()) },
                                     label = "favoriteIcon"
                                 ) { isFav ->
                                     Icon(
@@ -746,7 +743,7 @@ private fun MainAppContent(
                             val refreshSource = remember { MutableInteractionSource() }
                             IconButton(
                                 onClick = {
-                                    scope.launch { refreshRotation.animateTo(refreshRotation.value + 360f, tween(durationMillis = 350, easing = FastOutSlowInEasing)) }
+                                    scope.launch { refreshRotation.animateTo(refreshRotation.value + 360f, m3EffectsFast()) }
                                     NavState.arrivalsOnRefresh?.invoke()
                                 },
                                 interactionSource = refreshSource,
@@ -774,10 +771,10 @@ private fun MainAppContent(
             bottomBar = {
                 AnimatedVisibility(
                     visible = !inPip,
-                    enter = slideInVertically(tween(durationMillis = 250, easing = FastOutSlowInEasing)) { it } +
-                        fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)),
-                    exit = slideOutVertically(tween(durationMillis = 180, easing = FastOutSlowInEasing)) { it } +
-                        fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing))
+                    enter = slideInVertically(m3SpatialDefault()) { it } +
+                        fadeIn(m3EffectsDefault()),
+                    exit = slideOutVertically(m3SpatialFast()) { it } +
+                        fadeOut(m3EffectsFast())
                 ) {
                     @SuppressLint("FrequentlyChangingValue")
                     val pagePosition = topPagerState.currentPage +

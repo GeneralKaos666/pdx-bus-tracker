@@ -2,12 +2,8 @@ package com.trimettransit.tracker.wear
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -36,8 +32,8 @@ fun WearContentEntrance(
     AnimatedVisibility(
         visibleState = transitionState,
         modifier = modifier,
-        enter = fadeIn(tween(durationMillis = 300, easing = FastOutSlowInEasing)) +
-                slideInVertically(tween(durationMillis = 300, easing = FastOutSlowInEasing)) { it / 24 },
+        enter = fadeIn(m3EffectsDefault()) +
+                slideInVertically(m3SpatialDefault()) { it / 24 },
         exit = ExitTransition.None
     ) { content() }
 }
@@ -57,8 +53,8 @@ fun WearFadeInOnce(
     AnimatedVisibility(
         visibleState = visibleState,
         modifier = modifier,
-        enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)),
-        exit = fadeOut(tween(durationMillis = 250, easing = FastOutSlowInEasing))
+        enter = fadeIn(m3EffectsDefault()),
+        exit = fadeOut(m3EffectsFast())
     ) { content() }
 }
 
@@ -76,10 +72,7 @@ fun Modifier.wearPressScale(
     val pressed by interactionSource.collectIsPressedAsState()
     val animatedScale by animateFloatAsState(
         targetValue = if (pressed) scale else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        animationSpec = m3SpatialFast(),
         label = "wearPressScale"
     )
     return graphicsLayer {

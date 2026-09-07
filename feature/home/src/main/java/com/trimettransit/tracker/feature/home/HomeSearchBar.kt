@@ -5,8 +5,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
@@ -55,6 +53,10 @@ import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.searchStops
 import com.trimettransit.tracker.ui.components.StopSearchItem
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
+import com.trimettransit.tracker.ui.theme.m3EffectsFast
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -172,12 +174,12 @@ private fun SearchResultsDropdown(
         visible = query.isNotBlank(),
         modifier = modifier,
         enter = expandVertically(
-            animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing)
-        ) + fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)),
+            animationSpec = m3SpatialDefault()
+        ) + fadeIn(m3EffectsDefault()),
         exit = shrinkVertically(
-            animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+            animationSpec = m3SpatialFast(),
             shrinkTowards = Alignment.Top
-        ) + fadeOut(tween(durationMillis = 180, easing = FastOutSlowInEasing))
+        ) + fadeOut(m3EffectsFast())
     ) {
         Surface(
             shape = RoundedCornerShape(20.dp),

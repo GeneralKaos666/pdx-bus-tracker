@@ -1,5 +1,13 @@
 # Changelog
 
+## What's New in v4.12.3
+
+### Expressive motion everywhere
+- **Screen transitions that feel alive:** navigating between screens now uses Material 3 Expressive motion springs — the entering screen glides in with a subtle overshoot while the outgoing screen slips away quickly, on both the phone app and the Wear companion (the watch's system swipe/scale navigation is unchanged).
+- **Same expressive physics inside screens:** pull-to-refresh, loading/error/empty reloads, favorite toggling, the arrivals countdown roll, collapsible route lists, the search panel, settings, and the trip planner all share the same Material 3 Expressive spring rhythm instead of fixed-duration tweens.
+- **Tappable things press with intent:** every pressable card, button, chip, and stop row now dips down and springs back with a slight overshoot as you release.
+- **Theme changes melt, not snap:** switching between light, dark, and Material You palettes now animates through the expressive color springs, and the app's Material theme is wired to the Expressive motion scheme so built-in components inherit it too.
+
 ## What's New in v4.12.2
 
 ### Trip Planner polish

@@ -2,12 +2,8 @@ package com.trimettransit.tracker.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -19,6 +15,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
+import com.trimettransit.tracker.ui.theme.m3EffectsFast
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.ui.theme.m3SpatialFast
 
 /**
  * Fades + slides screen content up the first time it appears.
@@ -37,8 +37,8 @@ fun ContentEntrance(
     AnimatedVisibility(
         visibleState = transitionState,
         modifier = modifier,
-        enter = fadeIn(tween(durationMillis = 350, easing = FastOutSlowInEasing)) +
-                slideInVertically(tween(durationMillis = 350, easing = FastOutSlowInEasing)) { it / 24 },
+        enter = fadeIn(m3EffectsDefault()) +
+                slideInVertically(m3SpatialDefault()) { it / 24 },
         exit = ExitTransition.None
     ) { content() }
 }
@@ -58,8 +58,8 @@ fun FadeInOnce(
     AnimatedVisibility(
         visibleState = visibleState,
         modifier = modifier,
-        enter = fadeIn(tween(durationMillis = 250, easing = FastOutSlowInEasing)),
-        exit = fadeOut(tween(durationMillis = 250, easing = FastOutSlowInEasing))
+        enter = fadeIn(m3EffectsDefault()),
+        exit = fadeOut(m3EffectsFast())
     ) { content() }
 }
 
@@ -70,8 +70,8 @@ fun FadeInOnce(
  * IconButton(interactionSource = ...), Button(interactionSource = ...), NavigationDrawerItem(interactionSource = ...)) —
  * a private source would never emit and the scale would never animate.
  * MUST be applied BEFORE the clickable in the modifier chain (graphicsLayer wraps
- * the clickable so the ripple scales too). Press-down ~100ms, release ~150ms,
- * no overshoot (Spring.DampingRatioNoBouncy, Spring.StiffnessMediumLow).
+ * the clickable so the ripple scales too). Uses the M3 Expressive spatial-fast spring so the
+ * release pops back through 1.0 with the characteristic slight overshoot.
  */
 @Composable
 fun Modifier.pressScale(
@@ -81,10 +81,7 @@ fun Modifier.pressScale(
     val pressed by interactionSource.collectIsPressedAsState()
     val animatedScale by animateFloatAsState(
         targetValue = if (pressed) scale else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        animationSpec = m3SpatialFast(),
         label = "pressScale"
     )
     return graphicsLayer {

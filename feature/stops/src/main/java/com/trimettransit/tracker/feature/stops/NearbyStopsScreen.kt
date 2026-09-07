@@ -36,8 +36,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -57,6 +55,7 @@ import com.trimettransit.tracker.ui.components.LoadingState
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -198,7 +197,7 @@ fun NearbyStopsScreen(
         ) {
             Crossfade(
                 targetState = isLoading,
-                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                animationSpec = m3EffectsDefault(),
                 label = "refreshButtonState"
             ) { loading ->
                 if (loading) {
@@ -227,7 +226,7 @@ fun NearbyStopsScreen(
                 stops != null -> 3
                 else -> 4
             },
-            animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+            animationSpec = m3EffectsDefault(),
             label = "nearbyState"
         ) { state ->
             when (state) {

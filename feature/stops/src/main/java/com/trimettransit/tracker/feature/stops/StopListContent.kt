@@ -1,8 +1,6 @@
 package com.trimettransit.tracker.feature.stops
 
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +16,7 @@ import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 
 /**
  * Shared list shell for the Routes list: Crossfade between loading, error,
@@ -46,7 +45,7 @@ internal fun <T> StopListContent(
             safeItems.isEmpty() -> 2
             else -> 3
         },
-        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+        animationSpec = m3EffectsDefault(),
         label = stateLabel
     ) { state ->
         when (state) {

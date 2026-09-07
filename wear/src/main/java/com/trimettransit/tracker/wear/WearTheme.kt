@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.MotionScheme
 import androidx.wear.compose.material3.dynamicColorScheme
 
 /**
@@ -19,7 +20,10 @@ import androidx.wear.compose.material3.dynamicColorScheme
 fun WearBusTheme(content: @Composable () -> Unit) {
     val context = LocalContext.current
     val dynamic = dynamicColorScheme(context)
-    MaterialTheme(colorScheme = dynamic ?: BrandDarkColorScheme) {
+    MaterialTheme(
+        colorScheme = dynamic ?: BrandDarkColorScheme,
+        motionScheme = MotionScheme.expressive()
+    ) {
         content()
     }
 }

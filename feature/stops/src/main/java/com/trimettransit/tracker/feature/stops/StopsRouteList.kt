@@ -1,8 +1,6 @@
 package com.trimettransit.tracker.feature.stops
 
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +40,7 @@ import com.trimettransit.tracker.transit.ApiKeys
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 
 @Composable
 fun StopsRouteList(
@@ -155,7 +154,7 @@ private fun RouteListItem(
             }
             val chevronRotation by animateFloatAsState(
                 targetValue = if (isExpanded) 180f else 0f,
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                animationSpec = m3SpatialDefault()
             )
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,

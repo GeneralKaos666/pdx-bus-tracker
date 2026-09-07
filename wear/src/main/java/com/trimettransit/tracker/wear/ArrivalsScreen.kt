@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -318,15 +316,15 @@ private fun WearCountdownText(
             val i = initialState
             val decreasing = t != null && i != null && t < i
             val enter = (if (decreasing) {
-                slideInHorizontally(tween(250)) { it / 3 }
+                slideInHorizontally(m3SpatialDefault()) { it / 3 }
             } else {
-                slideInHorizontally(tween(250)) { -it / 3 }
-            }) + fadeIn(tween(250, easing = FastOutSlowInEasing))
+                slideInHorizontally(m3SpatialDefault()) { -it / 3 }
+            }) + fadeIn(m3EffectsDefault())
             val exit = (if (decreasing) {
-                slideOutHorizontally(tween(180)) { -it / 3 }
+                slideOutHorizontally(m3SpatialFast()) { -it / 3 }
             } else {
-                slideOutHorizontally(tween(180)) { it / 3 }
-            }) + fadeOut(tween(180, easing = FastOutSlowInEasing))
+                slideOutHorizontally(m3SpatialFast()) { it / 3 }
+            }) + fadeOut(m3EffectsFast())
             enter togetherWith exit
         },
         label = "wearCountdownRoll"

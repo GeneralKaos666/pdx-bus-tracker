@@ -2,9 +2,7 @@ package com.trimettransit.tracker.feature.stops
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -49,6 +47,10 @@ import com.trimettransit.tracker.transit.ApiKeys
 import com.trimettransit.tracker.ui.components.InlineSkeleton
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
+import com.trimettransit.tracker.ui.theme.m3EffectsFast
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.ui.theme.m3SpatialFast
 
 /**
  * Routes list with an accordion drill-down, mirroring the arrivals map card:
@@ -71,8 +73,8 @@ fun StopsScreen(
         routeTrailingContent = { route ->
             AnimatedVisibility(
                 visible = selectedRoute?.routeId == route.routeId,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                enter = expandVertically(m3SpatialDefault()) + fadeIn(m3EffectsDefault()),
+                exit = shrinkVertically(m3SpatialFast()) + fadeOut(m3EffectsFast())
             ) {
                 DirectionsSubCard(
                     route = route,
@@ -146,7 +148,7 @@ private fun DirectionsSubCard(
                     safeDirections.isEmpty() -> 3
                     else -> 4
                 },
-                animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+                animationSpec = m3EffectsDefault(),
                 label = "directionsSubCardState"
             ) { state ->
                 when (state) {
@@ -209,7 +211,7 @@ private fun DirectionItem(
             )
             val chevronRotation by animateFloatAsState(
                 targetValue = if (isExpanded) 180f else 0f,
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                animationSpec = m3SpatialDefault()
             )
             Spacer(modifier = Modifier.width(8.dp))
             Icon(
@@ -256,7 +258,7 @@ private fun StopsSubCard(
                 safeStops.isEmpty() -> 3
                 else -> 4
             },
-            animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+            animationSpec = m3EffectsDefault(),
             label = "stopsSubCardState"
         ) { state ->
             when (state) {
