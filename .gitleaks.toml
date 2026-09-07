@@ -1,0 +1,16 @@
+title = "PDX Bus Tracker gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Legacy secrets hardcoded in the pre-rewrite import commit (083053cf, Jul 2026) of the old 'trimet-go' app. All removed from current code in Aug 2026. The TriMet key C7558610143A7E383B6843D0A was rotated on 2026-09-07; the Google/Parse keys belong to the dead legacy app. Values survive only in git history."
+
+regexTarget = "match"
+
+regexes = [
+    '''AIzaSyDmbTHKuf8jfoE6BMPkbW6udRv_wyAJnzo''',
+    '''AIzaSyA5mKOjMkn8oWCohez2yRaZnpyi985hAOo''',
+    '''drGnMLdbtm2cIEqljH0eI3CqT0iv2IN7x0ILPKmB''',
+    '''C7558610143A7E383B6843D0A''',
+]
