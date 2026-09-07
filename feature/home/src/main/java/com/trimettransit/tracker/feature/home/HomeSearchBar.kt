@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -44,6 +45,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -70,8 +73,10 @@ import kotlinx.coroutines.withContext
 fun HomeSearchBar(
     transitRepository: TransitRepository,
     onStopSelected: (Stop) -> Unit,
+    header: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
     var query by remember { mutableStateOf("") }
     var allStops by remember { mutableStateOf<List<Stop>?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -121,7 +126,10 @@ fun HomeSearchBar(
                     if (query.isNotEmpty()) {
                         val clearSource = remember { MutableInteractionSource() }
                         IconButton(
-                            onClick = { query = "" },
+                            onClick = {
+                                query = ""
+                                focusManager.clearFocus()
+                            },
                             interactionSource = clearSource,
                             modifier = Modifier.pressScale(clearSource)
                         ) {
@@ -138,25 +146,55 @@ fun HomeSearchBar(
             )
         }
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            content()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(query) {
+                    detectTapGestures { focusManager.clearFocus() }
+                }
+        ) {
+            HomeSearchHeader(visible = query.isBlank() && header != null, header = header)
 
-            SearchResultsDropdown(
-                query = query,
-                isLoading = isLoading,
-                hasError = hasError,
-                allStops = allStops,
-                results = results,
-                onStopClick = { stop ->
-                    query = ""
-                    onStopSelected(stop)
-                },
+            Box(
                 modifier = Modifier
-                    .align(Alignment.TopStart)
+                    .weight(1f)
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            )
+            ) {
+                content()
+
+                SearchResultsDropdown(
+                    query = query,
+                    isLoading = isLoading,
+                    hasError = hasError,
+                    allStops = allStops,
+                    results = results,
+                    onStopClick = { stop ->
+                        query = ""
+                        focusManager.clearFocus()
+                        onStopSelected(stop)
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun HomeSearchHeader(
+    visible: Boolean,
+    header: (@Composable () -> Unit)?
+) {
+    if (header == null) return
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(m3EffectsDefault()) + expandVertically(m3SpatialDefault()),
+        exit = fadeOut(m3EffectsFast()) + shrinkVertically(m3SpatialFast(), shrinkTowards = Alignment.Top)
+    ) {
+        header()
     }
 }
 
