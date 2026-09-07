@@ -8,6 +8,7 @@ import java.nio.file.StandardCopyOption
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.plugin.compose'
+    id 'com.github.triplet.play' version '4.1.1'
 }
 
 abstract class RenameApkTask extends DefaultTask {
@@ -111,6 +112,22 @@ android {
             doNotStrip "**/*.so"
         }
   }
+
+    playConfigs {
+        release {
+            resolutionStrategy.set(com.github.triplet.gradle.androidpublisher.ResolutionStrategy.AUTO_OFFSET)
+        }
+    }
+}
+
+def playCredentialsConfigured = System.getenv("ANDROID_PUBLISHER_CREDENTIALS") != null ||
+        project.hasProperty("playServiceAccountJsonPath")
+
+play {
+    enabled.set(playCredentialsConfigured)
+    if (project.hasProperty("playServiceAccountJsonPath")) {
+        serviceAccountCredentials.set(file(project.property("playServiceAccountJsonPath")))
+    }
 }
 
 androidComponents {
