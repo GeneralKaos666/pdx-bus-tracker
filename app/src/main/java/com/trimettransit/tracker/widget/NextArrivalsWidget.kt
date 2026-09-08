@@ -4,48 +4,46 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.Preferences
+import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.GlanceId
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.itemsIndexed
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
-import androidx.glance.color.DynamicThemeColorProviders
+import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
-import androidx.glance.layout.Row
-import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
-import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
-import androidx.glance.layout.size
-import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.activities.MainActivity
+import com.trimettransit.tracker.widget.WidgetSnapshotCache.Snapshot
 
 class NextArrivalsWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val snapshot = WidgetSnapshotCache.snapshot(context)
         provideContent {
-            Content(snapshot)
+            val config = WidgetConfig.fromPersistentMap(currentState<Preferences>().toConfigMap())
+            Content(snapshot, config)
         }
     }
 }
 
 @Composable
-private fun Content(snapshot: WidgetSnapshotCache.Snapshot) {
+private fun Content(snapshot: Snapshot, config: WidgetConfig) {
     val context = LocalContext.current
-    GlanceTheme(DynamicThemeColorProviders) {
+    GlanceTheme(widgetColorProviders(config.theme)) {
         val c = GlanceTheme.colors
         Column(
             modifier = GlanceModifier
@@ -53,13 +51,16 @@ private fun Content(snapshot: WidgetSnapshotCache.Snapshot) {
                 .background(c.background)
                 .padding(12.dp)
         ) {
-            Text(
-                text = context.getString(R.string.next_arrivals_widget_label),
-                style = TextStyle(fontWeight = FontWeight.Bold),
-                modifier = GlanceModifier.padding(bottom = 6.dp)
-            )
+            if (!config.hideTitle) {
+                Text(
+                    text = config.titleText?.takeIf { it.isNotBlank() }
+                        ?: context.getString(R.string.next_arrivals_widget_label),
+                    style = TextStyle(fontWeight = FontWeight.Bold),
+                    modifier = GlanceModifier.padding(bottom = 6.dp)
+                )
+            }
             when {
-                snapshot.rows.isNotEmpty() -> StopList(snapshot)
+                snapshot.rows.isNotEmpty() -> StopList(snapshot, config)
                 !snapshot.hasFavorites && snapshot.updatedAtMillis == 0L -> EmptyState(
                     hint = context.getString(R.string.widget_empty_no_favorites),
                     ctx = context
@@ -74,58 +75,26 @@ private fun Content(snapshot: WidgetSnapshotCache.Snapshot) {
 }
 
 @Composable
-private fun StopList(snapshot: WidgetSnapshotCache.Snapshot) {
+private fun StopList(snapshot: Snapshot, config: WidgetConfig) {
     val now = System.currentTimeMillis()
+    val rows = orderedRows(snapshot.rows, config.selectedStopIds)
     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
-        itemsIndexed(snapshot.rows) { _, row ->
-            StopRow(row = row, now = now)
+        itemsIndexed(rows) { _, row ->
+            StopRow(row, config, now)
         }
     }
 }
 
-@Composable
-private fun StopRow(row: WidgetSnapshotCache.Row, now: Long) {
-    val c = GlanceTheme.colors
-    val context = LocalContext.current
-    Row(
-        modifier = GlanceModifier
-            .fillMaxWidth()
-            .padding(vertical = 5.dp)
-    ) {
-        Box(
-            modifier = GlanceModifier
-                .size(26.dp)
-                .background(c.primary),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = routeBadgeText(row.stop.routeNum),
-                style = TextStyle(color = c.onPrimary, fontWeight = FontWeight.Bold),
-                maxLines = 1
-            )
-        }
-        Spacer(GlanceModifier.width(10.dp))
-        Column(GlanceModifier.defaultWeight()) {
-            Text(
-                text = row.stop.desc,
-                style = TextStyle(color = c.onBackground),
-                maxLines = 1
-            )
-            Text(
-                text = row.arrivals.joinToString(context.getString(R.string.widget_arrival_separator)) { a ->
-                    if (a.dropOffOnly) {
-                        context.getString(R.string.widget_dropoff_only)
-                    } else {
-                        countdownLabel(row.minutesFrom(now, a), context)
-                    }
-                },
-                style = TextStyle(color = c.onBackground),
-                maxLines = 1,
-                modifier = GlanceModifier.padding(top = 2.dp)
-            )
-        }
+private fun orderedRows(
+    rows: List<WidgetSnapshotCache.Row>,
+    selectedStopIds: List<String>
+): List<WidgetSnapshotCache.Row> =
+    if (selectedStopIds.isEmpty()) {
+        rows
+    } else {
+        val byId = rows.associateBy { it.stop.locId.toString() }
+        selectedStopIds.mapNotNull { byId[it] }
     }
-}
 
 @Composable
 private fun EmptyState(hint: String, ctx: Context) {
@@ -144,9 +113,17 @@ private fun EmptyState(hint: String, ctx: Context) {
     }
 }
 
-private fun routeBadgeText(routeNum: Int): String = if (routeNum > 0) routeNum.toString() else "B"
-
-private fun countdownLabel(minutes: Long, context: Context): String = when {
-    minutes <= 0L -> context.getString(R.string.widget_due)
-    else -> context.getString(R.string.widget_countdown_min, minutes)
+private fun Preferences.toConfigMap(): Map<String, String> = buildMap {
+    val knownNames = setOf(
+        WidgetConfig.KEY_STOP_IDS,
+        WidgetConfig.KEY_ARRIVALS_PER_STOP,
+        WidgetConfig.KEY_SHOW_CLOCK_TIME,
+        WidgetConfig.KEY_THEME,
+        WidgetConfig.KEY_COMPACT_ROWS,
+        WidgetConfig.KEY_TITLE_TEXT,
+        WidgetConfig.KEY_HIDE_TITLE
+    )
+    asMap().forEach { (key, value) ->
+        if (key.name in knownNames) put(key.name, value.toString())
+    }
 }
