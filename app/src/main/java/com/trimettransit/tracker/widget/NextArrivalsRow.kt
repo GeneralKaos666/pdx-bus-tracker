@@ -28,9 +28,10 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-private val WidgetClockTime = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-    .withLocale(Locale.getDefault())
-    .withZone(ZoneId.systemDefault())
+private fun widgetClockTime(): DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+        .withLocale(Locale.getDefault())
+        .withZone(ZoneId.systemDefault())
 
 @Composable
 internal fun StopRow(row: Row, config: WidgetConfig, now: Long) {
@@ -132,6 +133,6 @@ private fun arrivalTimeLabel(
     context: Context
 ): String = when {
     arrival.dropOffOnly -> context.getString(R.string.widget_dropoff_only)
-    config.showClockTime -> WidgetClockTime.format(Instant.ofEpochMilli(arrival.atMillis))
+    config.showClockTime -> widgetClockTime().format(Instant.ofEpochMilli(arrival.atMillis))
     else -> countdownLabel(row.minutesFrom(now, arrival), context)
 }
