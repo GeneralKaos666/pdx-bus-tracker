@@ -44,5 +44,12 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/next_arrivals_widget_info"/>
         </receiver>
+        <activity
+            android:name="com.trimettransit.tracker.widget.config.WidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize"/>
     </application>
 </manifest>

@@ -8,6 +8,8 @@
     android:maxResizeHeight="450dp"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
+    android:configure="com.trimettransit.tracker.widget.config.WidgetConfigActivity"
+    android:widgetFeatures="reconfigurable"
     android:initialLayout="@layout/next_arrivals_widget_initial"
     android:updatePeriodMillis="0"
     android:description="@string/next_arrivals_widget_label" />
