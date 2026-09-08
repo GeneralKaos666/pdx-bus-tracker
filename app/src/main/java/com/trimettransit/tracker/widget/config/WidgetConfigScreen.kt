@@ -356,7 +356,9 @@ private fun StopReorderList(
  * the selection index matching how many other *selected* row centers it has crossed (computed
  * against their stable favorites-order positions), so unselected rows are never drop targets.
  * The dragged row translates and slightly scales via [androidx.compose.ui.graphics.graphicsLayer]
- * (draw-phase only — no per-frame recomposition); the selection commits on release.
+ * (draw-phase only — no per-frame recomposition); the selection commits on release. A long-press
+ * that never moves (zero drag offset) is a no-op and never reorders, even if the selection order
+ * differs from favorites order.
  */
 @Composable
 private fun Modifier.dragToReorder(
@@ -384,6 +386,11 @@ private fun Modifier.dragToReorder(
                     dragOffset.floatValue += dragAmount.y
                 },
                 onDragEnd = {
+                    if (currentDragOffset.value.toInt() == 0) {
+                        draggedLocId.value = null
+                        dragOffset.floatValue = 0f
+                        return@detectDragGesturesAfterLongPress
+                    }
                     val from = currentIds.value.indexOf(id)
                     if (from >= 0) {
                         val h = currentItemHeight.value
