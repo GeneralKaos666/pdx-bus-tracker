@@ -113,5 +113,5 @@ object WidgetSnapshotCache {
             }
             .distinctBy { it.atMillis }
             .sortedBy { it.atMillis }
-            .take(2)
+            .take(4)
 }

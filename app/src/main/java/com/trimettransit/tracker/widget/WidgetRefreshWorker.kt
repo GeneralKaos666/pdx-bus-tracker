@@ -44,8 +44,8 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
     }
 
     companion object {
-        const val MAX_STOPS = 10
+        const val MAX_STOPS = 12
         const val WINDOW_MINUTES = 30
-        const val ARRIVALS_PER_STOP = 2
+        const val ARRIVALS_PER_STOP = 4
     }
 }
