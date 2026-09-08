@@ -78,7 +78,9 @@ import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    widgetSection: (@Composable ColumnScope.() -> Unit)? = null
+) {
     val context = LocalContext.current
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
@@ -268,6 +270,11 @@ fun SettingsScreen() {
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+
+            // App-owned section (e.g. Widget settings) injected from the host module.
+            if (widgetSection != null) {
+                widgetSection()
             }
 
             SectionHeader(title = stringResource(R.string.open_source_licenses))

@@ -30,6 +30,19 @@
     <string name="widget_config_done">Done</string>
     <string name="widget_config_cancel">Cancel</string>
 
+    <!-- Widget settings section (inside the app's Settings screen) -->
+    <string name="widget_settings_title">Widget</string>
+    <string name="widget_settings_subtitle">Home-screen refresh frequency</string>
+    <string name="widget_settings_interval_min">%1$d min</string>
+    <plurals name="widget_settings_interval_desc">
+        <item quantity="one">Refresh every %d minute</item>
+        <item quantity="other">Refresh every %d minutes</item>
+    </plurals>
+    <string name="widget_settings_placed_title">Placed widgets</string>
+    <string name="widget_settings_no_widgets">No widgets placed yet — add one from your home screen</string>
+    <string name="widget_settings_widget_id">Widget %1$d</string>
+    <string name="widget_settings_edit">Edit</string>
+
     <!-- Bottom navigation -->
     <string name="nav_favorites">Favorites</string>
     <string name="nav_recent">Recent</string>

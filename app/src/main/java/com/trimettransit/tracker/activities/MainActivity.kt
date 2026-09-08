@@ -122,6 +122,7 @@ import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
 import com.trimettransit.tracker.data.local.RecentStopsRepositoryImpl
 import com.trimettransit.tracker.transit.TransitRepositoryImpl
 import com.trimettransit.tracker.widget.WidgetScheduler
+import com.trimettransit.tracker.widget.settings.WidgetSettingsSection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.trimettransit.tracker.model.Direction
@@ -871,7 +872,7 @@ private fun MainAppContent(
                     }
                 }
                 composable("settings") {
-                    SettingsScreen()
+                    SettingsScreen(widgetSection = { WidgetSettingsSection() })
                 }
                 composable("nearby_stops") {
                     NearbyStopsScreen(
