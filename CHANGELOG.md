@@ -4,7 +4,7 @@
 
 - **Privacy policy link in Settings:** the About card now includes a "Privacy Policy" row that opens the full policy, and the policy itself now documents the home-screen widget's periodic background refresh of arrival data.
 
-## What's New in v4.12.4
+## What's New in v4.13.0
 
 ### Home-screen widget, your way
 - **Configure each widget on your home screen:** long-pressing a "Next arrivals" widget now opens a dedicated settings screen where you choose exactly which of your favorite stops it shows and how many of their arrivals — 1, 2, or 3.
