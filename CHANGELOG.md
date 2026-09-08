@@ -4,6 +4,17 @@
 
 - **Privacy policy link in Settings:** the About card now includes a "Privacy Policy" row that opens the full policy, and the policy itself now documents the home-screen widget's periodic background refresh of arrival data.
 
+## What's New in v4.12.4
+
+### Home-screen widget, your way
+- **Configure each widget on your home screen:** long-pressing a "Next arrivals" widget now opens a dedicated settings screen where you choose exactly which of your favorite stops it shows and how many of their arrivals — 1, 2, or 3.
+- **Put your stops in your own order:** favorite stops on the widget can be dragged into whatever order you like, and that order is saved per widget.
+- **Countdown or clock:** each widget shows either the familiar minutes-to-arrival countdown or the actual clock time of the arrival, whichever you prefer.
+- **Theme it independently:** the widget can follow your system theme or be locked to light or dark, independent of the app.
+- **Compact or detailed rows:** a compact mode squeezes more arrivals into the same space when you want glance-ability over detail.
+- **A title that's yours (or none):** give each widget its own label, or hide the title entirely for a cleaner look.
+- **Tune how often widgets refresh:** a global setting controls the background refresh frequency (15, 30, 45, or 60 minutes), applied immediately and kept app-wide.
+
 ## What's New in v4.12.3
 
 ### Expressive motion everywhere

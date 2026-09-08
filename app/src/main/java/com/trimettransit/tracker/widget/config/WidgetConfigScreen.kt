@@ -103,7 +103,7 @@ fun WidgetConfigScreen(
 
     fun buildConfig(): WidgetConfig = WidgetConfig(
         selectedStopIds = selectedStopIds.value.distinct(),
-        arrivalsPerStop = arrivalsPerStop.value,
+        arrivalsPerStop = arrivalsPerStop.intValue,
         showClockTime = showClockTime.value,
         theme = theme.value,
         compactRows = compactRows.value,
@@ -179,8 +179,8 @@ fun WidgetConfigScreen(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             ChoiceSegmentedRow(
-                selected = arrivalsPerStop.value,
-                onSelect = { arrivalsPerStop.value = it },
+                selected = arrivalsPerStop.intValue,
+                onSelect = { arrivalsPerStop.intValue = it },
                 options = listOf(1, 2, 3),
                 labelFor = { it.toString() }
             )
