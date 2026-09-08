@@ -737,7 +737,7 @@ private fun StopMapCard(
             styleUrl = mapStyleUrl,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp),
+                .height(260.dp),
             consumeSingleFingerTouches = true,
             onStyleReady = { map, style, isReapply ->
                 applyStopMapStyle(style)

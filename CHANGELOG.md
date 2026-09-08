@@ -7,6 +7,7 @@
 ## What's New in v4.13.0
 
 ### Home-screen widget, your way
+- **Bigger bus-tracking map:** the live map that follows a bus on the arrivals screen is now taller, showing more of the surrounding streets so you can see the vehicle coming.
 - **Configure each widget on your home screen:** long-pressing a "Next arrivals" widget now opens a dedicated settings screen where you choose exactly which of your favorite stops it shows and how many of their arrivals — 1, 2, or 3.
 - **Put your stops in your own order:** favorite stops on the widget can be dragged into whatever order you like, and that order is saved per widget.
 - **Countdown or clock:** each widget shows either the familiar minutes-to-arrival countdown or the actual clock time of the arrival, whichever you prefer.
