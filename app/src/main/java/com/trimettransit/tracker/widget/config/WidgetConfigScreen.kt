@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,14 +33,22 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
@@ -49,8 +58,8 @@ import com.trimettransit.tracker.widget.WidgetThemeOption
 /**
  * Per-widget configuration editor. An empty [WidgetConfig.selectedStopIds] means "all
  * favorites" — it is never persisted as a blank-widget selection. [selectedStopIds] and
- * [reorder] are the reorder seam the drag layer (requiring [androidx.compose.foundation.gestures.detectDragGestures])
- * builds on.
+ * [reorder] are the reorder seam the drag layer (requiring
+ * [androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress]) builds on.
  */
 @Composable
 fun WidgetConfigScreen(
@@ -155,14 +164,12 @@ fun WidgetConfigScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                favorites.value.forEach { stop ->
-                    FavoriteStopRow(
-                        stop = stop,
-                        selected = stop.locId.toString() in selectedStopIds.value,
-                        onToggle = { toggleStop(stop) },
-                        modifier = Modifier
-                    )
-                }
+                StopReorderList(
+                    favorites = favorites.value,
+                    selectedStopIds = selectedStopIds,
+                    onToggle = { stop -> toggleStop(stop) },
+                    reorder = { from, to -> reorder(from, to) }
+                )
             }
 
             SectionHeader(R.string.widget_config_arrivals)
@@ -301,6 +308,121 @@ private fun FavoriteStopRow(
             )
         }
     }
+}
+
+/**
+ * Renders the favorites list in favorites order. Selected rows are long-press draggable to
+ * reorder them within [selectedStopIds]; unselected rows stay fixed (they are not part of the
+ * selection, so there is nothing to reorder). Drag state is shared across rows so exactly one
+ * row can be mid-drag at a time, and the selection is only mutated on release.
+ */
+@Composable
+private fun StopReorderList(
+    favorites: List<Stop>,
+    selectedStopIds: MutableState<List<String>>,
+    onToggle: (Stop) -> Unit,
+    reorder: (Int, Int) -> Unit
+) {
+    val itemHeightPx = remember { mutableFloatStateOf(0f) }
+    val draggedLocId = remember { mutableStateOf<String?>(null) }
+    val dragOffset = remember { mutableFloatStateOf(0f) }
+
+    favorites.forEach { stop ->
+        val id = stop.locId.toString()
+        val selected = id in selectedStopIds.value
+        FavoriteStopRow(
+            stop = stop,
+            selected = selected,
+            onToggle = { onToggle(stop) },
+            modifier = if (selected) {
+                Modifier.dragToReorder(
+                    id = id,
+                    favorites = favorites,
+                    selectedStopIds = selectedStopIds,
+                    itemHeightPx = itemHeightPx,
+                    draggedLocId = draggedLocId,
+                    dragOffset = dragOffset,
+                    reorder = reorder
+                )
+            } else {
+                Modifier
+            }
+        )
+    }
+}
+
+/**
+ * Long-press-drag reorder for the selected row with [id]. Hit-testing drops the dragged row at
+ * the selection index matching how many other *selected* row centers it has crossed (computed
+ * against their stable favorites-order positions), so unselected rows are never drop targets.
+ * The dragged row translates and slightly scales via [androidx.compose.ui.graphics.graphicsLayer]
+ * (draw-phase only — no per-frame recomposition); the selection commits on release.
+ */
+@Composable
+private fun Modifier.dragToReorder(
+    id: String,
+    favorites: List<Stop>,
+    selectedStopIds: MutableState<List<String>>,
+    itemHeightPx: MutableFloatState,
+    draggedLocId: MutableState<String?>,
+    dragOffset: MutableFloatState,
+    reorder: (Int, Int) -> Unit
+): Modifier {
+    val isDragged = draggedLocId.value == id
+    val currentIds = rememberUpdatedState(selectedStopIds.value)
+    val currentItemHeight = rememberUpdatedState(itemHeightPx.floatValue)
+    val currentDragOffset = rememberUpdatedState(dragOffset.floatValue)
+
+    return this
+        .onSizeChanged { itemHeightPx.floatValue = it.height.toFloat() }
+        .zIndex(if (isDragged) 1f else 0f)
+        .pointerInput(id) {
+            detectDragGesturesAfterLongPress(
+                onDragStart = { draggedLocId.value = id },
+                onDrag = { change, dragAmount ->
+                    change.consume()
+                    dragOffset.floatValue += dragAmount.y
+                },
+                onDragEnd = {
+                    val from = currentIds.value.indexOf(id)
+                    if (from >= 0) {
+                        val h = currentItemHeight.value
+                        val favIndexOf = { other: String ->
+                            favorites.indexOfFirst { it.locId.toString() == other }
+                        }
+                        val fi = favIndexOf(id)
+                        val draggedCenter = fi * h + h / 2f + currentDragOffset.value
+                        val droppedInBounds =
+                            h <= 0f || (draggedCenter >= 0f && draggedCenter <= favorites.size * h)
+                        val target = if (h > 0f && droppedInBounds) {
+                            currentIds.value.count { other ->
+                                other != id &&
+                                    (favIndexOf(other) - fi) * h < currentDragOffset.value
+                            }
+                        } else {
+                            from
+                        }
+                        if (target in currentIds.value.indices && target != from) {
+                            reorder(from, target)
+                        }
+                    }
+                    draggedLocId.value = null
+                    dragOffset.floatValue = 0f
+                },
+                onDragCancel = {
+                    draggedLocId.value = null
+                    dragOffset.floatValue = 0f
+                }
+            )
+        }
+        .graphicsLayer {
+            if (isDragged) {
+                translationY = dragOffset.floatValue
+                val scale = 1.03f
+                scaleX = scale
+                scaleY = scale
+            }
+        }
 }
 
 private fun stopSubtitle(stop: Stop): String {
