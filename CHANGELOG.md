@@ -1,6 +1,6 @@
 # Changelog
 
-## What's New in v4.14.0
+## What's New in v4.14.1
 
 ### Cards, your way
 - **Card outlines you can switch on or off:** every card across the app gets a crisp 1px outline you can enable or disable from Settings, giving screens a modern, defined-edge look instead of floating grey panels.
