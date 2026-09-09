@@ -10,6 +10,7 @@
 ## Privacy & compliance
 
 - **Privacy policy link in Settings:** the About card now includes a "Privacy Policy" row that opens the full policy, and the policy itself now documents the home-screen widget's periodic background refresh of arrival data.
+- **Trademark attribution:** the About card on phone and watch, plus the README and privacy policy, now carry TriMet's required trademark attribution line for the "TriMet" and "TransitTracker" marks.
 
 ## What's New in v4.13.0
 

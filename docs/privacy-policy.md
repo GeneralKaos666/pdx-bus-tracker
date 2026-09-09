@@ -102,4 +102,5 @@ release notes with a new effective date.
 
 *PDX Bus Tracker is an unofficial project and is not affiliated with, sponsored by, or
 endorsed by TriMet. Transit data is provided by TriMet's public Developer API and
-remains the property of TriMet.*
+remains the property of TriMet. \*TriMet and TransitTracker are registered trademarks
+of TriMet. All rights reserved.\**

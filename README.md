@@ -2,7 +2,7 @@
 
 Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Rail, Streetcar, and WES Commuter Rail — built with Jetpack Compose + Material 3.
 
-*PDX Bus Tracker is an unofficial, community-built app. It is not affiliated with, sponsored by, or endorsed by TriMet. "TriMet" and "TransitTracker" are trademarks of the Tri-County Metropolitan Transportation District of Oregon; they are referenced here solely to identify the transit service the app reads data from. TriMet's logos are not used, and all transit data remains the property of TriMet.*
+*PDX Bus Tracker is an unofficial, community-built app. It is not affiliated with, sponsored by, or endorsed by TriMet. "TriMet" and "TransitTracker" are trademarks of the Tri-County Metropolitan Transportation District of Oregon; they are referenced here solely to identify the transit service the app reads data from. TriMet's logos are not used, and all transit data remains the property of TriMet. \*TriMet and TransitTracker are registered trademarks of TriMet. All rights reserved.\**
 
 ## Features
 

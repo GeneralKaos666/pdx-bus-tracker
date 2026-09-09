@@ -5,6 +5,7 @@
     <string name="about">About</string>
     <string name="version_format">Version %1$s</string>
     <string name="about_description">Unofficial real-time TriMet transit tracker for Portland, OR.</string>
+    <string name="trademark_notice">* TriMet and TransitTracker are registered trademarks of TriMet. All rights reserved.</string>
     <string name="mit_license">MIT License</string>
     <string name="favorites">Favorites</string>
     <string name="recent_stops">Recent stops</string>

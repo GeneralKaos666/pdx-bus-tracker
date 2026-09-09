@@ -72,6 +72,14 @@ fun AboutScreen() {
                 }
                 item {
                     Text(
+                        text = stringResource(R.string.trademark_notice),
+                        textAlign = TextAlign.Start,
+                        color = androidx.wear.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+                }
+                item {
+                    Text(
                         text = stringResource(R.string.mit_license),
                         color = androidx.wear.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)

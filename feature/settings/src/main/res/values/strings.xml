@@ -4,6 +4,7 @@
     <string name="version_license">Version %1$s · MIT License</string>
     <string name="unofficial_disclaimer">Unofficial app — not affiliated with, sponsored by, or endorsed by TriMet.</string>
     <string name="data_provider">Data provided by TriMet\'s public Developer API (developer.trimet.org).</string>
+    <string name="trademark_notice">* TriMet and TransitTracker are registered trademarks of TriMet. All rights reserved.</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="open_source_licenses">Open source licenses</string>
     <string name="libraries_terms">Libraries used by this app and their terms</string>
