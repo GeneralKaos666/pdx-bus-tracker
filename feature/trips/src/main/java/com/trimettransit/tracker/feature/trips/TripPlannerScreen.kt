@@ -77,6 +77,8 @@ import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
+import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
@@ -358,10 +360,11 @@ fun TripPlannerScreen(
         ) {
             // Endpoint + scheduling card
             Surface(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shadowElevation = 6.dp,
-                tonalElevation = 3.dp,
+                border = appCardBorder(),
+                shadowElevation = 1.dp,
+                tonalElevation = 0.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {

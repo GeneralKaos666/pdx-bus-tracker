@@ -37,7 +37,7 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **Project:** https://github.com/square/okhttp
 
 ### MapLibre Native (Android, OpenGL backend)
-- **Artifact:** `org.maplibre.gl:android-sdk-opengl` 13.6.0
+- **Artifact:** `org.maplibre.gl:android-sdk-opengl` 13.6.1
 - **License:** BSD 2-Clause License
 - **Copyright:** Copyright (C) 2025 MapLibre contributors; portions Copyright (C) 2020 Mapbox
 - **Project:** https://github.com/maplibre/maplibre-native
