@@ -2,7 +2,7 @@
 
 Changelog for the standalone Wear OS companion app (independent version line from the phone app).
 
-## What's New in Wear v2.2.0
+## What's New in Wear v2.2.1
 
 ### New screens & watch polish
 - **Card-based home menu:** Favorites, Recent stops, Routes and Settings now sit in tappable cards with icons and chevrons, replacing the plain text menu.
