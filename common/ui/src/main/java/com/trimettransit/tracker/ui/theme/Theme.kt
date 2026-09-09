@@ -14,11 +14,13 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 val TriMetGoShapes = Shapes(
@@ -137,6 +139,9 @@ private fun androidx.compose.material3.ColorScheme.withVibrantColors(): androidx
 fun TriMetGoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
+    cardCornerRadius: Dp = 16.dp,
+    cardOutlinesEnabled: Boolean = true,
+    cardOutlineColor: Color? = null,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -155,7 +160,17 @@ fun TriMetGoTheme(
         motionScheme = MotionScheme.expressive(),
         typography = TriMetGoTypography,
         shapes = TriMetGoShapes,
-        content = content
+        content = {
+            CompositionLocalProvider(
+                LocalCardStyle provides CardStyle(
+                    cornerRadius = cardCornerRadius,
+                    outlinesEnabled = cardOutlinesEnabled,
+                    outlineColor = cardOutlineColor
+                )
+            ) {
+                content()
+            }
+        }
     )
 }
 

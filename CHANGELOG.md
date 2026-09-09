@@ -1,5 +1,12 @@
 # Changelog
 
+## What's New in v4.14.0
+
+### Cards, your way
+- **Card outlines you can switch on or off:** every card across the app gets a crisp 1px outline you can enable or disable from Settings, giving screens a modern, defined-edge look instead of floating grey panels.
+- **Pick any outline colour you like:** the outline defaults to a subtle tone that follows your light/dark/color theme, but an "Outline colour" picker lets you choose any colour with a simple hue/saturation/luminance/opacity slider dialog.
+- **Tune how rounded cards are:** a corner-radius slider (0–28 dp, default 16 dp) controls the corners of every card, so you can go fully square for a crisp look or extra round for a softer one — applied live across Home, Stops, Arrivals, Settings, and the Trip Planner.
+
 ## Privacy & compliance
 
 - **Privacy policy link in Settings:** the About card now includes a "Privacy Policy" row that opens the full policy, and the policy itself now documents the home-screen widget's periodic background refresh of arrival data.

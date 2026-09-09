@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.SideEffect
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.graphics.toColorInt
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.offset
@@ -507,11 +508,19 @@ class MainActivity : ComponentActivity() {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
             var themePref by remember { mutableStateOf(prefs.getString("theme", "system") ?: "system") }
             var dynamicColorPref by remember { mutableStateOf(prefs.getBoolean("pref_key_dynamic_color", true)) }
+            var cardCornerRadiusPref by remember { mutableIntStateOf(prefs.getInt("pref_key_card_corner_radius", 16)) }
+            var cardOutlinesPref by remember { mutableStateOf(prefs.getBoolean("pref_key_card_outlines", true)) }
+            var cardOutlineColorPref by remember {
+                mutableStateOf(prefs.getString("pref_key_card_outline_color", "auto") ?: "auto")
+            }
             DisposableEffect(prefs) {
                 val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                     when (key) {
                         "theme" -> themePref = prefs.getString("theme", "system") ?: "system"
                         "pref_key_dynamic_color" -> dynamicColorPref = prefs.getBoolean("pref_key_dynamic_color", true)
+                        "pref_key_card_corner_radius" -> cardCornerRadiusPref = prefs.getInt("pref_key_card_corner_radius", 16)
+                        "pref_key_card_outlines" -> cardOutlinesPref = prefs.getBoolean("pref_key_card_outlines", true)
+                        "pref_key_card_outline_color" -> cardOutlineColorPref = prefs.getString("pref_key_card_outline_color", "auto") ?: "auto"
                     }
                 }
                 prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -522,7 +531,13 @@ class MainActivity : ComponentActivity() {
                 "light" -> false
                 else -> isSystemInDarkTheme()
             }
-            TriMetGoTheme(darkTheme = isDark, dynamicColor = dynamicColorPref) {
+            TriMetGoTheme(
+                darkTheme = isDark,
+                dynamicColor = dynamicColorPref,
+                cardCornerRadius = cardCornerRadiusPref.dp,
+                cardOutlinesEnabled = cardOutlinesPref,
+                cardOutlineColor = parseCardOutlineColor(cardOutlineColorPref)
+            ) {
                 val activity = LocalActivity.current
                 SideEffect {
                     if (activity != null) {
@@ -545,6 +560,12 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         WidgetScheduler.refreshNow(this)
     }
+}
+
+/** Parses a stored card-outline colour pref ("auto" → null = follow the theme). */
+private fun parseCardOutlineColor(value: String): Color? {
+    if (value == "auto") return null
+    return runCatching { Color(value.toColorInt()) }.getOrNull()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

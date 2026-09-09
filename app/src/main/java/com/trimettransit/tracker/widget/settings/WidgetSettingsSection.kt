@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
@@ -45,6 +46,8 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.widget.NextArrivalsWidgetReceiver
 import com.trimettransit.tracker.widget.WidgetScheduler
 import com.trimettransit.tracker.widget.config.WidgetConfigActivity
@@ -144,11 +147,12 @@ private fun WidgetSettingsCard(content: @Composable ColumnScope.() -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        border = appCardBorder(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(content = content)
     }

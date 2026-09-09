@@ -114,6 +114,8 @@ import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
+import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
@@ -727,11 +729,12 @@ private fun StopMapCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp),
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        border = appCardBorder(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         MapLibreMapHost(
             styleUrl = mapStyleUrl,
@@ -902,7 +905,7 @@ private fun ArrivalItem(
         modifier = modifier
             .fillMaxWidth()
             .pressScale(interactionSource),
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
         colors = CardDefaults.cardColors(
             containerColor = lerp(
                 MaterialTheme.colorScheme.surfaceContainerLow,
@@ -910,7 +913,8 @@ private fun ArrivalItem(
                 0.10f
             )
         ),
-        elevation = CardDefaults.elevatedCardElevation()
+        border = appCardBorder(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier

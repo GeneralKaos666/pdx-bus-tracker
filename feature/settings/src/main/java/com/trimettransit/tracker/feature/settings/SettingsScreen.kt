@@ -7,6 +7,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -24,28 +25,36 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.BorderAll
 import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.Colorize
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,7 +62,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -62,6 +73,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color as AndroidColor
+import androidx.core.graphics.toColorInt
 import android.os.Build
 import androidx.core.content.edit
 import androidx.core.net.toUri
@@ -70,12 +83,15 @@ import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialFast
 
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @Composable
 fun SettingsScreen(
@@ -89,6 +105,16 @@ fun SettingsScreen(
     var onlyShowSelectedRoute by remember {
         mutableStateOf(prefs.getBoolean("pref_key_only_show_route_selected", true))
     }
+    var cardOutlines by remember {
+        mutableStateOf(prefs.getBoolean("pref_key_card_outlines", true))
+    }
+    var cardOutlineColorRaw by remember {
+        mutableStateOf(prefs.getString("pref_key_card_outline_color", "auto") ?: "auto")
+    }
+    var cornerRadius by remember {
+        mutableFloatStateOf(prefs.getInt("pref_key_card_corner_radius", 16).toFloat())
+    }
+    var showColorPicker by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -151,6 +177,42 @@ fun SettingsScreen(
                     onCheckedChange = {
                         dynamicColor = it
                         prefs.edit { putBoolean("pref_key_dynamic_color", it) }
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                SettingsSwitchOption(
+                    label = stringResource(R.string.card_outlines),
+                    subtitle = stringResource(R.string.card_outlines_subtitle),
+                    icon = Icons.Filled.BorderAll,
+                    checked = cardOutlines,
+                    onCheckedChange = {
+                        cardOutlines = it
+                        prefs.edit { putBoolean("pref_key_card_outlines", it) }
+                    }
+                )
+                AnimatedVisibility(
+                    visible = cardOutlines,
+                    enter = expandVertically(m3SpatialDefault()) + fadeIn(m3EffectsDefault()),
+                    exit = shrinkVertically(m3SpatialFast()) + fadeOut(m3EffectsFast())
+                ) {
+                    SettingsColourOption(
+                        label = stringResource(R.string.card_outline_colour),
+                        subtitle = stringResource(R.string.card_outline_colour_subtitle),
+                        icon = Icons.Filled.Colorize,
+                        colour = outlinePreviewColour(cardOutlineColorRaw),
+                        onClick = { showColorPicker = true }
+                    )
+                }
+                SettingsSliderOption(
+                    label = stringResource(R.string.card_corner_radius),
+                    icon = Icons.Filled.Tune,
+                    value = cornerRadius,
+                    valueLabel = stringResource(R.string.card_corner_radius_dp, cornerRadius.roundToInt()),
+                    onValueChange = { cornerRadius = it },
+                    onValueChangeFinished = {
+                        prefs.edit { putInt("pref_key_card_corner_radius", cornerRadius.roundToInt()) }
                     }
                 )
             }
@@ -356,6 +418,31 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
+
+    if (showColorPicker) {
+        CardOutlineColourDialog(
+            initial = cardOutlineColorRaw,
+            onDismiss = { showColorPicker = false },
+            onAuto = {
+                cardOutlineColorRaw = "auto"
+                prefs.edit { putString("pref_key_card_outline_color", "auto") }
+                showColorPicker = false
+            },
+            onConfirm = { argb ->
+                cardOutlineColorRaw = argb
+                prefs.edit { putString("pref_key_card_outline_color", argb) }
+                showColorPicker = false
+            }
+        )
+    }
+}
+
+/** The preview colour of the outline option row, or the scheme's outlineVariant when "auto". */
+@Composable
+private fun outlinePreviewColour(raw: String): Color {
+    val auto = MaterialTheme.colorScheme.outlineVariant
+    if (raw == "auto") return auto
+    return runCatching { Color(raw.toColorInt()) }.getOrElse { auto }
 }
 
 @Composable
@@ -375,11 +462,12 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        border = appCardBorder(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(content = content)
     }
@@ -522,5 +610,239 @@ private fun LicenseEntry(name: String, license: String, isNote: Boolean = false)
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun SettingsColourOption(
+    label: String,
+    subtitle: String,
+    icon: ImageVector,
+    colour: Color,
+    onClick: () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressScale(interactionSource)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                onClick = onClick
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        SettingsIconCircle(icon = icon, highlighted = false)
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Surface(
+            modifier = Modifier.size(32.dp),
+            shape = CircleShape,
+            color = colour,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {}
+    }
+}
+
+@Composable
+private fun SettingsSliderOption(
+    label: String,
+    icon: ImageVector,
+    value: Float,
+    valueLabel: String,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SettingsIconCircle(icon = icon, highlighted = false)
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = valueLabel,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 56.dp, end = 8.dp),
+            steps = 27
+        )
+    }
+}
+
+@Composable
+private fun CardOutlineColourDialog(
+    initial: String,
+    onDismiss: () -> Unit,
+    onAuto: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    val scheme = MaterialTheme.colorScheme
+    val fallback = scheme.outlineVariant
+    val startColor = runCatching {
+        if (initial == "auto") fallback else Color(initial.toColorInt())
+    }.getOrElse { fallback }
+    val initialHsv = remember(startColor) {
+        FloatArray(3).also { AndroidColor.colorToHSV(startColor.toArgb(), it) }
+    }
+    var isAuto by remember(initial) { mutableStateOf(initial == "auto") }
+    var hue by remember(initial) { mutableFloatStateOf(initialHsv[0]) }
+    var sat by remember(initial) { mutableFloatStateOf(initialHsv[1]) }
+    var value by remember(initial) { mutableFloatStateOf(initialHsv[2]) }
+    var alpha by remember(initial) { mutableFloatStateOf(startColor.alpha) }
+
+    val draft = remember(hue, sat, value, alpha) {
+        Color(AndroidColor.HSVToColor((alpha * 255).roundToInt(), floatArrayOf(hue, sat, value)))
+    }
+
+    fun markCustom() {
+        isAuto = false
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.card_outline_colour)) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                val autoSource = remember { MutableInteractionSource() }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pressScale(autoSource)
+                        .clickable(
+                            interactionSource = autoSource,
+                            indication = LocalIndication.current
+                        ) { isAuto = true }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.card_outline_auto),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
+                    )
+                    RadioButton(selected = isAuto, onClick = null)
+                }
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+                    color = draft,
+                    border = BorderStroke(1.dp, scheme.outlineVariant)
+                ) {}
+                Spacer(modifier = Modifier.height(16.dp))
+                ColourSlider(
+                    label = stringResource(R.string.color_hue),
+                    value = hue,
+                    valueRange = 0f..360f,
+                    steps = 35,
+                    onValueChange = {
+                        hue = it
+                        markCustom()
+                    }
+                )
+                ColourSlider(
+                    label = stringResource(R.string.color_saturation),
+                    value = sat,
+                    onValueChange = {
+                        sat = it
+                        markCustom()
+                    }
+                )
+                ColourSlider(
+                    label = stringResource(R.string.color_value),
+                    value = value,
+                    onValueChange = {
+                        value = it
+                        markCustom()
+                    }
+                )
+                ColourSlider(
+                    label = stringResource(R.string.color_opacity),
+                    value = alpha,
+                    onValueChange = {
+                        alpha = it
+                        markCustom()
+                    }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (isAuto) onAuto() else onConfirm("#%08X".format(draft.toArgb()))
+                }
+            ) {
+                Text(stringResource(R.string.done))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
+private fun ColourSlider(
+    label: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    steps: Int = 0,
+    onValueChange: (Float) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            steps = steps,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
