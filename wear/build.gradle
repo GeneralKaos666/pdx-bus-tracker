@@ -42,8 +42,8 @@ android {
         applicationId = 'com.trimettransit.tracker'
         minSdk = 31
         targetSdk = 37
-        versionCode = (project.findProperty('releaseVersionCode') ?: '216').toString().toInteger()
-        versionName = "2.1.4"
+        versionCode = (project.findProperty('releaseVersionCode') ?: '217').toString().toInteger()
+        versionName = "2.2.0"
     }
 
     signingConfigs {
@@ -103,7 +103,8 @@ android {
 
 androidComponents {
     onVariants(selector().all()) { variant ->
-        def renameTask = tasks.register("renameApkFor${variant.name.capitalize()}", RenameWearApkTask) {
+        def capitalize = { String s -> s.substring(0, 1).toUpperCase(Locale.ROOT) + s.substring(1) }
+        def renameTask = tasks.register("renameApkFor${capitalize(variant.name)}", RenameWearApkTask) {
             output.set(layout.buildDirectory.dir("outputs/renamed_apks/${variant.name}"))
             variantName.set(variant.name)
             builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
@@ -119,16 +120,20 @@ dependencies {
     implementation project(':component:transit')
     implementation project(':common:model')
     implementation project(':common:utils')
+    implementation project(':common:map')
+    implementation 'org.maplibre.gl:android-sdk-opengl:13.6.0'
     implementation 'androidx.wear:wear:1.4.0'
     implementation platform('androidx.compose:compose-bom:2026.08.00')
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.foundation:foundation'
+    implementation 'androidx.compose.material:material-icons-core'
     implementation 'androidx.wear.compose:compose-foundation:1.6.2'
     implementation 'androidx.wear.compose:compose-material3:1.6.2'
     implementation 'androidx.wear.compose:compose-navigation:1.6.2'
     implementation 'androidx.wear.compose:compose-ui-tooling:1.6.2'
     implementation 'androidx.activity:activity-compose:1.13.0'
     implementation 'androidx.core:core-ktx:1.19.0'
+    implementation 'androidx.core:core:1.19.0'
 
     // Time helpers surface org.joda.time.DateTime via the shared models
     implementation 'net.danlew:android.joda:2.14.2.1'

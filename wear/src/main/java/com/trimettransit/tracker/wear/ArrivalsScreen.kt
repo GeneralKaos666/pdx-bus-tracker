@@ -1,35 +1,47 @@
 package com.trimettransit.tracker.wear
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.AmbientMode
+import androidx.wear.compose.foundation.AmbientTickEffect
+import androidx.wear.compose.foundation.LocalAmbientModeManager
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
-import androidx.wear.compose.foundation.lazy.itemsIndexed
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.CardDefaults
 import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.IconToggleButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListHeaderDefaults
@@ -47,7 +59,10 @@ import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
 import com.trimettransit.tracker.data.local.RecentStopsRepositoryImpl
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.ArrivalsResult
+import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.domain.arrivalKey
+import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.transit.TransitRepositoryImpl
 import com.trimettransit.tracker.util.ConnectionUtils
@@ -74,6 +89,14 @@ fun ArrivalsScreen(stop: Stop) {
     var isFavorite by remember { mutableStateOf(false) }
     var favoriteBusy by remember { mutableStateOf(true) }
     var failed by remember { mutableStateOf(false) }
+    // Ambience drives battery-friendly behaviour: while the wear display is dimmed we
+    // stop polling the API and only re-render the countdowns once per minute (tick).
+    val ambientManager = LocalAmbientModeManager.current
+    val isAmbient = ambientManager?.currentAmbientMode is AmbientMode.Ambient
+    var ambientTick by remember { mutableIntStateOf(0) }
+    if (isAmbient) {
+        ambientManager.AmbientTickEffect { ambientTick++ }
+    }
     // Enriched stop fetched once from the API (coords/desc), reused for the recent-stop
     // and favorite DB writes so toggling a heart never triggers a network round-trip.
     var enriched by remember { mutableStateOf(stop) }
@@ -91,7 +114,14 @@ fun ArrivalsScreen(stop: Stop) {
         favoriteBusy = false
     }
 
-    LaunchedEffect(stop.locId) {
+    LaunchedEffect(stop.locId, isAmbient) {
+        if (isAmbient) {
+            // Low-power: hold the last data, no network calls. Countdowns move with
+            // the per-minute ambient tick driven above.
+            while (true) {
+                delay(60_000)
+            }
+        }
         var consecutiveFailures = 0
         while (true) {
             val fresh = withContext(Dispatchers.IO) {
@@ -127,7 +157,17 @@ fun ArrivalsScreen(stop: Stop) {
     // Boardable arrivals only — drop-off-only (non-boarding) buses are skipped so the
     // watch never counts down to a ride the user can't catch. The tile cache below still
     // gets the raw list; the Tile does its own skip when picking the next departure.
-    val arrivals = result?.arrivals.orEmpty().filterNot { it.dropOffOnly }
+    val boardable = result?.arrivals.orEmpty().filterNot { it.dropOffOnly }
+    // Optional per-route narrowing (Settings): when the user only wants to see departures
+    // on the route this stop was opened from, keep just those rows. The map still gets the
+    // full results so it isn't blank when the narrowed list is empty.
+    val onlyShowRoute = WearPrefs.onlyShowSelectedRoute(context)
+    val arrivals = if (onlyShowRoute && stop.routeNum != 0) {
+        filterArrivalsByRoute(boardable, stop.routeNum)
+    } else {
+        boardable
+    }
+    val hasMap = result?.stopLat != 0.0 && result?.stopLng != 0.0
 
     Box(modifier = Modifier.fillMaxSize()) {
         when {
@@ -168,6 +208,13 @@ fun ArrivalsScreen(stop: Stop) {
             else -> ArrivalList(
                 displayName = displayName,
                 arrivals = arrivals,
+                mapArrivals = result?.arrivals.orEmpty(),
+                blockPositions = result?.blockPositions.orEmpty(),
+                stopLat = result?.stopLat ?: 0.0,
+                stopLng = result?.stopLng ?: 0.0,
+                hasMap = hasMap,
+                isAmbient = isAmbient,
+                ambientTick = ambientTick,
                 isFavorite = isFavorite,
                 favoriteEnabled = !favoriteBusy,
                 onFavoriteToggle = { checked ->
@@ -209,12 +256,21 @@ private suspend fun enrichedOrStop(stop: Stop, transitRepository: TransitReposit
 private fun ArrivalList(
     displayName: String,
     arrivals: List<Arrival>,
+    mapArrivals: List<Arrival>,
+    blockPositions: List<BlockPosition>,
+    stopLat: Double,
+    stopLng: Double,
+    hasMap: Boolean,
+    isAmbient: Boolean,
+    ambientTick: Int,
     isFavorite: Boolean,
     favoriteEnabled: Boolean,
     onFavoriteToggle: (Boolean) -> Unit
 ) {
     val listState = rememberTransformingLazyColumnState()
     val transformationSpec = rememberTransformationSpec()
+    // The departure whose bus is currently shown on the map; tapping its row again closes it.
+    var trackedVehicleId by remember { mutableStateOf<Int?>(null) }
 
     ScreenScaffold(
         scrollState = listState,
@@ -245,9 +301,14 @@ private fun ArrivalList(
                             enabled = favoriteEnabled,
                             modifier = Modifier.padding(start = 4.dp)
                         ) {
-                            Text(
-                                text = stringResource(R.string.heart),
-                                color = if (isFavorite) {
+                            Icon(
+                                imageVector = if (isFavorite) {
+                                    Icons.Default.Favorite
+                                } else {
+                                    Icons.Default.FavoriteBorder
+                                },
+                                contentDescription = stringResource(R.string.favorites),
+                                tint = if (isFavorite) {
                                     MaterialTheme.colorScheme.error
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
@@ -256,13 +317,58 @@ private fun ArrivalList(
                         }
                     }
                 }
-                itemsIndexed(arrivals) { _, arrival ->
-                    ArrivalRow(
-                        arrival = arrival,
-                        modifier = Modifier
-                            .transformedHeight(this, transformationSpec)
-                            .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding)
-                    )
+                arrivals.forEach { arrival ->
+                    val rowKey = arrivalKey(arrival)
+                    item(key = rowKey) {
+                        Column(
+                            modifier = Modifier
+                                .transformedHeight(this, transformationSpec)
+                                .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding)
+                                .graphicsLayer {
+                                    alpha = if (isAmbient) 0.6f else 1f
+                                }
+                        ) {
+                            ArrivalRow(
+                                arrival = arrival,
+                                countdownTick = ambientTick,
+                                onClick = {
+                                    if (hasMap) {
+                                        trackedVehicleId = if (trackedVehicleId == arrival.vehicleID) {
+                                            null
+                                        } else {
+                                            arrival.vehicleID
+                                        }
+                                    }
+                                }
+                            )
+                            AnimatedVisibility(
+                                visible = hasMap && trackedVehicleId == arrival.vehicleID,
+                                enter = fadeIn() + expandVertically(),
+                                exit = fadeOut() + shrinkVertically()
+                            ) {
+                                WearStopMapCard(
+                                    lat = stopLat,
+                                    lng = stopLng,
+                                    blockPositions = blockPositions,
+                                    arrivals = mapArrivals,
+                                    trackedVehicleId = arrival.vehicleID
+                                )
+                            }
+                        }
+                    }
+                }
+                if (hasMap) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.tap_to_track_hint),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelSmall,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             }
         }
@@ -272,17 +378,23 @@ private fun ArrivalList(
 @Composable
 private fun ArrivalRow(
     arrival: Arrival,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    countdownTick: Int = 0
 ) {
     val displayTime: DateTime? =
         if (arrival.status == "estimated" && arrival.estimated != null) arrival.estimated
         else arrival.scheduled
-    val minutes = displayTime?.let { minutesUntil(it) }
+    // Re-derived on each ambient tick so the countdown stays true while the display is dimmed.
+    val minutes = remember(displayTime, countdownTick) {
+        displayTime?.let { minutesUntil(it) }
+    }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 6.dp, vertical = 4.dp)
+            .clickable(onClick = onClick)
     ) {
         Text(
             text = arrival.shortSign.ifBlank { arrival.fullSign },

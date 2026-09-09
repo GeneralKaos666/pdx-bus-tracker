@@ -8,6 +8,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.trimettransit.tracker.wear.WearPrefs
 import java.util.concurrent.TimeUnit
 
 /**
@@ -17,16 +18,21 @@ import java.util.concurrent.TimeUnit
 object TileScheduler {
     private const val PERIODIC_NAME = "pdxbus_tile_refresh"
     private const val ONE_SHOT_NAME = "pdxbus_tile_refresh_now"
-    private const val PERIOD_MINUTES = 30L
 
-    /** Called from [android.app.Application]/Activity launch; idempotent. */
+    /** Called from Activity launch; idempotent. Follows the user's refresh-interval
+     *  setting ([WearPrefs.refreshIntervalMinutes]). */
     fun schedulePeriodic(context: Context) {
-        val request = PeriodicWorkRequestBuilder<TileRefreshWorker>(PERIOD_MINUTES, TimeUnit.MINUTES)
+        schedulePeriodic(context, WearPrefs.refreshIntervalMinutes(context))
+    }
+
+    /** Re-arms periodic work at [intervalMinutes]; used when the setting changes. */
+    fun schedulePeriodic(context: Context, intervalMinutes: Int) {
+        val request = PeriodicWorkRequestBuilder<TileRefreshWorker>(intervalMinutes.toLong(), TimeUnit.MINUTES)
             .setConstraints(connectedConstraints())
             .build()
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             PERIODIC_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.UPDATE,
             request
         )
     }

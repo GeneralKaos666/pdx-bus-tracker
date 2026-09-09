@@ -2,11 +2,14 @@ package com.trimettransit.tracker.wear
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.compose.ui.res.stringResource
+import androidx.wear.compose.foundation.LocalAmbientModeManager
+import androidx.wear.compose.foundation.rememberAmbientModeManager
 import androidx.wear.compose.material3.AppScaffold
 import com.trimettransit.tracker.R
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
@@ -28,7 +31,9 @@ private object Routes {
     const val ROUTES_LIST = "routes"
     const val ROUTE_DIRS = "routes/{routeId}?name={name}"
     const val ROUTE_STOPS = "stops/{routeId}/{dir}?dirName={dirName}"
-    const val ABOUT = "about"
+    const val NEARBY = "nearby"
+    const val FAVORITES_MANAGE = "favorites_manage"
+    const val SETTINGS = "settings"
 
     fun arrivals(stop: Stop) =
         "arrivals/${stop.locId}?name=${Uri.encode(stop.desc)}&route=${stop.routeNum}"
@@ -42,8 +47,12 @@ private object Routes {
 
 @Composable
 fun WearApp(startStop: Stop? = null) {
-    WearBusTheme {
-        AppScaffold {
+    // Enables always-on display and tracks the ambient mode for the whole app; screens
+    // that are live (arrivals) read it to dim, pause polling, and tick per minute.
+    val ambientModeManager = rememberAmbientModeManager()
+    CompositionLocalProvider(LocalAmbientModeManager provides ambientModeManager) {
+        WearBusTheme {
+            AppScaffold {
             val navController = rememberSwipeDismissableNavController()
             val context = androidx.compose.ui.platform.LocalContext.current
             val transitRepository =
@@ -68,7 +77,8 @@ fun WearApp(startStop: Stop? = null) {
                         onOpenFavorites = { navController.navigate(Routes.FAVORITES) },
                         onOpenRecent = { navController.navigate(Routes.RECENT) },
                         onOpenRoutes = { navController.navigate(Routes.ROUTES_LIST) },
-                        onOpenAbout = { navController.navigate(Routes.ABOUT) }
+                        onOpenNearby = { navController.navigate(Routes.NEARBY) },
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) }
                     )
                 }
                 composable(Routes.FAVORITES) {
@@ -112,7 +122,20 @@ fun WearApp(startStop: Stop? = null) {
                         }
                     )
                 }
-composable(
+composable(Routes.NEARBY) {
+                    NearbyStopsScreen(
+                        onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
+                    )
+                }
+                composable(Routes.FAVORITES_MANAGE) {
+                    FavoritesManageScreen(
+                        onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
+                    )
+                }
+                composable(Routes.SETTINGS) {
+                    SettingsScreen()
+                }
+                composable(
                     route = Routes.ROUTE_STOPS,
                     arguments = listOf(
                         navArgument("routeId") { type = NavType.IntType },
@@ -131,9 +154,6 @@ composable(
                         onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
                     )
                 }
-                composable(Routes.ABOUT) {
-                    AboutScreen()
-                }
                 composable(
                     route = Routes.ARRIVALS,
                     arguments = listOf(
@@ -150,6 +170,7 @@ composable(
                     ArrivalsScreen(stop)
                 }
             }
+        }
         }
     }
 }

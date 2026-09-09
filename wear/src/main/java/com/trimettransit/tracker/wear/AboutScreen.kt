@@ -29,7 +29,7 @@ import androidx.wear.compose.material3.lazy.transformedHeight
 @Composable
 fun AboutScreen() {
     val context = LocalContext.current
-    val version = remember { versionName(context) }
+    val version = remember { watchVersionName(context) }
     val listState = rememberTransformingLazyColumnState()
     val transformationSpec = rememberTransformationSpec()
 
@@ -82,7 +82,8 @@ fun AboutScreen() {
     }
 }
 
-private fun versionName(context: Context): String {
+/** Version name from the package manager, shared with the Settings screen. */
+internal fun watchVersionName(context: Context): String {
     val pm = context.packageManager
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         runCatching {
