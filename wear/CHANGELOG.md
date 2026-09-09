@@ -2,7 +2,7 @@
 
 Changelog for the standalone Wear OS companion app (independent version line from the phone app).
 
-## What's New in Wear v2.1.4
+## What's New in Wear v2.2.0
 
 ### New screens & live bus map
 - **Card-based home menu:** Favorites, Recent stops, Routes, Nearby stops and Settings now sit in tappable cards with icons and chevrons, replacing the plain text menu.
