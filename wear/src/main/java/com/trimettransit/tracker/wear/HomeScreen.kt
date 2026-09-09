@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
@@ -42,7 +41,6 @@ fun HomeScreen(
     onOpenFavorites: () -> Unit,
     onOpenRecent: () -> Unit,
     onOpenRoutes: () -> Unit,
-    onOpenNearby: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
     val listState = rememberTransformingLazyColumnState()
@@ -95,17 +93,6 @@ fun HomeScreen(
                         title = stringResource(R.string.routes),
                         icon = Icons.AutoMirrored.Filled.List,
                         onClick = onOpenRoutes,
-                        modifier = Modifier
-                            .transformedHeight(this, transformationSpec)
-                            .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),
-                        transformation = SurfaceTransformation(transformationSpec)
-                    )
-                }
-                item {
-                    HomeMenuItem(
-                        title = stringResource(R.string.nearby_stops),
-                        icon = Icons.Default.LocationOn,
-                        onClick = onOpenNearby,
                         modifier = Modifier
                             .transformedHeight(this, transformationSpec)
                             .minimumVerticalContentPadding(CardDefaults.minimumVerticalListContentPadding),

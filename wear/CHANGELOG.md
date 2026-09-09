@@ -4,12 +4,10 @@ Changelog for the standalone Wear OS companion app (independent version line fro
 
 ## What's New in Wear v2.2.0
 
-### New screens & live bus map
-- **Card-based home menu:** Favorites, Recent stops, Routes, Nearby stops and Settings now sit in tappable cards with icons and chevrons, replacing the plain text menu.
+### New screens & watch polish
+- **Card-based home menu:** Favorites, Recent stops, Routes and Settings now sit in tappable cards with icons and chevrons, replacing the plain text menu.
 - **Settings on the watch:** choose which routes' arrivals to show (selected route only or all), set how often the tile refreshes (15/30/45/60 minutes), and browse the library licenses from your wrist.
 - **Manage your favorites:** swipe a favorite stop to remove it, or clear the whole list in one tap.
-- **Nearby stops:** a new home-menu entry lists stops near your current location, with the distance to each, so you can jump straight to arrivals when you're out and about.
-- **Live bus map on arrivals:** each stop's arrivals screen can expand an inline map showing the next buses (with id badges and drop-off-only markers) and the stop itself. Tap a bus to track it in the center of the map.
 - **Only-your-route filter:** when enabled in Settings, the arrivals list shows just the buses running the selected route at that stop, hiding cross-town traffic.
 - **Ambient-aware arrivals:** in low-power ambient mode the watch stops polling TriMet and dims the list, ticking countdowns once per minute so the screen stays correct while saving battery.
 - **Vector heart:** the favorite button now uses a proper vector heart icon edge-to-edge on the round screen instead of a text glyph.

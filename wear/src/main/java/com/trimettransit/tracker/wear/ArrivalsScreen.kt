@@ -1,17 +1,13 @@
 package com.trimettransit.tracker.wear
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -59,7 +55,6 @@ import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
 import com.trimettransit.tracker.data.local.RecentStopsRepositoryImpl
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.ArrivalsResult
-import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.domain.arrivalKey
 import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
@@ -159,15 +154,13 @@ fun ArrivalsScreen(stop: Stop) {
     // gets the raw list; the Tile does its own skip when picking the next departure.
     val boardable = result?.arrivals.orEmpty().filterNot { it.dropOffOnly }
     // Optional per-route narrowing (Settings): when the user only wants to see departures
-    // on the route this stop was opened from, keep just those rows. The map still gets the
-    // full results so it isn't blank when the narrowed list is empty.
+    // on the route this stop was opened from, keep just those rows.
     val onlyShowRoute = WearPrefs.onlyShowSelectedRoute(context)
     val arrivals = if (onlyShowRoute && stop.routeNum != 0) {
         filterArrivalsByRoute(boardable, stop.routeNum)
     } else {
         boardable
     }
-    val hasMap = result?.stopLat != 0.0 && result?.stopLng != 0.0
 
     Box(modifier = Modifier.fillMaxSize()) {
         when {
@@ -208,11 +201,6 @@ fun ArrivalsScreen(stop: Stop) {
             else -> ArrivalList(
                 displayName = displayName,
                 arrivals = arrivals,
-                mapArrivals = result?.arrivals.orEmpty(),
-                blockPositions = result?.blockPositions.orEmpty(),
-                stopLat = result?.stopLat ?: 0.0,
-                stopLng = result?.stopLng ?: 0.0,
-                hasMap = hasMap,
                 isAmbient = isAmbient,
                 ambientTick = ambientTick,
                 isFavorite = isFavorite,
@@ -256,11 +244,6 @@ private suspend fun enrichedOrStop(stop: Stop, transitRepository: TransitReposit
 private fun ArrivalList(
     displayName: String,
     arrivals: List<Arrival>,
-    mapArrivals: List<Arrival>,
-    blockPositions: List<BlockPosition>,
-    stopLat: Double,
-    stopLng: Double,
-    hasMap: Boolean,
     isAmbient: Boolean,
     ambientTick: Int,
     isFavorite: Boolean,
@@ -269,8 +252,6 @@ private fun ArrivalList(
 ) {
     val listState = rememberTransformingLazyColumnState()
     val transformationSpec = rememberTransformationSpec()
-    // The departure whose bus is currently shown on the map; tapping its row again closes it.
-    var trackedVehicleId by remember { mutableStateOf<Int?>(null) }
 
     ScreenScaffold(
         scrollState = listState,
@@ -330,44 +311,9 @@ private fun ArrivalList(
                         ) {
                             ArrivalRow(
                                 arrival = arrival,
-                                countdownTick = ambientTick,
-                                onClick = {
-                                    if (hasMap) {
-                                        trackedVehicleId = if (trackedVehicleId == arrival.vehicleID) {
-                                            null
-                                        } else {
-                                            arrival.vehicleID
-                                        }
-                                    }
-                                }
+                                countdownTick = ambientTick
                             )
-                            AnimatedVisibility(
-                                visible = hasMap && trackedVehicleId == arrival.vehicleID,
-                                enter = fadeIn() + expandVertically(),
-                                exit = fadeOut() + shrinkVertically()
-                            ) {
-                                WearStopMapCard(
-                                    lat = stopLat,
-                                    lng = stopLng,
-                                    blockPositions = blockPositions,
-                                    arrivals = mapArrivals,
-                                    trackedVehicleId = arrival.vehicleID
-                                )
-                            }
                         }
-                    }
-                }
-                if (hasMap) {
-                    item {
-                        Text(
-                            text = stringResource(R.string.tap_to_track_hint),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.labelSmall,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 4.dp)
-                        )
                     }
                 }
             }
@@ -378,7 +324,6 @@ private fun ArrivalList(
 @Composable
 private fun ArrivalRow(
     arrival: Arrival,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     countdownTick: Int = 0
 ) {
@@ -394,7 +339,6 @@ private fun ArrivalRow(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 6.dp, vertical = 4.dp)
-            .clickable(onClick = onClick)
     ) {
         Text(
             text = arrival.shortSign.ifBlank { arrival.fullSign },

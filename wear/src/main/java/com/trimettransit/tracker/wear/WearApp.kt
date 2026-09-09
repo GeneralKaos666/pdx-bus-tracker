@@ -31,7 +31,6 @@ private object Routes {
     const val ROUTES_LIST = "routes"
     const val ROUTE_DIRS = "routes/{routeId}?name={name}"
     const val ROUTE_STOPS = "stops/{routeId}/{dir}?dirName={dirName}"
-    const val NEARBY = "nearby"
     const val FAVORITES_MANAGE = "favorites_manage"
     const val SETTINGS = "settings"
 
@@ -77,7 +76,6 @@ fun WearApp(startStop: Stop? = null) {
                         onOpenFavorites = { navController.navigate(Routes.FAVORITES) },
                         onOpenRecent = { navController.navigate(Routes.RECENT) },
                         onOpenRoutes = { navController.navigate(Routes.ROUTES_LIST) },
-                        onOpenNearby = { navController.navigate(Routes.NEARBY) },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) }
                     )
                 }
@@ -120,11 +118,6 @@ fun WearApp(startStop: Stop? = null) {
                         onDirectionClick = { direction ->
                             navController.navigate(Routes.routeStops(routeId, direction))
                         }
-                    )
-                }
-composable(Routes.NEARBY) {
-                    NearbyStopsScreen(
-                        onStopClick = { stop -> navController.navigate(Routes.arrivals(stop)) }
                     )
                 }
                 composable(Routes.FAVORITES_MANAGE) {

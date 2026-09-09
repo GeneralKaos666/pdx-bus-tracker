@@ -73,6 +73,7 @@ stops, favorites, and arrivals by name.
 |---|---|
 | `ACCESS_COARSE_LOCATION` / `ACCESS_FINE_LOCATION` | Find nearby stops, plan trips from your location, and show your position on the map (foreground use only, always initiated by you) |
 | `INTERNET`, `ACCESS_NETWORK_STATE` | Fetch live transit data and detect offline state |
+| `WAKE_LOCK` | Wear OS only: keep the watch screen on and ticking the countdown during low-power ambient mode |
 
 ## 6. Data deletion
 
