@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -129,7 +128,7 @@ private fun RouteListItem(
             }
             Surface(
                 modifier = Modifier.size(44.dp),
-                shape = CircleShape,
+                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                 color = typeColor
             ) {
                 Box(contentAlignment = Alignment.Center) {

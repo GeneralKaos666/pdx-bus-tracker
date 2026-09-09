@@ -39,7 +39,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -516,7 +515,7 @@ fun ArrivalsScreen(
                                         remember { MutableInteractionSource() }
                                     Surface(
                                         modifier = Modifier.fillMaxWidth(),
-                                        shape = MaterialTheme.shapes.large,
+                                        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                                         color = MaterialTheme.colorScheme.surfaceContainerLow
                                     ) {
                                         Row(
@@ -924,7 +923,7 @@ private fun ArrivalItem(
         ) {
             Surface(
                 modifier = Modifier.size(44.dp),
-                shape = CircleShape,
+                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                 color = color
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -960,7 +959,7 @@ private fun ArrivalItem(
                     Spacer(modifier = Modifier.width(8.dp))
                     val alertInteractionSource = remember { MutableInteractionSource() }
                     Surface(
-                        shape = RoundedCornerShape(50),
+                        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                         color = MaterialTheme.colorScheme.errorContainer,
                         modifier = Modifier
                             .pressScale(alertInteractionSource)
@@ -987,7 +986,7 @@ private fun ArrivalItem(
             Spacer(modifier = Modifier.width(8.dp))
 
             Surface(
-                shape = RoundedCornerShape(50),
+                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                 color = MaterialTheme.colorScheme.onSurface
             ) {
                 if (arrival.status == "canceled") {
@@ -1147,7 +1146,7 @@ private fun PipCountdownContent(
                 ) {
                     Surface(
                         modifier = Modifier.size(26.dp),
-                        shape = CircleShape,
+                        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                         color = color
                     ) {
                         Box(contentAlignment = Alignment.Center) {

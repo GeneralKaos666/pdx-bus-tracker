@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -210,6 +209,7 @@ fun SettingsScreen(
                     icon = Icons.Filled.Tune,
                     value = cornerRadius,
                     valueLabel = stringResource(R.string.card_corner_radius_dp, cornerRadius.roundToInt()),
+                    valueRange = 0f..28f,
                     onValueChange = { cornerRadius = it },
                     onValueChangeFinished = {
                         prefs.edit { putInt("pref_key_card_corner_radius", cornerRadius.roundToInt()) }
@@ -262,7 +262,7 @@ fun SettingsScreen(
                 ) {
                     Surface(
                         modifier = Modifier.size(48.dp),
-                        shape = MaterialTheme.shapes.medium,
+                        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                         color = MaterialTheme.colorScheme.surfaceContainerHighest
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -489,7 +489,7 @@ private fun SettingsIconCircle(icon: ImageVector, highlighted: Boolean) {
     )
     Surface(
         modifier = Modifier.size(40.dp),
-        shape = CircleShape,
+        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
         color = containerColor
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -654,7 +654,7 @@ private fun SettingsColourOption(
         Spacer(modifier = Modifier.width(16.dp))
         Surface(
             modifier = Modifier.size(32.dp),
-            shape = CircleShape,
+            shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
             color = colour,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {}
@@ -667,6 +667,7 @@ private fun SettingsSliderOption(
     icon: ImageVector,
     value: Float,
     valueLabel: String,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..28f,
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit
 ) {
@@ -699,6 +700,7 @@ private fun SettingsSliderOption(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 56.dp, end = 8.dp),
+            valueRange = valueRange,
             steps = 27
         )
     }

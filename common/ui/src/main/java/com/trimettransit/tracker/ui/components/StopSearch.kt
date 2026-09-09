@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -25,6 +25,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import java.util.Locale
 
 const val STOP_SEARCH_MAX_RESULTS = 250
@@ -70,7 +71,7 @@ fun StopSearchItem(
         }
         Surface(
             modifier = Modifier.size(40.dp),
-            shape = CircleShape,
+            shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
             color = typeColor
         ) {
             Box(contentAlignment = Alignment.Center) {

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Schedule
@@ -208,7 +207,7 @@ private fun WidgetRadioOption(
 private fun SettingsIconCircle(icon: ImageVector, highlighted: Boolean) {
     Surface(
         modifier = Modifier.size(40.dp),
-        shape = CircleShape,
+        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
         color = if (highlighted) MaterialTheme.colorScheme.primaryContainer
                 else MaterialTheme.colorScheme.surfaceContainerHighest
     ) {

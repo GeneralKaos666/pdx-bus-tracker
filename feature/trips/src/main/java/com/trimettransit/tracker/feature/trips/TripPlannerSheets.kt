@@ -59,6 +59,7 @@ import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.searchStops
 import com.trimettransit.tracker.ui.components.StopSearchItem
+import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
@@ -202,7 +203,7 @@ internal fun StopSearchPanel(
 
     Column(modifier = modifier) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier
                 .fillMaxWidth()

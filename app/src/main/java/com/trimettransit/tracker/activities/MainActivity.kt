@@ -136,6 +136,7 @@ import com.trimettransit.tracker.feature.settings.SettingsScreen
 import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
 import com.trimettransit.tracker.feature.trips.TripPlannerScreen
+import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
@@ -258,14 +259,14 @@ private fun MainBottomBar(
                     onClick = onBackClick,
                     icon = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.back),
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                     size = itemHeight
                 )
             }
             Surface(
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shadowElevation = 8.dp,
                 tonalElevation = 4.dp
@@ -301,7 +302,7 @@ private fun MainBottomBar(
                 onClick = onSettingsClick,
                 icon = Icons.Default.Settings,
                 contentDescription = stringResource(R.string.settings),
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                 size = itemHeight
@@ -392,7 +393,7 @@ private fun MainTabRow(
                     modifier = Modifier
                         .width(indicatorWidth)
                         .height(itemHeight)
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(LocalCardStyle.current.cornerRadius))
                         .background(MaterialTheme.colorScheme.surfaceContainer)
                 )
             }
@@ -472,7 +473,7 @@ private fun CompactContextPill(
     itemHeight: Dp
 ) {
     Surface(
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
         color = MaterialTheme.colorScheme.primaryContainer,
         shadowElevation = 8.dp,
         tonalElevation = 4.dp

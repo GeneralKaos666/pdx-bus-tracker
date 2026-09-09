@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -336,7 +335,7 @@ fun TripPlannerScreen(
         ) {
             Surface(
                 onClick = { showLocationExplainer = true },
-                shape = MaterialTheme.shapes.large,
+                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 shadowElevation = 4.dp,
                 modifier = Modifier
@@ -532,7 +531,7 @@ fun TripPlannerScreen(
                     slideOutVertically(m3SpatialFast()) { -it / 3 }
             ) {
                 Surface(
-                    shape = MaterialTheme.shapes.large,
+                    shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                     color = MaterialTheme.colorScheme.primaryContainer,
                     shadowElevation = 4.dp,
                     modifier = Modifier
@@ -569,7 +568,7 @@ fun TripPlannerScreen(
             val statusText = resolvedError
             if (statusText != null) {
                 Surface(
-                    shape = MaterialTheme.shapes.large,
+                    shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                     color = if (planResult is TripPlanResult.Error) {
                         MaterialTheme.colorScheme.errorContainer
                     } else {
@@ -681,7 +680,7 @@ private fun EndpointRow(
     Surface(
         onClick = onClick,
         interactionSource = source,
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier
             .fillMaxWidth()
@@ -696,7 +695,7 @@ private fun EndpointRow(
             Box(
                 modifier = Modifier
                     .size(10.dp)
-                    .background(accentColor, CircleShape)
+                    .background(accentColor, RoundedCornerShape(LocalCardStyle.current.cornerRadius))
             )
             Spacer(modifier = Modifier.width(10.dp))
             Crossfade(

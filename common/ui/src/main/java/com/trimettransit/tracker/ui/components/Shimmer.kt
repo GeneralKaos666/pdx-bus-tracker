@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.trimettransit.tracker.ui.theme.LocalCardStyle
 
 /**
  * Rounded shimmer placeholder block — a surface-tinted fill with a soft highlight band
@@ -41,10 +42,11 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ShimmerBox(
     modifier: Modifier = Modifier,
-    shape: Shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+    shape: Shape? = null
 ) {
     val base = MaterialTheme.colorScheme.surfaceVariant
     val highlight = MaterialTheme.colorScheme.surfaceContainerHighest
+    val resolvedShape = shape ?: RoundedCornerShape(LocalCardStyle.current.cornerRadius)
     val transition = rememberInfiniteTransition(label = "shimmer")
     val progress by transition.animateFloat(
         initialValue = 0f,
@@ -57,7 +59,7 @@ fun ShimmerBox(
     )
     Box(
         modifier = modifier
-            .clip(shape)
+            .clip(resolvedShape)
             .background(base)
     ) {
         BoxWithConstraints(modifier = Modifier.matchParentSize()) {
@@ -132,7 +134,7 @@ private fun ShimmerRow() {
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ShimmerBox(modifier = Modifier.size(40.dp), shape = CircleShape)
+        ShimmerBox(modifier = Modifier.size(40.dp), shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius))
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             ShimmerBox(modifier = Modifier.fillMaxWidth().height(16.dp))

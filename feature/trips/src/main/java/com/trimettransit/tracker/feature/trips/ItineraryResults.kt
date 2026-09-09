@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
@@ -46,6 +45,7 @@ import com.trimettransit.tracker.model.TripLeg
 import com.trimettransit.tracker.model.TripPlan
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
+import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
@@ -189,7 +189,7 @@ internal fun RouteBadge(
     val letter = leg.mode.transitTypeLetter()
     val badgeDescription = contentDescription
     Surface(
-        shape = CircleShape,
+        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
         color = transitColor(letter, scheme),
         modifier = if (badgeDescription != null) {
             modifier.semantics { this.contentDescription = badgeDescription }
@@ -278,7 +278,7 @@ internal fun LegRow(leg: TripLeg) {
                 )
                 if (leg.stayOnBoard) {
                     Surface(
-                        shape = RoundedCornerShape(50),
+                        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         Text(

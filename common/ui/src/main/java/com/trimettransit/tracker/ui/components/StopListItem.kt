@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -94,7 +93,7 @@ fun StopListItem(
             // Transit type indicator
             Surface(
                 modifier = Modifier.size(40.dp),
-                shape = CircleShape,
+                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                 color = transitTypeColor
             ) {
                 Box(
