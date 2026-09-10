@@ -13,7 +13,7 @@ app / wear
   -> common/*
 ```
 
-The modules are declared in `settings.gradle`. Keep dependencies flowing downward; do not add `feature`-to-`feature` or library-to-`app` dependencies.
+The modules are declared in `settings.gradle.kts`. Keep dependencies flowing downward; do not add `feature`-to-`feature` or library-to-`app` dependencies.
 
 - `app` owns the phone activity, Compose navigation, floating pill navigation, PiP, and the home-screen widget.
 - `wear` is a standalone Wear OS app. It owns its screens, SQLite-backed favorites/recent stops, direct transit API access, and the "Next departure" tile. It does not communicate with the phone app.

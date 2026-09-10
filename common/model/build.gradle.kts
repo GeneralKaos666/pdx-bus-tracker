@@ -1,9 +1,9 @@
 plugins {
-    id 'com.android.library'
+    id("com.android.library")
 }
 
 android {
-    namespace = 'com.trimettransit.tracker.util'
+    namespace = "com.trimettransit.tracker.model"
     compileSdk = 37
 
     defaultConfig {
@@ -22,6 +22,5 @@ android {
 }
 
 dependencies {
-    implementation 'net.danlew:android.joda:2.14.2.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0'
+    implementation("net.danlew:android.joda:2.14.2.1")
 }

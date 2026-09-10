@@ -1,9 +1,9 @@
 plugins {
-    id 'com.android.library'
+    id("com.android.library")
 }
 
 android {
-    namespace = 'com.trimettransit.tracker.data.local'
+    namespace = "com.trimettransit.tracker.data.local"
     compileSdk = 37
 
     defaultConfig {
@@ -22,8 +22,8 @@ android {
 }
 
 dependencies {
-    implementation project(':common:model')
-    implementation 'com.google.android.material:material:1.14.0'
-    implementation 'androidx.core:core-ktx:1.19.0'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0'
+    implementation(project(":common:model"))
+    implementation("com.google.android.material:material:1.14.0")
+    implementation("androidx.core:core-ktx:1.19.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 }
