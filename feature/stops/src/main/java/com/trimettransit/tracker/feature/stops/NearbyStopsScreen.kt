@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -52,6 +53,7 @@ import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.LoadingState
+import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
@@ -249,6 +251,7 @@ fun NearbyStopsScreen(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
                             flingBehavior = smoothFling,
+                            contentPadding = PaddingValues(bottom = navPillBottomPadding()),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             items(safeStops ?: emptyList(), key = { it.locId }, contentType = { "stop" }) { stop ->

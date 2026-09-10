@@ -102,6 +102,7 @@ import com.trimettransit.tracker.ui.components.DotCircle
 import com.trimettransit.tracker.ui.components.badgeBitmap
 import com.trimettransit.tracker.ui.components.circleMarker
 import com.trimettransit.tracker.ui.components.EmptyState
+import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
 import com.trimettransit.tracker.ui.components.pressScale
@@ -454,7 +455,7 @@ fun ArrivalsScreen(
                                 start = 12.dp,
                                 end = 12.dp,
                                 top = 8.dp,
-                                bottom = 8.dp
+                                bottom = navPillBottomPadding() + 8.dp
                             ),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {

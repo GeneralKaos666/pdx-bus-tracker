@@ -5,6 +5,11 @@
 - **Toolchain:** Android Gradle Plugin bumped 9.3.1 → 9.4.0 and the Compose compiler plugin 2.4.10 → 2.4.20 (Gradle wrapper stays on 9.7.1).
 - **Libraries:** Compose BOM 2026.08.00 → 2026.09.00, Material 3 to 1.5.0-alpha28, Navigation Compose 2.9.8 → 2.10.1, the home-screen widget libraries (Glance) to 1.2.0, and the map engine unified on 13.6.1 across phone and planner.
 
+## UI polish (next release)
+
+- **Content now scrolls under the navigation bar:** the app's bottom navigation floats over the content edge-to-edge, so every list glides smoothly up and behind the navigation pill instead of stopping at a hard bar, in Home, Stops, Arrivals, Settings, and the Trip Planner.
+- **Widget setup screen under the system bars:** the widget's settings screen now draws edge-to-edge with a floating, translucent action bar, and its title sits comfortably below the status bar instead of crowding it.
+
 ## What's New in the Widget (next release)
 
 ### Home-screen widget, smarter

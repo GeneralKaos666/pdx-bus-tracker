@@ -25,6 +25,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -688,7 +691,10 @@ private fun MainAppContent(
         scope.launch { topPagerState.animateScrollToPage(0) }
     }
 
-    Scaffold(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            contentWindowInsets = WindowInsets.safeDrawing
+                .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
             topBar = {
                 if (!isTopLevel) {
                 AnimatedContent(
@@ -821,36 +827,13 @@ private fun MainAppContent(
                 }
             }
             },
-            bottomBar = {
-                AnimatedVisibility(
-                    visible = !inPip,
-                    enter = slideInVertically(m3SpatialDefault()) { it } +
-                        fadeIn(m3EffectsDefault()),
-                    exit = slideOutVertically(m3SpatialFast()) { it } +
-                        fadeOut(m3EffectsFast())
-                ) {
-                    @SuppressLint("FrequentlyChangingValue")
-                    val pagePosition = topPagerState.currentPage +
-                        topPagerState.currentPageOffsetFraction
-                    MainBottomBar(
-                        topPage = topPagerState.currentPage,
-                        pagePosition = pagePosition,
-                        onNavigate = ::navigateToTopPage,
-                        onSettingsClick = {
-                            navController.navigate(ROUTE_SETTINGS) { launchSingleTop = true }
-                        },
-                        showBack = !isTopLevel,
-                        onBackClick = { navController.popBackStack() },
-                        onContextClick = { NavState.onScrollToTop?.invoke() },
-                        contextLabelRes = contextLabelRes,
-                        contextIcon = contextIcon
-                    )
-                }
-            },
+            bottomBar = {},
             snackbarHost = {
                 SnackbarHost(
                     hostState = outerSnackbarHostState,
-                    modifier = Modifier.padding(bottom = 64.dp),
+                    modifier = Modifier
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .padding(bottom = 56.dp),
                     snackbar = { data ->
                         Snackbar(
                             snackbarData = data,
@@ -958,6 +941,32 @@ private fun MainAppContent(
                 }
             }
         }
+        AnimatedVisibility(
+            visible = !inPip,
+            enter = slideInVertically(m3SpatialDefault()) { it } +
+                fadeIn(m3EffectsDefault()),
+            exit = slideOutVertically(m3SpatialFast()) { it } +
+                fadeOut(m3EffectsFast()),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            @SuppressLint("FrequentlyChangingValue")
+            val pagePosition = topPagerState.currentPage +
+                topPagerState.currentPageOffsetFraction
+            MainBottomBar(
+                topPage = topPagerState.currentPage,
+                pagePosition = pagePosition,
+                onNavigate = ::navigateToTopPage,
+                onSettingsClick = {
+                    navController.navigate(ROUTE_SETTINGS) { launchSingleTop = true }
+                },
+                showBack = !isTopLevel,
+                onBackClick = { navController.popBackStack() },
+                onContextClick = { NavState.onScrollToTop?.invoke() },
+                contextLabelRes = contextLabelRes,
+                contextIcon = contextIcon
+            )
+        }
+    }
 
 }
 

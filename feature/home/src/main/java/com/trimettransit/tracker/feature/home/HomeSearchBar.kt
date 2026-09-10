@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -51,6 +52,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
+import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.searchStops
@@ -238,7 +240,8 @@ private fun SearchResultsDropdown(
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
-                        flingBehavior = smoothFling
+                        flingBehavior = smoothFling,
+                        contentPadding = PaddingValues(bottom = navPillBottomPadding())
                     ) {
                         items(results, key = { it.locId }, contentType = { "stopSearch" }) { stop ->
                             StopSearchItem(

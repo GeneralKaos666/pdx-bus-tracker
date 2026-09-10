@@ -11,11 +11,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -31,6 +36,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +60,7 @@ import androidx.compose.ui.zIndex
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
+import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.widget.WidgetConfig
 import com.trimettransit.tracker.widget.WidgetThemeOption
 
@@ -130,13 +137,22 @@ fun WidgetConfigScreen(
     )
 
     Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        contentWindowInsets = WindowInsets.safeDrawing
+            .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
         bottomBar = {
-            Surface(tonalElevation = 3.dp) {
+            Surface(
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                shape = RoundedCornerShape(28.dp),
+                shadowElevation = 6.dp,
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .fillMaxWidth()
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     OutlinedButton(
@@ -160,7 +176,8 @@ fun WidgetConfigScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp)
+                .padding(bottom = navPillBottomPadding() + 24.dp)
         ) {
             Text(
                 text = stringResource(R.string.widget_config_title),
@@ -266,11 +283,18 @@ fun WidgetConfigScreen(
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
-            Slider(
+            val maxStopsSlider = rememberSliderState(
                 value = maxStops.intValue.toFloat(),
-                onValueChange = { maxStops.intValue = it.toInt().coerceIn(1, 12) },
-                valueRange = 1f..12f,
-                steps = 10,
+                trackRange = 1f..12f,
+                steps = 10
+            )
+            Slider(
+                state = maxStopsSlider,
+                onValueChange = { v ->
+                    val snapped = v.toInt().coerceIn(1, 12)
+                    maxStops.intValue = snapped
+                    maxStopsSlider.value = snapped.toFloat()
+                },
                 modifier = Modifier.fillMaxWidth()
             )
             Text(

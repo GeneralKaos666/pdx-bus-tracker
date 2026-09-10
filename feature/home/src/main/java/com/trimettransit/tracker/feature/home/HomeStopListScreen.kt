@@ -16,6 +16,7 @@ import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
+import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
@@ -49,7 +50,10 @@ fun HomeStopListScreen(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
                     flingBehavior = smoothFling,
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    contentPadding = PaddingValues(
+                        top = 8.dp,
+                        bottom = navPillBottomPadding() + 8.dp
+                    )
                 ) {
                     items(stops.size, key = { stops[it].locId }, contentType = { "stop" }) { index ->
                         val stop = stops[index]

@@ -80,6 +80,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.ContentEntrance
+import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.SectionHeader
 import com.trimettransit.tracker.ui.components.SettingsCard
 import com.trimettransit.tracker.ui.components.SettingsIconCircle
@@ -138,6 +139,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
+                .padding(bottom = navPillBottomPadding() + 8.dp)
         ) {
             SectionHeader(title = stringResource(R.string.section_appearance))
 
