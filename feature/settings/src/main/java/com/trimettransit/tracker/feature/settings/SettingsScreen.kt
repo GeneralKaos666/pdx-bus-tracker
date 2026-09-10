@@ -78,7 +78,6 @@ import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.core.graphics.drawable.toBitmap
 import androidx.preference.PreferenceManager
-import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.SectionHeader
@@ -102,7 +101,8 @@ import kotlin.math.roundToInt
 
 @Composable
 fun SettingsScreen(
-    widgetSection: (@Composable ColumnScope.() -> Unit)? = null
+    widgetSection: (@Composable ColumnScope.() -> Unit)? = null,
+    onRegisterScrollToTop: ((() -> Unit)?) -> Unit
 ) {
     val context = LocalContext.current
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -128,10 +128,10 @@ fun SettingsScreen(
 
     // Collapsed bottom-bar pill: scroll Settings back to the top.
     DisposableEffect(Unit) {
-        NavState.onScrollToTop = {
+        onRegisterScrollToTop {
             coroutineScope.launch { scrollState.scrollTo(0) }
         }
-        onDispose { NavState.onScrollToTop = null }
+        onDispose { onRegisterScrollToTop(null) }
     }
 
     ContentEntrance(modifier = Modifier.fillMaxSize()) {

@@ -59,7 +59,6 @@ import androidx.compose.material3.SnackbarDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.activities.toggleFavorite
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButtonDefaults
@@ -74,6 +73,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -85,6 +85,7 @@ import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
@@ -650,9 +651,17 @@ private fun MainAppContent(
     }
     val outerSnackbarHostState = remember { SnackbarHostState() }
 
+    var arrivalsStopName by remember { mutableStateOf("") }
+    var arrivalsIsFavorite by remember { mutableStateOf(false) }
+    var arrivalsLat by remember { mutableDoubleStateOf(0.0) }
+    var arrivalsLng by remember { mutableDoubleStateOf(0.0) }
+    var arrivalsOnRefresh by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var onScrollToTop by remember { mutableStateOf<(() -> Unit)?>(null) }
+
     val topPagerState = rememberPagerState(pageCount = { bottomNavItems.size })
     var selectedStopsRoute by remember { mutableStateOf<Route?>(null) }
     var selectedStopsDirection by remember { mutableStateOf<Direction?>(null) }
+    val saveableStateHolder = rememberSaveableStateHolder()
 
     fun navigateToArrivals(stop: Stop, routeId: Int) {
         val stopToRecord = if (routeId > 0) stop.copy(routeNum = routeId) else stop
@@ -730,7 +739,7 @@ private fun MainAppContent(
                         )
                     )
                     route.startsWith(ROUTE_ARRIVALS_PREFIX) && !inPip -> TopAppBar(
-                        title = { Text(NavState.arrivalsStopName.ifBlank { stringResource(R.string.stop) }) },
+                        title = { Text(arrivalsStopName.ifBlank { stringResource(R.string.stop) }) },
                         navigationIcon = { BackNavigationIcon(onClick = { navController.popBackStack() }) },
                         contentPadding = PaddingValues(0.dp),
                         windowInsets = TopAppBarDefaults.windowInsets,
@@ -774,9 +783,9 @@ private fun MainAppContent(
                                     val stopName = entry?.arguments?.getString("stopName") ?: ""
                                     scope.launch {
                                         val routeId = entry?.arguments?.getInt("routeId") ?: -1
-                                        var lat = NavState.arrivalsLat
-                                        var lng = NavState.arrivalsLng
-                                        if (!NavState.arrivalsIsFavorite && lat == 0.0 && lng == 0.0) {
+                                        var lat = arrivalsLat
+                                        var lng = arrivalsLng
+                                        if (!arrivalsIsFavorite && lat == 0.0 && lng == 0.0) {
                                             // Coords not resolved yet (fetch still in flight or offline):
                                             // resolve them now so the favorite isn't parked at 0,0.
                                             transitRepository.getStopById(locId)?.let {
@@ -784,9 +793,9 @@ private fun MainAppContent(
                                                 lng = it.longitude
                                             }
                                         }
-                                        val result = toggleFavorite(favoritesRepository, context, locId, stopName, NavState.arrivalsIsFavorite, routeId, lat, lng)
+                                        val result = toggleFavorite(favoritesRepository, context, locId, stopName, arrivalsIsFavorite, routeId, lat, lng)
                                         if (result.first) {
-                                            NavState.arrivalsIsFavorite = !NavState.arrivalsIsFavorite
+                                            arrivalsIsFavorite = !arrivalsIsFavorite
                                         }
                                         outerSnackbarHostState.showSnackbar(result.second)
                                     }
@@ -795,7 +804,7 @@ private fun MainAppContent(
                                 modifier = Modifier.pressScale(favSource)
                             ) {
                                 AnimatedContent(
-                                    targetState = NavState.arrivalsIsFavorite,
+                                    targetState = arrivalsIsFavorite,
                                     transitionSpec = { fadeIn(m3EffectsDefault()) togetherWith fadeOut(m3EffectsFast()) },
                                     label = "favoriteIcon"
                                 ) { isFav ->
@@ -811,7 +820,7 @@ private fun MainAppContent(
                             IconButton(
                                 onClick = {
                                     scope.launch { refreshRotation.animateTo(refreshRotation.value + 360f, m3EffectsFast()) }
-                                    NavState.arrivalsOnRefresh?.invoke()
+                                    arrivalsOnRefresh?.invoke()
                                 },
                                 interactionSource = refreshSource,
                                 modifier = Modifier.pressScale(refreshSource)
@@ -876,22 +885,23 @@ private fun MainAppContent(
                         state = topPagerState,
                         modifier = Modifier.fillMaxSize(),
                         beyondViewportPageCount = 1
-                    ) { page ->
-                        when (page) {
-                            0 -> FavoritesScreen(
-                                favoritesRepository = favoritesRepository,
-                                transitRepository = transitRepository,
-                                onNavigateToArrivals = { stop: Stop ->
-                                    navigateToArrivals(stop, stop.routeNum)
-                                }
-                            )
-                            1 -> RecentStopsScreen(
-                                recentStopsRepository = recentStopsRepository,
-                                onNavigateToArrivals = { stop: Stop ->
-                                    navigateToArrivals(stop, stop.routeNum)
-                                }
-                            )
-2 -> StopsScreen(
+) { page ->
+                        saveableStateHolder.SaveableStateProvider(page) {
+                            when (page) {
+                                0 -> FavoritesScreen(
+                                    favoritesRepository = favoritesRepository,
+                                    transitRepository = transitRepository,
+                                    onNavigateToArrivals = { stop: Stop ->
+                                        navigateToArrivals(stop, stop.routeNum)
+                                    }
+                                )
+                                1 -> RecentStopsScreen(
+                                    recentStopsRepository = recentStopsRepository,
+                                    onNavigateToArrivals = { stop: Stop ->
+                                        navigateToArrivals(stop, stop.routeNum)
+                                    }
+                                )
+                                2 -> StopsScreen(
                                     transitRepository = transitRepository,
                                     selectedRoute = selectedStopsRoute,
                                     selectedDirection = selectedStopsDirection,
@@ -912,17 +922,22 @@ private fun MainAppContent(
                                     isDark = isDark
                                 )
                             }
+                        }
                     }
                 }
                 composable(ROUTE_SETTINGS) {
-                    SettingsScreen(widgetSection = { WidgetSettingsSection() })
+                    SettingsScreen(
+                        widgetSection = { WidgetSettingsSection() },
+                        onRegisterScrollToTop = { onScrollToTop = it }
+                    )
                 }
                 composable(ROUTE_NEARBY_STOPS) {
                     NearbyStopsScreen(
                         transitRepository = transitRepository,
                         onNavigateToArrivals = { stop: Stop, routeId: Int ->
                             navigateToArrivals(stop, routeId)
-                        }
+                        },
+                        onRegisterScrollToTop = { onScrollToTop = it }
                     )
                 }
                 composable(
@@ -945,6 +960,14 @@ private fun MainAppContent(
                         latitude = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0,
                         longitude = backStackEntry.arguments?.getString("lng")?.toDoubleOrNull() ?: 0.0,
                         isDark = isDark,
+                        onArrivalsStateChange = { name, fav, lat, lng ->
+                            arrivalsStopName = name
+                            arrivalsIsFavorite = fav
+                            arrivalsLat = lat
+                            arrivalsLng = lng
+                        },
+                        onRegisterRefresh = { arrivalsOnRefresh = it },
+                        onRegisterScrollToTop = { onScrollToTop = it }
                     )
                 }
             }
@@ -969,7 +992,7 @@ private fun MainAppContent(
                 },
                 showBack = !isTopLevel,
                 onBackClick = { navController.popBackStack() },
-                onContextClick = { NavState.onScrollToTop?.invoke() },
+                onContextClick = { onScrollToTop?.invoke() },
                 contextLabelRes = contextLabelRes,
                 contextIcon = contextIcon
             )

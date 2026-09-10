@@ -96,7 +96,6 @@ import com.trimettransit.tracker.model.domain.isCanceled
 import com.trimettransit.tracker.model.domain.isEstimated
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
-import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.DotCircle
 import com.trimettransit.tracker.ui.components.badgeBitmap
@@ -178,6 +177,9 @@ fun ArrivalsScreen(
     latitude: Double = 0.0,
     longitude: Double = 0.0,
     isDark: Boolean = false,
+    onArrivalsStateChange: (stopName: String, isFavorite: Boolean, lat: Double, lng: Double) -> Unit,
+    onRegisterRefresh: ((() -> Unit)?) -> Unit,
+    onRegisterScrollToTop: ((() -> Unit)?) -> Unit
 ) {
     val context = LocalContext.current
     var arrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
@@ -202,14 +204,16 @@ fun ArrivalsScreen(
     var stopLat by remember { mutableDoubleStateOf(latitude) }
     var stopLng by remember { mutableDoubleStateOf(longitude) }
     var isLoadingStop by remember { mutableStateOf(false) }
+    var isFavorite by remember { mutableStateOf(false) }
     val hasValidCoords = !isLoadingStop && stopLat != 0.0 && stopLng != 0.0
 
     // Read initial favorite state from DB
     LaunchedEffect(stopId) {
         if (locId > 0) {
-            NavState.arrivalsIsFavorite = withContext(Dispatchers.IO) {
+            isFavorite = withContext(Dispatchers.IO) {
                 favoritesRepository.isFavorite(locId)
             }
+            onArrivalsStateChange(stopName.ifBlank { stopNumberLabel }, isFavorite, stopLat, stopLng)
         }
     }
 
@@ -339,9 +343,9 @@ fun ArrivalsScreen(
         if (trackingKey != null) refreshPositions()
     }
 
-    // Populate NavState for outer scaffold's top bar
+    // Report the resolved stop name to the outer scaffold's top bar
     LaunchedEffect(Unit) {
-        NavState.arrivalsStopName = stopName.ifBlank { stopNumberLabel }
+        onArrivalsStateChange(stopName.ifBlank { stopNumberLabel }, isFavorite, stopLat, stopLng)
     }
 
     val smoothFling = rememberSmoothFlingBehavior()
@@ -349,14 +353,16 @@ fun ArrivalsScreen(
 
     DisposableEffect(Unit) {
         // Must use a stable lambda — loadArrivals is a local fun, always the same behavior
-        NavState.arrivalsOnRefresh = { loadArrivals() }
+        onRegisterRefresh { loadArrivals() }
         // Collapsed bottom-bar pill: scroll back to the top and refresh.
-        NavState.onScrollToTop = {
+        onRegisterScrollToTop {
             coroutineScope.launch { listState.animateScrollToItem(0) }
             loadArrivals()
         }
         onDispose {
-            NavState.clearArrivals()
+            onRegisterRefresh(null)
+            onRegisterScrollToTop(null)
+            onArrivalsStateChange("", false, 0.0, 0.0)
         }
     }
 
@@ -396,10 +402,9 @@ fun ArrivalsScreen(
             return@Crossfade
         }
 
-        // Bridge resolved coordinates to outer scaffold for favorite persistence
+        // Bridge resolved coordinates to the outer scaffold for favorite persistence
         LaunchedEffect(stopLat, stopLng) {
-            NavState.arrivalsLat = stopLat
-            NavState.arrivalsLng = stopLng
+            onArrivalsStateChange(stopName.ifBlank { stopNumberLabel }, isFavorite, stopLat, stopLng)
         }
 
     val pullToRefreshState = rememberPullToRefreshState()

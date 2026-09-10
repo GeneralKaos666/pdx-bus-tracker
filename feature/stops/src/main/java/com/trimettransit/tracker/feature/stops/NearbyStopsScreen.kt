@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
-import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.EmptyState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.trimettransit.tracker.ui.components.ContentEntrance
@@ -67,7 +66,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 @Composable
 fun NearbyStopsScreen(
     transitRepository: TransitRepository,
-    onNavigateToArrivals: (Stop, Int) -> Unit
+    onNavigateToArrivals: (Stop, Int) -> Unit,
+    onRegisterScrollToTop: ((() -> Unit)?) -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -90,10 +90,10 @@ fun NearbyStopsScreen(
 
     // Collapsed bottom-bar pill: scroll the nearby-stops list back to the top.
     DisposableEffect(Unit) {
-        NavState.onScrollToTop = {
+        onRegisterScrollToTop {
             coroutineScope.launch { listState.animateScrollToItem(0) }
         }
-        onDispose { NavState.onScrollToTop = null }
+        onDispose { onRegisterScrollToTop(null) }
     }
 
     fun launchLoadNearbyStops() {
