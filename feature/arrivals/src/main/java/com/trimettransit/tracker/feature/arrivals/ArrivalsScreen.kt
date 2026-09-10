@@ -402,8 +402,13 @@ fun ArrivalsScreen(
             return@Crossfade
         }
 
-        // Bridge resolved coordinates to the outer scaffold for favorite persistence
+        // Bridge resolved coordinates to the outer scaffold for favorite persistence.
+        // Re-read the favorite from the DB: the top bar may have toggled it since the
+        // initial read (e.g. PiP exit re-fires this effect), so the local mirror is stale.
         LaunchedEffect(stopLat, stopLng) {
+            if (locId > 0) {
+                isFavorite = withContext(Dispatchers.IO) { favoritesRepository.isFavorite(locId) }
+            }
             onArrivalsStateChange(stopName.ifBlank { stopNumberLabel }, isFavorite, stopLat, stopLng)
         }
 

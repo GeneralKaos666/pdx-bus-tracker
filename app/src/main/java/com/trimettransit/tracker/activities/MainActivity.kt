@@ -885,7 +885,7 @@ private fun MainAppContent(
                         state = topPagerState,
                         modifier = Modifier.fillMaxSize(),
                         beyondViewportPageCount = 1
-) { page ->
+                    ) { page ->
                         saveableStateHolder.SaveableStateProvider(page) {
                             when (page) {
                                 0 -> FavoritesScreen(
