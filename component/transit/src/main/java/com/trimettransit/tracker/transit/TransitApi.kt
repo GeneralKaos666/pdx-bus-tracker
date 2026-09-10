@@ -53,6 +53,11 @@ object TransitApi {
         return parseRouteObj(desc, routeId, type)
     }
 
+    /** TriMet serves coordinates in the Portland metro area; anything else is malformed/absent data. */
+    private fun isValidCoordinate(latitude: Double, longitude: Double): Boolean =
+        latitude in -90.0..90.0 && longitude in -180.0..180.0 &&
+            !(latitude == 0.0 && longitude == 0.0)
+
     suspend fun fetchRoutes(context: Context): List<Route>? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
         val apiKey = ApiKeys.getTrimetApiKey()
@@ -94,7 +99,9 @@ object TransitApi {
             val url = "$baseUrl/appID/$apiKey/route/$routeId/dir/true"
             val json = parser.fetch(url)
             val dirs = mutableListOf<Direction>()
-            val routeObj = json.getJSONObject("resultSet").getJSONArray("route").getJSONObject(0)
+            val routeArr = json.getJSONObject("resultSet").optJSONArray("route")
+            if (routeArr == null || routeArr.length() == 0) return@withContext emptyList()
+            val routeObj = routeArr.getJSONObject(0)
             val route = parseRoute(routeObj)
             val arr = routeObj.getJSONArray("dir")
             for (i in 0 until arr.length()) {
@@ -526,11 +533,14 @@ object TransitApi {
                         val builder = buildersById[locId]
                         if (builder == null) {
                             val stopDir = obj.optString("dir", "")
+                            val lat = obj.optDouble("lat", 0.0)
+                            val lng = obj.optDouble("lng", obj.optDouble("lon", 0.0))
+                            if (!isValidCoordinate(lat, lng)) continue
                             buildersById[locId] = StopBuilder(
                                 desc = obj.optString("desc", ""),
                                 dirDesc = if (stopDir == "") dirDesc else stopDir,
-                                latitude = obj.optDouble("lat", 0.0),
-                                longitude = obj.optDouble("lng", obj.optDouble("lon", 0.0)),
+                                latitude = lat,
+                                longitude = lng,
                                 routeNum = routeNum,
                                 locId = locId,
                                 routes = mutableListOf(route)
@@ -543,13 +553,17 @@ object TransitApi {
             }
             buildersById.values
                 .map { b ->
+                    val primaryRoute = b.routes.minByOrNull { it.routeId } ?: Route(
+                        desc = b.desc, routeId = b.routeNum, isBus = true, isMax = false,
+                        isStreetcar = false, isWes = false
+                    )
                     Stop(
                         desc = b.desc,
                         dirDesc = b.dirDesc,
                         latitude = b.latitude,
                         longitude = b.longitude,
                         transitType = computeTransitType(b.routes),
-                        routeNum = b.routeNum,
+                        routeNum = primaryRoute.routeId,
                         locId = b.locId,
                         routes = b.routes
                     )
