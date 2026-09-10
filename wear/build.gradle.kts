@@ -50,8 +50,8 @@ android {
         applicationId = "com.trimettransit.tracker"
         minSdk = 31
         targetSdk = 37
-        versionCode = (project.findProperty("releaseVersionCode") ?: "218").toString().toInt()
-        versionName = "2.2.1"
+        versionCode = (project.findProperty("releaseVersionCode") ?: "219").toString().toInt()
+        versionName = "2.2.2"
     }
 
     signingConfigs {
