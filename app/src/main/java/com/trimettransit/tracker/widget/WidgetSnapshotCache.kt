@@ -3,6 +3,7 @@ package com.trimettransit.tracker.widget
 import android.content.Context
 import androidx.core.content.edit
 import com.trimettransit.tracker.model.Arrival
+import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.util.minutesUntil
 import org.json.JSONArray
@@ -20,11 +21,24 @@ object WidgetSnapshotCache {
     private const val KEY_JSON = "widget_snapshot"
 
     /** Per-stop widget row, ready to render. */
-    data class ArrivalOnScreen(val sign: String, val atMillis: Long, val dropOffOnly: Boolean = false)
+    data class ArrivalOnScreen(
+        val sign: String,
+        val atMillis: Long,
+        val dropOffOnly: Boolean = false,
+        val status: String = ""
+    )
+
+    /** Detour alert attached to a stop row, deduped by [id]. */
+    data class WidgetDetour(
+        val id: Int = 0,
+        val desc: String = "",
+        val routeIds: List<Int> = emptyList()
+    )
 
     data class Row(
         val stop: Stop,
-        val arrivals: List<ArrivalOnScreen>
+        val arrivals: List<ArrivalOnScreen>,
+        val detours: List<WidgetDetour> = emptyList()
     ) {
         /** Whole minutes until this arrival (floor, matching the phone); 0 means "due". */
         fun minutesFrom(nowMillis: Long, arrival: ArrivalOnScreen): Long =
@@ -67,6 +81,8 @@ object WidgetSnapshotCache {
         .put("dir", row.stop.dirDesc)
         .put("route", row.stop.routeNum)
         .put("type", row.stop.transitType)
+        .put("lat", row.stop.latitude)
+        .put("lng", row.stop.longitude)
         .put(
             "arrivals",
             JSONArray().apply {
@@ -76,6 +92,25 @@ object WidgetSnapshotCache {
                             .put("sign", a.sign)
                             .put("at", a.atMillis)
                             .put("dropOffOnly", a.dropOffOnly)
+                            .put("status", a.status)
+                    )
+                }
+            }
+        )
+        .put(
+            "detours",
+            JSONArray().apply {
+                row.detours.forEach { d ->
+                    put(
+                        JSONObject()
+                            .put("id", d.id)
+                            .put("desc", d.desc)
+                            .put(
+                                "routes",
+                                JSONArray().apply {
+                                    d.routeIds.forEach { put(it) }
+                                }
+                            )
                     )
                 }
             }
@@ -85,6 +120,8 @@ object WidgetSnapshotCache {
         val stop = Stop(
             desc = o.optString("name", ""),
             dirDesc = o.optString("dir", ""),
+            latitude = o.optDouble("lat", 0.0),
+            longitude = o.optDouble("lng", 0.0),
             transitType = o.optString("type", "bus"),
             locId = o.optInt("locId", 0),
             routeNum = o.optInt("route", 0)
@@ -93,12 +130,23 @@ object WidgetSnapshotCache {
         val arrivals = (0 until arr.length()).map { i ->
             val a = arr.getJSONObject(i)
             ArrivalOnScreen(
-                    a.optString("sign", ""),
-                    a.optLong("at", 0L),
-                    a.optBoolean("dropOffOnly", false)
-                )
+                a.optString("sign", ""),
+                a.optLong("at", 0L),
+                a.optBoolean("dropOffOnly", false),
+                a.optString("status", "")
+            )
         }
-        return Row(stop, arrivals)
+        val detours = o.optJSONArray("detours") ?: JSONArray()
+        val parsedDetours = (0 until detours.length()).map { i ->
+            val d = detours.getJSONObject(i)
+            val routes = d.optJSONArray("routes") ?: JSONArray()
+            WidgetDetour(
+                id = d.optInt("id", 0),
+                desc = d.optString("desc", ""),
+                routeIds = (0 until routes.length()).map { routes.getInt(it) }
+            )
+        }
+        return Row(stop, arrivals, parsedDetours)
     }
 
     private fun prefs(context: Context) =
@@ -109,9 +157,29 @@ object WidgetSnapshotCache {
         result
             .mapNotNull { a ->
                 val at = a.estimatedMillis.takeIf { it > 0L } ?: a.scheduledMillis.takeIf { it > 0L }
-                at?.let { ArrivalOnScreen(a.shortSign.ifBlank { a.fullSign }, it, a.dropOffOnly) }
+                at?.let {
+                    ArrivalOnScreen(
+                        sign = a.shortSign.ifBlank { a.fullSign },
+                        atMillis = it,
+                        dropOffOnly = a.dropOffOnly,
+                        status = a.status
+                    )
+                }
             }
             .distinctBy { it.atMillis }
             .sortedBy { it.atMillis }
             .take(4)
+
+    /** Collapses the arrival response's detour list to the first entry per id. */
+    fun dedupeDetours(detours: List<Detour>): List<WidgetDetour> {
+        val seen = mutableSetOf<Int>()
+        return detours.mapNotNull { d ->
+            if (!seen.add(d.id)) return@mapNotNull null
+            WidgetDetour(
+                id = d.id,
+                desc = d.desc,
+                routeIds = d.routes.orEmpty()
+            )
+        }
+    }
 }
