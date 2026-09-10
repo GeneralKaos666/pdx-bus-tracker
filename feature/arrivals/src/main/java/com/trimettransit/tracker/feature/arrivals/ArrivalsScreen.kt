@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -934,6 +935,7 @@ private fun ArrivalItem(
                         shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                         color = MaterialTheme.colorScheme.errorContainer,
                         modifier = Modifier
+                            .requiredSizeIn(minWidth = 48.dp, minHeight = 48.dp)
                             .pressScale(alertInteractionSource)
                             .clickable(
                                 interactionSource = alertInteractionSource,
@@ -941,7 +943,7 @@ private fun ArrivalItem(
                             ) { onShowAlerts(lineDetours) }
                     ) {
                         Box(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 15.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
