@@ -19,7 +19,12 @@ class WidgetConfigTest {
             theme = DARK,
             compactRows = true,
             titleText = "My stops",
-            hideTitle = true
+            hideTitle = true,
+            showRouteBadge = false,
+            showDetourAlerts = false,
+            showArrivalStatus = false,
+            maxStops = 6,
+            routeFilter = listOf("4", "17")
         )
         assertEquals(config, WidgetConfig.fromPersistentMap(config.toPersistentMap()))
     }
@@ -65,6 +70,82 @@ class WidgetConfigTest {
     @Test
     fun `round trips hide title`() {
         assertTrue(WidgetConfig.fromPersistentMap(WidgetConfig(hideTitle = true).toPersistentMap()).hideTitle)
+    }
+
+    @Test
+    fun `round trips show route badge`() {
+        val config = WidgetConfig(showRouteBadge = true)
+        assertTrue(WidgetConfig.fromPersistentMap(config.toPersistentMap()).showRouteBadge)
+        val off = WidgetConfig(showRouteBadge = false)
+        assertFalse(WidgetConfig.fromPersistentMap(off.toPersistentMap()).showRouteBadge)
+    }
+
+    @Test
+    fun `round trips show detour alerts`() {
+        val config = WidgetConfig(showDetourAlerts = false)
+        assertFalse(WidgetConfig.fromPersistentMap(config.toPersistentMap()).showDetourAlerts)
+    }
+
+    @Test
+    fun `round trips show arrival status`() {
+        val config = WidgetConfig(showArrivalStatus = false)
+        assertFalse(WidgetConfig.fromPersistentMap(config.toPersistentMap()).showArrivalStatus)
+    }
+
+    @Test
+    fun `round trips max stops`() {
+        assertEquals(6, WidgetConfig.fromPersistentMap(WidgetConfig(maxStops = 6).toPersistentMap()).maxStops)
+    }
+
+    @Test
+    fun `round trips route filter`() {
+        val config = WidgetConfig(routeFilter = listOf("4", "17", "20"))
+        assertEquals(config, WidgetConfig.fromPersistentMap(config.toPersistentMap()))
+    }
+
+    @Test
+    fun `new options default on with max stops at twelve and an empty route filter`() {
+        val config = WidgetConfig.fromPersistentMap(emptyMap())
+        assertTrue(config.showRouteBadge)
+        assertTrue(config.showDetourAlerts)
+        assertTrue(config.showArrivalStatus)
+        assertEquals(12, config.maxStops)
+        assertEquals(emptyList<String>(), config.routeFilter)
+    }
+
+    @Test
+    fun `display toggles decode anything other than false as true`() {
+        val config = WidgetConfig.fromPersistentMap(
+            mapOf(
+                WidgetConfig.KEY_SHOW_ROUTE_BADGE to "true",
+                WidgetConfig.KEY_SHOW_DETOUR_ALERTS to "yes",
+                WidgetConfig.KEY_SHOW_ARRIVAL_STATUS to "1"
+            )
+        )
+        assertTrue(config.showRouteBadge)
+        assertTrue(config.showDetourAlerts)
+        assertTrue(config.showArrivalStatus)
+    }
+
+    @Test
+    fun `max stops clamps out-of-range values to the default`() {
+        assertEquals(12, WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_MAX_STOPS to "0")).maxStops)
+        assertEquals(12, WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_MAX_STOPS to "100")).maxStops)
+        assertEquals(12, WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_MAX_STOPS to "abc")).maxStops)
+    }
+
+    @Test
+    fun `max stops accepts the boundary values`() {
+        assertEquals(1, WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_MAX_STOPS to "1")).maxStops)
+        assertEquals(12, WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_MAX_STOPS to "12")).maxStops)
+    }
+
+    @Test
+    fun `route filter omits blank entries`() {
+        assertEquals(
+            listOf("4", "20"),
+            WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_ROUTE_FILTER to "4,,20, ,")).routeFilter
+        )
     }
 
     @Test
@@ -134,7 +215,12 @@ class WidgetConfigTest {
             theme = LIGHT,
             compactRows = true,
             titleText = "TriMet NW",
-            hideTitle = true
+            hideTitle = true,
+            showRouteBadge = false,
+            showDetourAlerts = false,
+            showArrivalStatus = false,
+            maxStops = 3,
+            routeFilter = listOf("4", "20")
         )
         assertEquals(
             mapOf(
@@ -144,7 +230,12 @@ class WidgetConfigTest {
                 "theme" to "light",
                 "compact_rows" to "true",
                 "title_text" to "TriMet NW",
-                "hide_title" to "true"
+                "hide_title" to "true",
+                "show_route_badge" to "false",
+                "show_detour_alerts" to "false",
+                "show_arrival_status" to "false",
+                "max_stops" to "3",
+                "route_filter" to "4,20"
             ),
             config.toPersistentMap()
         )
@@ -159,7 +250,12 @@ class WidgetConfigTest {
                 "show_clock_time" to "false",
                 "theme" to "system",
                 "compact_rows" to "false",
-                "hide_title" to "false"
+                "hide_title" to "false",
+                "show_route_badge" to "true",
+                "show_detour_alerts" to "true",
+                "show_arrival_status" to "true",
+                "max_stops" to "12",
+                "route_filter" to ""
             ),
             WidgetConfig().toPersistentMap()
         )

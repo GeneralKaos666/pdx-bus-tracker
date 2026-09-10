@@ -48,8 +48,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -508,6 +510,8 @@ private fun SettingsSliderOption(
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit
 ) {
+    val sliderState = rememberSliderState(value, 27, valueRange)
+    LaunchedEffect(value) { sliderState.value = value }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -531,14 +535,12 @@ private fun SettingsSliderOption(
             )
         }
         Slider(
-            value = value,
+            state = sliderState,
             onValueChange = onValueChange,
             onValueChangeFinished = onValueChangeFinished,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 56.dp, end = 8.dp),
-            valueRange = valueRange,
-            steps = 27
+                .padding(start = 56.dp, end = 8.dp)
         )
     }
 }
@@ -664,6 +666,8 @@ private fun ColourSlider(
     steps: Int = 0,
     onValueChange: (Float) -> Unit
 ) {
+    val sliderState = rememberSliderState(value, steps, valueRange)
+    LaunchedEffect(value) { sliderState.value = value }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -675,11 +679,9 @@ private fun ColourSlider(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Slider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = valueRange,
-            steps = steps,
-            modifier = Modifier.fillMaxWidth()
+            state = sliderState,
+            modifier = Modifier.fillMaxWidth(),
+            onValueChange = onValueChange
         )
     }
 }
