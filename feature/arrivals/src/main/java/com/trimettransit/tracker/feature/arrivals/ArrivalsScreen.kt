@@ -171,7 +171,7 @@ private const val STOP_MAP_STYLE_URL_DARK = "https://tiles.openfreemap.org/style
 fun ArrivalsScreen(
     transitRepository: TransitRepository,
     favoritesRepository: FavoritesRepository,
-    stopId: String,
+    stopId: Int,
     stopName: String,
     routeId: Int,
     latitude: Double = 0.0,
@@ -199,7 +199,6 @@ fun ArrivalsScreen(
     // The loop itself lives below the lifecycle observer so it can pause in background.
     var countdownTick by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
-    val locId = stopId.toIntOrNull() ?: 0
     val stopNumberLabel = stringResource(R.string.stop_number, stopId)
     var stopLat by remember { mutableDoubleStateOf(latitude) }
     var stopLng by remember { mutableDoubleStateOf(longitude) }
@@ -209,24 +208,24 @@ fun ArrivalsScreen(
 
     // Read initial favorite state from DB
     LaunchedEffect(stopId) {
-        if (locId > 0) {
+        if (stopId > 0) {
             isFavorite = withContext(Dispatchers.IO) {
-                favoritesRepository.isFavorite(locId)
+                favoritesRepository.isFavorite(stopId)
             }
             onArrivalsStateChange(stopName.ifBlank { stopNumberLabel }, isFavorite, stopLat, stopLng)
         }
     }
 
-    LaunchedEffect(locId) {
-        if ((stopLat == 0.0 || stopLng == 0.0) && locId > 0) {
+    LaunchedEffect(stopId) {
+        if ((stopLat == 0.0 || stopLng == 0.0) && stopId > 0) {
             isLoadingStop = true
-            transitRepository.getStopById(locId)?.let { stop ->
+            transitRepository.getStopById(stopId)?.let { stop ->
                 stopLat = stop.latitude
                 stopLng = stop.longitude
             }
             isLoadingStop = false
             if (stopLat == 0.0 || stopLng == 0.0) {
-                Timber.w("Stop #$locId has zero coordinates after fallback — map hidden")
+                Timber.w("Stop #$stopId has zero coordinates after fallback — map hidden")
             }
         }
     }
@@ -243,7 +242,7 @@ fun ArrivalsScreen(
         arrivalsJob = coroutineScope.launch {
             if (showLoading) isLoading = true
             val result = transitRepository.getArrivals(
-                locIds = listOf(locId),
+                locIds = listOf(stopId),
                 showPosition = true,
                 minutes = ARRIVALS_FETCH_MINUTES,
                 maxArrivals = ARRIVALS_FETCH_MAX
@@ -319,7 +318,7 @@ fun ArrivalsScreen(
         coroutineScope.launch {
             try {
                 val result = transitRepository.getArrivals(
-                    locIds = listOf(locId),
+                    locIds = listOf(stopId),
                     showPosition = true,
                     minutes = ARRIVALS_FETCH_MINUTES,
                     maxArrivals = ARRIVALS_FETCH_MAX
@@ -406,8 +405,8 @@ fun ArrivalsScreen(
         // Re-read the favorite from the DB: the top bar may have toggled it since the
         // initial read (e.g. PiP exit re-fires this effect), so the local mirror is stale.
         LaunchedEffect(stopLat, stopLng) {
-            if (locId > 0) {
-                isFavorite = withContext(Dispatchers.IO) { favoritesRepository.isFavorite(locId) }
+            if (stopId > 0) {
+                isFavorite = withContext(Dispatchers.IO) { favoritesRepository.isFavorite(stopId) }
             }
             onArrivalsStateChange(stopName.ifBlank { stopNumberLabel }, isFavorite, stopLat, stopLng)
         }

@@ -21,7 +21,7 @@
     <string name="collapse_arrivals">Collapse arrivals</string>
     <string name="expand_arrivals">Expand arrivals</string>
     <string name="stop">Stop</string>
-    <string name="stop_number">Stop #%1$s</string>
+    <string name="stop_number">Stop #%1$d</string>
     <string name="due">Due</string>
     <string name="minutes">%1$d min</string>
     <string name="arrival_delay_late">%1$d min late</string>

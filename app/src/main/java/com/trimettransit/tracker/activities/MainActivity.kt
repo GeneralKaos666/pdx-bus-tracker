@@ -120,12 +120,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavType
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
@@ -135,6 +135,7 @@ import com.trimettransit.tracker.widget.WidgetScheduler
 import com.trimettransit.tracker.widget.WidgetLaunch
 import com.trimettransit.tracker.widget.settings.WidgetSettingsSection
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
@@ -154,7 +155,6 @@ import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import com.trimettransit.tracker.ui.theme.m3SpatialSlow
 import androidx.annotation.StringRes
 import com.trimettransit.tracker.R
-import android.net.Uri
 
 private val AnimatedContentTransitionScope<*>.navEnter: EnterTransition
     get() = slideInHorizontally(
@@ -232,13 +232,24 @@ private val bottomNavItems = listOf(
     BottomNavItem(3, R.string.nav_trips, Icons.Filled.Directions)
 )
 
-// Navigation route literals, shared by the NavHost registration and every navigate()/popBackStack().
-private const val ROUTE_HOME = "home"
-private const val ROUTE_SETTINGS = "settings"
-private const val ROUTE_NEARBY_STOPS = "nearby_stops"
-private const val ROUTE_ARRIVALS_PREFIX = "arrivals/"
-private const val ROUTE_ARRIVALS =
-    "arrivals/{stopId}?stopName={stopName}&routeId={routeId}&lat={lat}&lng={lng}"
+// Type-safe navigation destinations, shared by the NavHost registration and every navigate()/popBackStack().
+@Serializable
+object HomeDestination
+
+@Serializable
+object SettingsDestination
+
+@Serializable
+object NearbyStopsDestination
+
+@Serializable
+data class ArrivalsDestination(
+    val stopId: Int,
+    val stopName: String = "",
+    val routeId: Int = -1,
+    val lat: Double = 0.0,
+    val lng: Double = 0.0
+)
 
 /** Back arrow used by every non-top-level top app bar. */
 @Composable
@@ -624,8 +635,11 @@ private fun MainAppContent(
     val context = LocalContext.current
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val refreshRotation = remember { Animatable(0f) }
-    val currentRoute = currentBackStackEntry?.destination?.route ?: ""
-    val isTopLevel = currentRoute == ROUTE_HOME
+    val destination = currentBackStackEntry?.destination
+    val isTopLevel = destination?.hasRoute<HomeDestination>() == true
+    val isArrivals = destination?.hasRoute<ArrivalsDestination>() == true
+    val isNearbyStops = destination?.hasRoute<NearbyStopsDestination>() == true
+    val isSettings = destination?.hasRoute<SettingsDestination>() == true
 
     // Manual dependency wiring: one shared DatabaseHelper drives both local-data repos.
     val appContext = context.applicationContext
@@ -636,15 +650,15 @@ private fun MainAppContent(
     var contextLabelRes: Int? = null
     var contextIcon: ImageVector? = null
     when {
-        currentRoute.startsWith(ROUTE_ARRIVALS_PREFIX) -> {
+        isArrivals -> {
             contextLabelRes = R.string.nav_arrivals
             contextIcon = Icons.Filled.Schedule
         }
-        currentRoute == ROUTE_NEARBY_STOPS -> {
+        isNearbyStops -> {
             contextLabelRes = R.string.nearby_stops_title
             contextIcon = Icons.Filled.NearMe
         }
-        currentRoute == ROUTE_SETTINGS -> {
+        isSettings -> {
             contextLabelRes = R.string.settings
             contextIcon = Icons.Default.Settings
         }
@@ -669,7 +683,7 @@ private fun MainAppContent(
             recentStopsRepository.addRecentStop(stopToRecord)
         }
         navController.navigate(
-            "$ROUTE_ARRIVALS_PREFIX${stop.locId}?stopName=${Uri.encode(stop.desc)}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
+            ArrivalsDestination(stop.locId, stop.desc, routeId, stop.latitude, stop.longitude)
         )
     }
 
@@ -697,8 +711,8 @@ private fun MainAppContent(
     }
 
     fun navigateToTopPage(page: Int) {
-        if (currentRoute != ROUTE_HOME) {
-            navController.popBackStack(ROUTE_HOME, inclusive = false)
+        if (!isTopLevel) {
+            navController.popBackStack(HomeDestination, inclusive = false)
         }
         onTopPageSelected(page)
     }
@@ -715,7 +729,7 @@ private fun MainAppContent(
             topBar = {
                 if (!isTopLevel) {
                 AnimatedContent(
-                    targetState = currentRoute,
+                    targetState = destination,
                     transitionSpec = {
                         (fadeIn(m3EffectsDefault()) +
                             slideInVertically(m3SpatialDefault()) { -it })
@@ -725,9 +739,9 @@ private fun MainAppContent(
                             )
                     },
                     label = "topBar"
-                ) { route ->
+                ) { dest ->
                     when {
-                        route == ROUTE_NEARBY_STOPS -> TopAppBar(
+                        dest?.hasRoute<NearbyStopsDestination>() == true -> TopAppBar(
                         title = { Text(stringResource(R.string.nearby_stops_title)) },
                         navigationIcon = { BackNavigationIcon(onClick = { navController.popBackStack() }) },
                         contentPadding = PaddingValues(0.dp),
@@ -738,7 +752,7 @@ private fun MainAppContent(
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     )
-                    route.startsWith(ROUTE_ARRIVALS_PREFIX) && !inPip -> TopAppBar(
+                    dest?.hasRoute<ArrivalsDestination>() == true && !inPip -> TopAppBar(
                         title = { Text(arrivalsStopName.ifBlank { stringResource(R.string.stop) }) },
                         navigationIcon = { BackNavigationIcon(onClick = { navController.popBackStack() }) },
                         contentPadding = PaddingValues(0.dp),
@@ -779,7 +793,7 @@ private fun MainAppContent(
                             IconButton(
                                 onClick = {
                                     val entry = currentBackStackEntry
-                                    val locId = entry?.arguments?.getString("stopId")?.toIntOrNull() ?: 0
+                                    val locId = entry?.arguments?.getInt("stopId") ?: 0
                                     val stopName = entry?.arguments?.getString("stopName") ?: ""
                                     scope.launch {
                                         val routeId = entry?.arguments?.getInt("routeId") ?: -1
@@ -871,7 +885,7 @@ private fun MainAppContent(
         ) { padding ->
             NavHost(
                 navController = navController,
-                startDestination = ROUTE_HOME,
+                startDestination = HomeDestination,
                 modifier = Modifier
                     .padding(padding)
                     .consumeWindowInsets(padding),
@@ -880,7 +894,7 @@ private fun MainAppContent(
                 popEnterTransition = { navPopEnter },
                 popExitTransition = { navPopExit }
             ) {
-                composable(ROUTE_HOME, exitTransition = { navExitQuick }) {
+                composable<HomeDestination>(exitTransition = { navExitQuick }) {
                     HorizontalPager(
                         state = topPagerState,
                         modifier = Modifier.fillMaxSize(),
@@ -925,13 +939,13 @@ private fun MainAppContent(
                         }
                     }
                 }
-                composable(ROUTE_SETTINGS) {
+                composable<SettingsDestination> {
                     SettingsScreen(
                         widgetSection = { WidgetSettingsSection() },
                         onRegisterScrollToTop = { onScrollToTop = it }
                     )
                 }
-                composable(ROUTE_NEARBY_STOPS) {
+                composable<NearbyStopsDestination> {
                     NearbyStopsScreen(
                         transitRepository = transitRepository,
                         onNavigateToArrivals = { stop: Stop, routeId: Int ->
@@ -940,25 +954,16 @@ private fun MainAppContent(
                         onRegisterScrollToTop = { onScrollToTop = it }
                     )
                 }
-                composable(
-                    route = ROUTE_ARRIVALS,
-                    arguments = listOf(
-                        navArgument("stopId") { type = NavType.StringType },
-                        navArgument("stopName") { type = NavType.StringType; defaultValue = "" },
-                        navArgument("routeId") { type = NavType.IntType; defaultValue = -1 },
-                        navArgument("lat") { type = NavType.StringType; defaultValue = "" },
-                        navArgument("lng") { type = NavType.StringType; defaultValue = "" }
-                    ),
-                    enterTransition = { navEnterArrivals }
-                ) { backStackEntry ->
+                composable<ArrivalsDestination>(enterTransition = { navEnterArrivals }) { backStackEntry ->
+                    val dest: ArrivalsDestination = backStackEntry.toRoute()
                     ArrivalsScreen(
                         transitRepository = transitRepository,
                         favoritesRepository = favoritesRepository,
-                        stopId = backStackEntry.arguments?.getString("stopId") ?: "",
-                        stopName = backStackEntry.arguments?.getString("stopName") ?: "",
-                        routeId = backStackEntry.arguments?.getInt("routeId") ?: -1,
-                        latitude = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0,
-                        longitude = backStackEntry.arguments?.getString("lng")?.toDoubleOrNull() ?: 0.0,
+                        stopId = dest.stopId,
+                        stopName = dest.stopName,
+                        routeId = dest.routeId,
+                        latitude = dest.lat,
+                        longitude = dest.lng,
                         isDark = isDark,
                         onArrivalsStateChange = { name, fav, lat, lng ->
                             arrivalsStopName = name
@@ -988,7 +993,7 @@ private fun MainAppContent(
                 pagePosition = pagePosition,
                 onNavigate = ::navigateToTopPage,
                 onSettingsClick = {
-                    navController.navigate(ROUTE_SETTINGS) { launchSingleTop = true }
+                    navController.navigate(SettingsDestination) { launchSingleTop = true }
                 },
                 showBack = !isTopLevel,
                 onBackClick = { navController.popBackStack() },

@@ -10,6 +10,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.github.triplet.play") version "4.1.1"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.20"
 }
 
 abstract class RenameApkTask : DefaultTask() {
@@ -179,6 +180,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.navigation:navigation-compose:2.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // UI
