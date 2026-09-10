@@ -113,6 +113,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
@@ -451,7 +455,11 @@ private fun MainTabRow(
                                 width = coords.size.width
                             )
                         }
-                        .pressScale(itemSource, 0.92f),
+                        .pressScale(itemSource, 0.92f)
+                        .semantics {
+                            role = Role.Tab
+                            selected = isSelected
+                        },
                     colors = IconButtonDefaults.iconButtonColors(
                         contentColor = if (isSelected) {
                             MaterialTheme.colorScheme.onSurface
