@@ -34,7 +34,11 @@ fun minutesUntil(dateTime: DateTime): Long {
     return (dateTime.millis - DateTime.now().millis) / 60000
 }
 
-/** Whole minutes until an arrival at [epochMillis] (floor: 0 until the minute is up). */
+/**
+ * Whole minutes until an arrival at [epochMillis]: the difference truncated toward
+ * zero in whole minutes. Negative when [epochMillis] is in the past; 0 for a time
+ * up to 59s in the future. Callers that need a floor of 0 must coerceAtLeast(0).
+ */
 fun minutesUntil(epochMillis: Long, nowMillis: Long = System.currentTimeMillis()): Long {
     return (epochMillis - nowMillis) / 60000
 }
