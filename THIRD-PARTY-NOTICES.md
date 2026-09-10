@@ -9,9 +9,9 @@ itself is licensed under the MIT License (see `LICENSE`).
 ## Libraries
 
 ### AndroidX / Jetpack Compose
-- **Artifacts:** `androidx.compose:compose-bom` 2026.08.00 (`compose-ui`, `compose-foundation`,
-  `material3` 1.5.0-alpha27, `material-icons-extended`), `androidx.activity:activity-compose` 1.13.0,
-  `androidx.navigation:navigation-compose` 2.9.8, `androidx.appcompat:appcompat` 1.8.0,
+- **Artifacts:** `androidx.compose:compose-bom` 2026.09.00 (`compose-ui`, `compose-foundation`,
+  `material3` 1.5.0-alpha28, `material-icons-extended`), `androidx.activity:activity-compose` 1.13.0,
+  `androidx.navigation:navigation-compose` 2.10.1, `androidx.appcompat:appcompat` 1.8.0,
   `androidx.core:core` / `core-ktx` 1.19.0, `androidx.preference:preference` 1.2.1
 - **License:** Apache License 2.0
 - **Copyright:** Copyright The Android Open Source Project
@@ -71,8 +71,8 @@ itself is licensed under the MIT License (see `LICENSE`).
   is no longer used.
 
 ### AndroidX Glance (home-screen widget)
-- **Artifacts:** `androidx.glance:glance` 1.1.1, `androidx.glance:glance-appwidget` 1.1.1,
-  `androidx.glance:glance-material3` 1.1.1
+- **Artifacts:** `androidx.glance:glance` 1.2.0, `androidx.glance:glance-appwidget` 1.2.0,
+  `androidx.glance:glance-material3` 1.2.0
 - **License:** Apache License 2.0
 - **Copyright:** Copyright The Android Open Source Project
 - **Project:** https://developer.android.com/jetpack/compose/layouts/glance

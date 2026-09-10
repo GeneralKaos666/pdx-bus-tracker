@@ -94,13 +94,13 @@ For a local smoke test without real credentials you can build with a debug fallb
 
 | Stack | Version |
 |---|---|
-| Gradle / AGP | 9.7.1 / 9.3.1 |
-| Kotlin / Compose compiler plugin | 2.4.10 |
-| Jetpack Compose | BOM 2026.08.00 (Material 3 1.5.0-alpha27, Navigation 2.9.8) |
+| Gradle / AGP | 9.7.1 / 9.4.0 |
+| Kotlin / Compose compiler plugin | 2.4.20 |
+| Jetpack Compose | BOM 2026.09.00 (Material 3 1.5.0-alpha28, Navigation 2.10.1) |
 | OkHttp | 5.5.0 |
 | Joda-Time (android.joda) | 2.14.2.1 |
 | Kotlin coroutines | 1.11.0 |
-| MapLibre GL Native (OpenGL backend) | 13.6.0 + OpenFreeMap tiles |
+| MapLibre GL Native (OpenGL backend) | 13.6.1 + OpenFreeMap tiles |
 | Wear Compose / `androidx.wear` | 1.6.2 / 1.4.0 |
 
 ## Privacy Policy

@@ -1,5 +1,10 @@
 # Changelog
 
+## Dependencies
+
+- **Toolchain:** Android Gradle Plugin bumped 9.3.1 → 9.4.0 and the Compose compiler plugin 2.4.10 → 2.4.20 (Gradle wrapper stays on 9.7.1).
+- **Libraries:** Compose BOM 2026.08.00 → 2026.09.00, Material 3 to 1.5.0-alpha28, Navigation Compose 2.9.8 → 2.10.1, the home-screen widget libraries (Glance) to 1.2.0, and the map engine unified on 13.6.1 across phone and planner.
+
 ## What's New in v4.14.1
 
 ### Cards, your way
