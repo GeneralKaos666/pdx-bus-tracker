@@ -3,7 +3,6 @@ package com.trimettransit.tracker.feature.trips
 import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripLeg
 import com.trimettransit.tracker.model.TripPoint
-import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.style.sources.GeoJsonSource
@@ -29,7 +28,6 @@ internal class TripMapState {
     var stopSource: GeoJsonSource? = null
     var boardSource: GeoJsonSource? = null
     var meSource: GeoJsonSource? = null
-    var lastMe: LatLng? = null
     var lastFitTag: FitTag? = null
 
     /** Identity of the plan the camera was last fitted to; lets the composable skip re-fitting
@@ -37,7 +35,6 @@ internal class TripMapState {
     data class FitTag(val origin: TripPoint?, val dest: TripPoint?, val itinerary: TripItinerary?)
 
     fun applyMe(lat: Double, lng: Double) {
-        lastMe = LatLng(lat, lng)
         meSource?.setGeoJson(
             FeatureCollection.fromFeatures(listOf(pointFeature(lng, lat)))
         )
@@ -101,20 +98,20 @@ internal class TripMapState {
     }
 
     private fun transitLineFeature(leg: TripLeg): Feature? {
-        if (leg.from.latitude == 0.0 && leg.from.longitude == 0.0 &&
-            leg.to.latitude == 0.0 && leg.to.longitude == 0.0
-        ) return null
+        if (!leg.hasUsableEndpoints()) return null
         val feature = Feature.fromGeometry(lineSegment(leg))
         feature.addStringProperty("color", letterColors[leg.mode.transitTypeLetter()] ?: "#888888")
         return feature
     }
 
     private fun walkLineFeature(leg: TripLeg): Feature? {
-        if (leg.from.latitude == 0.0 && leg.from.longitude == 0.0 &&
-            leg.to.latitude == 0.0 && leg.to.longitude == 0.0
-        ) return null
+        if (!leg.hasUsableEndpoints()) return null
         return Feature.fromGeometry(lineSegment(leg))
     }
+
+    /** A map leg is only drawable when at least one endpoint has real coordinates. */
+    private fun TripLeg.hasUsableEndpoints(): Boolean =
+        (from.latitude != 0.0 || from.longitude != 0.0) || (to.latitude != 0.0 || to.longitude != 0.0)
 
     private fun lineSegment(leg: TripLeg): LineString =
         LineString.fromLngLats(

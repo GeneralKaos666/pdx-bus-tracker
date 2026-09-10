@@ -83,12 +83,12 @@ import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import com.trimettransit.tracker.util.SingleJobRunner
+import com.trimettransit.tracker.util.clockTime
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.maplibre.android.geometry.LatLng
 import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
 import java.util.Calendar
 private const val DEFAULT_ARRIVE_BY_ADVANCE_MS = 60L * 60_000L
 /** Saves a trip endpoint across configuration changes (rotation/process death). */
@@ -239,7 +239,10 @@ fun TripPlannerScreen(
 
     fun onMapTap(value: LatLng) {
         when (picking) {
-            PickSlot.ORIGIN -> origin = TripPoint(value.latitude, value.longitude, pinnedLocationLabel)
+            PickSlot.ORIGIN -> {
+                pendingMyLocationOrigin = false
+                origin = TripPoint(value.latitude, value.longitude, pinnedLocationLabel)
+            }
             PickSlot.DEST -> dest = TripPoint(value.latitude, value.longitude, pinnedLocationLabel)
             PickSlot.NONE -> return
         }
@@ -262,7 +265,7 @@ fun TripPlannerScreen(
         }
         invalidatePlan()
         isPlanning = true
-        planRunner.launch {
+        planRunner.launchWithJob { job ->
             try {
                 val time = TripRequestTime(
                     arriveBy = arriveBy,
@@ -283,7 +286,7 @@ fun TripPlannerScreen(
             } finally {
                 // Only the current request may clear the planning state; a superseded
                 // request's cleanup must not clobber the newer request's state.
-                if (planRunner.isCurrent(coroutineContext[Job]!!)) {
+                if (planRunner.isCurrent(job)) {
                     isPlanning = false
                 }
             }
@@ -413,7 +416,7 @@ fun TripPlannerScreen(
                                     pickerSlot = PickSlot.ORIGIN
                                     picking = PickSlot.NONE
                                 },
-                                onClear = { origin = null; invalidatePlan() }
+                                onClear = { pendingMyLocationOrigin = false; origin = null; invalidatePlan() }
                             )
                             Row(
                                 modifier = Modifier
@@ -425,6 +428,7 @@ fun TripPlannerScreen(
                                 IconButton(
                                     onClick = {
                                         val from = origin
+                                        pendingMyLocationOrigin = false
                                         origin = dest
                                         dest = from
                                         invalidatePlan()
@@ -479,10 +483,10 @@ fun TripPlannerScreen(
                                 )
                                 if (arriveBy) {
                                     TextButton(onClick = { showTimePicker = true }) {
-                                        Text(
-                                            DateTimeFormat.forPattern("h:mm a")
-                                                .print(DateTime(arriveByTimeMillis ?: (System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS)))
+                                        val time = clockTime(
+                                            DateTime(arriveByTimeMillis ?: (System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS))
                                         )
+                                        Text("${time.text} ${time.period}")
                                     }
                                 }
                             }
@@ -636,7 +640,12 @@ fun TripPlannerScreen(
             transitRepository = transitRepository,
             onStopPicked = { stop ->
                 val point = TripPoint(stop.latitude, stop.longitude, stop.desc)
-                if (slot == PickSlot.ORIGIN) origin = point else dest = point
+                if (slot == PickSlot.ORIGIN) {
+                    pendingMyLocationOrigin = false
+                    origin = point
+                } else {
+                    dest = point
+                }
                 invalidatePlan()
                 pickerSlot = null
             },

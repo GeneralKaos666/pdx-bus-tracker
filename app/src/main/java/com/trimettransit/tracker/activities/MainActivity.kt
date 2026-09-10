@@ -124,7 +124,6 @@ import com.trimettransit.tracker.data.local.RecentStopsRepositoryImpl
 import com.trimettransit.tracker.transit.TransitRepositoryImpl
 import com.trimettransit.tracker.widget.WidgetScheduler
 import com.trimettransit.tracker.widget.settings.WidgetSettingsSection
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
@@ -223,11 +222,32 @@ private val bottomNavItems = listOf(
     BottomNavItem(3, R.string.nav_trips, Icons.Filled.Directions)
 )
 
+// Navigation route literals, shared by the NavHost registration and every navigate()/popBackStack().
+private const val ROUTE_HOME = "home"
+private const val ROUTE_SETTINGS = "settings"
+private const val ROUTE_NEARBY_STOPS = "nearby_stops"
+private const val ROUTE_ARRIVALS_PREFIX = "arrivals/"
+private const val ROUTE_ARRIVALS =
+    "arrivals/{stopId}?stopName={stopName}&routeId={routeId}&lat={lat}&lng={lng}"
+
+/** Back arrow used by every non-top-level top app bar. */
+@Composable
+private fun BackNavigationIcon(onClick: () -> Unit) {
+    val backSource = remember { MutableInteractionSource() }
+    IconButton(
+        onClick = onClick,
+        interactionSource = backSource,
+        modifier = Modifier.pressScale(backSource)
+    ) {
+        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainBottomBar(
     topPage: Int,
-    pagePosition: Float = topPage.toFloat(),
+    pagePosition: Float,
     onNavigate: (Int) -> Unit,
     onSettingsClick: () -> Unit,
     showBack: Boolean = false,
@@ -349,7 +369,7 @@ private fun MainTabRow(
     itemHeight: Dp,
     shouldHideLabel: Boolean,
     onNavigate: (Int) -> Unit,
-    pagePosition: Float = topPage.toFloat()
+    pagePosition: Float
 ) {
     val bounds = remember { mutableStateMapOf<Int, PillBounds>() }
     var boxLeft by remember { mutableIntStateOf(0) }
@@ -582,7 +602,7 @@ private fun MainAppContent(
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val refreshRotation = remember { Animatable(0f) }
     val currentRoute = currentBackStackEntry?.destination?.route ?: ""
-    val isTopLevel = currentRoute == "home"
+    val isTopLevel = currentRoute == ROUTE_HOME
 
     // Manual dependency wiring: one shared DatabaseHelper drives both local-data repos.
     val appContext = context.applicationContext
@@ -593,15 +613,15 @@ private fun MainAppContent(
     var contextLabelRes: Int? = null
     var contextIcon: ImageVector? = null
     when {
-        currentRoute.startsWith("arrivals/") -> {
+        currentRoute.startsWith(ROUTE_ARRIVALS_PREFIX) -> {
             contextLabelRes = R.string.nav_arrivals
             contextIcon = Icons.Filled.Schedule
         }
-        currentRoute == "nearby_stops" -> {
+        currentRoute == ROUTE_NEARBY_STOPS -> {
             contextLabelRes = R.string.nearby_stops_title
             contextIcon = Icons.Filled.NearMe
         }
-        currentRoute == "settings" -> {
+        currentRoute == ROUTE_SETTINGS -> {
             contextLabelRes = R.string.settings
             contextIcon = Icons.Default.Settings
         }
@@ -618,7 +638,7 @@ private fun MainAppContent(
             recentStopsRepository.addRecentStop(stopToRecord)
         }
         navController.navigate(
-            "arrivals/${stop.locId}?stopName=${Uri.encode(stop.desc)}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
+            "$ROUTE_ARRIVALS_PREFIX${stop.locId}?stopName=${Uri.encode(stop.desc)}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
         )
     }
 
@@ -629,8 +649,8 @@ private fun MainAppContent(
     }
 
     fun navigateToTopPage(page: Int) {
-        if (currentRoute != "home") {
-            navController.popBackStack("home", inclusive = false)
+        if (currentRoute != ROUTE_HOME) {
+            navController.popBackStack(ROUTE_HOME, inclusive = false)
         }
         onTopPageSelected(page)
     }
@@ -656,18 +676,9 @@ private fun MainAppContent(
                     label = "topBar"
                 ) { route ->
                     when {
-                        route == "nearby_stops" -> TopAppBar(
+                        route == ROUTE_NEARBY_STOPS -> TopAppBar(
                         title = { Text(stringResource(R.string.nearby_stops_title)) },
-                        navigationIcon = {
-                            val backSource = remember { MutableInteractionSource() }
-                            IconButton(
-                                onClick = { navController.popBackStack() },
-                                interactionSource = backSource,
-                                modifier = Modifier.pressScale(backSource)
-                            ) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-                            }
-                        },
+                        navigationIcon = { BackNavigationIcon(onClick = { navController.popBackStack() }) },
                         contentPadding = PaddingValues(0.dp),
                         windowInsets = TopAppBarDefaults.windowInsets,
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -676,18 +687,9 @@ private fun MainAppContent(
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     )
-                    route.startsWith("arrivals/") && !inPip -> TopAppBar(
+                    route.startsWith(ROUTE_ARRIVALS_PREFIX) && !inPip -> TopAppBar(
                         title = { Text(NavState.arrivalsStopName.ifBlank { stringResource(R.string.stop) }) },
-                        navigationIcon = {
-                            val backSource = remember { MutableInteractionSource() }
-                            IconButton(
-                                onClick = { navController.popBackStack() },
-                                interactionSource = backSource,
-                                modifier = Modifier.pressScale(backSource)
-                            ) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-                            }
-                        },
+                        navigationIcon = { BackNavigationIcon(onClick = { navController.popBackStack() }) },
                         contentPadding = PaddingValues(0.dp),
                         windowInsets = TopAppBarDefaults.windowInsets,
                         actions = {
@@ -807,7 +809,7 @@ private fun MainAppContent(
                         pagePosition = pagePosition,
                         onNavigate = ::navigateToTopPage,
                         onSettingsClick = {
-                            navController.navigate("settings") { launchSingleTop = true }
+                            navController.navigate(ROUTE_SETTINGS) { launchSingleTop = true }
                         },
                         showBack = !isTopLevel,
                         onBackClick = { navController.popBackStack() },
@@ -841,7 +843,7 @@ private fun MainAppContent(
         ) { padding ->
             NavHost(
                 navController = navController,
-                startDestination = "home",
+                startDestination = ROUTE_HOME,
                 modifier = Modifier
                     .padding(padding)
                     .consumeWindowInsets(padding),
@@ -850,7 +852,7 @@ private fun MainAppContent(
                 popEnterTransition = { navPopEnter },
                 popExitTransition = { navPopExit }
             ) {
-                composable("home", exitTransition = { navExitQuick }) {
+                composable(ROUTE_HOME, exitTransition = { navExitQuick }) {
                     HorizontalPager(
                         state = topPagerState,
                         modifier = Modifier.fillMaxSize(),
@@ -893,10 +895,10 @@ private fun MainAppContent(
                             }
                     }
                 }
-                composable("settings") {
+                composable(ROUTE_SETTINGS) {
                     SettingsScreen(widgetSection = { WidgetSettingsSection() })
                 }
-                composable("nearby_stops") {
+                composable(ROUTE_NEARBY_STOPS) {
                     NearbyStopsScreen(
                         transitRepository = transitRepository,
                         onNavigateToArrivals = { stop: Stop, routeId: Int ->
@@ -905,7 +907,7 @@ private fun MainAppContent(
                     )
                 }
                 composable(
-                    route = "arrivals/{stopId}?stopName={stopName}&routeId={routeId}&lat={lat}&lng={lng}",
+                    route = ROUTE_ARRIVALS,
                     arguments = listOf(
                         navArgument("stopId") { type = NavType.StringType },
                         navArgument("stopName") { type = NavType.StringType; defaultValue = "" },

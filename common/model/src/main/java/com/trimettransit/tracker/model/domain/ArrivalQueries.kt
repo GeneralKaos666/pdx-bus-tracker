@@ -2,6 +2,7 @@ package com.trimettransit.tracker.model.domain
 
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Detour
+import org.joda.time.DateTime
 
 /**
  * Pure, side-effect-free helpers for shaping arrival data before it is rendered.
@@ -30,3 +31,24 @@ fun filterArrivalsByRoute(arrivals: List<Arrival>, routeId: Int): List<Arrival> 
 /** Alerts that apply to a specific [routeId]. */
 fun detoursForLine(detours: List<Detour>?, routeId: Int): List<Detour> =
     detours.orEmpty().filter { it.routes?.contains(routeId) == true }
+
+/** TriMet arrival status tokens used by the API parse and the UI. */
+private const val STATUS_ESTIMATED = "estimated"
+private const val STATUS_CANCELED = "canceled"
+
+/** True when the API reports a live (estimated) arrival. */
+val Arrival.isEstimated: Boolean get() = status == STATUS_ESTIMATED
+
+/** True when the API reports the arrival as canceled (see [Arrival.reason]). */
+val Arrival.isCanceled: Boolean get() = status == STATUS_CANCELED
+
+/**
+ * The time the UI should display for this arrival: the live estimate when the
+ * API has one, otherwise the scheduled time. Epoch millis so the shared helpers
+ * stay free of joda `DateTime` construction at call sites.
+ */
+val Arrival.displayTimeMillis: Long
+    get() {
+        val fallback = scheduledMillis
+        return if (isEstimated) estimatedMillis.takeIf { it > 0L } ?: fallback else fallback
+    }

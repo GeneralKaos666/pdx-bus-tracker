@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.util
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,21 @@ class SingleJobRunner(private val scope: CoroutineScope) {
     fun launch(block: suspend CoroutineScope.() -> Unit): Job {
         current.value?.cancel()
         val job = scope.launch(block = block)
+        current.value = job
+        return job
+    }
+
+    /**
+     * [launch] that hands the run's own [Job] to [block] for "is this the
+     * current run?" guards, so callers don't need [kotlinx.coroutines.coroutineContext].
+     */
+    fun launchWithJob(block: suspend (job: Job) -> Unit): Job {
+        current.value?.cancel()
+        val started = CompletableDeferred<Job>()
+        val job = scope.launch {
+            started.complete(coroutineContext[Job]!!)
+            block(started.await())
+        }
         current.value = job
         return job
     }

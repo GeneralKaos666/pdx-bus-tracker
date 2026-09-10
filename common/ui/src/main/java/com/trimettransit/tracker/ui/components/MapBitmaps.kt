@@ -3,6 +3,7 @@ package com.trimettransit.tracker.ui.components
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
@@ -15,6 +16,38 @@ fun drawableBitmap(context: Context, resId: Int, sizePx: Int): Bitmap {
         ?: createBitmap(1, 1, Bitmap.Config.ARGB_8888)
 }
 
+/** One circle of the dot markers: radius in dp and opaque fill color. */
+data class DotCircle(val radiusDp: Float, val color: Int)
+
+/**
+ * Draws a dot map marker: an opaque back disc at [backDp] (the outline/halo), a fill disc
+ * inset to [fillDp], then any [foreground] circles on top. Radius arithmetic is done in dp
+ * and scaled by [density] so markers track the display (dp) rather than raw pixels.
+ */
+fun circleMarker(
+    backDp: Float,
+    backColor: Int,
+    fillDp: Float,
+    fillColor: Int,
+    density: Float,
+    foreground: List<DotCircle> = emptyList()
+): Bitmap {
+    val size = (backDp * 2 * density).toInt().coerceAtLeast(1)
+    val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val c = Canvas(out)
+    val center = size / 2f
+    fun draw(radiusDp: Float, color: Int) {
+        c.drawCircle(
+            center, center, radiusDp * density,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color }
+        )
+    }
+    draw(backDp, backColor)
+    draw(fillDp, fillColor)
+    foreground.forEach { draw(it.radiusDp, it.color) }
+    return out
+}
+
 /**
  * Colored circle badge with a transit glyph, used as the vehicle/bus marker image. The glyph is
  * tinted [glyphColor] (defaults to white) so it stays legible against the badge fill in both the
@@ -25,7 +58,7 @@ fun badgeBitmap(
     fillColor: Int,
     glyphRes: Int,
     density: Float,
-    glyphColor: Int = android.graphics.Color.WHITE
+    glyphColor: Int = Color.WHITE
 ): Bitmap {
     val size = (34 * density).toInt()
     val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)

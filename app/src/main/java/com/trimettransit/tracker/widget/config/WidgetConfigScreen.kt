@@ -78,7 +78,9 @@ fun WidgetConfigScreen(
     val titleText = remember { mutableStateOf(initial.titleText.orEmpty()) }
     val hideTitle = remember { mutableStateOf(initial.hideTitle) }
     val favorites = remember { mutableStateOf(listOf<Stop>()) }
-    LaunchedEffect(Unit) { favorites.value = favoritesRepository.getFavorites() }
+    LaunchedEffect(Unit) {
+        favorites.value = runCatching { favoritesRepository.getFavorites() }.getOrDefault(emptyList())
+    }
 
     fun toggleStop(stop: Stop) {
         val id = stop.locId.toString()

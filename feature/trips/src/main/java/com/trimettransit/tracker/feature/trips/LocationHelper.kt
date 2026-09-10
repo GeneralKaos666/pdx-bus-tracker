@@ -75,10 +75,3 @@ internal suspend fun requestCurrentLocation(context: Context): LatLng? {
     }
     return null
 }
-
-/** Straight-line distance in meters between two points (WGS84). */
-internal fun distanceMeters(a: LatLng, b: LatLng): Double {
-    val results = FloatArray(1)
-    Location.distanceBetween(a.latitude, a.longitude, b.latitude, b.longitude, results)
-    return results[0].toDouble()
-}

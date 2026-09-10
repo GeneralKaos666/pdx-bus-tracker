@@ -57,6 +57,7 @@ import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.domain.arrivalKey
+import com.trimettransit.tracker.model.domain.displayTimeMillis
 import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.transit.TransitRepositoryImpl
@@ -327,12 +328,10 @@ private fun ArrivalRow(
     modifier: Modifier = Modifier,
     countdownTick: Int = 0
 ) {
-    val displayTime: DateTime? =
-        if (arrival.status == "estimated" && arrival.estimated != null) arrival.estimated
-        else arrival.scheduled
+    val displayTime = arrival.displayTimeMillis
     // Re-derived on each ambient tick so the countdown stays true while the display is dimmed.
     val minutes = remember(displayTime, countdownTick) {
-        displayTime?.let { minutesUntil(it) }
+        displayTime.takeIf { it > 0L }?.let { minutesUntil(it) }
     }
 
     Column(

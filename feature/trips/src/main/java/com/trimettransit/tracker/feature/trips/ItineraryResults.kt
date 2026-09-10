@@ -46,9 +46,8 @@ import com.trimettransit.tracker.model.TripPlan
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.util.clockTime
 import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
-import org.joda.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ItineraryResultsSheet(
@@ -110,11 +109,10 @@ internal fun ItineraryResultsSheet(
 
 @Composable
 internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Modifier) {
-    val timePattern = DateTimeFormat.forPattern("h:mm a")
     Column(modifier = modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = itinerary.departure.printTime(timePattern),
+                text = itinerary.departure.clockTimeText(),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -125,7 +123,7 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
             Text(
-                text = itinerary.arrival.printTime(timePattern),
+                text = itinerary.arrival.clockTimeText(),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -216,7 +214,6 @@ internal fun RouteBadge(
 @Composable
 internal fun LegRow(leg: TripLeg) {
     val scheme = MaterialTheme.colorScheme
-    val timePattern = DateTimeFormat.forPattern("h:mm a")
     Row(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
         if (leg.isWalk) {
             Icon(
@@ -266,9 +263,9 @@ internal fun LegRow(leg: TripLeg) {
                 Text(
                     text = stringResource(
                         R.string.leg_transit_fmt,
-                        leg.departure.printTime(timePattern),
+                        leg.departure.clockTimeText(),
                         leg.from.description,
-                        leg.arrival.printTime(timePattern),
+                        leg.arrival.clockTimeText(),
                         leg.to.description
                     ),
                     style = MaterialTheme.typography.bodySmall,
@@ -306,5 +303,5 @@ internal fun formatDurationMillis(ms: Long): String {
 }
 
 /** Formats a scheduled time, or an em dash when the WS returned none (walk legs/itineraries). */
-internal fun DateTime?.printTime(pattern: DateTimeFormatter): String =
-    this?.let(pattern::print) ?: "—"
+internal fun DateTime?.clockTimeText(): String =
+    this?.let { val t = clockTime(it); "${t.text} ${t.period}" } ?: "—"

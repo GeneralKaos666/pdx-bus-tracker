@@ -1,9 +1,6 @@
 package com.trimettransit.tracker.feature.arrivals
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
 import timber.log.Timber
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -81,7 +78,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.createBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -94,12 +90,17 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.domain.arrivalKey
 import com.trimettransit.tracker.model.domain.dedupeArrivals
 import com.trimettransit.tracker.model.domain.detoursForLine
+import com.trimettransit.tracker.model.domain.displayTimeMillis
 import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
+import com.trimettransit.tracker.model.domain.isCanceled
+import com.trimettransit.tracker.model.domain.isEstimated
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.ContentEntrance
+import com.trimettransit.tracker.ui.components.DotCircle
 import com.trimettransit.tracker.ui.components.badgeBitmap
+import com.trimettransit.tracker.ui.components.circleMarker
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
@@ -127,10 +128,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
+import org.joda.time.DateTime
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
-import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.Property
@@ -159,6 +160,9 @@ import org.maplibre.geojson.Point
 private const val POSITION_REFRESH_MS = 15_000L
 private const val PIP_REFRESH_MS = 20_000L
 private const val ARRIVALS_REFRESH_MS = 30_000L
+private const val TOP_ARRIVAL_ROWS = 5
+private const val ARRIVALS_FETCH_MINUTES = 30
+private const val ARRIVALS_FETCH_MAX = 15
 private const val STOP_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 private const val STOP_MAP_STYLE_URL_DARK = "https://tiles.openfreemap.org/styles/dark"
 
@@ -236,8 +240,8 @@ fun ArrivalsScreen(
             val result = transitRepository.getArrivals(
                 locIds = listOf(locId),
                 showPosition = true,
-                minutes = 30,
-                maxArrivals = 15
+                minutes = ARRIVALS_FETCH_MINUTES,
+                maxArrivals = ARRIVALS_FETCH_MAX
             )
             if (result != null) {
                 val allArrivals = dedupeArrivals(result.arrivals)
@@ -270,8 +274,8 @@ fun ArrivalsScreen(
 
     // Re-fetch arrivals on app re-entry (and initial composition via lifecycle observer)
     RememberOnResume { loadArrivals() }
-    val visibleCount = minOf(arrivals.size, 5)
-    val showExpandButton = arrivals.size > 5 || unfilteredArrivals.size > arrivals.size
+    val visibleCount = minOf(arrivals.size, TOP_ARRIVAL_ROWS)
+    val showExpandButton = arrivals.size > TOP_ARRIVAL_ROWS || unfilteredArrivals.size > arrivals.size
     // Tracked positions: the tapped row's own vehicle when it reports a position,
     // otherwise that line's other live vehicles so the map is never empty.
     fun arrivalFor(bp: BlockPosition): Arrival? =
@@ -312,8 +316,8 @@ fun ArrivalsScreen(
                 val result = transitRepository.getArrivals(
                     locIds = listOf(locId),
                     showPosition = true,
-                    minutes = 30,
-                    maxArrivals = 15
+                    minutes = ARRIVALS_FETCH_MINUTES,
+                    maxArrivals = ARRIVALS_FETCH_MAX
                 )
                 if (result != null) {
                     blockPositions = result.blockPositions
@@ -365,14 +369,7 @@ fun ArrivalsScreen(
             selectedDetours = null
             while (true) {
                 delay(PIP_REFRESH_MS)
-                try {
-                    loadArrivals()
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Timber.e(e, "PiP arrivals refresh failed")
-                    isError = true
-                }
+                loadArrivals()
             }
         }
     }
@@ -462,14 +459,13 @@ fun ArrivalsScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             val visibleArrivals =
-                                if (showAllArrivals) unfilteredArrivals else arrivals.take(5)
+                                if (showAllArrivals) unfilteredArrivals else arrivals.take(TOP_ARRIVAL_ROWS)
                             items(
                                 visibleArrivals,
                                 key = { "${if (showAllArrivals) "all_" else "top_"}${arrivalKey(it)}" },
                                 contentType = { "arrival" }) { arrival ->
                                 val lineDetours = detoursForLine(detours, arrival.routeId)
-                                val rowKey =
-                                    "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}_${arrival.blockID}_${arrival.vehicleID}"
+                                val rowKey = arrivalKey(arrival)
                                 Column {
                                     ArrivalItem(
                                         arrival = arrival,
@@ -624,7 +620,7 @@ private fun AlertsDialog(
 }
 
 private fun formatDelay(arrival: Arrival, context: Context): String? {
-    if (arrival.status != "estimated" || arrival.estimatedMillis == 0L || arrival.scheduledMillis == 0L) return null
+    if (!arrival.isEstimated || arrival.estimatedMillis == 0L || arrival.scheduledMillis == 0L) return null
     val delayMin = (arrival.estimatedMillis - arrival.scheduledMillis) / 60000.0
     return when {
         delayMin >= 1.0 -> context.getString(R.string.arrival_delay_late, delayMin.roundToInt())
@@ -667,7 +663,14 @@ private fun StopMapCard(
     fun applyStopMapStyle(style: Style) {
         style.addImage(
             "stop-dot",
-            stopDotBitmap(context, scheme.primary.toArgb(), scheme.onPrimary.toArgb(), density)
+            circleMarker(
+                backDp = 17f,
+                backColor = scheme.primary.toArgb(),
+                fillDp = 17f,
+                fillColor = scheme.primary.toArgb(),
+                density = density,
+                foreground = listOf(DotCircle(6f, scheme.onPrimary.toArgb()))
+            )
         )
         badgeColors.forEach { (letter, color) ->
             style.addImage(
@@ -769,7 +772,6 @@ private fun StopMapCard(
 }
 
 private class MapState {
-    var mapView: MapView? = null
     var map: MapLibreMap? = null
     var busSource: GeoJsonSource? = null
     var positions: List<BlockPosition> = emptyList()
@@ -799,11 +801,9 @@ private class MapState {
             val label = if (match?.dropOffOnly == true) {
                 dropoffLabel
             } else {
-                val displayTime = match?.let { a ->
-                    if (a.status == "estimated" && a.estimated != null) a.estimated else a.scheduled
-                }
-                if (displayTime != null) {
-                    val mins = minutesUntil(displayTime)
+                val atMillis = match?.displayTimeMillis
+                if (atMillis != null) {
+                    val mins = minutesUntil(atMillis)
                     if (mins <= 0) countdownDue else countdownMinFormat.format(mins)
                 } else ""
             }
@@ -812,30 +812,6 @@ private class MapState {
         }
         source.setGeoJson(FeatureCollection.fromFeatures(features))
     }
-}
-
-/** Primary-colored dot with a contrasting center, used as the stop marker image. */
-private fun stopDotBitmap(
-    context: Context,
-    fillColor: Int,
-    centerColor: Int = android.graphics.Color.WHITE,
-    density: Float
-): Bitmap {
-    val size = (34 * density).toInt()
-    val out = createBitmap(size, size, Bitmap.Config.ARGB_8888)
-    val c = Canvas(out)
-    c.drawCircle(
-        size / 2f,
-        size / 2f,
-        size / 2f,
-        Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = fillColor })
-    val dotRadius = (6 * density).toInt().toFloat()
-    c.drawCircle(
-        size / 2f,
-        size / 2f,
-        dotRadius,
-        Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = centerColor })
-    return out
 }
 
 /** The bus to follow: the tracked vehicle, else the first live position on that route. */
@@ -887,15 +863,10 @@ private fun ArrivalItem(
     val color = remember(type, scheme) {
         transitColor(type, scheme)
     }
-    val displayTime = if (arrival.status == "estimated" && arrival.estimated != null) {
-        arrival.estimated
-    } else {
-        arrival.scheduled
-    }
+    val displayTime = arrival.displayTimeMillis
 
-    val formattedTime = if (displayTime != null) formatDateTime(displayTime, context) else ""
-    val minutesAway = if (displayTime != null) minutesUntil(displayTime) else 0L
-    val isEstimated = arrival.status == "estimated"
+    val formattedTime = if (displayTime > 0L) formatDateTime(DateTime(displayTime), context) else ""
+    val minutesAway = if (displayTime > 0L) minutesUntil(displayTime) else 0L
 
     val interactionSource = remember { MutableInteractionSource() }
     Card(
@@ -989,7 +960,7 @@ private fun ArrivalItem(
                 shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
                 color = MaterialTheme.colorScheme.onSurface
             ) {
-                if (arrival.status == "canceled") {
+                if (arrival.isCanceled) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -1034,7 +1005,7 @@ private fun ArrivalItem(
                     ) {
                         AnimatedCountdownText(
                             minutesAway = minutesAway,
-                            isEstimated = isEstimated,
+                            isEstimated = arrival.isEstimated,
                             color = MaterialTheme.colorScheme.surface,
                             style = MaterialTheme.typography.titleMedium
                         )
@@ -1045,7 +1016,7 @@ private fun ArrivalItem(
                                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
                                 style = MaterialTheme.typography.labelSmall
                             )
-                        } else if (!isEstimated) {
+                        } else if (!arrival.isEstimated) {
                             Text(
                                 text = stringResource(R.string.scheduled),
                                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
@@ -1129,15 +1100,11 @@ private fun PipCountdownContent(
                 color = scheme.onSurfaceVariant
             )
         } else {
-            arrivals.take(5).forEach { arrival ->
+            arrivals.take(TOP_ARRIVAL_ROWS).forEach { arrival ->
                 val type = transitBadgeLetter(arrival.routeId)
                 val color = transitColor(type, scheme)
-                val displayTime = if (arrival.status == "estimated" && arrival.estimated != null) {
-                    arrival.estimated
-                } else {
-                    arrival.scheduled
-                }
-                val minutesAway = if (displayTime != null) minutesUntil(displayTime) else 0L
+                val displayTime = arrival.displayTimeMillis
+                val minutesAway = if (displayTime > 0L) minutesUntil(displayTime) else 0L
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1167,7 +1134,7 @@ private fun PipCountdownContent(
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(Modifier.width(8.dp))
-                    if (arrival.status == "canceled") {
+                    if (arrival.isCanceled) {
                         Text(
                             text = stringResource(R.string.canceled),
                             style = MaterialTheme.typography.labelMedium,
@@ -1184,7 +1151,7 @@ private fun PipCountdownContent(
                     } else {
                         AnimatedCountdownText(
                             minutesAway = minutesAway,
-                            isEstimated = arrival.status == "estimated",
+                            isEstimated = arrival.isEstimated,
                             color = color,
                             style = MaterialTheme.typography.titleSmall
                         )

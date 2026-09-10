@@ -10,7 +10,6 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.util.SingleJobRunner
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -44,7 +43,7 @@ internal fun rememberStopListLoader(
     fun load() {
         // SingleJobRunner cancels any in-flight read so a slower older one can't
         // overwrite newer data.
-        runner.launch {
+        runner.launchWithJob { job ->
             try {
                 stops = withContext(Dispatchers.IO) { read() }
                 isError = false
@@ -53,7 +52,7 @@ internal fun rememberStopListLoader(
                 isError = true
             } finally {
                 // Only the current load may clear the loading state.
-                if (runner.isCurrent(coroutineContext[Job]!!)) isLoading = false
+                if (runner.isCurrent(job)) isLoading = false
             }
         }
     }

@@ -56,9 +56,9 @@ import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
+import com.trimettransit.tracker.util.SingleJobRunner
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -82,7 +82,7 @@ fun NearbyStopsScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var hasLoaded by remember { mutableStateOf(false) }
     // In-flight load, deduped so resume/re-entry can't stack overlapping fetches.
-    var loadJob by remember { mutableStateOf<Job?>(null) }
+    val runner = remember { SingleJobRunner(coroutineScope) }
 
     val listState = rememberLazyListState()
 
@@ -95,20 +95,17 @@ fun NearbyStopsScreen(
     }
 
     fun launchLoadNearbyStops() {
-        loadJob?.cancel()
-        val job = coroutineScope.launch {
-            val me = coroutineContext[Job]!!
+        runner.launchWithJob { job ->
             loadNearbyStops(
                 context = context,
                 transitRepository = transitRepository,
-                isCurrent = { loadJob == me },
+                isCurrent = { runner.isCurrent(job) },
                 setStops = { stops = it },
                 setLoading = { isLoading = it },
                 setError = { errorMessage = it },
                 setHasLoaded = { hasLoaded = true }
             )
         }
-        loadJob = job
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(

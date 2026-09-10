@@ -1,7 +1,6 @@
 package com.trimettransit.tracker.feature.settings
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -40,7 +39,6 @@ import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -67,7 +65,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import android.content.Intent
@@ -81,6 +78,12 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.ui.NavState
 import com.trimettransit.tracker.ui.components.ContentEntrance
+import com.trimettransit.tracker.ui.components.SectionHeader
+import com.trimettransit.tracker.ui.components.SettingsCard
+import com.trimettransit.tracker.ui.components.SettingsIconCircle
+import com.trimettransit.tracker.ui.components.SettingsRadioOption
+import com.trimettransit.tracker.ui.components.SettingsRowOption
+import com.trimettransit.tracker.ui.components.SettingsSwitchOption
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardBorder
@@ -88,6 +91,8 @@ import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialFast
+
+import java.util.Locale
 
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -240,19 +245,14 @@ fun SettingsScreen(
                         .toBitmap().asImageBitmap()
                 }
                 val versionName = remember {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        runCatching {
-                            context.packageManager
-                                .getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
-                                .versionName
-                        }.getOrNull() ?: "0.0.0"
-                    } else {
-                        runCatching {
-                            context.packageManager
-                                .getPackageInfo(context.packageName, 0)
-                                .versionName
-                        }.getOrNull() ?: "0.0.0"
-                    }
+                    runCatching {
+                        val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
+                        } else {
+                            context.packageManager.getPackageInfo(context.packageName, 0)
+                        }
+                        info.versionName
+                    }.getOrNull() ?: "0.0.0"
                 }
                 Row(
                     modifier = Modifier
@@ -445,159 +445,13 @@ fun SettingsScreen(
 
 /** The preview colour of the outline option row, or the scheme's outlineVariant when "auto". */
 @Composable
-private fun outlinePreviewColour(raw: String): Color {
-    val auto = MaterialTheme.colorScheme.outlineVariant
-    if (raw == "auto") return auto
-    return runCatching { Color(raw.toColorInt()) }.getOrElse { auto }
-}
+private fun outlinePreviewColour(raw: String): Color =
+    parseOutlineColour(raw, MaterialTheme.colorScheme.outlineVariant)
 
-@Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
-    )
-}
-
-@Composable
-private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        ),
-        border = appCardBorder(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(content = content)
-    }
-}
-
-@Composable
-private fun SettingsIconCircle(icon: ImageVector, highlighted: Boolean) {
-    val containerColor by animateColorAsState(
-        targetValue = if (highlighted) MaterialTheme.colorScheme.primaryContainer
-                      else MaterialTheme.colorScheme.surfaceContainerHighest,
-        animationSpec = m3EffectsDefault(),
-        label = "settingsIconContainer"
-    )
-    val contentColor by animateColorAsState(
-        targetValue = if (highlighted) MaterialTheme.colorScheme.onPrimaryContainer
-                      else MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = m3EffectsDefault(),
-        label = "settingsIconContent"
-    )
-    Surface(
-        modifier = Modifier.size(40.dp),
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-        color = containerColor
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = contentColor,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun SettingsRadioOption(
-    label: String,
-    subtitle: String,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pressScale(interactionSource)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = LocalIndication.current,
-                onClick = onClick
-            )
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SettingsIconCircle(icon = icon, highlighted = selected)
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        RadioButton(
-            selected = selected,
-            onClick = null
-        )
-    }
-}
-
-@Composable
-private fun SettingsSwitchOption(
-    label: String,
-    subtitle: String,
-    icon: ImageVector,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pressScale(interactionSource)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = LocalIndication.current
-            ) { onCheckedChange(!checked) }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SettingsIconCircle(icon = icon, highlighted = false)
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Switch(
-            checked = checked,
-            onCheckedChange = null
-        )
-    }
+/** Parses a persisted outline-colour pref into a [Color]; "auto" (or an unparseable value) → [fallback]. */
+private fun parseOutlineColour(raw: String, fallback: Color): Color {
+    if (raw == "auto") return fallback
+    return runCatching { Color(raw.toColorInt()) }.getOrElse { fallback }
 }
 
 @Composable
@@ -627,44 +481,21 @@ private fun SettingsColourOption(
     colour: Color,
     onClick: () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pressScale(interactionSource)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = LocalIndication.current,
-                onClick = onClick
-            )
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SettingsIconCircle(icon = icon, highlighted = false)
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+    SettingsRowOption(
+        label = label,
+        subtitle = subtitle,
+        icon = icon,
+        highlighted = false,
+        onClick = onClick,
+        trailing = {
+            Surface(
+                modifier = Modifier.size(32.dp),
+                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+                color = colour,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {}
         }
-        Spacer(modifier = Modifier.width(16.dp))
-        Surface(
-            modifier = Modifier.size(32.dp),
-            shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-            color = colour,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-        ) {}
-    }
+    )
 }
 
 @Composable
@@ -673,7 +504,7 @@ private fun SettingsSliderOption(
     icon: ImageVector,
     value: Float,
     valueLabel: String,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..28f,
+    valueRange: ClosedFloatingPointRange<Float>,
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit
 ) {
@@ -721,9 +552,7 @@ private fun CardOutlineColourDialog(
 ) {
     val scheme = MaterialTheme.colorScheme
     val fallback = scheme.outlineVariant
-    val startColor = runCatching {
-        if (initial == "auto") fallback else Color(initial.toColorInt())
-    }.getOrElse { fallback }
+    val startColor = parseOutlineColour(initial, fallback)
     val initialHsv = remember(startColor) {
         FloatArray(3).also { AndroidColor.colorToHSV(startColor.toArgb(), it) }
     }
@@ -813,7 +642,7 @@ private fun CardOutlineColourDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    if (isAuto) onAuto() else onConfirm("#%08X".format(draft.toArgb()))
+                    if (isAuto) onAuto() else onConfirm(String.format(Locale.US, "#%08X", draft.toArgb()))
                 }
             ) {
                 Text(stringResource(R.string.done))

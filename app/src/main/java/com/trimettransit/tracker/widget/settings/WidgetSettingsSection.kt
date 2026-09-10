@@ -4,32 +4,20 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,15 +26,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.R
-import com.trimettransit.tracker.ui.components.pressScale
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
-import com.trimettransit.tracker.ui.theme.appCardBorder
+import com.trimettransit.tracker.ui.components.SectionHeader
+import com.trimettransit.tracker.ui.components.SettingsCard
+import com.trimettransit.tracker.ui.components.SettingsIconCircle
+import com.trimettransit.tracker.ui.components.SettingsRadioOption
+import com.trimettransit.tracker.ui.components.SettingsRowOption
 import com.trimettransit.tracker.widget.NextArrivalsWidgetReceiver
 import com.trimettransit.tracker.widget.WidgetScheduler
 import com.trimettransit.tracker.widget.config.WidgetConfigActivity
@@ -68,11 +57,11 @@ fun WidgetSettingsSection() {
     var intervalMin by remember {
         mutableIntStateOf(prefs.getInt(WidgetScheduler.KEY_REFRESH_INTERVAL_MIN, DEFAULT_INTERVAL_MIN))
     }
-    val placedWidgetIds = remember { placedWidgetIds(context) }
+    var placedWidgetIds by remember { mutableStateOf(placedWidgetIds(context)) }
 
     SectionHeader(title = stringResource(R.string.widget_settings_title))
 
-    WidgetSettingsCard {
+    SettingsCard {
         Text(
             text = stringResource(R.string.widget_settings_subtitle),
             style = MaterialTheme.typography.bodySmall,
@@ -80,7 +69,7 @@ fun WidgetSettingsSection() {
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)
         )
         refreshIntervals.forEach { minutes ->
-            WidgetRadioOption(
+            SettingsRadioOption(
                 label = stringResource(R.string.widget_settings_interval_min, minutes),
                 subtitle = pluralStringResource(R.plurals.widget_settings_interval_desc, minutes, minutes),
                 icon = Icons.Filled.Schedule,
@@ -99,7 +88,7 @@ fun WidgetSettingsSection() {
 
     SectionHeader(title = stringResource(R.string.widget_settings_placed_title))
 
-    WidgetSettingsCard {
+    SettingsCard {
         if (placedWidgetIds.isEmpty()) {
             Text(
                 text = stringResource(R.string.widget_settings_no_widgets),
@@ -127,100 +116,6 @@ private fun openWidgetConfig(context: Context, appWidgetId: Int) {
         Intent(context, WidgetConfigActivity::class.java)
             .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
     )
-}
-
-@Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
-    )
-}
-
-@Composable
-private fun WidgetSettingsCard(content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        ),
-        border = appCardBorder(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(content = content)
-    }
-}
-
-@Composable
-private fun WidgetRadioOption(
-    label: String,
-    subtitle: String,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pressScale(interactionSource)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = LocalIndication.current,
-                onClick = onClick
-            )
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SettingsIconCircle(icon = icon, highlighted = selected)
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        RadioButton(
-            selected = selected,
-            onClick = null
-        )
-    }
-}
-
-@Composable
-private fun SettingsIconCircle(icon: ImageVector, highlighted: Boolean) {
-    Surface(
-        modifier = Modifier.size(40.dp),
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-        color = if (highlighted) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surfaceContainerHighest
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (highlighted) MaterialTheme.colorScheme.onPrimaryContainer
-                       else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
 }
 
 @Composable
