@@ -5,6 +5,14 @@
 - **Toolchain:** Android Gradle Plugin bumped 9.3.1 → 9.4.0 and the Compose compiler plugin 2.4.10 → 2.4.20 (Gradle wrapper stays on 9.7.1).
 - **Libraries:** Compose BOM 2026.08.00 → 2026.09.00, Material 3 to 1.5.0-alpha28, Navigation Compose 2.9.8 → 2.10.1, the home-screen widget libraries (Glance) to 1.2.0, and the map engine unified on 13.6.1 across phone and planner.
 
+## What's New in v4.15.1
+
+- Stop search no longer re-downloads the entire transit network on every keystroke.
+- Alert pills on arrival rows have a larger touch target for accessibility.
+- Fixed several cases where a cancelled refresh could leave stale state on screen.
+- Bottom navigation tabs now announce their selected state to screen readers.
+- Wear clean-up dialog and settings now use the correct Control components for screen readers.
+
 ## What's New in v4.15.0
 
 ### Home-screen widget, smarter
