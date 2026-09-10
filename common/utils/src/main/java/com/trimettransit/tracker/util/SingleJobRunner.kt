@@ -30,6 +30,7 @@ class SingleJobRunner(private val scope: CoroutineScope) {
         current.value?.cancel()
         val job = scope.launch(block = block)
         current.value = job
+        job.invokeOnCompletion { current.compareAndSet(job, null) }
         return job
     }
 
@@ -45,6 +46,7 @@ class SingleJobRunner(private val scope: CoroutineScope) {
             block(started.await())
         }
         current.value = job
+        job.invokeOnCompletion { current.compareAndSet(job, null) }
         return job
     }
 
