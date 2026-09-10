@@ -87,7 +87,6 @@ import com.trimettransit.tracker.map.MapLibreMapHost
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.Detour
-import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.domain.arrivalKey
 import com.trimettransit.tracker.model.domain.dedupeArrivals
 import com.trimettransit.tracker.model.domain.detoursForLine
@@ -1029,47 +1028,6 @@ private fun ArrivalItem(
                     }
                 }
             }
-        }
-    }
-}
-
-suspend fun toggleFavorite(
-    favoritesRepository: FavoritesRepository,
-    context: Context,
-    locId: Int,
-    stopName: String,
-    currentlyFavorite: Boolean,
-    routeId: Int = -1,
-    lat: Double = 0.0,
-    lng: Double = 0.0
-): Pair<Boolean, String> {
-    return withContext(Dispatchers.IO) {
-        try {
-            if (currentlyFavorite) {
-                if (favoritesRepository.removeFavorite(locId)) {
-                    true to context.getString(R.string.favorite_deleted_text)
-                } else {
-                    // Stop was already absent — the DB already matches the unfavorited UI state.
-                    true to context.getString(R.string.favorite_does_not_exist_text)
-                }
-            } else {
-                val stop = Stop(
-                    desc = stopName,
-                    latitude = lat,
-                    longitude = lng,
-                    routeNum = if (routeId > 0) routeId else 0,
-                    locId = locId
-                )
-                if (favoritesRepository.addFavorite(stop)) {
-                    true to context.getString(R.string.favorite_added_text)
-                } else {
-                    // Already a favorite — the DB already matches the favorited UI state.
-                    true to context.getString(R.string.favorite_exists_text)
-                }
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to toggle favorite")
-            false to context.getString(R.string.failed_to_update_favorite)
         }
     }
 }

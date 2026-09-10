@@ -2,10 +2,6 @@
 <resources>
     <string name="arrival_cancelled">Cancelled</string>
     <string name="arrival_dropoff_only">Dropoff Only</string>
-    <string name="favorite_added_text">Favorite added.</string>
-    <string name="favorite_deleted_text">Favorite deleted.</string>
-    <string name="favorite_does_not_exist_text">Favorite does not exist.</string>
-    <string name="favorite_exists_text">Favorite already exists.</string>
     <string name="alerts_count">Alerts (%1$d)</string>
     <string name="bullet">\u2022</string>
     <string name="close">Close</string>
@@ -31,5 +27,4 @@
     <string name="arrival_delay_late">%1$d min late</string>
     <string name="arrival_delay_early">%1$d min early</string>
     <string name="arrival_on_time">On time</string>
-    <string name="failed_to_update_favorite">Failed to update favorite</string>
 </resources>

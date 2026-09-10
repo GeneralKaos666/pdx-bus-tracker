@@ -60,7 +60,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import com.trimettransit.tracker.ui.NavState
-import com.trimettransit.tracker.feature.arrivals.toggleFavorite
+import com.trimettransit.tracker.activities.toggleFavorite
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Icon
