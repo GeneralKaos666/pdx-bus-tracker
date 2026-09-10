@@ -37,7 +37,7 @@ object JSONParser {
             // http:// would silently downgrade the caller's data in transit.
             if (!response.request.url.isHttps) {
                 throw IOException(
-                    "Only HTTPS endpoints are allowed; final URL was ${response.request.url}"
+                    "Only HTTPS endpoints are allowed; final URL was ${sanitizedUrl(response.request.url)}"
                 )
             }
             if (!response.isSuccessful) {
@@ -70,7 +70,7 @@ object JSONParser {
             // http:// would silently downgrade the caller's data in transit.
             if (!response.request.url.isHttps) {
                 throw IOException(
-                    "Only HTTPS endpoints are allowed; final URL was ${response.request.url}"
+                    "Only HTTPS endpoints are allowed; final URL was ${sanitizedUrl(response.request.url)}"
                 )
             }
             if (!response.isSuccessful) {
@@ -83,4 +83,7 @@ object JSONParser {
             return responseBody
         }
     }
+
+    private fun sanitizedUrl(url: okhttp3.HttpUrl): String =
+        url.scheme + "://" + url.host + (if (url.encodedPath.isNotEmpty()) url.encodedPath else "/")
 }
