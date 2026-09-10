@@ -35,7 +35,6 @@ import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.ScrollIndicator
 import androidx.wear.compose.material3.Text
-import androidx.wear.compose.material3.TextButton
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.SwipeToDismissBox
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
@@ -161,9 +160,10 @@ fun FavoritesManageScreen(onStopClick: (Stop) -> Unit) {
                 }) { Text(stringResource(R.string.clear)) }
             },
             dismissButton = {
-                TextButton(onClick = { showClearConfirm = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
+                Button(
+                    onClick = { showClearConfirm = false },
+                    colors = ButtonDefaults.filledTonalButtonColors()
+                ) { Text(stringResource(R.string.cancel)) }
             },
             title = { Text(pluralStringResource(R.plurals.confirm_clear_favorites, favorites.size, favorites.size)) }
         )
