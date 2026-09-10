@@ -15,6 +15,7 @@ import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.util.ConnectionUtils
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.trimettransit.tracker.model.Arrival
@@ -73,6 +74,8 @@ object TransitApi {
                 }
             }
             routes
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch routes")
             null
@@ -104,6 +107,8 @@ object TransitApi {
                 dirs.add(dir)
             }
             dirs
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch directions")
             null
@@ -152,6 +157,8 @@ object TransitApi {
                 )
             }
             stops
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch stops")
             null
@@ -281,6 +288,8 @@ object TransitApi {
                 stopLat = stopLat,
                 stopLng = stopLng
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch arrivals")
             null
@@ -363,6 +372,8 @@ object TransitApi {
                 vehicles.add(vp)
             }
             vehicles
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch vehicles")
             null
@@ -427,6 +438,8 @@ object TransitApi {
                 )
             }
             stops
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch stops by location")
             null
@@ -464,6 +477,8 @@ object TransitApi {
                 locId = obj.optInt("locid", 0),
                 routes = routes
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch stop by ID")
             null
@@ -539,6 +554,8 @@ object TransitApi {
                         routes = b.routes
                     )
                 }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch search stops")
             null
@@ -581,6 +598,8 @@ object TransitApi {
             }
             val xml = parser.fetchXml(url)
             parseTripPlanResponse(xml)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch trip plan")
             TripPlanResult.Error(TripPlannerError.SYSTEM_OUTAGE)
@@ -594,6 +613,8 @@ object TransitApi {
             factory.newDocumentBuilder()
                 .parse(InputSource(StringReader(xml)))
                 .documentElement
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to parse trip planner XML")
             return TripPlanResult.Error(TripPlannerError.SYSTEM_OUTAGE)
