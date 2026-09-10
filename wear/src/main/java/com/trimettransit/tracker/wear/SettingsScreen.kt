@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListHeaderDefaults
 import androidx.wear.compose.material3.ListSubHeader
@@ -134,14 +136,15 @@ fun SettingsScreen() {
                     )
                 }
                 item {
-                    RadioButton(
-                        selected = licensesExpanded,
-                        onSelect = { licensesExpanded = !licensesExpanded },
+                    Button(
+                        onClick = { licensesExpanded = !licensesExpanded },
                         modifier = Modifier
                             .fillMaxWidth()
                             .transformedHeight(this, transformationSpec),
-                        label = { Text(stringResource(R.string.third_party_licenses)) }
-                    )
+                        colors = ButtonDefaults.filledTonalButtonColors()
+                    ) {
+                        Text(stringResource(R.string.third_party_licenses))
+                    }
                 }
                 if (licensesExpanded) {
                     item {
