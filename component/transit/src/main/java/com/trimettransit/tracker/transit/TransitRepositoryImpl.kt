@@ -19,6 +19,8 @@ class TransitRepositoryImpl(
     private val context: Context
 ) : TransitRepository {
 
+    private val searchCache = SearchStopCache()
+
     override suspend fun getRoutes(): List<Route>? = TransitApi.fetchRoutes(context)
 
     override suspend fun getDirections(routeId: Int): List<Direction>? =
@@ -60,11 +62,43 @@ class TransitRepositoryImpl(
 
     override suspend fun getStopById(locId: Int): Stop? = TransitApi.fetchStopById(context, locId)
 
-    override suspend fun searchStops(): List<Stop>? = TransitApi.fetchSearchStops(context)
+    override suspend fun searchStops(): List<Stop>? {
+        searchCache.get()?.let { return it }
+        val fresh = TransitApi.fetchSearchStops(context) ?: return null
+        searchCache.put(fresh)
+        return fresh
+    }
 
     override suspend fun planTrip(
         from: TripPoint,
         to: TripPoint,
         time: TripRequestTime
     ): TripPlanResult? = TransitApi.fetchTripPlan(context, from, to, time)
+}
+
+/**
+ * Bounds fetchSearchStops to once per 30 minutes per process. The full-network
+ * stop dump is several MB; re-parsing it per keystroke was the peak-memory hot
+ * path. Guarded with @Synchronized because searchStops may be called from
+ * concurrent scopes (home + trip planner share one repository instance).
+ */
+private class SearchStopCache {
+    private data class Snapshot(val stops: List<Stop>, val fetchedAtMillis: Long)
+    private var snapshot: Snapshot? = null
+
+    @Synchronized
+    fun get(): List<Stop>? {
+        val sn = snapshot ?: return null
+        val ageMillis = System.currentTimeMillis() - sn.fetchedAtMillis
+        return if (ageMillis < TTL_MILLIS) sn.stops else null
+    }
+
+    @Synchronized
+    fun put(stops: List<Stop>) {
+        snapshot = Snapshot(stops, System.currentTimeMillis())
+    }
+
+    private companion object {
+        const val TTL_MILLIS = 30L * 60 * 1000
+    }
 }
