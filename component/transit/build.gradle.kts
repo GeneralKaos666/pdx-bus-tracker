@@ -1,0 +1,43 @@
+plugins {
+    id("com.android.library")
+}
+
+private fun quoteForBuildConfig(value: String): String {
+    val safe = value.replace("\\", "\\\\").replace("\"", "\\\"")
+    return "\"$safe\""
+}
+
+val trimetApiKey = (project.findProperty("TRIMET_API_KEY") ?: System.getenv("TRIMET_API_KEY") ?: "").toString()
+
+android {
+    namespace = "com.trimettransit.tracker.transit"
+    compileSdk = 37
+
+    defaultConfig {
+        minSdk = 31
+        buildConfigField("String", "TRIMET_API_KEY", quoteForBuildConfig(trimetApiKey))
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    lint {
+        abortOnError = true
+        baseline = file("lint-baseline.xml")
+    }
+}
+
+dependencies {
+    implementation(project(":common:utils"))
+    implementation(project(":common:model"))
+    implementation("com.squareup.okhttp3:okhttp:5.5.0")
+    implementation("net.danlew:android.joda:2.14.2.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    implementation("com.jakewharton.timber:timber:5.0.1")
+}
