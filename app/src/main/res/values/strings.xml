@@ -32,7 +32,10 @@
     <string name="widget_config_show_detour_alerts">Detour alerts</string>
     <string name="widget_config_show_arrival_status">Arrival status</string>
     <string name="widget_config_limit">Limit</string>
-    <string name="widget_config_max_stops">Show %1$d stops</string>
+    <plurals name="widget_config_max_stops">
+        <item quantity="one">Show %1$d stop</item>
+        <item quantity="other">Show %1$d stops</item>
+    </plurals>
     <string name="widget_config_route_filter">Only these routes (comma-separated)</string>
     <string name="widget_config_route_filter_hint">e.g. 4, 9, 12</string>
     <string name="widget_config_title_field">Title</string>

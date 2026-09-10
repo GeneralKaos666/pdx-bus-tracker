@@ -5,6 +5,16 @@
 - **Toolchain:** Android Gradle Plugin bumped 9.3.1 → 9.4.0 and the Compose compiler plugin 2.4.10 → 2.4.20 (Gradle wrapper stays on 9.7.1).
 - **Libraries:** Compose BOM 2026.08.00 → 2026.09.00, Material 3 to 1.5.0-alpha28, Navigation Compose 2.9.8 → 2.10.1, the home-screen widget libraries (Glance) to 1.2.0, and the map engine unified on 13.6.1 across phone and planner.
 
+## What's New in the Widget (next release)
+
+### Home-screen widget, smarter
+- **Rank the arrivals:** the widget now fetches every stop's arrivals at once (in parallel) and retries briefly when the network wavers, so rows fill in faster and stale "refreshing" states shrink.
+- **Spot disruptions on the widget:** alerts from TriMet that touch a stop's line appear as a compact detour pill beneath that stop's departures.
+- **See the type at a glance:** each row's badge now follows its transit type (bus, MAX, WES, streetcar) and you can hide badges entirely.
+- **Canceled and delayed arrivals self-identify:** a row marks "Canceled" or "Delayed" arrivals instead of showing a misleading countdown.
+- **Tap a row, land on that stop:** tapping any stop on the widget opens that stop's live arrivals screen in the app, so you can follow the bus on the map.
+- **Control density and volume:** each widget's new Display and Limit settings toggle the route badge, detour alerts, and arrival-status markers, cap how many stops show (1–12), and filter to specific route numbers.
+
 ## What's New in v4.14.1
 
 ### Cards, your way

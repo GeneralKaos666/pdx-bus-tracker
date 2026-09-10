@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -257,7 +258,11 @@ fun WidgetConfigScreen(
 
             SectionHeader(R.string.widget_config_limit)
             Text(
-                text = stringResource(R.string.widget_config_max_stops, maxStops.intValue),
+                text = pluralStringResource(
+                    R.plurals.widget_config_max_stops,
+                    maxStops.intValue,
+                    maxStops.intValue
+                ),
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
