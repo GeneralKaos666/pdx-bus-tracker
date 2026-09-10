@@ -28,6 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -75,6 +76,11 @@ fun WidgetConfigScreen(
     val showClockTime = remember { mutableStateOf(initial.showClockTime) }
     val theme = remember { mutableStateOf(initial.theme) }
     val compactRows = remember { mutableStateOf(initial.compactRows) }
+    val showRouteBadge = remember { mutableStateOf(initial.showRouteBadge) }
+    val showDetourAlerts = remember { mutableStateOf(initial.showDetourAlerts) }
+    val showArrivalStatus = remember { mutableStateOf(initial.showArrivalStatus) }
+    val maxStops = remember { mutableIntStateOf(initial.maxStops) }
+    val routeFilter = remember { mutableStateOf(initial.routeFilter.joinToString(", ")) }
     val titleText = remember { mutableStateOf(initial.titleText.orEmpty()) }
     val hideTitle = remember { mutableStateOf(initial.hideTitle) }
     val favorites = remember { mutableStateOf(listOf<Stop>()) }
@@ -109,6 +115,15 @@ fun WidgetConfigScreen(
         showClockTime = showClockTime.value,
         theme = theme.value,
         compactRows = compactRows.value,
+        showRouteBadge = showRouteBadge.value,
+        showDetourAlerts = showDetourAlerts.value,
+        showArrivalStatus = showArrivalStatus.value,
+        maxStops = maxStops.intValue,
+        routeFilter = routeFilter.value
+            .split(',', ' ')
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinct(),
         titleText = titleText.value.trim().takeIf { it.isNotBlank() },
         hideTitle = hideTitle.value
     )
@@ -223,6 +238,49 @@ fun WidgetConfigScreen(
                 }
             )
 
+            SectionHeader(R.string.widget_config_display)
+            ToggleRow(
+                label = stringResource(R.string.widget_config_show_route_badge),
+                checked = showRouteBadge.value,
+                onCheckedChange = { showRouteBadge.value = it }
+            )
+            ToggleRow(
+                label = stringResource(R.string.widget_config_show_detour_alerts),
+                checked = showDetourAlerts.value,
+                onCheckedChange = { showDetourAlerts.value = it }
+            )
+            ToggleRow(
+                label = stringResource(R.string.widget_config_show_arrival_status),
+                checked = showArrivalStatus.value,
+                onCheckedChange = { showArrivalStatus.value = it }
+            )
+
+            SectionHeader(R.string.widget_config_limit)
+            Text(
+                text = stringResource(R.string.widget_config_max_stops, maxStops.intValue),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            Slider(
+                value = maxStops.intValue.toFloat(),
+                onValueChange = { maxStops.intValue = it.toInt().coerceIn(1, 12) },
+                valueRange = 1f..12f,
+                steps = 10,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                text = stringResource(R.string.widget_config_route_filter),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+            )
+            OutlinedTextField(
+                value = routeFilter.value,
+                onValueChange = { routeFilter.value = it },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                placeholder = { Text(stringResource(R.string.widget_config_route_filter_hint)) }
+            )
+
             SectionHeader(R.string.widget_config_title_field)
             OutlinedTextField(
                 value = titleText.value,
@@ -231,7 +289,8 @@ fun WidgetConfigScreen(
                 placeholder = { Text(stringResource(R.string.next_arrivals_widget_label)) },
                 singleLine = true
             )
-            HideTitleRow(
+            ToggleRow(
+                label = stringResource(R.string.widget_config_hide_title),
                 checked = hideTitle.value,
                 onCheckedChange = { hideTitle.value = it }
             )
@@ -440,7 +499,7 @@ private fun stopSubtitle(stop: Stop): String {
 }
 
 @Composable
-private fun HideTitleRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
@@ -454,7 +513,7 @@ private fun HideTitleRow(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = stringResource(R.string.widget_config_hide_title),
+            text = label,
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f)
         )

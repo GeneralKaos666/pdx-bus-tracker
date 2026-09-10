@@ -27,6 +27,14 @@
     <string name="widget_config_rows">Rows</string>
     <string name="widget_config_compact">Compact</string>
     <string name="widget_config_detailed">Detailed</string>
+    <string name="widget_config_display">Display</string>
+    <string name="widget_config_show_route_badge">Route badge</string>
+    <string name="widget_config_show_detour_alerts">Detour alerts</string>
+    <string name="widget_config_show_arrival_status">Arrival status</string>
+    <string name="widget_config_limit">Limit</string>
+    <string name="widget_config_max_stops">Show %1$d stops</string>
+    <string name="widget_config_route_filter">Only these routes (comma-separated)</string>
+    <string name="widget_config_route_filter_hint">e.g. 4, 9, 12</string>
     <string name="widget_config_title_field">Title</string>
     <string name="widget_config_hide_title">Hide title</string>
     <string name="widget_config_done">Done</string>
