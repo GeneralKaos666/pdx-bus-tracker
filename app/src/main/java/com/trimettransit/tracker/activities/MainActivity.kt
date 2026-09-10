@@ -2,6 +2,7 @@ package com.trimettransit.tracker.activities
 
 import android.app.PictureInPictureParams
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Rational
@@ -123,6 +124,7 @@ import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
 import com.trimettransit.tracker.data.local.RecentStopsRepositoryImpl
 import com.trimettransit.tracker.transit.TransitRepositoryImpl
 import com.trimettransit.tracker.widget.WidgetScheduler
+import com.trimettransit.tracker.widget.WidgetLaunch
 import com.trimettransit.tracker.widget.settings.WidgetSettingsSection
 import kotlinx.coroutines.launch
 import com.trimettransit.tracker.model.Direction
@@ -517,8 +519,17 @@ private fun CompactContextPill(
 }
 
 class MainActivity : ComponentActivity() {
+
+    internal val widgetLaunchIntent = mutableStateOf<Intent?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        widgetLaunchIntent.value = intent
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        widgetLaunchIntent.value = intent
         WidgetScheduler.schedulePeriodic(this)
         WidgetScheduler.refreshNow(this)
         // Play's "deprecated Android 15 edge-to-edge APIs" warning comes from
@@ -640,6 +651,23 @@ private fun MainAppContent(
         navController.navigate(
             "$ROUTE_ARRIVALS_PREFIX${stop.locId}?stopName=${Uri.encode(stop.desc)}&routeId=$routeId&lat=${stop.latitude}&lng=${stop.longitude}"
         )
+    }
+
+    // Widget taps arrive with stop/route/coords as intent extras (see WidgetLaunch).
+    val widgetLaunchIntentValue = (LocalActivity.current as? MainActivity)?.widgetLaunchIntent?.value
+    LaunchedEffect(widgetLaunchIntentValue) {
+        val intent = widgetLaunchIntentValue ?: return@LaunchedEffect
+        val stopId = intent.getLongExtra(WidgetLaunch.EXTRA_STOP_ID, -1L)
+        if (stopId <= 0L) return@LaunchedEffect
+        val stop = Stop(
+            desc = intent.getStringExtra(WidgetLaunch.EXTRA_STOP_NAME).orEmpty(),
+            latitude = intent.getDoubleExtra(WidgetLaunch.EXTRA_LAT, 0.0),
+            longitude = intent.getDoubleExtra(WidgetLaunch.EXTRA_LNG, 0.0),
+            transitType = "bus",
+            locId = stopId.toInt(),
+            routeNum = intent.getIntExtra(WidgetLaunch.EXTRA_ROUTE_ID, 0)
+        )
+        navigateToArrivals(stop, stop.routeNum)
     }
 
     fun onTopPageSelected(page: Int) {
