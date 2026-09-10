@@ -610,6 +610,10 @@ object TransitApi {
         val response = try {
             val factory = DocumentBuilderFactory.newInstance()
             factory.isNamespaceAware = false
+            factory.isExpandEntityReferences = false
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
             factory.newDocumentBuilder()
                 .parse(InputSource(StringReader(xml)))
                 .documentElement
