@@ -7,7 +7,7 @@ import androidx.compose.animation.core.spring
  * Material 3 Expressive motion tokens for the standalone Wear module.
  *
  * Wear deliberately does not depend on `common/ui` (it ships its own animation helpers in
- * [WearAnimations] — see `wear/build.gradle`'s module list), so these mirror
+ * [WearAnimations] — see `wear/build.gradle.kts`'s module list), so these mirror
  * `common/ui/.../theme/Motion.kt` exactly. Values are the `androidx.compose.material3`
  * `ExpressiveMotionTokens` spring constants:
  *   Spatial default: damping 0.8, stiffness 380
