@@ -77,7 +77,7 @@ private fun Content(snapshot: Snapshot, config: WidgetConfig) {
 @Composable
 private fun StopList(snapshot: Snapshot, config: WidgetConfig) {
     val now = System.currentTimeMillis()
-    val rows = orderedRows(snapshot.rows, config.selectedStopIds)
+    val rows = applyRowConfig(snapshot.rows, config)
     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
         itemsIndexed(rows) { _, row ->
             StopRow(row, config, now)
@@ -85,16 +85,21 @@ private fun StopList(snapshot: Snapshot, config: WidgetConfig) {
     }
 }
 
-private fun orderedRows(
+/** Orders rows by [WidgetConfig.selectedStopIds], filters by [WidgetConfig.routeFilter], and caps at [WidgetConfig.maxStops]. */
+internal fun applyRowConfig(
     rows: List<WidgetSnapshotCache.Row>,
-    selectedStopIds: List<String>
-): List<WidgetSnapshotCache.Row> =
-    if (selectedStopIds.isEmpty()) {
+    config: WidgetConfig
+): List<WidgetSnapshotCache.Row> {
+    val ordered = if (config.selectedStopIds.isEmpty()) {
         rows
     } else {
         val byId = rows.associateBy { it.stop.locId.toString() }
-        selectedStopIds.mapNotNull { byId[it] }
+        config.selectedStopIds.mapNotNull { byId[it] }
     }
+    return ordered
+        .filter { row -> config.routeFilter.isEmpty() || row.stop.routeNum.toString() in config.routeFilter }
+        .take(config.maxStops)
+}
 
 @Composable
 private fun EmptyState(hint: String, ctx: Context) {
@@ -121,7 +126,12 @@ private fun Preferences.toConfigMap(): Map<String, String> = buildMap {
         WidgetConfig.KEY_THEME,
         WidgetConfig.KEY_COMPACT_ROWS,
         WidgetConfig.KEY_TITLE_TEXT,
-        WidgetConfig.KEY_HIDE_TITLE
+        WidgetConfig.KEY_HIDE_TITLE,
+        WidgetConfig.KEY_SHOW_ROUTE_BADGE,
+        WidgetConfig.KEY_SHOW_DETOUR_ALERTS,
+        WidgetConfig.KEY_SHOW_ARRIVAL_STATUS,
+        WidgetConfig.KEY_MAX_STOPS,
+        WidgetConfig.KEY_ROUTE_FILTER
     )
     asMap().forEach { (key, value) ->
         if (key.name in knownNames) put(key.name, value.toString())
