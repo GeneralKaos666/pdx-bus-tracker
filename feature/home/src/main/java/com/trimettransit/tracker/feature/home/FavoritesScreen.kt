@@ -35,7 +35,7 @@ fun FavoritesScreen(
                 FavoritesHeader()
             }
         ) {
-            HomeStopListScreen(
+            FavoritesStopList(
                 stops = favorites.stops,
                 isLoading = favorites.isLoading,
                 isError = favorites.isError,

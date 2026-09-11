@@ -2,6 +2,7 @@ package com.trimettransit.tracker.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
@@ -15,10 +16,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialFast
+import kotlin.math.min
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Fades + slides screen content up the first time it appears.
@@ -61,6 +68,35 @@ fun FadeInOnce(
         enter = fadeIn(m3EffectsDefault()),
         exit = fadeOut(m3EffectsFast())
     ) { content() }
+}
+
+/**
+ * Fades + slides a list item in on first appearance with a per-index delay so items
+ * cascade from top to bottom. Uses [Animatable]s (like [ContentEntrance]'s
+ * MutableTransitionState trick) so the animation plays on first composition — unlike
+ * `AnimatedVisibility(visible = true)`, which appears instantly. Delay caps at
+ * [maxDelay] so far-off items never wait for the whole list.
+ */
+@Composable
+fun Modifier.staggeredFadeIn(
+    index: Int,
+    delayPerItem: Int = 60,
+    maxDelay: Int = 360,
+    slideUp: Dp = 12.dp
+): Modifier {
+    val delayMillis = min(index * delayPerItem, maxDelay)
+    val slidePx = with(LocalDensity.current) { slideUp.toPx() }
+    val alpha = remember { Animatable(0f) }
+    val translateY = remember { Animatable(slidePx) }
+    LaunchedEffect(Unit) {
+        delay(delayMillis.toLong())
+        launch { alpha.animateTo(1f, m3EffectsDefault()) }
+        launch { translateY.animateTo(0f, m3SpatialDefault()) }
+    }
+    return graphicsLayer {
+        this.alpha = alpha.value
+        translationY = translateY.value
+    }
 }
 
 /**

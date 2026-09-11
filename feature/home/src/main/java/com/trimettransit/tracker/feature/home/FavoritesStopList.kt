@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.home
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,20 +10,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.animation.Crossfade
 import com.trimettransit.tracker.feature.home.R
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
-import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.StopListItem
+import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
+import com.trimettransit.tracker.ui.components.staggeredFadeIn
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 
 @Composable
-fun HomeStopListScreen(
+fun FavoritesStopList(
     stops: List<Stop>,
     isLoading: Boolean,
     isError: Boolean,
@@ -37,35 +37,44 @@ fun HomeStopListScreen(
             else -> 3
         },
         animationSpec = m3EffectsDefault(),
-        label = "homeStopList"
+        label = "favoritesStopList"
     ) { state ->
         when (state) {
             0 -> ListLoadingSkeleton()
             1 -> ErrorState(message = stringResource(R.string.unable_to_load))
             2 -> EmptyState(message = emptyText)
-            else -> ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                val listState = rememberLazyListState()
-                val smoothFling = rememberSmoothFlingBehavior()
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    flingBehavior = smoothFling,
-                    contentPadding = PaddingValues(
-                        top = 8.dp,
-                        bottom = navPillBottomPadding() + 8.dp
-                    )
-                ) {
-                    items(stops.size, key = { stops[it].locId }, contentType = { "stop" }) { index ->
-                        val stop = stops[index]
-                        StopListItem(
-                            stop = stop,
-                            onClick = { onNavigateToArrivals(stop) },
-                            modifier = Modifier.animateItem(),
-                            zoomOnTap = true
-                        )
-                    }
-                }
-            }
+            else -> FavoritesList(
+                stops = stops,
+                onNavigateToArrivals = onNavigateToArrivals
+            )
+        }
+    }
+}
+
+@Composable
+private fun FavoritesList(
+    stops: List<Stop>,
+    onNavigateToArrivals: (Stop) -> Unit
+) {
+    val listState = rememberLazyListState()
+    val smoothFling = rememberSmoothFlingBehavior()
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        flingBehavior = smoothFling,
+        contentPadding = PaddingValues(
+            top = 8.dp,
+            bottom = navPillBottomPadding() + 8.dp
+        )
+    ) {
+        items(stops.size, key = { stops[it].locId }, contentType = { "stop" }) { index ->
+            val stop = stops[index]
+            StopListItem(
+                stop = stop,
+                onClick = { onNavigateToArrivals(stop) },
+                modifier = Modifier.animateItem().staggeredFadeIn(index),
+                zoomOnTap = true
+            )
         }
     }
 }

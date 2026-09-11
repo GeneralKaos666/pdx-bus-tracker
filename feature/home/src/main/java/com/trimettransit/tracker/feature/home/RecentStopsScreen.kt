@@ -37,7 +37,7 @@ fun RecentStopsScreen(
         }
 
         Box(modifier = Modifier.weight(1f)) {
-            HomeStopListScreen(
+            RecentStopsStopList(
                 stops = recent.stops,
                 isLoading = recent.isLoading,
                 isError = recent.isError,
