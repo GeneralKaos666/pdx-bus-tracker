@@ -88,7 +88,6 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            ndk.debugSymbolLevel = "FULL"
         }
         debug {
             signingConfig = signingConfigs.getByName("release")
@@ -117,10 +116,6 @@ android {
                 "META-INF/DEPENDENCIES", "META-INF/LICENSE", "META-INF/LICENSE.txt",
                 "META-INF/NOTICE", "META-INF/NOTICE.txt"
             )
-        }
-        // Prevents Gradle from calling the incompatible x86_64 llvm-strip binary on native dependencies
-        jniLibs {
-            doNotStrip("**/*.so")
         }
     }
 
