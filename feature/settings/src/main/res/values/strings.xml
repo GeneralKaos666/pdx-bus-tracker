@@ -9,6 +9,9 @@
     <string name="open_source_licenses">Open source licenses</string>
     <string name="libraries_terms">Libraries used by this app and their terms</string>
     <string name="section_appearance">Appearance</string>
+    <string name="section_cards">Cards</string>
+    <string name="card_style">Card style</string>
+    <string name="card_style_subtitle">Outlines, colour, and corner radius</string>
     <string name="theme_system">System default</string>
     <string name="theme_system_subtitle">Follow your device\'s theme</string>
     <string name="theme_light">Light</string>

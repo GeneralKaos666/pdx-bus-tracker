@@ -51,7 +51,6 @@
         <item quantity="one">Refresh every %d minute</item>
         <item quantity="other">Refresh every %d minutes</item>
     </plurals>
-    <string name="widget_settings_placed_title">Placed widgets</string>
     <string name="widget_settings_no_widgets">No widgets placed yet — add one from your home screen</string>
     <string name="widget_settings_widget_id">Widget %1$d</string>
     <string name="widget_settings_edit">Edit</string>

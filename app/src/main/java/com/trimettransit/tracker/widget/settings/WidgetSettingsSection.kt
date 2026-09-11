@@ -4,12 +4,12 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -84,11 +84,9 @@ fun WidgetSettingsSection() {
                 }
             )
         }
-    }
 
-    SectionHeader(title = stringResource(R.string.widget_settings_placed_title))
+        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
 
-    SettingsCard {
         if (placedWidgetIds.isEmpty()) {
             Text(
                 text = stringResource(R.string.widget_settings_no_widgets),

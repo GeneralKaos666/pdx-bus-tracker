@@ -5,6 +5,10 @@
 - **Toolchain:** Android Gradle Plugin bumped 9.3.1 → 9.4.0 and the Compose compiler plugin 2.4.10 → 2.4.20 (Gradle wrapper stays on 9.7.1).
 - **Libraries:** Compose BOM 2026.08.00 → 2026.09.00, Material 3 to 1.5.0-alpha28, Navigation Compose 2.9.8 → 2.10.1, the home-screen widget libraries (Glance) to 1.2.0, and the map engine unified on 13.6.1 across phone and planner.
 
+## What's New in v4.15.2
+
+- **Settings, reorganized:** card outlines, outline colour, and corner radius now live in their own collapsible "Cards" section (arrow to expand/collapse, like the Show-all rows on Arrivals). Widget settings are grouped into one section sitting right below Arrivals, and the About section moved to the bottom.
+
 ## What's New in v4.15.1
 
 - Stop search no longer re-downloads the entire transit network on every keystroke.

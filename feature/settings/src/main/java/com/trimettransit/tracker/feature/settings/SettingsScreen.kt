@@ -187,43 +187,100 @@ fun SettingsScreen(
                         prefs.edit { putBoolean("pref_key_dynamic_color", it) }
                     }
                 )
+            }
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            SectionHeader(title = stringResource(R.string.section_cards))
 
-                SettingsSwitchOption(
-                    label = stringResource(R.string.card_outlines),
-                    subtitle = stringResource(R.string.card_outlines_subtitle),
-                    icon = Icons.Filled.BorderAll,
-                    checked = cardOutlines,
-                    onCheckedChange = {
-                        cardOutlines = it
-                        prefs.edit { putBoolean("pref_key_card_outlines", it) }
-                    }
-                )
-                AnimatedVisibility(
-                    visible = cardOutlines,
-                    enter = expandVertically(m3SpatialDefault()) + fadeIn(m3EffectsDefault()),
-                    exit = shrinkVertically(m3SpatialFast()) + fadeOut(m3EffectsFast())
+            SettingsCard {
+                var cardsExpanded by remember { mutableStateOf(false) }
+                val cardsInteractionSource = remember { MutableInteractionSource() }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pressScale(cardsInteractionSource)
+                        .clickable(
+                            interactionSource = cardsInteractionSource,
+                            indication = LocalIndication.current
+                        ) { cardsExpanded = !cardsExpanded }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    SettingsColourOption(
-                        label = stringResource(R.string.card_outline_colour),
-                        subtitle = stringResource(R.string.card_outline_colour_subtitle),
-                        icon = Icons.Filled.Colorize,
-                        colour = outlinePreviewColour(cardOutlineColorRaw),
-                        onClick = { showColorPicker = true }
+                    SettingsIconCircle(icon = Icons.Filled.BorderAll, highlighted = cardsExpanded)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.card_style),
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = stringResource(R.string.card_style_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    val cardsChevronRotation by animateFloatAsState(
+                        targetValue = if (cardsExpanded) 180f else 0f,
+                        animationSpec = m3SpatialDefault(),
+                        label = "cardsChevron"
+                    )
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowDown,
+                        contentDescription = if (cardsExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.rotate(cardsChevronRotation)
                     )
                 }
-                SettingsSliderOption(
-                    label = stringResource(R.string.card_corner_radius),
-                    icon = Icons.Filled.Tune,
-                    value = cornerRadius,
-                    valueLabel = stringResource(R.string.card_corner_radius_dp, cornerRadius.roundToInt()),
-                    valueRange = 0f..28f,
-                    onValueChange = { cornerRadius = it },
-                    onValueChangeFinished = {
-                        prefs.edit { putInt("pref_key_card_corner_radius", cornerRadius.roundToInt()) }
+                AnimatedVisibility(
+                    visible = cardsExpanded,
+                    enter = expandVertically(
+                        animationSpec = m3SpatialDefault()
+                    ) + fadeIn(m3EffectsDefault()),
+                    exit = shrinkVertically(
+                        animationSpec = m3SpatialFast()
+                    ) + fadeOut(m3EffectsFast())
+                ) {
+                    Column {
+                        SettingsSwitchOption(
+                            label = stringResource(R.string.card_outlines),
+                            subtitle = stringResource(R.string.card_outlines_subtitle),
+                            icon = Icons.Filled.BorderAll,
+                            checked = cardOutlines,
+                            onCheckedChange = {
+                                cardOutlines = it
+                                prefs.edit { putBoolean("pref_key_card_outlines", it) }
+                            }
+                        )
+                        AnimatedVisibility(
+                            visible = cardOutlines,
+                            enter = expandVertically(m3SpatialDefault()) + fadeIn(m3EffectsDefault()),
+                            exit = shrinkVertically(m3SpatialFast()) + fadeOut(m3EffectsFast())
+                        ) {
+                            SettingsColourOption(
+                                label = stringResource(R.string.card_outline_colour),
+                                subtitle = stringResource(R.string.card_outline_colour_subtitle),
+                                icon = Icons.Filled.Colorize,
+                                colour = outlinePreviewColour(cardOutlineColorRaw),
+                                onClick = { showColorPicker = true }
+                            )
+                        }
+                        SettingsSliderOption(
+                            label = stringResource(R.string.card_corner_radius),
+                            icon = Icons.Filled.Tune,
+                            value = cornerRadius,
+                            valueLabel = stringResource(R.string.card_corner_radius_dp, cornerRadius.roundToInt()),
+                            valueRange = 0f..28f,
+                            onValueChange = { cornerRadius = it },
+                            onValueChangeFinished = {
+                                prefs.edit { putInt("pref_key_card_corner_radius", cornerRadius.roundToInt()) }
+                            }
+                        )
                     }
-                )
+                }
             }
 
             SectionHeader(title = stringResource(R.string.section_arrivals))
@@ -239,6 +296,11 @@ fun SettingsScreen(
                         prefs.edit { putBoolean("pref_key_only_show_route_selected", it) }
                     }
                 )
+            }
+
+            // App-owned section (e.g. Widget settings) injected from the host module.
+            if (widgetSection != null) {
+                widgetSection()
             }
 
             SectionHeader(title = stringResource(R.string.section_about))
@@ -342,11 +404,6 @@ fun SettingsScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-
-            // App-owned section (e.g. Widget settings) injected from the host module.
-            if (widgetSection != null) {
-                widgetSection()
             }
 
             SectionHeader(title = stringResource(R.string.open_source_licenses))
