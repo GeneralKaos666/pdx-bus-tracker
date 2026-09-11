@@ -31,6 +31,15 @@ android {
         abortOnError = true
         baseline = file("lint-baseline.xml")
     }
+
+    testOptions {
+        unitTests {
+            // The trip-planner XML parser calls android.net.Uri.decode() while mapping
+            // the echoed from/to place labels; that android.jar stub must return a
+            // default instead of throwing in plain JVM unit tests.
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -40,4 +49,9 @@ dependencies {
     implementation("net.danlew:android.joda:2.14.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation("com.jakewharton.timber:timber:5.0.1")
+
+    // Testing
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20260814")
+    testImplementation("net.danlew:android.joda:2.14.2.1")
 }

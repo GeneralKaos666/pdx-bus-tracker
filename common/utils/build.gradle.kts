@@ -24,4 +24,8 @@ android {
 dependencies {
     implementation("net.danlew:android.joda:2.14.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+
+    // Testing
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("net.danlew:android.joda:2.14.2.1")
 }
