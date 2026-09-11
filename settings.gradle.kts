@@ -8,7 +8,6 @@ pluginManagement {
 
 rootProject.name = "PDX Bus Tracker"
 include(":app")
-include(":wear")
 include(":common:model")
 include(":common:utils")
 include(":common:ui")

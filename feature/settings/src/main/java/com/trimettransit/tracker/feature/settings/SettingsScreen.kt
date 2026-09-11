@@ -470,7 +470,6 @@ fun SettingsScreen(
                         LicenseEntry(stringResource(R.string.license_maplibre), stringResource(R.string.license_bsd_2))
                         LicenseEntry(stringResource(R.string.license_joda), stringResource(R.string.license_apache_2))
                         LicenseEntry(stringResource(R.string.license_timber), stringResource(R.string.license_apache_2))
-                        LicenseEntry(stringResource(R.string.license_wear), stringResource(R.string.license_apache_2))
                         LicenseEntry(stringResource(R.string.license_glance), stringResource(R.string.license_apache_2))
                         LicenseEntry(stringResource(R.string.license_workmanager), stringResource(R.string.license_apache_2))
                         LicenseEntry(

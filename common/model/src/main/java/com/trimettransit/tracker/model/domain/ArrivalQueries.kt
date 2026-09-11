@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 
 /**
  * Pure, side-effect-free helpers for shaping arrival data before it is rendered.
- * Lives in `common:model` (shared across phone + wear) so the funneling logic
+ * Lives in `common:model` (shared across phone and widget) so the funneling logic
  * (dedup, route filtering, per-line detour lookup) can be unit tested.
  *
  * Together these model the app's business rules: a stop can report the same

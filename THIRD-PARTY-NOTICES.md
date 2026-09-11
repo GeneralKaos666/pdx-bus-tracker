@@ -57,19 +57,6 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **Copyright:** Copyright Jake Wharton
 - **Project:** https://github.com/JakeWharton/timber
 
-### Wear OS (companion app)
-- **Artifacts:** `androidx.wear:wear` 1.4.0, `androidx.wear.compose:compose-foundation` /
-  `compose-material3` / `compose-navigation` / `compose-ui-tooling` (all 1.6.2),
-  `androidx.compose.material:material-icons-core`, `androidx.wear.tiles:tiles` 1.6.2,
-  `androidx.wear.protolayout:protolayout`, `protolayout-material3`,
-  `protolayout-expression` (1.4.2), `androidx.wear.tiles:tiles-renderer` 1.6.2 (debug
-  builds only)
-- **License:** Apache License 2.0
-- **Copyright:** Copyright The Android Open Source Project
-- **Project:** https://developer.android.com/jetpack/androidx/releases/wear-compose
-- **Note:** The watch app is fully standalone — `com.google.android.gms:play-services-wearable`
-  is no longer used.
-
 ### AndroidX Glance (home-screen widget)
 - **Artifacts:** `androidx.glance:glance` 1.2.0, `androidx.glance:glance-appwidget` 1.2.0,
   `androidx.glance:glance-material3` 1.2.0

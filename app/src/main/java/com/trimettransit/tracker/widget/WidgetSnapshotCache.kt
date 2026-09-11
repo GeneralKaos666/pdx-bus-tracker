@@ -12,8 +12,7 @@ import org.json.JSONObject
 /**
  * SharedPreferences snapshot backing the "Next arrivals" home-screen widget. The widget
  * provider runs on the launcher's render thread and must return fast, so this cache hands
- * it pre-fetched arrival data without network calls or SQLite (mirrors the Wear tile's
- * [com.trimettransit.tracker.wear.tile.TileCache]). Grouping stays per stop: each row
+ * it pre-fetched arrival data without network calls or SQLite. Grouping stays per stop: each row
  * carries its own arrivals, refreshed one request per stop by [WidgetRefreshWorker].
  */
 object WidgetSnapshotCache {

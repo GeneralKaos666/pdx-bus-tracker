@@ -47,7 +47,6 @@
     <string name="license_bsd_2">BSD 2-Clause License</string>
     <string name="license_joda">Joda-Time Android</string>
     <string name="license_timber">Timber</string>
-    <string name="license_wear">Wear OS Compose (androidx.wear, Wear Compose)</string>
     <string name="license_glance">AndroidX Glance (home-screen widget)</string>
     <string name="license_workmanager">AndroidX WorkManager</string>
     <string name="license_full_texts">Full license texts: see THIRD-PARTY-NOTICES.md in the project repository.</string>

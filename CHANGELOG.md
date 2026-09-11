@@ -1,5 +1,9 @@
 # Changelog
 
+## What's New
+
+- **The Wear OS companion is discontinued:** the dedicated watch app and its "Next departure" tile are no longer developed or shipped. Existing watch installs keep the last published version, which will not receive further updates. The phone app is unaffected.
+
 ## Dependencies
 
 - **Toolchain:** Android Gradle Plugin bumped 9.3.1 → 9.4.0 and the Compose compiler plugin 2.4.10 → 2.4.20 (Gradle wrapper stays on 9.7.1).

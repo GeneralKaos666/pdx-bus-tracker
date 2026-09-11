@@ -4,7 +4,7 @@ import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
 
 /**
- * Material 3 Expressive motion tokens used across phone + Wear transitions.
+ * Material 3 Expressive motion tokens used across phone screen transitions.
  *
  * Values mirror `androidx.compose.material3`'s `ExpressiveMotionTokens` (motion emitters 1.1.0):
  *   spatial mechanics — starting/destination/easing coefficient 360, shape coefficient 720, etc. —

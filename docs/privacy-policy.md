@@ -31,11 +31,6 @@ stops, favorites, and arrivals by name.
   device (including stop names/IDs and their map coordinates). This data never leaves
   your device and is removed if you uninstall the app or clear its data.
 - **Settings** (theme, display preferences) are stored in local app preferences.
-- **Wear OS companion:** when installed, the standalone watch app keeps its own
-  Favorites and Recent stops in a local SQLite database on the watch, and stores a
-  short "Next departure" snapshot (stop, route, and countdown time) in local
-  preferences to power the watch Tile. Like the phone data, it stays on the watch and
-  never leaves your device.
 - **Home-screen widget:** the optional "Next arrivals" widget stores a short arrival
   snapshot (stop, route, and countdown time) in local preferences to display the next
   departures for your favorited stops. This snapshot stays on your device; it is
@@ -46,10 +41,9 @@ stops, favorites, and arrivals by name.
 
 - **TriMet API** (`developer.trimet.org`): arrival times, vehicle positions, routes,
   stop lists, service alerts, and trip-planning requests. Requests include your API key
-  registration ID and standard server log data such as your IP address. The Wear OS
-  companion and its background Tile refresh make the same direct TriMet API requests
-  from the watch, and the phone's home-screen widget makes them periodically in the
-  background to keep its arrivals snapshot fresh.
+  registration ID and standard server log data such as your IP address. The phone's
+  home-screen widget makes these requests periodically in the background to keep its
+  arrivals snapshot fresh.
 - **Map tiles:** the in-app maps use [MapLibre Native](https://maplibre.org/) with
   vector tiles from [OpenFreeMap](https://openfreemap.org/) (built on OpenStreetMap
   data). Requesting tiles necessarily reveals your IP address and the approximate area
@@ -73,13 +67,11 @@ stops, favorites, and arrivals by name.
 |---|---|
 | `ACCESS_COARSE_LOCATION` / `ACCESS_FINE_LOCATION` | Find nearby stops, plan trips from your location, and show your position on the map (foreground use only, always initiated by you) |
 | `INTERNET`, `ACCESS_NETWORK_STATE` | Fetch live transit data and detect offline state |
-| `WAKE_LOCK` | Wear OS only: keep the watch screen on and ticking the countdown during low-power ambient mode |
 
 ## 6. Data deletion
 
 Uninstalling the app (or clearing its storage from Android Settings → Apps) deletes all
-favorites, recent stops, and settings stored on the device — on the watch, uninstalling
-the companion (or clearing its storage) does the same there. There is no server-side
+favorites, recent stops, and settings stored on the device. There is no server-side
 account or stored profile to delete.
 
 ## 7. Open source
