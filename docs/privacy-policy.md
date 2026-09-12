@@ -45,7 +45,7 @@ stops, favorites, and arrivals by name.
 ## 3. Network requests
 
 - **TriMet API** (`developer.trimet.org`): arrival times, vehicle positions, routes,
-  stop lists, service alerts, and trip-planning requests. Requests include your API key
+  stop lists, and trip-planning requests. Requests include your API key
   registration ID and standard server log data such as your IP address. The phone's
   home-screen widget makes these requests periodically in the background to keep its
   arrivals snapshot fresh. If you enable departure alerts (off by default), the

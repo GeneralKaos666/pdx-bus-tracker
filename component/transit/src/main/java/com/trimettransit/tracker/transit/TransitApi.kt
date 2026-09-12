@@ -3,7 +3,6 @@ package com.trimettransit.tracker.transit
 import android.content.Context
 import android.net.Uri
 import timber.log.Timber
-import com.trimettransit.tracker.model.Alert
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
@@ -168,26 +167,6 @@ object TransitApi {
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch arrivals")
-            null
-        }
-    }
-
-    suspend fun fetchAlerts(context: Context): List<Alert>? = withContext(Dispatchers.IO) {
-        if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = ApiKeys.getTrimetApiKey()
-        if (apiKey.isBlank()) {
-            Timber.w("TriMet API key not configured")
-            return@withContext null
-        }
-        try {
-            val baseUrl = context.getString(R.string.base_alerts_url)
-            val url = "$baseUrl/appID/$apiKey"
-            val json = parser.fetch(url)
-            TransitJsonMapper.parseAlerts(json.getJSONObject("resultSet"))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch alerts")
             null
         }
     }

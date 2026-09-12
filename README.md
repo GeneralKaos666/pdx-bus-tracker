@@ -13,7 +13,7 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 - **Stop search** — instant client-side search by name, right on the Home screen
 - **Favorites & recent stops** — saved locally in SQLite; the Favorites pill always lands on the Favorites tab
 - **Floating pill navigation** — a Material 3 Expressive pill bottom bar with a fixed Favorites / Recent / Routes / Trips item set, swipeable screens, and a trailing Settings button (becomes a Back button on Settings)
-- **Service alerts & detours** — active TriMet alerts for the stop and its routes
+- **Detours on arrival cards** — TriMet detours for each stop's routes show as pills right on the arrival rows
 - **Picture-in-picture** — mini-window countdown on the arrivals screen (2:3 PiP)
 - **Dynamic theming** — Material 3 with Android 12+ dynamic color; system/light/dark override in Settings
 - **Route-pinned mode** — optional setting to show only the arrivals for the route you opened the stop from

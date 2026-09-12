@@ -1,7 +1,6 @@
 package com.trimettransit.tracker.transit
 
 import android.content.Context
-import com.trimettransit.tracker.model.Alert
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
@@ -30,8 +29,6 @@ class TransitRepositoryImpl(
 
     override suspend fun getStops(routeId: Int, directionId: Int): List<Stop>? =
         TransitApi.fetchStops(context, routeId, directionId)
-
-    override suspend fun getAlerts(): List<Alert>? = TransitApi.fetchAlerts(context)
 
     override suspend fun getArrivals(
         locIds: List<Int>,

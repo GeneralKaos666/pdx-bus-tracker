@@ -9,9 +9,6 @@
     <string name="no_favorite_stops">Aún no hay paradas favoritas.\nToca el corazón en las llegadas para añadir una.</string>
     <string name="no_stops_found">No se encontraron paradas.</string>
     <string name="favorites_title">Favoritos</string>
-    <string name="service_alerts">Alertas de servicio</string>
-    <string name="no_service_alerts">No hay alertas de servicio ahora mismo.\n¡Buen viaje!</string>
-    <string name="system_wide_alert">Todo el sistema</string>
     <string name="recent_stops_title">Paradas recientes</string>
     <string name="no_recent_stops">No hay paradas recientes.</string>
 </resources>

@@ -9,9 +9,6 @@
     <string name="no_favorite_stops">No favorite stops yet.\nTap the heart on arrivals to add one.</string>
     <string name="no_stops_found">No stops found.</string>
     <string name="favorites_title">Favorites</string>
-    <string name="service_alerts">Service alerts</string>
-    <string name="no_service_alerts">No service alerts right now.\nRide on!</string>
-    <string name="system_wide_alert">System-wide</string>
     <string name="recent_stops_title">Recent Stops</string>
     <string name="no_recent_stops">No recent stops.</string>
 </resources>
