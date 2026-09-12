@@ -1,6 +1,6 @@
 # Changelog
 
-## What's New
+## What's New in v4.16.0
 
 - **Español (Spanish):** the whole app is now translated into Spanish — favorites, arrivals, route browser, nearby stops, the Trip Planner (including its new options), home-screen widget, and Settings — following your device's language automatically. English remains the default.
 - **Departure alerts (opt-in):** get a notification when the next bus, train, or MAX at a stop you choose is about to leave. Turn "Departure alerts" on in Settings, pick the favorite stops to monitor, and choose to be pinged 5, 10, or 15 minutes before departure. Alerts pause overnight (11 PM–5 AM), and each departure notifies you once. Everything is off by default.
@@ -8,7 +8,7 @@
 - **Trip Planner options:** customize how trips are planned — travel by all modes, buses, or MAX & trains only; cap the walking distance (0.1–0.9 mi); and choose how many route options to compare (1–6). Choices are remembered across launches.
 - **The Wear OS companion is discontinued:** the dedicated watch app and its "Next departure" tile are no longer developed or shipped. Existing watch installs keep the last published version, which will not receive further updates. The phone app is unaffected.
 
-## Dependencies
+### Dependencies
 
 - **Toolchain:** Android Gradle Plugin bumped 9.3.1 → 9.4.0 and the Compose compiler plugin 2.4.10 → 2.4.20 (Gradle wrapper stays on 9.7.1).
 - **Libraries:** Compose BOM 2026.08.00 → 2026.09.00, Material 3 to 1.5.0-alpha28, Navigation Compose 2.9.8 → 2.10.1, the home-screen widget libraries (Glance) to 1.2.0, and the map engine unified on 13.6.1 across phone and planner.
