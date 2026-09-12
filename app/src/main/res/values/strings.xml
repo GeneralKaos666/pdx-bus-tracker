@@ -76,4 +76,20 @@
     <string name="favorite_exists_text">Favorite already exists.</string>
     <string name="failed_to_update_favorite">Failed to update favorite</string>
     <string name="refresh">Refresh</string>
+
+    <!-- Departure alerts -->
+    <string name="departure_alert_channel_name">Departure alerts</string>
+    <string name="departure_alert_default_title">Bus arriving</string>
+    <string name="departure_alert_minutes">%1$s \u00b7 Departs in %2$d min</string>
+    <string name="departure_alert_now">%1$s \u00b7 Departing now</string>
+    <string name="notifications_section_title">Departure alerts</string>
+    <string name="notifications_master_label">Departure alerts</string>
+    <string name="notifications_master_subtitle">Remind me when the next trip at a monitored stop is about to leave</string>
+    <string name="notifications_window_label_min">%1$d min</string>
+    <plurals name="notifications_window_desc">
+        <item quantity="one">Alert %d minute before departure</item>
+        <item quantity="other">Alert %d minutes before departure</item>
+    </plurals>
+    <string name="notifications_stops_header">Stops with alerts</string>
+    <string name="notifications_no_favorites">No favorites yet — add some to choose which stops are monitored</string>
 </resources>

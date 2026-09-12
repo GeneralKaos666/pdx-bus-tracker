@@ -36,6 +36,11 @@ stops, favorites, and arrivals by name.
   departures for your favorited stops. This snapshot stays on your device; it is
   refreshed periodically in the background (see Section 3) and is removed if you
   uninstall the app or clear its data.
+- **Departure alerts (optional, off by default):** if you enable "Departure alerts"
+  in Settings, the app stores which favorite stops you chose to monitor and which
+  departures have already alerted you (as stop/trip pairs) in local preferences, so you
+  get one notification per departure. All of it stays on your device; nothing about
+  your alerts is sent anywhere, and disabling the feature stops the background checks.
 
 ## 3. Network requests
 
@@ -43,7 +48,9 @@ stops, favorites, and arrivals by name.
   stop lists, service alerts, and trip-planning requests. Requests include your API key
   registration ID and standard server log data such as your IP address. The phone's
   home-screen widget makes these requests periodically in the background to keep its
-  arrivals snapshot fresh.
+  arrivals snapshot fresh. If you enable departure alerts (off by default), the
+  app makes similar periodic requests in the background to check your monitored
+  stops for upcoming departures.
 - **Map tiles:** the in-app maps use [MapLibre Native](https://maplibre.org/) with
   vector tiles from [OpenFreeMap](https://openfreemap.org/) (built on OpenStreetMap
   data). Requesting tiles necessarily reveals your IP address and the approximate area
@@ -66,6 +73,7 @@ stops, favorites, and arrivals by name.
 | Permission | Why |
 |---|---|
 | `ACCESS_COARSE_LOCATION` / `ACCESS_FINE_LOCATION` | Find nearby stops, plan trips from your location, and show your position on the map (foreground use only, always initiated by you) |
+| `POST_NOTIFICATIONS` | Show departure alerts you've opted into (Android 13+; no notifications are posted while this is denied) |
 | `INTERNET`, `ACCESS_NETWORK_STATE` | Fetch live transit data and detect offline state |
 
 ## 6. Data deletion

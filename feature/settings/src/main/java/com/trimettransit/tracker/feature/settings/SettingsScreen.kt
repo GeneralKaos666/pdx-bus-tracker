@@ -102,6 +102,7 @@ import kotlin.math.roundToInt
 @Composable
 fun SettingsScreen(
     widgetSection: (@Composable ColumnScope.() -> Unit)? = null,
+    notificationsSection: (@Composable ColumnScope.() -> Unit)? = null,
     onRegisterScrollToTop: ((() -> Unit)?) -> Unit
 ) {
     val context = LocalContext.current
@@ -298,7 +299,10 @@ fun SettingsScreen(
                 )
             }
 
-            // App-owned section (e.g. Widget settings) injected from the host module.
+            // App-owned sections (e.g. Departure alerts, Widget settings) injected from the host module.
+            if (notificationsSection != null) {
+                notificationsSection()
+            }
             if (widgetSection != null) {
                 widgetSection()
             }

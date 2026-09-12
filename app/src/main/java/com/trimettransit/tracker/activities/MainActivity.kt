@@ -133,6 +133,7 @@ import com.trimettransit.tracker.data.local.RecentStopsRepositoryImpl
 import com.trimettransit.tracker.transit.TransitRepositoryImpl
 import com.trimettransit.tracker.widget.WidgetScheduler
 import com.trimettransit.tracker.widget.WidgetLaunch
+import com.trimettransit.tracker.notifications.DepartureAlertsSection
 import com.trimettransit.tracker.widget.settings.WidgetSettingsSection
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -942,6 +943,7 @@ private fun MainAppContent(
                 composable<SettingsDestination> {
                     SettingsScreen(
                         widgetSection = { WidgetSettingsSection() },
+                        notificationsSection = { DepartureAlertsSection() },
                         onRegisterScrollToTop = { onScrollToTop = it }
                     )
                 }
