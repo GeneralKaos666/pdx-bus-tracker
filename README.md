@@ -78,6 +78,8 @@ export STORE_PASSWORD=... KEY_ALIAS=... KEY_PASSWORD=...
 - **Signed APK:** `app/build/outputs/apk/release/` (a copy named `PdxBusTracker-release-<version>.apk` lands in `app/build/outputs/renamed_apks/release/`)
 - **Android App Bundle (Google Play):** `app/build/outputs/bundle/release/app-release.aab` — this is what Play Console accepts for uploads
 
+**GitHub release:** after bumping `versionName` + the `## What's New in vX.Y.Z` changelog section, committing, and pushing, run `scripts/release.sh`. It reads the version from `app/build.gradle.kts`, pulls the latest changelog section as the release notes, and publishes the `vX.Y.Z` GitHub release with the signed APK attached (requires the `gh` CLI). `--dry-run` prints what it would do without publishing.
+
 For a local smoke test without real credentials you can build with a debug fallback keystore: `-PreleaseSigningFallback=true`. Never upload that build.
 
 ## Tech stack
