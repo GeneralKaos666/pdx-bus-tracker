@@ -102,8 +102,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -339,8 +340,8 @@ private fun MainAppContent(
     // WS4 adaptive layout: wide (≥840dp) screens become a master-detail split. The top-level
     // pager sits left and the selected stop's arrivals render in a persistent right pane; the
     // bottom pill bar is replaced by a left-edge rail. Narrow/mid layouts keep the phone UX.
-    val configuration = LocalConfiguration.current
-    val expandedPane = configuration.screenWidthDp >= 840
+    val windowInfo = LocalWindowInfo.current
+    val expandedPane = with(LocalDensity.current) { windowInfo.containerSize.width >= 840.dp.roundToPx() }
     var detailStop by remember { mutableStateOf<ArrivalsDestination?>(null) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val refreshRotation = remember { Animatable(0f) }
