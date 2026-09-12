@@ -3,6 +3,7 @@ package com.trimettransit.tracker.feature.trips
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,18 +21,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -45,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -53,6 +60,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.TripPlannerMode
+import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.searchStops
@@ -60,6 +69,7 @@ import com.trimettransit.tracker.ui.components.StopSearchItem
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun EndpointPickerSheet(
@@ -300,3 +310,121 @@ internal fun StopSearchPanel(
 @Composable
 internal fun modalSearchTextStyle() =
     MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun TripOptionsSheet(
+    options: TripRequestOptions,
+    onOptionsChanged: (TripRequestOptions) -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp)) {
+            Text(
+                text = stringResource(R.string.trip_options_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = stringResource(R.string.trip_options_mode),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ModeChip(TripPlannerMode.ALL, R.string.trip_mode_all, options, onOptionsChanged)
+                ModeChip(TripPlannerMode.BUS, R.string.trip_mode_bus, options, onOptionsChanged)
+                ModeChip(TripPlannerMode.TRAIN, R.string.trip_mode_train, options, onOptionsChanged)
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = stringResource(R.string.trip_options_walk),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(
+                        R.string.trip_summary_walk,
+                        String.format(Locale.US, "%.1f", options.maxWalkMiles)
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                Slider(
+                    value = options.maxWalkMiles,
+                    onValueChange = { value ->
+                        onOptionsChanged(options.copy(maxWalkMiles = Math.round(value * 10) / 10f))
+                    },
+                    valueRange = 0.1f..0.9f,
+                    steps = 7,
+                    modifier = Modifier.weight(2f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = stringResource(R.string.trip_options_count),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = {
+                        onOptionsChanged(options.copy(itineraryCount = options.itineraryCount - 1))
+                    },
+                    enabled = options.itineraryCount > 1
+                ) {
+                    Icon(
+                        Icons.Default.Remove,
+                        contentDescription = stringResource(R.string.decrease_option_count),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.trip_option_count,
+                        options.itineraryCount,
+                        options.itineraryCount
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.width(96.dp),
+                    maxLines = 1
+                )
+                IconButton(
+                    onClick = {
+                        onOptionsChanged(options.copy(itineraryCount = options.itineraryCount + 1))
+                    },
+                    enabled = options.itineraryCount < 6
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = stringResource(R.string.increase_option_count),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+    }
+}
+
+@Composable
+private fun ModeChip(
+    mode: TripPlannerMode,
+    labelRes: Int,
+    options: TripRequestOptions,
+    onOptionsChanged: (TripRequestOptions) -> Unit
+) {
+    FilterChip(
+        selected = options.mode == mode,
+        onClick = { onOptionsChanged(options.copy(mode = mode)) },
+        label = { Text(stringResource(labelRes)) }
+    )
+}

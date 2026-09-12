@@ -42,6 +42,21 @@
     <string name="no_stops_found">No stops match that search</string>
     <string name="fare_label">Fare: %1$s</string>
     <string name="walk_transit_fmt">Walk %1$s · Transit %2$s</string>
+    <string name="trip_options_title">Trip options</string>
+    <string name="trip_options_open">Options</string>
+    <string name="trip_options_mode">Travel mode</string>
+    <string name="trip_options_walk">Max walking distance</string>
+    <string name="trip_options_count">Number of options</string>
+    <string name="decrease_option_count">Fewer trip options</string>
+    <string name="increase_option_count">More trip options</string>
+    <string name="trip_mode_all">All modes</string>
+    <string name="trip_mode_bus">Buses only</string>
+    <string name="trip_mode_train">MAX &amp; trains only</string>
+    <string name="trip_summary_walk">%1$s mi walk</string>
+    <plurals name="trip_option_count">
+        <item quantity="one">%1$d option</item>
+        <item quantity="other">%1$d options</item>
+    </plurals>
     <string name="walk_between_fmt">%1$s to %2$s</string>
     <string name="route_label">Transit</string>
     <string name="leg_transit_fmt">%1$s · %2$s → %3$s · %4$s</string>

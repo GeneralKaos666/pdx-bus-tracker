@@ -10,6 +10,7 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.TripPlannerError
 import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripPoint
+import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.model.VehiclePosition
 import com.trimettransit.tracker.model.computeTransitType
@@ -298,7 +299,8 @@ object TransitApi {
         context: Context,
         from: TripPoint,
         to: TripPoint,
-        time: TripRequestTime
+        time: TripRequestTime,
+        options: TripRequestOptions = TripRequestOptions()
     ): TripPlanResult? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
         val apiKey = ApiKeys.getTrimetApiKey()
@@ -312,22 +314,18 @@ object TransitApi {
             val date = DateTimeFormat.forPattern("M-d-yyyy").print(requested)
             val clock = DateTimeFormat.forPattern("h:mm a").print(requested)
             val baseUrl = context.getString(R.string.base_trip_planner_url)
-            val url = buildString {
-                append(baseUrl)
-                append("/fromPlace/").append(Uri.encode(from.description))
-                append("/fromCoord/").append("${from.longitude},${from.latitude}")
-                append("/toPlace/").append(Uri.encode(to.description))
-                append("/toCoord/").append("${to.longitude},${to.latitude}")
-                append("/date/").append(date)
-                append("/time/").append(Uri.encode(clock))
-                append("/arr/").append(if (time.arriveBy) "A" else "D")
-                append("/min/T")
-                append("/mode/A")
-                append("/walk/0.5")
-                append("/maxIntineraries/3")
-                append("/format/xml")
-                append("/appID/").append(apiKey)
-            }
+            val url = buildTripPlannerRequestUrl(
+                baseUrl = baseUrl,
+                apiKey = apiKey,
+                fromPlace = Uri.encode(from.description),
+                fromCoord = "${from.longitude},${from.latitude}",
+                toPlace = Uri.encode(to.description),
+                toCoord = "${to.longitude},${to.latitude}",
+                date = date,
+                clock = Uri.encode(clock),
+                arriveBy = time.arriveBy,
+                options = options
+            )
             val xml = parser.fetchXml(url)
             TripPlannerXmlParser.parseTripPlanResponse(xml)
         } catch (e: CancellationException) {

@@ -6,6 +6,7 @@ import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripPlanResult
+import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.model.VehiclePosition
 
@@ -49,6 +50,7 @@ interface TransitRepository {
     suspend fun planTrip(
         from: TripPoint,
         to: TripPoint,
-        time: TripRequestTime = TripRequestTime()
+        time: TripRequestTime = TripRequestTime(),
+        options: TripRequestOptions = TripRequestOptions()
     ): TripPlanResult?
 }

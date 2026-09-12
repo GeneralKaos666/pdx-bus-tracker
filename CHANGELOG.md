@@ -2,6 +2,7 @@
 
 ## What's New
 
+- **Trip Planner options:** customize how trips are planned — travel by all modes, buses, or MAX & trains only; cap the walking distance (0.1–0.9 mi); and choose how many route options to compare (1–6). Choices are remembered across launches.
 - **The Wear OS companion is discontinued:** the dedicated watch app and its "Next departure" tile are no longer developed or shipped. Existing watch installs keep the last published version, which will not receive further updates. The phone app is unaffected.
 
 ## Dependencies

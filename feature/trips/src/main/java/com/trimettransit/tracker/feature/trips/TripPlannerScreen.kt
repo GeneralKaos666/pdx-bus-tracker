@@ -60,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -70,8 +71,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripPlannerError
+import com.trimettransit.tracker.model.TripPlannerMode
 import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripPoint
+import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
@@ -90,6 +93,7 @@ import kotlinx.coroutines.launch
 import org.maplibre.android.geometry.LatLng
 import org.joda.time.DateTime
 import java.util.Calendar
+import java.util.Locale
 private const val DEFAULT_ARRIVE_BY_ADVANCE_MS = 60L * 60_000L
 /** Saves a trip endpoint across configuration changes (rotation/process death). */
 private val tripPointSaver = listSaver<TripPoint?, Any>(
@@ -147,6 +151,9 @@ fun TripPlannerScreen(
     var arriveByTimeMillis by rememberSaveable { mutableStateOf<Long?>(null) }
     var showTimePicker by remember { mutableStateOf(false) }
 
+    var options by remember { mutableStateOf(TripPlannerPrefs.load(context)) }
+    var showOptionsSheet by remember { mutableStateOf(false) }
+
     var planResult by remember { mutableStateOf<TripPlanResult?>(null) }
     var selectedIndex by remember { mutableIntStateOf(0) }
     var isPlanning by remember { mutableStateOf(false) }
@@ -193,6 +200,14 @@ fun TripPlannerScreen(
         planResult = null
         showResults = false
         isPlanning = false
+    }
+
+    /** Applies a new set of planner options, persists them, and invalidates the current plan. */
+    fun updateOptions(newOptions: TripRequestOptions) {
+        if (newOptions == options) return
+        options = newOptions
+        TripPlannerPrefs.save(context, newOptions)
+        invalidatePlan()
     }
 
     // Ask for location once, and only while this page is visible (the pager pre-composes
@@ -273,7 +288,7 @@ fun TripPlannerScreen(
                         arriveByTimeMillis ?: (System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS)
                     } else null
                 )
-                val result = transitRepository.planTrip(from, to, time)
+                val result = transitRepository.planTrip(from, to, time, options)
                 val successPlan = (result as? TripPlanResult.Success)?.plan
                 if (successPlan?.itineraries?.isNotEmpty() == true) {
                     selectedIndex = 0
@@ -315,6 +330,26 @@ fun TripPlannerScreen(
             }
         }
     }
+
+    val modeLabels = listOf(
+        stringResource(R.string.trip_mode_all),
+        stringResource(R.string.trip_mode_bus),
+        stringResource(R.string.trip_mode_train)
+    )
+    val walkSummary = stringResource(
+        R.string.trip_summary_walk,
+        String.format(Locale.US, "%.1f", options.maxWalkMiles)
+    )
+    val countSummary = pluralStringResource(
+        R.plurals.trip_option_count,
+        options.itineraryCount,
+        options.itineraryCount
+    )
+    val optionsSummary = listOf(
+        modeLabels[options.mode.ordinal],
+        walkSummary,
+        countSummary
+    ).joinToString(" · ")
 
     Box(modifier = Modifier.fillMaxSize()) {
         TripMap(
@@ -491,6 +526,38 @@ fun TripPlannerScreen(
                                 }
                             }
 
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            val optionsSource = remember { MutableInteractionSource() }
+                            Surface(
+                                onClick = { showOptionsSheet = true },
+                                interactionSource = optionsSource,
+                                color = Color.Transparent,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .pressScale(optionsSource)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.trip_options_open),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(
+                                        text = optionsSummary,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+
                             Spacer(modifier = Modifier.height(8.dp))
 
                             val planSource = remember { MutableInteractionSource() }
@@ -658,6 +725,15 @@ fun TripPlannerScreen(
                 pickerSlot = null
             },
             onDismiss = { pickerSlot = null }
+        )
+    }
+
+    // Trip options sheet
+    if (showOptionsSheet) {
+        TripOptionsSheet(
+            options = options,
+            onOptionsChanged = { updateOptions(it) },
+            onDismiss = { showOptionsSheet = false }
         )
     }
 
