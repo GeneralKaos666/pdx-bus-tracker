@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="try_again">Reintentar</string>
+    <string name="api_key_not_configured">Clave de API no configurada.\nConsulta los ajustes de la app.</string>
+    <string name="unable_to_load_directions">No se pudieron cargar las direcciones.\nComprueba tu conexión.</string>
+    <string name="no_directions_available">No hay direcciones disponibles.</string>
+    <string name="unable_to_load_stops">No se pudieron cargar las paradas.\nComprueba tu conexión.</string>
+    <string name="unable_to_load_routes">No se pudieron cargar las rutas.\nComprueba tu conexión.</string>
+    <string name="no_routes_available">No hay rutas disponibles.</string>
+    <string name="no_stops_available">No hay paradas disponibles.</string>
+    <string name="collapse">Contraer</string>
+    <string name="expand">Expandir</string>
+    <string name="use_your_location_question">¿Permitir usar tu ubicación?</string>
+    <string name="location_explainer">PDX Bus Tracker usa tu ubicación solo cuando se lo pides para encontrar paradas de TriMet cerca de ti. Tu ubicación nunca se guarda en esta app ni se usa para nada más.</string>
+    <string name="continue_">Continuar</string>
+    <string name="not_now">Ahora no</string>
+    <string name="nearby_stops_list_title">Paradas cercanas</string>
+    <string name="loading">Cargando…</string>
+    <string name="refresh">Actualizar</string>
+    <string name="finding_nearby_stops">Buscando paradas cercanas…</string>
+    <string name="unknown_error">Error desconocido</string>
+    <string name="no_stops_found_nearby">No se encontraron paradas cerca</string>
+    <string name="tap_refresh_to_find">Toca Actualizar para buscar paradas cercanas</string>
+    <string name="tap_refresh_using_location">Toca Actualizar para buscar paradas cercanas usando tu ubicación actual</string>
+    <string name="location_permission_required">Se necesita el permiso de ubicación para encontrar paradas cercanas</string>
+    <string name="location_services_disabled">Los servicios de ubicación están desactivados.\nActívalos para continuar.</string>
+    <string name="location_permission_required_short">Se requiere el permiso de ubicación.</string>
+    <string name="unable_to_get_location">No se pudo obtener tu ubicación.\nInténtalo de nuevo.</string>
+    <string name="unable_to_find_nearby_stops">No se pudieron encontrar paradas cercanas.\nInténtalo de nuevo.</string>
+</resources>

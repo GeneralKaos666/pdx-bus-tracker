@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_try_again">Reintentar</string>
+    <string name="common_stop_number">Parada nº %1$d</string>
+
+    <!-- Transit type labels (accessibility + inline labels shared across modules) -->
+    <string name="transit_type_bus">Autobús</string>
+    <string name="transit_type_max_light_rail">Tren ligero MAX</string>
+    <string name="transit_type_streetcar">Tranvía</string>
+    <string name="transit_type_wes_commuter_rail">Tren de cercanías WES</string>
+    <string name="transit_type_transit">Transporte</string>
+</resources>

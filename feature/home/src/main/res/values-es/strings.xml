@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_stops_hint">Buscar paradas por nombre o ID</string>
+    <string name="search">Buscar</string>
+    <string name="clear_search">Borrar búsqueda</string>
+    <string name="loading_stops">Cargando paradas…</string>
+    <string name="no_connection">Sin conexión.\nComprueba tu conexión a internet.</string>
+    <string name="unable_to_load">No se pudo cargar.\nComprueba tu conexión.</string>
+    <string name="no_favorite_stops">Aún no hay paradas favoritas.\nToca el corazón en las llegadas para añadir una.</string>
+    <string name="no_stops_found">No se encontraron paradas.</string>
+    <string name="favorites_title">Favoritos</string>
+    <string name="recent_stops_title">Paradas recientes</string>
+    <string name="no_recent_stops">No hay paradas recientes.</string>
+</resources>

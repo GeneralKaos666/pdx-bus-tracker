@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="arrival_cancelled">Cancelado</string>
+    <string name="arrival_dropoff_only">Solo bajada</string>
+    <string name="alerts_count">Alertas (%1$d)</string>
+    <string name="bullet">\u2022</string>
+    <string name="close">Cerrar</string>
+    <string name="show_alerts_for_route">Mostrar alertas de la ruta %1$s</string>
+    <string name="scheduled">programado</string>
+    <string name="no_upcoming_arrivals">No hay próximas llegadas</string>
+    <string name="canceled">Cancelado</string>
+    <string name="dropoff_only">Solo bajada</string>
+    <string name="arrivals_load_error">No se pudieron cargar las llegadas.\nTira hacia abajo para reintentar.</string>
+    <string name="no_upcoming_for_route">No hay próximas llegadas para esta ruta.\nLas llegadas de otras rutas están ocultas — desactiva el filtro en los Ajustes.</string>
+    <string name="empty_no_arrivals">No hay próximas llegadas.</string>
+    <string name="show_fewer">Mostrar menos</string>
+    <plurals name="show_all_arrivals">
+        <item quantity="one">Mostrar todas las llegadas (%1$d más)</item>
+        <item quantity="many">Mostrar todas las llegadas (%1$d más)</item>
+        <item quantity="other">Mostrar todas las llegadas (%1$d más)</item>
+    </plurals>
+    <string name="collapse_arrivals">Contraer llegadas</string>
+    <string name="expand_arrivals">Expandir llegadas</string>
+    <string name="stop">Parada</string>
+    <string name="stop_number">Parada nº %1$d</string>
+    <string name="due">Ahora</string>
+    <string name="minutes">%1$d min</string>
+    <string name="arrival_delay_late">%1$d min tarde</string>
+    <string name="arrival_delay_early">%1$d min antes</string>
+    <string name="arrival_on_time">A tiempo</string>
+</resources>

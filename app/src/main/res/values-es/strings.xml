@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PDX Bus Tracker</string>
+    <string name="next_arrivals_widget_label">Próximas llegadas</string>
+    <string name="next_arrivals_widget_placeholder">Cargando…</string>
+    <string name="widget_empty_no_favorites">Aún no hay favoritos — toca para añadir algunos</string>
+    <string name="widget_empty_refreshing">Actualizando — toca para abrir la app</string>
+    <string name="widget_dropoff_only">Solo bajada</string>
+    <string name="widget_canceled">Cancelado</string>
+    <string name="widget_delayed">Retrasado</string>
+    <string name="widget_due">Ahora</string>
+    <string name="widget_countdown_min">%1$d min</string>
+    <string name="widget_arrival_separator">  \u00b7  </string>
+    <string name="widget_config_title">Configuración del widget</string>
+    <string name="widget_config_stops">Paradas</string>
+    <string name="widget_config_stops_hint">Deja sin marcar para incluir todos los favoritos</string>
+    <string name="widget_config_no_favorites">Aún no hay favoritos — añádelos en la app</string>
+    <string name="widget_config_arrivals">Llegadas</string>
+    <string name="widget_config_arrivals_per_stop">Llegadas por parada</string>
+    <string name="widget_config_time">Hora</string>
+    <string name="widget_config_countdown">Cuenta atrás</string>
+    <string name="widget_config_clock">Hora del reloj</string>
+    <string name="widget_config_theme">Tema</string>
+    <string name="widget_config_theme_system">Sistema</string>
+    <string name="widget_config_theme_light">Claro</string>
+    <string name="widget_config_theme_dark">Oscuro</string>
+    <string name="widget_config_rows">Filas</string>
+    <string name="widget_config_compact">Compacto</string>
+    <string name="widget_config_detailed">Detallado</string>
+    <string name="widget_config_display">Pantalla</string>
+    <string name="widget_config_show_route_badge">Insignia de ruta</string>
+    <string name="widget_config_show_detour_alerts">Alertas de desvío</string>
+    <string name="widget_config_show_arrival_status">Estado de llegada</string>
+    <string name="widget_config_limit">Límite</string>
+    <plurals name="widget_config_max_stops">
+        <item quantity="one">Mostrar %1$d parada</item>
+        <item quantity="many">Mostrar %1$d paradas</item>
+        <item quantity="other">Mostrar %1$d paradas</item>
+    </plurals>
+    <string name="widget_config_route_filter">Solo estas rutas (separadas por comas)</string>
+    <string name="widget_config_route_filter_hint">p. ej. 4, 9, 12</string>
+    <string name="widget_config_title_field">Título</string>
+    <string name="widget_config_hide_title">Ocultar título</string>
+    <string name="widget_config_done">Listo</string>
+    <string name="widget_config_cancel">Cancelar</string>
+
+    <!-- Widget settings section (inside the app's Settings screen) -->
+    <string name="widget_settings_title">Widget</string>
+    <string name="widget_settings_subtitle">Frecuencia de actualización de la pantalla de inicio</string>
+    <string name="widget_settings_interval_min">%1$d min</string>
+    <plurals name="widget_settings_interval_desc">
+        <item quantity="one">Actualizar cada %d minuto</item>
+        <item quantity="many">Actualizar cada %d minutos</item>
+        <item quantity="other">Actualizar cada %d minutos</item>
+    </plurals>
+    <string name="widget_settings_no_widgets">Aún no has colocado ningún widget — añádelo desde tu pantalla de inicio</string>
+    <string name="widget_settings_widget_id">Widget %1$d</string>
+    <string name="widget_settings_edit">Editar</string>
+
+    <!-- Departure alerts -->
+    <string name="departure_alert_channel_name">Alertas de salida</string>
+    <string name="departure_alert_default_title">Llegada de autobús</string>
+    <string name="departure_alert_minutes">%1$s \u00b7 Sale en %2$d min</string>
+    <string name="departure_alert_now">%1$s \u00b7 Saliendo ahora</string>
+    <string name="notifications_section_title">Alertas de salida</string>
+    <string name="notifications_master_label">Alertas de salida</string>
+    <string name="notifications_master_subtitle">Avísame cuando el próximo viaje de una parada supervisada esté por salir</string>
+    <string name="notifications_window_label_min">%1$d min</string>
+    <plurals name="notifications_window_desc">
+        <item quantity="one">Aviso %d minuto antes de la salida</item>
+        <item quantity="many">Aviso %d minutos antes de la salida</item>
+        <item quantity="other">Aviso %d minutos antes de la salida</item>
+    </plurals>
+    <string name="notifications_stops_header">Paradas con alertas</string>
+    <string name="notifications_no_favorites">Aún no hay favoritos — añade algunos para elegir qué paradas supervisar</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_favorites">Favoritos</string>
+    <string name="nav_recent">Recientes</string>
+    <string name="nav_routes">Rutas</string>
+    <string name="nav_trips">Viajes</string>
+    <string name="nav_arrivals">Llegadas</string>
+
+    <!-- Top bar -->
+    <string name="back">Atrás</string>
+    <string name="settings">Ajustes</string>
+    <string name="nearby_stops_title">Paradas cercanas</string>
+    <string name="stop">Parada</string>
+    <string name="mini_window">Ventana pequeña</string>
+    <string name="add_favorite">Añadir a favoritos</string>
+    <string name="remove_favorite">Quitar de favoritos</string>
+    <string name="favorite_added_text">Favorito añadido.</string>
+    <string name="favorite_deleted_text">Favorito eliminado.</string>
+    <string name="favorite_does_not_exist_text">El favorito no existe.</string>
+    <string name="favorite_exists_text">El favorito ya existe.</string>
+    <string name="failed_to_update_favorite">No se pudo actualizar el favorito</string>
+    <string name="refresh">Actualizar</string>
+</resources>
