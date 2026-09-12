@@ -120,7 +120,7 @@ android {
     }
 
     playConfigs {
-        maybeCreate("release").resolutionStrategy.set(com.github.triplet.gradle.androidpublisher.ResolutionStrategy.AUTO_OFFSET)
+        maybeCreate("release").resolutionStrategy.set(com.github.triplet.gradle.androidpublisher.ResolutionStrategy.AUTO)
     }
 }
 
