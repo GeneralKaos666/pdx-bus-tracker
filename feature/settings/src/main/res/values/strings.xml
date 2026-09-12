@@ -27,6 +27,12 @@
     <string name="card_outline_auto">Automatic (follow theme)</string>
     <string name="card_corner_radius">Corner radius</string>
     <string name="card_corner_radius_dp">%1$d dp</string>
+    <string name="card_corner_style">Corner style</string>
+    <string name="card_corner_style_subtitle">Preset for card and panel corners</string>
+    <string name="corner_style_rounded">Rounded</string>
+    <string name="corner_style_rounded_subtitle">Soft, curved corners</string>
+    <string name="corner_style_cut">Cut</string>
+    <string name="corner_style_cut_subtitle">Chamfered, angular corners</string>
     <string name="color_hue">Hue</string>
     <string name="color_saturation">Saturation</string>
     <string name="color_value">Value</string>

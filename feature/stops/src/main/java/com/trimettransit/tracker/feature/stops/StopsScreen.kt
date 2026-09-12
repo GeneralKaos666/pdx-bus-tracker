@@ -49,6 +49,7 @@ import com.trimettransit.tracker.ui.components.InlineSkeleton
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
@@ -133,7 +134,7 @@ private fun DirectionsSubCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+        shape = appCardShape(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
@@ -193,7 +194,7 @@ private fun DirectionItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .pressScale(interactionSource),
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+        shape = appCardShape(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),

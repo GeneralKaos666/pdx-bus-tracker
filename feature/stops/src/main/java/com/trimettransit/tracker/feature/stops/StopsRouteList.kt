@@ -41,6 +41,7 @@ import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 
@@ -109,7 +110,7 @@ private fun RouteListItem(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
             .pressScale(interactionSource),
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+        shape = appCardShape(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
@@ -128,7 +129,7 @@ private fun RouteListItem(
             }
             Surface(
                 modifier = Modifier.size(44.dp),
-                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+                shape = appCardShape(),
                 color = typeColor
             ) {
                 Box(contentAlignment = Alignment.Center) {

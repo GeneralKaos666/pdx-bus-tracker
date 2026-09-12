@@ -1,56 +1,35 @@
 package com.trimettransit.tracker.feature.arrivals
 
-import android.content.Context
 import timber.log.Timber
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSizeIn
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -67,104 +46,47 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.preference.PreferenceManager
-import com.trimettransit.tracker.map.MapLibreMapHost
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.domain.arrivalKey
 import com.trimettransit.tracker.model.domain.dedupeArrivals
 import com.trimettransit.tracker.model.domain.detoursForLine
-import com.trimettransit.tracker.model.domain.displayTimeMillis
 import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
-import com.trimettransit.tracker.model.domain.isCanceled
-import com.trimettransit.tracker.model.domain.isEstimated
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.ContentEntrance
-import com.trimettransit.tracker.ui.components.DotCircle
-import com.trimettransit.tracker.ui.components.badgeBitmap
-import com.trimettransit.tracker.ui.components.circleMarker
 import com.trimettransit.tracker.ui.components.EmptyState
-import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
+import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
-import com.trimettransit.tracker.ui.components.transitBadgeLetter
-import com.trimettransit.tracker.ui.components.transitBadgeLetters
-import com.trimettransit.tracker.ui.components.transitColor
-import com.trimettransit.tracker.ui.components.transitIconResource
-import com.trimettransit.tracker.ui.components.transitOnColor
-import com.trimettransit.tracker.ui.components.transitTypeLabel
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
-import com.trimettransit.tracker.ui.theme.appCardBorder
+import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
-import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
-import com.trimettransit.tracker.ui.theme.m3SpatialFast
-import com.trimettransit.tracker.util.formatDateTime
-import com.trimettransit.tracker.util.minutesUntil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.roundToInt
-import org.joda.time.DateTime
-import org.maplibre.android.camera.CameraUpdateFactory
-import org.maplibre.android.geometry.LatLng
-import org.maplibre.android.maps.MapLibreMap
-import org.maplibre.android.maps.Style
-import org.maplibre.android.style.expressions.Expression
-import org.maplibre.android.style.layers.Property
-import org.maplibre.android.style.layers.PropertyFactory.iconAllowOverlap
-import org.maplibre.android.style.layers.PropertyFactory.iconAnchor
-import org.maplibre.android.style.layers.PropertyFactory.iconIgnorePlacement
-import org.maplibre.android.style.layers.PropertyFactory.iconImage
-import org.maplibre.android.style.layers.PropertyFactory.iconRotate
-import org.maplibre.android.style.layers.PropertyFactory.iconRotationAlignment
-import org.maplibre.android.style.layers.PropertyFactory.textAllowOverlap
-import org.maplibre.android.style.layers.PropertyFactory.textAnchor
-import org.maplibre.android.style.layers.PropertyFactory.textColor
-import org.maplibre.android.style.layers.PropertyFactory.textField
-import org.maplibre.android.style.layers.PropertyFactory.textFont
-import org.maplibre.android.style.layers.PropertyFactory.textHaloColor
-import org.maplibre.android.style.layers.PropertyFactory.textHaloWidth
-import org.maplibre.android.style.layers.PropertyFactory.textIgnorePlacement
-import org.maplibre.android.style.layers.PropertyFactory.textOffset
-import org.maplibre.android.style.layers.PropertyFactory.textSize
-import org.maplibre.android.style.layers.SymbolLayer
-import org.maplibre.android.style.sources.GeoJsonSource
-import org.maplibre.geojson.Feature
-import org.maplibre.geojson.FeatureCollection
-import org.maplibre.geojson.Point
 
 private const val POSITION_REFRESH_MS = 15_000L
 private const val PIP_REFRESH_MS = 20_000L
 private const val ARRIVALS_REFRESH_MS = 30_000L
-private const val TOP_ARRIVAL_ROWS = 5
 private const val ARRIVALS_FETCH_MINUTES = 30
 private const val ARRIVALS_FETCH_MAX = 15
-private const val STOP_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
-private const val STOP_MAP_STYLE_URL_DARK = "https://tiles.openfreemap.org/styles/dark"
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -521,7 +443,7 @@ fun ArrivalsScreen(
                                         remember { MutableInteractionSource() }
                                     Surface(
                                         modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+                                        shape = appCardShape(),
                                         color = MaterialTheme.colorScheme.surfaceContainerLow
                                     ) {
                                         Row(
@@ -579,596 +501,3 @@ fun ArrivalsScreen(
     }
 }
 
-@Composable
-private fun AlertsDialog(
-    detours: List<Detour>,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = stringResource(R.string.alerts_count, detours.size),
-                style = MaterialTheme.typography.titleLarge
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                detours.forEach { detour ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Text(
-                            text = stringResource(R.string.bullet),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                        Text(
-                            text = detour.desc,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.close))
-            }
-        }
-    )
-}
-
-private fun formatDelay(arrival: Arrival, context: Context): String? {
-    if (!arrival.isEstimated || arrival.estimatedMillis == 0L || arrival.scheduledMillis == 0L) return null
-    val delayMin = (arrival.estimatedMillis - arrival.scheduledMillis) / 60000.0
-    return when {
-        delayMin >= 1.0 -> context.getString(R.string.arrival_delay_late, delayMin.roundToInt())
-        delayMin <= -1.0 -> context.getString(R.string.arrival_delay_early, -delayMin.roundToInt())
-        else -> context.getString(R.string.arrival_on_time)
-    }
-}
-
-@Composable
-private fun StopMapCard(
-    lat: Double,
-    lng: Double,
-    modifier: Modifier = Modifier,
-    blockPositions: List<BlockPosition> = emptyList(),
-    arrivals: List<Arrival> = emptyList(),
-    trackedVehicleId: Int = 0,
-    isDark: Boolean = false
-) {
-    val mapState = remember { MapState() }
-    // Resolve the drop-off label in the configuration-aware composable scope (the map's
-    // getMapAsync callback is not configuration-aware, so it can't look the string up there).
-    mapState.dropoffLabel = stringResource(R.string.arrival_dropoff_only)
-    mapState.countdownDue = stringResource(R.string.due)
-    mapState.countdownMinFormat = stringResource(R.string.minutes)
-    val density = LocalDensity.current.density
-    val scheme = MaterialTheme.colorScheme
-    val badgeColors = remember(scheme) {
-        transitBadgeLetters().associateWith { transitColor(it, scheme) }
-    }
-    val badgeGlyphColors = remember(scheme) {
-        transitBadgeLetters().associateWith { transitOnColor(it, scheme) }
-    }
-    val context = LocalContext.current
-    val mapStyleUrl = if (isDark) STOP_MAP_STYLE_URL_DARK else STOP_MAP_STYLE_URL
-    // MapLibre halo/text colors are chosen for legibility against the basemap: light basemap
-    // wants a light halo over dark glyphs, the dark basemap wants a dark halo over light glyphs.
-    val countdownTextColor = scheme.onSurface.toArgb()
-    val countdownHaloColor = if (isDark) scheme.surface.toArgb() else android.graphics.Color.WHITE
-
-    fun applyStopMapStyle(style: Style) {
-        style.addImage(
-            "stop-dot",
-            circleMarker(
-                backDp = 17f,
-                backColor = scheme.primary.toArgb(),
-                fillDp = 17f,
-                fillColor = scheme.primary.toArgb(),
-                density = density,
-                foreground = listOf(DotCircle(6f, scheme.onPrimary.toArgb()))
-            )
-        )
-        badgeColors.forEach { (letter, color) ->
-            style.addImage(
-                "badge-$letter",
-                badgeBitmap(
-                    context,
-                    color.toArgb(),
-                    transitIconResource(letter),
-                    density,
-                    badgeGlyphColors[letter]?.toArgb() ?: android.graphics.Color.WHITE
-                )
-            )
-        }
-        style.addSource(
-            GeoJsonSource(
-                "stop-source",
-                Feature.fromGeometry(Point.fromLngLat(lng, lat))
-            )
-        )
-        style.addLayer(
-            SymbolLayer("stop-layer", "stop-source").withProperties(
-                iconImage("stop-dot"),
-                iconAnchor(Property.ICON_ANCHOR_CENTER),
-                iconAllowOverlap(true),
-                iconIgnorePlacement(true)
-            )
-        )
-        val busSource = GeoJsonSource("bus-source")
-        style.addSource(busSource)
-        style.addLayer(
-            SymbolLayer("bus-layer", "bus-source").withProperties(
-                iconImage(Expression.get("icon")),
-                iconRotate(Expression.get("bearing")),
-                iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
-                iconAnchor(Property.ICON_ANCHOR_CENTER),
-                iconAllowOverlap(true),
-                iconIgnorePlacement(true)
-            )
-        )
-        mapState.busSource = busSource
-        style.addLayer(
-            SymbolLayer("countdown-layer", "bus-source").withProperties(
-                textField(Expression.get("countdown")),
-                textAnchor(Property.TEXT_ANCHOR_BOTTOM),
-                textOffset(arrayOf(0f, -1.8f)),
-                textSize(11f),
-                textColor(countdownTextColor),
-                textHaloColor(countdownHaloColor),
-                textHaloWidth(2f),
-                textAllowOverlap(true),
-                textIgnorePlacement(true),
-                textFont(arrayOf("Noto Sans Bold"))
-            )
-        )
-    }
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        ),
-        border = appCardBorder(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        MapLibreMapHost(
-            styleUrl = mapStyleUrl,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(260.dp),
-            consumeSingleFingerTouches = true,
-            onStyleReady = { map, style, isReapply ->
-                applyStopMapStyle(style)
-                if (!isReapply) {
-                    map.moveCamera(
-                        CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 16.0)
-                    )
-                }
-                mapState.applyPositions()   // in case update ran before style load
-            },
-            onUpdate = { view, map ->
-                mapState.positions = blockPositions
-                mapState.arrivals = arrivals
-                mapState.applyPositions()
-                // Follow the tracked bus instead of framing the stop together with it,
-                // so the camera stays centered on the vehicle and its "N min" label never
-                // clips at the map's top edge. The stop marker still renders but simply
-                // scrolls out of frame once a bus position is available.
-                if (map != null && view.width > 0 && view.height > 0) {
-                    trackedTarget(blockPositions, trackedVehicleId)?.let { target ->
-                        keepBusCentered(map, target, view.width, view.height, density)
-                    }
-                }
-            }
-        )
-    }
-}
-
-private class MapState {
-    var map: MapLibreMap? = null
-    var busSource: GeoJsonSource? = null
-    var positions: List<BlockPosition> = emptyList()
-    var arrivals: List<Arrival> = emptyList()
-
-    /** Resolved "Dropoff Only" label, set when the map is configured. */
-    var dropoffLabel: String = ""
-
-    /** Resolved countdown labels, set when the map is configured. */
-    var countdownDue: String = ""
-    var countdownMinFormat: String = ""
-
-    /** Pushes the latest bus positions into the GeoJsonSource (no-op until style is ready). */
-    fun applyPositions() {
-        val source = busSource ?: return
-        val features = positions
-            .filter { it.lat != 0.0 || it.lng != 0.0 }
-            .map { bp ->
-            val letter = transitBadgeLetter(bp.routeNumber).ifBlank { "B" }
-            val feature = Feature.fromGeometry(Point.fromLngLat(bp.lng, bp.lat))
-            feature.addStringProperty("icon", "badge-$letter")
-            feature.addNumberProperty("bearing", bp.bearing)
-            // Time-left label shown above the icon: the tracked arrival for this vehicle,
-            // phrased exactly like the list rows. Drop-off-only arrivals show the label
-            // instead of a countdown. Empty string renders nothing on the map.
-            val match = arrivals.firstOrNull { it.vehicleID == bp.vehicleID }
-            val label = if (match?.dropOffOnly == true) {
-                dropoffLabel
-            } else {
-                val atMillis = match?.displayTimeMillis
-                if (atMillis != null) {
-                    val mins = minutesUntil(atMillis)
-                    if (mins <= 0) countdownDue else countdownMinFormat.format(mins)
-                } else ""
-            }
-            feature.addStringProperty("countdown", label)
-            feature
-        }
-        source.setGeoJson(FeatureCollection.fromFeatures(features))
-    }
-}
-
-/** The bus to follow: the tracked vehicle, else the first live position on that route. */
-private fun trackedTarget(
-    blockPositions: List<BlockPosition>,
-    trackedVehicleId: Int
-): LatLng? {
-    val valid = blockPositions.filter { it.lat != 0.0 || it.lng != 0.0 }
-    if (valid.isEmpty()) return null
-    return valid.firstOrNull { it.vehicleID == trackedVehicleId }
-        ?.let { LatLng(it.lat, it.lng) }
-        ?: LatLng(valid.first().lat, valid.first().lng)
-}
-
-/**
- * Pans the camera back onto the bus only when it drifts outside a centered band.
- * The top margin is larger so the "N min" label above the icon stays on screen;
- * user zoom is preserved and the stop is no longer kept in frame.
- */
-private fun keepBusCentered(
-    map: MapLibreMap,
-    target: LatLng,
-    viewWidth: Int,
-    viewHeight: Int,
-    density: Float
-) {
-    val marginPx = (24 * density).toInt()
-    val topMarginPx = (72 * density).toInt()
-    val p = map.projection.toScreenLocation(target)
-    val outside = p.x < marginPx || p.x > viewWidth - marginPx ||
-            p.y < topMarginPx || p.y > viewHeight - marginPx
-    if (outside) {
-        map.easeCamera(CameraUpdateFactory.newLatLng(target), 400)
-    }
-}
-
-@Composable
-private fun ArrivalItem(
-    arrival: Arrival,
-    context: Context,
-    modifier: Modifier = Modifier,
-    refreshKey: Int = 0,
-    lineDetours: List<Detour> = emptyList(),
-    onShowAlerts: (List<Detour>) -> Unit = {},
-    onClick: () -> Unit = {}
-) {
-    val type = transitBadgeLetter(arrival.routeId)
-    val scheme = MaterialTheme.colorScheme
-    val color = remember(type, scheme) {
-        transitColor(type, scheme)
-    }
-    val displayTime = arrival.displayTimeMillis
-
-    val formattedTime = if (displayTime > 0L) formatDateTime(DateTime(displayTime), context) else ""
-    val minutesAway = if (displayTime > 0L) minutesUntil(displayTime) else 0L
-
-    val interactionSource = remember { MutableInteractionSource() }
-    Card(
-        onClick = onClick,
-        interactionSource = interactionSource,
-        modifier = modifier
-            .fillMaxWidth()
-            .pressScale(interactionSource),
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-        colors = CardDefaults.cardColors(
-            containerColor = lerp(
-                MaterialTheme.colorScheme.surfaceContainerLow,
-                color,
-                0.10f
-            )
-        ),
-        border = appCardBorder(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-                color = color
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(id = transitIconResource(type)),
-                        contentDescription = stringResource(transitTypeLabel(type)),
-                        tint = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = arrival.shortSign,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = formattedTime,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            AnimatedVisibility(
-                visible = lineDetours.isNotEmpty(),
-                enter = fadeIn(m3EffectsDefault()) + scaleIn(initialScale = 0.6f, animationSpec = m3SpatialDefault()),
-                exit = fadeOut(m3EffectsFast()) + scaleOut(targetScale = 0.6f, animationSpec = m3SpatialFast())
-            ) {
-                Row {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    val alertInteractionSource = remember { MutableInteractionSource() }
-                    Surface(
-                        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-                        color = MaterialTheme.colorScheme.errorContainer,
-                        modifier = Modifier
-                            .requiredSizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                            .pressScale(alertInteractionSource)
-                            .clickable(
-                                interactionSource = alertInteractionSource,
-                                indication = LocalIndication.current
-                            ) { onShowAlerts(lineDetours) }
-                    ) {
-                        Box(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 15.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_alert_warning),
-                                contentDescription = stringResource(R.string.show_alerts_for_route, arrival.routeId),
-                                tint = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Surface(
-                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-                color = MaterialTheme.colorScheme.onSurface
-            ) {
-                if (arrival.isCanceled) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = context.getString(R.string.arrival_cancelled),
-                            color = MaterialTheme.colorScheme.surface,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (arrival.reason.isNotEmpty()) {
-                            Text(
-                                text = arrival.reason,
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    }
-                } else if (arrival.dropOffOnly) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = context.getString(R.string.arrival_dropoff_only),
-                            color = MaterialTheme.colorScheme.surface,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (arrival.reason.isNotEmpty()) {
-                            Text(
-                                text = arrival.reason,
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    }
-                } else {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        AnimatedCountdownText(
-                            minutesAway = minutesAway,
-                            isEstimated = arrival.isEstimated,
-                            color = MaterialTheme.colorScheme.surface,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        val delayText = formatDelay(arrival, context)
-                        if (delayText != null) {
-                            Text(
-                                text = delayText,
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        } else if (!arrival.isEstimated) {
-                            Text(
-                                text = stringResource(R.string.scheduled),
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PipCountdownContent(
-    arrivals: List<Arrival>,
-    stopName: String,
-    modifier: Modifier = Modifier,
-    tick: Int = 0
-) {
-    val scheme = MaterialTheme.colorScheme
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(scheme.surface)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-    ) {
-        Text(
-            text = stopName.ifBlank { stringResource(R.string.stop) },
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(Modifier.height(8.dp))
-        if (arrivals.isEmpty()) {
-            Text(
-                text = stringResource(R.string.no_upcoming_arrivals),
-                style = MaterialTheme.typography.bodyMedium,
-                color = scheme.onSurfaceVariant
-            )
-        } else {
-            arrivals.take(TOP_ARRIVAL_ROWS).forEach { arrival ->
-                val type = transitBadgeLetter(arrival.routeId)
-                val color = transitColor(type, scheme)
-                val displayTime = arrival.displayTimeMillis
-                val minutesAway = if (displayTime > 0L) minutesUntil(displayTime) else 0L
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        modifier = Modifier.size(26.dp),
-                        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-                        color = color
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(id = transitIconResource(type)),
-                                contentDescription = null,
-                                tint = scheme.surface,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = arrival.shortSign,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    if (arrival.isCanceled) {
-                        Text(
-                            text = stringResource(R.string.canceled),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = scheme.error
-                        )
-                    } else if (arrival.dropOffOnly) {
-                        Text(
-                            text = stringResource(R.string.dropoff_only),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = scheme.onSurfaceVariant
-                        )
-                    } else {
-                        AnimatedCountdownText(
-                            minutesAway = minutesAway,
-                            isEstimated = arrival.isEstimated,
-                            color = color,
-                            style = MaterialTheme.typography.titleSmall
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Countdown "N min" / "Due" label that rolls with minute changes instead of snapping.
- * The tick updates the minute bucket every ~30s; AnimatedContent slides the change in the
- * direction of the countdown (decreasing rolls in from the right) and fades the swap.
- */
-@Composable
-private fun AnimatedCountdownText(
-    minutesAway: Long,
-    isEstimated: Boolean,
-    color: Color,
-    style: TextStyle,
-    modifier: Modifier = Modifier
-) {
-    AnimatedContent(
-        targetState = minutesAway.coerceAtLeast(0L),
-        modifier = modifier,
-        transitionSpec = {
-            val decreasing = targetState < initialState
-            val enter = (if (decreasing) {
-                slideInHorizontally(m3SpatialDefault()) { it / 3 }
-            } else {
-                slideInHorizontally(m3SpatialDefault()) { -it / 3 }
-            }) + fadeIn(m3EffectsDefault())
-            val exit = (if (decreasing) {
-                slideOutHorizontally(m3SpatialFast()) { -it / 3 }
-            } else {
-                slideOutHorizontally(m3SpatialFast()) { it / 3 }
-            }) + fadeOut(m3EffectsFast())
-            enter togetherWith exit
-        },
-        label = "countdownRoll"
-    ) { minutes ->
-        Text(
-            text = if (minutes <= 0) stringResource(R.string.due) else stringResource(R.string.minutes, minutes),
-            color = color,
-            style = style,
-            fontWeight = if (isEstimated) FontWeight.Bold else FontWeight.Normal
-        )
-    }
-}

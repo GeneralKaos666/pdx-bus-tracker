@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardShape
 
 /**
  * Rounded shimmer placeholder block — a surface-tinted fill with a soft highlight band
@@ -46,7 +47,7 @@ fun ShimmerBox(
 ) {
     val base = MaterialTheme.colorScheme.surfaceVariant
     val highlight = MaterialTheme.colorScheme.surfaceContainerHighest
-    val resolvedShape = shape ?: RoundedCornerShape(LocalCardStyle.current.cornerRadius)
+    val resolvedShape = shape ?: appCardShape()
     val transition = rememberInfiniteTransition(label = "shimmer")
     val progress by transition.animateFloat(
         initialValue = 0f,
@@ -134,7 +135,7 @@ private fun ShimmerRow() {
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ShimmerBox(modifier = Modifier.size(40.dp), shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius))
+        ShimmerBox(modifier = Modifier.size(40.dp), shape = appCardShape())
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             ShimmerBox(modifier = Modifier.fillMaxWidth().height(16.dp))

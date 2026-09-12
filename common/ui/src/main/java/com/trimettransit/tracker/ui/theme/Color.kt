@@ -7,14 +7,6 @@ val TrimetBlue = Color(0xFF0079C1)
 val TrimetBlueDark = Color(0xFF005A91)
 val TrimetOrange = Color(0xFFFF7F00)
 
-// Line colors
-val CircleRed = Color(0xFFE60000)
-val CircleBlue = Color(0xFF0000FF)
-val CircleYellow = Color(0xFFFFDC00)
-val CircleGreen = Color(0xFF00A300)
-val CircleBlack = Color(0xFF000000)
-val CircleDefault = Color(0xFF888888)
-
 // Light theme M3 tokens
 val LightPrimary = Color(0xFF0079C1)
 val LightOnPrimary = Color(0xFFFFFFFF)

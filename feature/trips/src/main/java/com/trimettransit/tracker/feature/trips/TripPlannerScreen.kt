@@ -80,6 +80,7 @@ import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
@@ -373,7 +374,7 @@ fun TripPlannerScreen(
         ) {
             Surface(
                 onClick = { showLocationExplainer = true },
-                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+                shape = appCardShape(),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 shadowElevation = 4.dp,
                 modifier = Modifier
@@ -397,7 +398,7 @@ fun TripPlannerScreen(
         ) {
             // Endpoint + scheduling card
             Surface(
-                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+                shape = appCardShape(),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 border = appCardBorder(),
                 shadowElevation = 1.dp,
@@ -602,7 +603,7 @@ fun TripPlannerScreen(
                     slideOutVertically(m3SpatialFast()) { -it / 3 }
             ) {
                 Surface(
-                    shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+                    shape = appCardShape(),
                     color = MaterialTheme.colorScheme.primaryContainer,
                     shadowElevation = 4.dp,
                     modifier = Modifier
@@ -639,7 +640,7 @@ fun TripPlannerScreen(
             val statusText = resolvedError
             if (statusText != null) {
                 Surface(
-                    shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+                    shape = appCardShape(),
                     color = if (planResult is TripPlanResult.Error) {
                         MaterialTheme.colorScheme.errorContainer
                     } else {
@@ -765,7 +766,7 @@ private fun EndpointRow(
     Surface(
         onClick = onClick,
         interactionSource = source,
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+        shape = appCardShape(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier
             .fillMaxWidth()
@@ -780,7 +781,7 @@ private fun EndpointRow(
             Box(
                 modifier = Modifier
                     .size(10.dp)
-                    .background(accentColor, RoundedCornerShape(LocalCardStyle.current.cornerRadius))
+                    .background(accentColor, appCardShape())
             )
             Spacer(modifier = Modifier.width(10.dp))
             Crossfade(

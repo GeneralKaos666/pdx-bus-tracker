@@ -46,6 +46,7 @@ import com.trimettransit.tracker.model.TripPlan
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.util.clockTime
 import org.joda.time.DateTime
 @OptIn(ExperimentalMaterial3Api::class)
@@ -187,7 +188,7 @@ internal fun RouteBadge(
     val letter = leg.mode.transitTypeLetter()
     val badgeDescription = contentDescription
     Surface(
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+        shape = appCardShape(),
         color = transitColor(letter, scheme),
         modifier = if (badgeDescription != null) {
             modifier.semantics { this.contentDescription = badgeDescription }
@@ -275,7 +276,7 @@ internal fun LegRow(leg: TripLeg) {
                 )
                 if (leg.stayOnBoard) {
                     Surface(
-                        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+                        shape = appCardShape(),
                         color = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         Text(

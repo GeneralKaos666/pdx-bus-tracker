@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardShape
 import java.util.Locale
 
 const val STOP_SEARCH_MAX_RESULTS = 250
@@ -71,7 +72,7 @@ fun StopSearchItem(
         }
         Surface(
             modifier = Modifier.size(40.dp),
-            shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+            shape = appCardShape(),
             color = typeColor
         ) {
             Box(contentAlignment = Alignment.Center) {

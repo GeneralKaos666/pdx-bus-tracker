@@ -2,6 +2,7 @@ package com.trimettransit.tracker.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -40,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.R
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
@@ -79,7 +83,7 @@ fun StopListItem(
                     scaleY = zoom.value
                 }
             },
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+        shape = appCardShape(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
@@ -102,7 +106,7 @@ fun StopListItem(
             // Transit type indicator
             Surface(
                 modifier = Modifier.size(40.dp),
-                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+                shape = appCardShape(),
                 color = transitTypeColor
             ) {
                 Box(
@@ -181,7 +185,7 @@ fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+        shape = appCardShape(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
@@ -209,7 +213,7 @@ fun SettingsIconCircle(icon: ImageVector, highlighted: Boolean) {
     )
     Surface(
         modifier = Modifier.size(40.dp),
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+        shape = appCardShape(),
         color = containerColor
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -268,6 +272,70 @@ fun SettingsRowOption(
         }
         Spacer(modifier = Modifier.width(16.dp))
         trailing()
+    }
+}
+
+/** [SettingsRowOption] variant that previews the card corner shape itself instead of an icon. */
+@Composable
+fun SettingsCornerOption(
+    label: String,
+    subtitle: String,
+    cut: Boolean,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val radius = LocalCardStyle.current.cornerRadius
+    val previewShape = if (cut) CutCornerShape(radius) else RoundedCornerShape(radius)
+    val interactionSource = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressScale(interactionSource)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                onClick = onClick
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            modifier = Modifier.size(40.dp),
+            shape = previewShape,
+            color = if (selected) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceContainerHighest
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Surface(
+                    modifier = Modifier.size(18.dp),
+                    shape = previewShape,
+                    color = Color.Transparent,
+                    border = BorderStroke(
+                        2.dp,
+                        if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                ) {}
+            }
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        RadioButton(selected = selected, onClick = null)
     }
 }
 

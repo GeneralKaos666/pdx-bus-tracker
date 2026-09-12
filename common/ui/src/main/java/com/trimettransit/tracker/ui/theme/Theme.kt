@@ -140,6 +140,7 @@ fun TriMetGoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     cardCornerRadius: Dp = 16.dp,
+    cardCutCorners: Boolean = false,
     cardOutlinesEnabled: Boolean = true,
     cardOutlineColor: Color? = null,
     content: @Composable () -> Unit
@@ -164,6 +165,7 @@ fun TriMetGoTheme(
             CompositionLocalProvider(
                 LocalCardStyle provides CardStyle(
                     cornerRadius = cardCornerRadius,
+                    cutCorners = cardCutCorners,
                     outlinesEnabled = cardOutlinesEnabled,
                     outlineColor = cardOutlineColor
                 )

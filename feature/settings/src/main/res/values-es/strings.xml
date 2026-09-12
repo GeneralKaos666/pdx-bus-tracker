@@ -27,6 +27,12 @@
     <string name="card_outline_auto">Automático (seguir el tema)</string>
     <string name="card_corner_radius">Radio de las esquinas</string>
     <string name="card_corner_radius_dp">%1$d dp</string>
+    <string name="card_corner_style">Estilo de esquina</string>
+    <string name="card_corner_style_subtitle">Preajuste para esquinas de tarjetas y paneles</string>
+    <string name="corner_style_rounded">Redondeadas</string>
+    <string name="corner_style_rounded_subtitle">Esquinas suaves y curvas</string>
+    <string name="corner_style_cut">Cortadas</string>
+    <string name="corner_style_cut_subtitle">Esquinas achaflanadas y angulares</string>
     <string name="color_hue">Tono</string>
     <string name="color_saturation">Saturación</string>
     <string name="color_value">Valor</string>

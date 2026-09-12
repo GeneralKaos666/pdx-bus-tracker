@@ -58,6 +58,7 @@ import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.searchStops
 import com.trimettransit.tracker.ui.components.StopSearchItem
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
@@ -109,7 +110,7 @@ fun HomeSearchBar(
 
     Column(modifier = Modifier.fillMaxSize()) {
         Surface(
-            shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+            shape = appCardShape(),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier
                 .fillMaxWidth()
@@ -222,7 +223,7 @@ private fun SearchResultsDropdown(
         ) + fadeOut(m3EffectsFast())
     ) {
         Surface(
-            shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
+            shape = appCardShape(),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             shadowElevation = 8.dp,
             tonalElevation = 4.dp,
