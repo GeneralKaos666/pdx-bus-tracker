@@ -59,11 +59,13 @@ internal fun TripMap(
     picking: PickSlot,
     onMapTap: (LatLng) -> Unit,
     modifier: Modifier = Modifier,
-    isDark: Boolean = false
+    isDark: Boolean = false,
+    legGeometries: Map<Int, List<GeoPoint>> = emptyMap()
 ) {
     val currentOnMapTap by rememberUpdatedState(onMapTap)
     val pickingActive = picking != PickSlot.NONE
     val currentPickingActive by rememberUpdatedState(pickingActive)
+    val currentLegGeometries by rememberUpdatedState(legGeometries)
     val mapState = remember { TripMapState() }
     val fitSize = remember { intArrayOf(-1, -1) }
     val density = LocalDensity.current.density
@@ -73,7 +75,8 @@ internal fun TripMap(
 
     // Guarantee the route markers and lines track the selected itinerary even if the
     // AndroidView update pass is skipped on a future recomposition.
-    LaunchedEffect(origin, dest, itinerary) {
+    LaunchedEffect(origin, dest, itinerary, legGeometries) {
+        mapState.legGeometries = legGeometries
         mapState.push(origin, dest, itinerary)
     }
 
@@ -220,6 +223,7 @@ internal fun TripMap(
         onStyleReady = { map, style, isReapply ->
             mapState.map = map
             applyTripStyle(style)
+            mapState.legGeometries = currentLegGeometries
             mapState.push(origin, dest, itinerary)
             if (!isReapply) {
                 // Tap-to-drop-pin and the falling-back camera only need setup once; style
@@ -239,6 +243,7 @@ internal fun TripMap(
         },
         onUpdate = { view, map ->
             mapState.mapView = view
+            mapState.legGeometries = currentLegGeometries
             mapState.push(origin, dest, itinerary)
             myLocation?.let { mapState.applyMe(it.latitude, it.longitude) }
             fitPlanCameraIfReady(view, mapState, origin, dest, itinerary, fitSize)

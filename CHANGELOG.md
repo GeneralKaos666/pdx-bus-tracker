@@ -1,5 +1,13 @@
 # Changelog
 
+## What's New in v4.17.0
+
+- **Wide screens get two panes:** on tablets and in landscape, the app switches to a two-pane layout with a navigation rail — lists sit alongside detail content, so favorites and arrivals can be seen at a glance.
+- **New typography:** the interface now uses Bricolage Grotesque, a self-hosted open-source font family, giving headings and route lists a crisper, friendlier look.
+- **Trip Planner map follows the streets:** bus and streetcar legs now trace the real route and stop sequence between your pickup and drop-off points instead of a straight line. MAX legs keep their route lines.
+- **Service alerts in Home:** a new "Service alerts" tab beside Favorites lists current service disruptions — system-wide notices first, then route-by-route alerts with the affected route numbers.
+- **Cards and pills, consistent:** card outlines, fill, and corner radius now apply uniformly to cards, pills, and badges throughout the app, matching your Card outline and corner-radius settings.
+
 ## What's New in v4.16.0
 
 - **Español (Spanish):** the whole app is now translated into Spanish — favorites, arrivals, route browser, nearby stops, the Trip Planner (including its new options), home-screen widget, and Settings — following your device's language automatically. English remains the default.

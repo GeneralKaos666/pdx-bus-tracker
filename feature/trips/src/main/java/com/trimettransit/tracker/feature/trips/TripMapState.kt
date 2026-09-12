@@ -30,6 +30,14 @@ internal class TripMapState {
     var meSource: GeoJsonSource? = null
     var lastFitTag: FitTag? = null
 
+    /**
+     * Real route polyline coordinates (lat/lng), keyed by itinerary leg index. The Trip
+     * Planner WS returns no geometry, so transit legs normally render as straight "sticks";
+     * when a leg's route+direction stop sequence is known we slice it between boarding and
+     * alighting and draw the actual road-following line instead.
+     */
+    var legGeometries: Map<Int, List<GeoPoint>> = emptyMap()
+
     /** Identity of the plan the camera was last fitted to; lets the composable skip re-fitting
      *  on recompositions that don't change the trip (location fixes, picker toggles, theme). */
     data class FitTag(val origin: TripPoint?, val dest: TripPoint?, val itinerary: TripItinerary?)
@@ -40,9 +48,12 @@ internal class TripMapState {
         )
     }
 
+    private data class GeoRawPoint(val lng: Double, val lat: Double)
+
     /** Pushes origin/destination markers and the selected itinerary's route lines. The Trip
      *  Planner WS returns no geometry, so transit legs render as straight "sticks" between their
-     *  boarding and alighting points (dashed for walks) with badge markers at each boarding point. */
+* boarding and alighting points by default; when a leg's route geometry was resolved, the
+     * polyline spanning board→alight is drawn through the route's real stop sequence. */
     fun push(origin: TripPoint?, dest: TripPoint?, itinerary: TripItinerary?) {
         originSource?.let { source ->
             source.setGeoJson(
@@ -62,7 +73,9 @@ internal class TripMapState {
         transitSource?.let { source ->
             source.setGeoJson(
                 FeatureCollection.fromFeatures(
-                    legs.filter { !it.isWalk }.mapNotNull { transitLineFeature(it) }
+                    legs.mapIndexedNotNull { index, leg ->
+                        if (!leg.isWalk) transitLineFeature(leg, legGeometries[index]) else null
+                    }
                 )
             )
         }
@@ -74,15 +87,28 @@ internal class TripMapState {
             )
         }
         stopSource?.let { source ->
+            // Boarding points carry a badge marker, so plain stop dots cover walk segment
+            // endpoints, alighting points, and the intermediate stops of the drawn geometry.
+            val rawPoints = mutableListOf<GeoRawPoint>()
+            legs.forEachIndexed { index, leg ->
+                if (leg.isWalk) {
+                    rawPoints += GeoRawPoint(leg.from.longitude, leg.from.latitude)
+                    rawPoints += GeoRawPoint(leg.to.longitude, leg.to.latitude)
+                } else {
+                    rawPoints += GeoRawPoint(leg.to.longitude, leg.to.latitude)
+                }
+                legGeometries[index]?.forEach { point ->
+                    if (point.latitude != 0.0 || point.longitude != 0.0) {
+                        rawPoints += GeoRawPoint(point.longitude, point.latitude)
+                    }
+                }
+            }
             source.setGeoJson(
                 FeatureCollection.fromFeatures(
-                    legs.flatMap { leg ->
-                        // Boarding points carry a badge marker, so only walk segments and
-                        // alighting points need the plain stop dot.
-                        if (leg.isWalk) listOf(leg.from, leg.to) else listOf(leg.to)
-                    }
-                        .filter { it.latitude != 0.0 || it.longitude != 0.0 }
-                        .map { pointFeature(it.longitude, it.latitude) }
+                    rawPoints
+                        .filter { it.lat != 0.0 || it.lng != 0.0 }
+                        .distinct()
+                        .map { pointFeature(it.lng, it.lat) }
                 )
             )
         }
@@ -97,9 +123,15 @@ internal class TripMapState {
         }
     }
 
-    private fun transitLineFeature(leg: TripLeg): Feature? {
-        if (!leg.hasUsableEndpoints()) return null
-        val feature = Feature.fromGeometry(lineSegment(leg))
+    private fun transitLineFeature(leg: TripLeg, geometry: List<GeoPoint>?): Feature? {
+        val polygon = geometry?.map { Point.fromLngLat(it.longitude, it.latitude) }
+        val feature = if (polygon != null && polygon.size >= 2) {
+            Feature.fromGeometry(LineString.fromLngLats(polygon))
+        } else if (leg.hasUsableEndpoints()) {
+            Feature.fromGeometry(lineSegment(leg))
+        } else {
+            return null
+        }
         feature.addStringProperty("color", letterColors[leg.mode.transitTypeLetter()] ?: "#888888")
         return feature
     }
@@ -130,3 +162,6 @@ internal class TripMapState {
     private fun pointFeature(lng: Double, lat: Double): Feature =
         Feature.fromGeometry(Point.fromLngLat(lng, lat))
 }
+
+/** A plain lat/lng pair used to carry route geometry to the map (model-agnostic of maplibre). */
+internal data class GeoPoint(val latitude: Double, val longitude: Double)

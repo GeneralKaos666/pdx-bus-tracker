@@ -48,6 +48,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -69,6 +70,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.trimettransit.tracker.model.Direction
+import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripPlannerError
 import com.trimettransit.tracker.model.TripPlannerMode
@@ -76,6 +79,8 @@ import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
+import com.trimettransit.tracker.model.domain.matchDirection
+import com.trimettransit.tracker.model.domain.sliceStopsForLeg
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
@@ -160,6 +165,13 @@ fun TripPlannerScreen(
     var isPlanning by remember { mutableStateOf(false) }
     val planRunner = remember { SingleJobRunner(coroutineScope) }
     var locationJob by remember { mutableStateOf<Job?>(null) }
+    var legGeometries by remember { mutableStateOf<Map<Int, List<GeoPoint>>>(emptyMap()) }
+    val geometryDirectionsCache = remember {
+        mutableStateOf<Map<Int, List<Direction>>>(emptyMap())
+    }
+    val geometryStopsCache = remember {
+        mutableStateOf<Map<Pair<Int, Int>, List<Stop>>>(emptyMap())
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -352,11 +364,24 @@ fun TripPlannerScreen(
         countSummary
     ).joinToString(" · ")
 
+    // Resolve the selected itinerary's transit legs into real route geometry once the plan
+    // (or its selected option) changes; walks and legs whose route can't be matched to the
+    // route config keep the map's default stick rendering.
+    LaunchedEffect(selectedItinerary, transitRepository) {
+        legGeometries = fetchLegGeometries(
+            transitRepository = transitRepository,
+            itinerary = selectedItinerary,
+            directionsCache = geometryDirectionsCache,
+            stopsCache = geometryStopsCache
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         TripMap(
             origin = origin,
             dest = dest,
             itinerary = selectedItinerary,
+            legGeometries = legGeometries,
             myLocation = myLocation,
             picking = picking,
             onMapTap = { onMapTap(it) },
@@ -834,4 +859,46 @@ private fun tripPlannerErrorString(context: Context, error: TripPlannerError): S
         TripPlannerError.NETWORK -> context.getString(R.string.no_connection)
         TripPlannerError.UNKNOWN -> context.getString(R.string.trip_planner_error_unknown)
     }
+}
+
+/**
+ * Resolves the itinerary's transit legs into real route geometry. The Trip Planner WS
+ * returns no geometry, so each non-walk leg with a numeric route number is matched to its
+ * route config direction (via the leg's compass label) and the stop sequence is sliced
+ * between the boarding and alighting points. Legs that can't be resolved contribute no
+ * entry and the map keeps its straight stick line. Directions and stop sequences are
+ * memoized per (route, direction) so multi-leg or repeated plans avoid re-fetching.
+ */
+private suspend fun fetchLegGeometries(
+    transitRepository: TransitRepository,
+    itinerary: TripItinerary?,
+    directionsCache: MutableState<Map<Int, List<Direction>>>,
+    stopsCache: MutableState<Map<Pair<Int, Int>, List<Stop>>>
+): Map<Int, List<GeoPoint>> {
+    val result = mutableMapOf<Int, List<GeoPoint>>()
+    val plan = itinerary ?: return result
+    plan.legs.forEachIndexed { legIndex, leg ->
+        if (leg.isWalk) return@forEachIndexed
+        val routeId = leg.routeNumber?.toIntOrNull() ?: return@forEachIndexed
+        val dirSnapshot = directionsCache.value
+        val directions = dirSnapshot[routeId]
+            ?: transitRepository.getDirections(routeId)
+                ?.also { directionsCache.value = dirSnapshot + (routeId to it) }
+            ?: return@forEachIndexed
+        val direction = matchDirection(directions, leg.direction) ?: return@forEachIndexed
+        val key = routeId to direction.dir
+        val stopsSnapshot = stopsCache.value
+        val sequence = stopsSnapshot[key]
+            ?: transitRepository.getStops(routeId, direction.dir)
+                ?.also { stopsCache.value = stopsSnapshot + (key to it) }
+            ?: return@forEachIndexed
+        val slice = sliceStopsForLeg(
+            sequence,
+            leg.from.latitude, leg.from.longitude,
+            leg.to.latitude, leg.to.longitude
+        )
+        if (slice.size < 2) return@forEachIndexed
+        result[legIndex] = slice.map { GeoPoint(it.latitude, it.longitude) }
+    }
+    return result
 }
