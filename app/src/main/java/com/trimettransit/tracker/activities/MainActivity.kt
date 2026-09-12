@@ -15,41 +15,37 @@ import androidx.compose.runtime.SideEffect
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.graphics.toColorInt
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
-import kotlin.math.ceil
-import kotlin.math.floor
 import kotlin.math.roundToInt
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
@@ -59,9 +55,9 @@ import androidx.compose.material3.SnackbarDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.VerticalDivider
 import com.trimettransit.tracker.activities.toggleFavorite
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -73,18 +69,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import com.trimettransit.tracker.ui.MainBottomBar
+import com.trimettransit.tracker.ui.MainNavigationRail
+import com.trimettransit.tracker.ui.bottomNavItems
 import com.trimettransit.tracker.ui.components.findActivity
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
@@ -97,28 +95,17 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
@@ -147,14 +134,11 @@ import com.trimettransit.tracker.feature.settings.SettingsScreen
 import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
 import com.trimettransit.tracker.feature.trips.TripPlannerScreen
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialFast
-import com.trimettransit.tracker.ui.theme.m3SpatialSlow
-import androidx.annotation.StringRes
 import com.trimettransit.tracker.R
 
 private val AnimatedContentTransitionScope<*>.navEnter: EnterTransition
@@ -219,19 +203,6 @@ private val AnimatedContentTransitionScope<*>.navExitQuick: ExitTransition
         animationSpec = m3EffectsFast()
     )
 
-private data class BottomNavItem(
-    val pageIndex: Int,
-    @StringRes val labelRes: Int,
-    val icon: ImageVector,
-    val iconSize: Dp = 24.dp
-)
-
-private val bottomNavItems = listOf(
-    BottomNavItem(0, R.string.nav_favorites, Icons.Filled.Favorite),
-    BottomNavItem(1, R.string.nav_recent, Icons.Filled.History),
-    BottomNavItem(2, R.string.nav_routes, Icons.Filled.Map),
-    BottomNavItem(3, R.string.nav_trips, Icons.Filled.Directions)
-)
 
 // Type-safe navigation destinations, shared by the NavHost registration and every navigate()/popBackStack().
 @Serializable
@@ -265,282 +236,6 @@ private fun BackNavigationIcon(onClick: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MainBottomBar(
-    topPage: Int,
-    pagePosition: Float,
-    onNavigate: (Int) -> Unit,
-    onSettingsClick: () -> Unit,
-    showBack: Boolean = false,
-    onBackClick: () -> Unit = {},
-    onContextClick: () -> Unit = {},
-    contextLabelRes: Int? = null,
-    contextIcon: ImageVector? = null
-) {
-    val windowInfo = LocalWindowInfo.current
-    val density = LocalDensity.current
-    val fontScale = density.fontScale
-    val itemHeight = 40.dp
-    val shouldHideLabel = fontScale > 1.25f ||
-            windowInfo.containerSize.width < with(density) { 360.dp.roundToPx() }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (showBack) {
-                PillActionButton(
-                    onClick = onBackClick,
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back),
-                    shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                    size = itemHeight
-                )
-            }
-            Surface(
-                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shadowElevation = 8.dp,
-                tonalElevation = 4.dp
-            ) {
-                AnimatedContent(
-                    targetState = contextLabelRes == null,
-                    transitionSpec = {
-                        (fadeIn(m3EffectsDefault()) + scaleIn(initialScale = 0.85f, animationSpec = m3SpatialDefault())) togetherWith
-                            (fadeOut(m3EffectsFast()) + scaleOut(targetScale = 0.85f, animationSpec = m3SpatialFast()))
-                    },
-                    label = "nav_collapse"
-                ) { isTopLevel ->
-                    if (isTopLevel) {
-                        MainTabRow(
-                            topPage = topPage,
-                            items = bottomNavItems,
-                            itemHeight = itemHeight,
-                            shouldHideLabel = shouldHideLabel,
-                            onNavigate = onNavigate,
-                            pagePosition = pagePosition
-                        )
-                    } else {
-                        CompactContextPill(
-                            contextLabelRes = contextLabelRes ?: R.string.nav_arrivals,
-                            contextIcon = contextIcon,
-                            onClick = onContextClick,
-                            itemHeight = itemHeight
-                        )
-                    }
-                }
-            }
-            PillActionButton(
-                onClick = onSettingsClick,
-                icon = Icons.Default.Settings,
-                contentDescription = stringResource(R.string.settings),
-                shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                size = itemHeight
-            )
-        }
-    }
-}
-
-private data class PillBounds(val x: Int, val width: Int)
-
-@Composable
-private fun PillActionButton(
-    onClick: () -> Unit,
-    icon: ImageVector,
-    contentDescription: String,
-    shape: Shape,
-    containerColor: Color,
-    contentColor: Color,
-    size: Dp
-) {
-    Surface(
-        shape = shape,
-        color = containerColor,
-        shadowElevation = 8.dp,
-        tonalElevation = 4.dp
-    ) {
-        val source = remember { MutableInteractionSource() }
-        IconButton(
-            onClick = onClick,
-            interactionSource = source,
-            modifier = Modifier
-                .size(size)
-                .pressScale(source, 0.92f)
-        ) {
-            Icon(icon, contentDescription = contentDescription, tint = contentColor)
-        }
-    }
-}
-
-@Composable
-private fun MainTabRow(
-    topPage: Int,
-    items: List<BottomNavItem>,
-    itemHeight: Dp,
-    shouldHideLabel: Boolean,
-    onNavigate: (Int) -> Unit,
-    pagePosition: Float
-) {
-    val bounds = remember { mutableStateMapOf<Int, PillBounds>() }
-    var boxLeft by remember { mutableIntStateOf(0) }
-    val density = LocalDensity.current
-
-    // Continuous page position (currentPage + drag/fling offset fraction) drives the
-    // pill so it tracks finger swipes frame-by-frame instead of snapping on settle.
-    val maxIndex = items.lastIndex
-    val position = pagePosition.coerceIn(0f, maxIndex.toFloat())
-    val fromPage = floor(position).toInt().coerceIn(0, maxIndex)
-    val toPage = ceil(position).toInt().coerceIn(0, maxIndex)
-    val fraction = position - fromPage
-    val fromBounds = bounds[fromPage]
-    val toBounds = bounds[toPage]
-    val pillTarget = when {
-        fromBounds == null -> toBounds
-        toBounds == null -> fromBounds
-        else -> PillBounds(
-            x = fromBounds.x + ((toBounds.x - fromBounds.x) * fraction).roundToInt(),
-            width = fromBounds.width + ((toBounds.width - fromBounds.width) * fraction).roundToInt()
-        )
-    }
-
-    val indicatorOffset = with(density) { (pillTarget?.x ?: 0).toDp() }
-    val indicatorWidth = with(density) { (pillTarget?.width ?: 0).toDp() }
-
-    Box(
-        modifier = Modifier
-            .padding(8.dp)
-            .onGloballyPositioned { coords ->
-                boxLeft = coords.positionInWindow().x.roundToInt()
-            }
-    ) {
-        if (pillTarget != null) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .offset { IntOffset(indicatorOffset.roundToPx(), 0) }
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(indicatorWidth)
-                        .height(itemHeight)
-                        .clip(RoundedCornerShape(LocalCardStyle.current.cornerRadius))
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                )
-            }
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            items.forEachIndexed { index, item ->
-                val isSelected = topPage == item.pageIndex
-                val icon = item.icon
-                val labelRes = item.labelRes
-
-                val labelWidth by animateDpAsState(
-                    targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
-                    animationSpec = m3SpatialSlow(),
-                    label = "label_width_$index"
-                )
-
-                val itemSource = remember { MutableInteractionSource() }
-                IconButton(
-                    onClick = {
-                        if (item.pageIndex != topPage) onNavigate(item.pageIndex)
-                    },
-                    interactionSource = itemSource,
-                    modifier = Modifier
-                        .width(48.dp + labelWidth)
-                        .height(itemHeight)
-                        .onGloballyPositioned { coords ->
-                            val pos = coords.positionInWindow()
-                            bounds[index] = PillBounds(
-                                x = pos.x.roundToInt() - boxLeft,
-                                width = coords.size.width
-                            )
-                        }
-                        .pressScale(itemSource, 0.92f)
-                        .semantics {
-                            role = Role.Tab
-                            selected = isSelected
-                        },
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = if (isSelected) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        }
-                    )
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = stringResource(labelRes),
-                            tint = if (isSelected) {
-                                MaterialTheme.colorScheme.onSurface
-                            } else {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            },
-                            modifier = Modifier.size(item.iconSize)
-                        )
-                        if (isSelected && !shouldHideLabel) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(labelRes),
-                                style = MaterialTheme.typography.labelLarge,
-                                maxLines = 1,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CompactContextPill(
-    contextLabelRes: Int,
-    contextIcon: ImageVector?,
-    onClick: () -> Unit,
-    itemHeight: Dp
-) {
-    Surface(
-        shape = RoundedCornerShape(LocalCardStyle.current.cornerRadius),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shadowElevation = 8.dp,
-        tonalElevation = 4.dp
-    ) {
-        val source = remember { MutableInteractionSource() }
-        IconButton(
-            onClick = onClick,
-            interactionSource = source,
-            modifier = Modifier
-                .size(itemHeight)
-                .pressScale(source, 0.92f)
-        ) {
-            Icon(
-                imageVector = contextIcon ?: Icons.Default.Settings,
-                contentDescription = stringResource(contextLabelRes),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}
 
 class MainActivity : ComponentActivity() {
 
@@ -565,6 +260,9 @@ class MainActivity : ComponentActivity() {
             var themePref by remember { mutableStateOf(prefs.getString("theme", "system") ?: "system") }
             var dynamicColorPref by remember { mutableStateOf(prefs.getBoolean("pref_key_dynamic_color", true)) }
             var cardCornerRadiusPref by remember { mutableIntStateOf(prefs.getInt("pref_key_card_corner_radius", 16)) }
+            var cardCornerStylePref by remember {
+                mutableStateOf(prefs.getString("pref_key_card_corner_style", "rounded") ?: "rounded")
+            }
             var cardOutlinesPref by remember { mutableStateOf(prefs.getBoolean("pref_key_card_outlines", true)) }
             var cardOutlineColorPref by remember {
                 mutableStateOf(prefs.getString("pref_key_card_outline_color", "auto") ?: "auto")
@@ -575,6 +273,8 @@ class MainActivity : ComponentActivity() {
                         "theme" -> themePref = prefs.getString("theme", "system") ?: "system"
                         "pref_key_dynamic_color" -> dynamicColorPref = prefs.getBoolean("pref_key_dynamic_color", true)
                         "pref_key_card_corner_radius" -> cardCornerRadiusPref = prefs.getInt("pref_key_card_corner_radius", 16)
+                        "pref_key_card_corner_style" -> cardCornerStylePref =
+                            prefs.getString("pref_key_card_corner_style", "rounded") ?: "rounded"
                         "pref_key_card_outlines" -> cardOutlinesPref = prefs.getBoolean("pref_key_card_outlines", true)
                         "pref_key_card_outline_color" -> cardOutlineColorPref = prefs.getString("pref_key_card_outline_color", "auto") ?: "auto"
                     }
@@ -591,6 +291,7 @@ class MainActivity : ComponentActivity() {
                 darkTheme = isDark,
                 dynamicColor = dynamicColorPref,
                 cardCornerRadius = cardCornerRadiusPref.dp,
+                cardCutCorners = cardCornerStylePref == "cut",
                 cardOutlinesEnabled = cardOutlinesPref,
                 cardOutlineColor = parseCardOutlineColor(cardOutlineColorPref)
             ) {
@@ -634,6 +335,13 @@ private fun MainAppContent(
     val inPip = rememberIsInPipMode()
     val pipActivity = LocalContext.current.findActivity()
     val context = LocalContext.current
+
+    // WS4 adaptive layout: wide (≥840dp) screens become a master-detail split. The top-level
+    // pager sits left and the selected stop's arrivals render in a persistent right pane; the
+    // bottom pill bar is replaced by a left-edge rail. Narrow/mid layouts keep the phone UX.
+    val configuration = LocalConfiguration.current
+    val expandedPane = configuration.screenWidthDp >= 840
+    var detailStop by remember { mutableStateOf<ArrivalsDestination?>(null) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val refreshRotation = remember { Animatable(0f) }
     val destination = currentBackStackEntry?.destination
@@ -683,9 +391,13 @@ private fun MainAppContent(
         scope.launch {
             recentStopsRepository.addRecentStop(stopToRecord)
         }
-        navController.navigate(
-            ArrivalsDestination(stop.locId, stop.desc, routeId, stop.latitude, stop.longitude)
-        )
+        if (expandedPane) {
+            detailStop = ArrivalsDestination(stop.locId, stop.desc, routeId, stop.latitude, stop.longitude)
+        } else {
+            navController.navigate(
+                ArrivalsDestination(stop.locId, stop.desc, routeId, stop.latitude, stop.longitude)
+            )
+        }
     }
 
     // Widget taps arrive with stop/route/coords as intent extras (see WidgetLaunch).
@@ -723,10 +435,143 @@ private fun MainAppContent(
         scope.launch { topPagerState.animateScrollToPage(0) }
     }
 
+    // Two-pane: system back first closes the arrivals detail pane, then falls back to pager/exit.
+    BackHandler(enabled = expandedPane && isTopLevel && detailStop != null) {
+        detailStop = null
+    }
+
+    /**
+     * Toggles the favorite state for the stop currently shown, resolving its coordinates first if
+     * the arrivals fetch is still in flight or failed. Shared by the phone top bar and the
+     * two-pane detail header so both surfaces stay in sync.
+     */
+    fun toggleFavoriteFlow(locId: Int, stopName: String, routeId: Int) {
+        scope.launch {
+            var lat = arrivalsLat
+            var lng = arrivalsLng
+            if (!arrivalsIsFavorite && lat == 0.0 && lng == 0.0) {
+                // Coords not resolved yet (fetch still in flight or offline):
+                // resolve them now so the favorite isn't parked at 0,0.
+                transitRepository.getStopById(locId)?.let {
+                    lat = it.latitude
+                    lng = it.longitude
+                }
+            }
+            val result = toggleFavorite(favoritesRepository, context, locId, stopName, arrivalsIsFavorite, routeId, lat, lng)
+            if (result.first) {
+                arrivalsIsFavorite = !arrivalsIsFavorite
+            }
+            outerSnackbarHostState.showSnackbar(result.second)
+        }
+    }
+
+    /**
+     * Arrivals detail pane for the Expanded two-pane layout: a compact header (stop name, favorite,
+     * refresh, close) above the shared ArrivalsScreen so the pane mirrors the phone top bar's actions.
+     * Keyed by the selected stop so switching selections rebuilds the screen's local state.
+     */
+    val arrivalsDetailPane: @Composable (ArrivalsDestination) -> Unit = { dest ->
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 12.dp, top = 8.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = arrivalsStopName.ifBlank {
+                        dest.stopName.ifBlank { stringResource(R.string.stop) }
+                    },
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                val paneFavSource = remember(dest.stopId) { MutableInteractionSource() }
+                IconButton(
+                    onClick = { toggleFavoriteFlow(dest.stopId, dest.stopName, dest.routeId) },
+                    interactionSource = paneFavSource,
+                    modifier = Modifier.pressScale(paneFavSource)
+                ) {
+                    AnimatedContent(
+                        targetState = arrivalsIsFavorite,
+                        transitionSpec = { fadeIn(m3EffectsDefault()) togetherWith fadeOut(m3EffectsFast()) },
+                        label = "paneFavoriteIcon"
+                    ) { isFav ->
+                        Icon(
+                            imageVector = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = if (isFav) stringResource(R.string.remove_favorite) else stringResource(R.string.add_favorite),
+                            tint = if (isFav) MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                val paneRefreshSource = remember(dest.stopId) { MutableInteractionSource() }
+                IconButton(
+                    onClick = {
+                        scope.launch { refreshRotation.animateTo(refreshRotation.value + 360f, m3EffectsFast()) }
+                        arrivalsOnRefresh?.invoke()
+                    },
+                    interactionSource = paneRefreshSource,
+                    modifier = Modifier.pressScale(paneRefreshSource)
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = stringResource(R.string.refresh),
+                        modifier = Modifier.rotate(refreshRotation.value)
+                    )
+                }
+                val paneCloseSource = remember(dest.stopId) { MutableInteractionSource() }
+                IconButton(
+                    onClick = { detailStop = null },
+                    interactionSource = paneCloseSource,
+                    modifier = Modifier.pressScale(paneCloseSource)
+                ) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.close_detail),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            key(dest.stopId, dest.routeId) {
+                ArrivalsScreen(
+                    transitRepository = transitRepository,
+                    favoritesRepository = favoritesRepository,
+                    stopId = dest.stopId,
+                    stopName = dest.stopName,
+                    routeId = dest.routeId,
+                    latitude = dest.lat,
+                    longitude = dest.lng,
+                    isDark = isDark,
+                    onArrivalsStateChange = { name, fav, lat, lng ->
+                        arrivalsStopName = name
+                        arrivalsIsFavorite = fav
+                        arrivalsLat = lat
+                        arrivalsLng = lng
+                    },
+                    onRegisterRefresh = { arrivalsOnRefresh = it },
+                    onRegisterScrollToTop = { onScrollToTop = it }
+                )
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            contentWindowInsets = WindowInsets.safeDrawing
-                .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (expandedPane) {
+                MainNavigationRail(
+                    topPage = topPagerState.currentPage,
+                    onNavigate = ::navigateToTopPage,
+                    onSettingsClick = {
+                        navController.navigate(SettingsDestination) { launchSingleTop = true }
+                    }
+                )
+            }
+            Scaffold(
+                modifier = if (expandedPane) Modifier.weight(1f) else Modifier.fillMaxSize(),
+                contentWindowInsets = WindowInsets.safeDrawing
+                    .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
             topBar = {
                 if (!isTopLevel) {
                 AnimatedContent(
@@ -794,26 +639,11 @@ private fun MainAppContent(
                             IconButton(
                                 onClick = {
                                     val entry = currentBackStackEntry
-                                    val locId = entry?.arguments?.getInt("stopId") ?: 0
-                                    val stopName = entry?.arguments?.getString("stopName") ?: ""
-                                    scope.launch {
-                                        val routeId = entry?.arguments?.getInt("routeId") ?: -1
-                                        var lat = arrivalsLat
-                                        var lng = arrivalsLng
-                                        if (!arrivalsIsFavorite && lat == 0.0 && lng == 0.0) {
-                                            // Coords not resolved yet (fetch still in flight or offline):
-                                            // resolve them now so the favorite isn't parked at 0,0.
-                                            transitRepository.getStopById(locId)?.let {
-                                                lat = it.latitude
-                                                lng = it.longitude
-                                            }
-                                        }
-                                        val result = toggleFavorite(favoritesRepository, context, locId, stopName, arrivalsIsFavorite, routeId, lat, lng)
-                                        if (result.first) {
-                                            arrivalsIsFavorite = !arrivalsIsFavorite
-                                        }
-                                        outerSnackbarHostState.showSnackbar(result.second)
-                                    }
+                                    toggleFavoriteFlow(
+                                        entry?.arguments?.getInt("stopId") ?: 0,
+                                        entry?.arguments?.getString("stopName") ?: "",
+                                        entry?.arguments?.getInt("routeId") ?: -1
+                                    )
                                 },
                                 interactionSource = favSource,
                                 modifier = Modifier.pressScale(favSource)
@@ -896,11 +726,7 @@ private fun MainAppContent(
                 popExitTransition = { navPopExit }
             ) {
                 composable<HomeDestination>(exitTransition = { navExitQuick }) {
-                    HorizontalPager(
-                        state = topPagerState,
-                        modifier = Modifier.fillMaxSize(),
-                        beyondViewportPageCount = 1
-                    ) { page ->
+                    val topLevelPage: @Composable (Int) -> Unit = { page ->
                         saveableStateHolder.SaveableStateProvider(page) {
                             when (page) {
                                 0 -> FavoritesScreen(
@@ -937,6 +763,62 @@ private fun MainAppContent(
                                     isDark = isDark
                                 )
                             }
+                        }
+                    }
+                    if (expandedPane) {
+                        // Master-detail split: browsing list on the left, chosen stop's arrivals on the right.
+                        Row(modifier = Modifier.fillMaxSize()) {
+                            HorizontalPager(
+                                state = topPagerState,
+                                modifier = Modifier
+                                    .weight(1.15f)
+                                    .fillMaxHeight(),
+                                beyondViewportPageCount = 1
+                            ) { page ->
+                                topLevelPage(page)
+                            }
+                            VerticalDivider(modifier = Modifier.fillMaxHeight())
+                            val dest = detailStop
+                            if (dest == null) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            Icons.Filled.Schedule,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(48.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Text(
+                                            text = stringResource(R.string.expanded_arrivals_placeholder),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            } else {
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .padding(start = 8.dp, end = 16.dp)
+                                ) {
+                                    arrivalsDetailPane(dest)
+                                }
+                            }
+                        }
+                    } else {
+                        HorizontalPager(
+                            state = topPagerState,
+                            modifier = Modifier.fillMaxSize(),
+                            beyondViewportPageCount = 1
+                        ) { page ->
+                            topLevelPage(page)
                         }
                     }
                 }
@@ -979,32 +861,33 @@ private fun MainAppContent(
                 }
             }
         }
-        AnimatedVisibility(
-            visible = !inPip,
-            enter = slideInVertically(m3SpatialDefault()) { it } +
-                fadeIn(m3EffectsDefault()),
-            exit = slideOutVertically(m3SpatialFast()) { it } +
-                fadeOut(m3EffectsFast()),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            @SuppressLint("FrequentlyChangingValue")
-            val pagePosition = topPagerState.currentPage +
-                topPagerState.currentPageOffsetFraction
-            MainBottomBar(
-                topPage = topPagerState.currentPage,
-                pagePosition = pagePosition,
-                onNavigate = ::navigateToTopPage,
-                onSettingsClick = {
-                    navController.navigate(SettingsDestination) { launchSingleTop = true }
-                },
-                showBack = !isTopLevel,
-                onBackClick = { navController.popBackStack() },
-                onContextClick = { onScrollToTop?.invoke() },
-                contextLabelRes = contextLabelRes,
-                contextIcon = contextIcon
-            )
         }
+    AnimatedVisibility(
+        visible = !inPip && !expandedPane,
+        enter = slideInVertically(m3SpatialDefault()) { it } +
+            fadeIn(m3EffectsDefault()),
+        exit = slideOutVertically(m3SpatialFast()) { it } +
+            fadeOut(m3EffectsFast()),
+        modifier = Modifier.align(Alignment.BottomCenter)
+    ) {
+        @SuppressLint("FrequentlyChangingValue")
+        val pagePosition = topPagerState.currentPage +
+            topPagerState.currentPageOffsetFraction
+        MainBottomBar(
+            topPage = topPagerState.currentPage,
+            pagePosition = pagePosition,
+            onNavigate = ::navigateToTopPage,
+            onSettingsClick = {
+                navController.navigate(SettingsDestination) { launchSingleTop = true }
+            },
+            showBack = !isTopLevel,
+            onBackClick = { navController.popBackStack() },
+            onContextClick = { onScrollToTop?.invoke() },
+            contextLabelRes = contextLabelRes,
+            contextIcon = contextIcon
+        )
     }
+}
 
 }
 

@@ -95,4 +95,6 @@
     <string name="favorite_exists_text">El favorito ya existe.</string>
     <string name="failed_to_update_favorite">No se pudo actualizar el favorito</string>
     <string name="refresh">Actualizar</string>
+    <string name="close_detail">Cerrar detalles de llegada</string>
+    <string name="expanded_arrivals_placeholder">Selecciona una parada para ver las llegadas</string>
 </resources>

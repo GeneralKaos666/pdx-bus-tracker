@@ -76,6 +76,8 @@
     <string name="favorite_exists_text">Favorite already exists.</string>
     <string name="failed_to_update_favorite">Failed to update favorite</string>
     <string name="refresh">Refresh</string>
+    <string name="close_detail">Close arrival details</string>
+    <string name="expanded_arrivals_placeholder">Select a stop to view arrivals</string>
 
     <!-- Departure alerts -->
     <string name="departure_alert_channel_name">Departure alerts</string>
