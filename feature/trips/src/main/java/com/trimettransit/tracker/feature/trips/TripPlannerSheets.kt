@@ -39,6 +39,7 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
@@ -356,13 +357,15 @@ internal fun TripOptionsSheet(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
+                val walkSliderState = rememberSliderState(options.maxWalkMiles, 7, 0.1f..0.9f)
+                LaunchedEffect(options.maxWalkMiles) { walkSliderState.value = options.maxWalkMiles }
                 Slider(
-                    value = options.maxWalkMiles,
+                    state = walkSliderState,
                     onValueChange = { value ->
-                        onOptionsChanged(options.copy(maxWalkMiles = Math.round(value * 10) / 10f))
+                        val snapped = Math.round(value * 10) / 10f
+                        onOptionsChanged(options.copy(maxWalkMiles = snapped))
+                        walkSliderState.value = snapped
                     },
-                    valueRange = 0.1f..0.9f,
-                    steps = 7,
                     modifier = Modifier.weight(2f)
                 )
             }
