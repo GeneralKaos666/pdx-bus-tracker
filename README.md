@@ -1,22 +1,23 @@
 # PDX Bus Tracker
 
-Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Rail, Streetcar, and WES Commuter Rail — built with Jetpack Compose + Material 3.
+Real-time transit for Portland, OR's TriMet system: bus, MAX Light Rail, Streetcar, and WES, plus a trip planner that draws your options on a map. Built with Jetpack Compose and Material 3.
 
-*PDX Bus Tracker is an unofficial, community-built app. It is not affiliated with, sponsored by, or endorsed by TriMet. "TriMet" and "TransitTracker" are trademarks of the Tri-County Metropolitan Transportation District of Oregon; they are referenced here solely to identify the transit service the app reads data from. TriMet's logos are not used, and all transit data remains the property of TriMet. \*TriMet and TransitTracker are registered trademarks of TriMet. All rights reserved.\**
+PDX Bus Tracker is an unofficial, community-built app. It is not affiliated with, sponsored by, or endorsed by TriMet. "TriMet" and "TransitTracker" are trademarks of the Tri-County Metropolitan Transportation District of Oregon, used here only to name the transit service this app reads data from. TriMet's logos are not used, and all transit data remains the property of TriMet.
+
+*TriMet and TransitTracker are registered trademarks of TriMet. All rights reserved.*
 
 ## Features
 
-- **Real-time arrivals** — live departure countdowns at any stop, per-run bus positions on a map card, pull-to-refresh, and auto-refresh when the app returns to the foreground
-- **Trip Planner** — plan a from-A-to-B trip right on the map: pick an origin and destination by tapping the map, searching stops, or using your current location; choose depart-now or arrive-by and compare itinerary options whose routes are drawn over the basemap
-- **Route & stop browser** — routes → directions → stops in an animated accordion drill-down
-- **Nearby stops** — find stops around your current GPS location
-- **Stop search** — instant client-side search by name, right on the Home screen
-- **Favorites & recent stops** — saved locally in SQLite; the Favorites pill always lands on the Favorites tab
-- **Floating pill navigation** — a Material 3 Expressive pill bottom bar with a fixed Favorites / Recent / Routes / Trips item set, swipeable screens, and a trailing Settings button (becomes a Back button on Settings)
-- **Detours on arrival cards** — TriMet detours for each stop's routes show as pills right on the arrival rows
-- **Picture-in-picture** — mini-window countdown on the arrivals screen (2:3 PiP)
-- **Dynamic theming** — Material 3 with Android 12+ dynamic color; system/light/dark override in Settings
-- **Route-pinned mode** — optional setting to show only the arrivals for the route you opened the stop from
+- **Live arrivals.** See when the next bus, train, or MAX leaves any stop. Pull to refresh, and the list refreshes itself when you come back to the app.
+- **Trip Planner.** Pick a start and an end point by tapping the map, searching stops, or using your current location. Choose depart-now or arrive-by, and compare itinerary options drawn over the map.
+- **Route & stop browser.** Drill from routes to directions to stops in an animated accordion.
+- **Nearby stops.** Find stops around where you are, and search stops by name right from the Home screen (the local stop list stays usable offline).
+- **Favorites & recent stops.** Bookmark stops and step back to them in a tap. Everything is stored on your device in SQLite, and saved stops always land on the Favorites tab.
+- **Detours on arrival cards.** TriMet detour notices for a stop's routes appear as small badges right on the arrival rows.
+- **Floating pill navigation.** A compact pill bar keeps Favorites, Recent, Routes, Trips, and Settings within reach.
+- **Picture-in-picture.** Keep an arrival countdown in a floating mini-window while you use other apps.
+- **Dynamic theming.** Material 3 follows your system theme, with light and dark overrides in Settings.
+- **Route-pinned mode.** Optionally show only the arrivals for the route you opened a stop from.
 
 ## Screenshots
 
@@ -29,27 +30,27 @@ Real-time transit tracker for Portland, OR's TriMet system — bus, MAX Light Ra
 
 ## Requirements
 
-- Android 12+ (minSdk 31, targetSdk/compileSdk 37)
-- JDK 21 (locally and in CI)
+- Android 12 or newer (minSdk 31)
+- JDK 21
 - Android SDK platform 37
 
 ## Architecture
 
-11 Gradle modules in five layers with strictly downward dependencies (no module→app or feature→feature edges):
+The app is 12 Gradle modules in five layers with strictly downward dependencies: a module can depend on the layers below it, never above it, and no feature depends on another feature.
 
 | Layer | Modules |
 |---|---|
-| `app` | single Activity, Compose Navigation graph, floating pill nav + trailing Settings/Back button, PiP |
-| `feature/*` | `home`, `stops`, `trips`, `arrivals`, `settings` — one screen area per module |
+| `app` | Launcher, single activity, navigation, floating pill bar, picture-in-picture |
+| `feature/*` | `home`, `stops`, `trips`, `arrivals`, `settings` (one screen area per module) |
 | `component/*` | `transit` (TriMet API client: OkHttp + JSON/XML parsing, including the Trip Planner web service), `localdata` (SQLite favorites/recent stops) |
-| `common/*` | `model` (domain models), `utils` (connectivity, date helpers), `ui` (theme, shared Compose components, cross-screen state) |
+| `common/*` | `model` (domain models), `utils` (connectivity, date helpers), `ui` (theme, shared components), `map` (shared MapLibre map host) |
 
-No ViewModels, no DI framework, no Room — screens own state with `remember { mutableStateOf(...) }` and call suspend API functions.
+There are no ViewModels, no DI framework, and no Room. Screens keep their own state and call the API functions directly.
 
 ## Building
 
 1. **Prerequisites:** JDK 21 and Android SDK platform 37.
-2. **Get an API key:** register for a free key at [developer.trimet.org](https://developer.trimet.org/appid/registration/) (required only for real live data; an empty key builds fine).
+2. **Get an API key.** Register for a free key at [developer.trimet.org](https://developer.trimet.org/appid/registration/). You only need it for real-time data; the app builds fine without one.
 3. **Set the key** (either works):
    ```sh
    export TRIMET_API_KEY=your_key_here
@@ -60,27 +61,27 @@ No ViewModels, no DI framework, no Room — screens own state with `remember { m
    ```sh
    ./gradlew assembleDebug
    ```
-5. **APK location:** `app/build/outputs/apk/debug/`
-6. **Run the checks** (exactly what CI runs):
+5. **Find the APK** at `app/build/outputs/apk/debug/`.
+6. **Run the repo's full check** (tests, lint, and a debug build):
    ```sh
    ./gradlew clean test lint assembleDebug --stacktrace
    ```
 
 ### Release builds
 
-Release builds are signed with a local keystore (`app/release.keystore`, gitignored). Provide the credentials via environment variables — the build fails fast if they are missing:
+Release builds are signed with a local keystore (`app/release.keystore`, not checked in). Set the signing credentials as environment variables; the build fails fast if they are missing:
 
 ```sh
 export STORE_PASSWORD=... KEY_ALIAS=... KEY_PASSWORD=...
 ./gradlew assembleRelease bundleRelease
 ```
 
-- **Signed APK:** `app/build/outputs/apk/release/` (a copy named `PdxBusTracker-release-<version>.apk` lands in `app/build/outputs/renamed_apks/release/`)
-- **Android App Bundle (Google Play):** `app/build/outputs/bundle/release/app-release.aab` — this is what Play Console accepts for uploads
+- **Signed APK:** `app/build/outputs/apk/release/` (a copy named `PdxBusTracker-release-<version>.apk` also lands in `app/build/outputs/renamed_apks/release/`)
+- **Android App Bundle (what Play Console accepts):** `app/build/outputs/bundle/release/app-release.aab`
 
-**GitHub release:** after bumping `versionName` + the `## What's New in vX.Y.Z` changelog section, committing, and pushing, run `scripts/release.sh`. It reads the version from `app/build.gradle.kts`, pulls the latest changelog section as the release notes, and publishes the `vX.Y.Z` GitHub release with the signed APK attached (requires the `gh` CLI). `--dry-run` prints what it would do without publishing.
+**Publishing a GitHub release:** bump `versionName` and add a "What's New" section to the changelog, commit and push, then run `scripts/release.sh`. It reads the version from `app/build.gradle.kts`, pulls the latest changelog section, and publishes the release with the signed APK attached (requires the `gh` CLI). `--dry-run` prints what it would do without publishing.
 
-For a local smoke test without real credentials you can build with a debug fallback keystore: `-PreleaseSigningFallback=true`. Never upload that build.
+For a local smoke test without real credentials, build with `-PreleaseSigningFallback=true`. Never upload a build signed with the fallback keystore.
 
 ## Tech stack
 
@@ -94,16 +95,14 @@ For a local smoke test without real credentials you can build with a debug fallb
 | Kotlin coroutines | 1.11.0 |
 | MapLibre GL Native (OpenGL backend) | 13.6.1 + OpenFreeMap tiles |
 
-## Privacy Policy
+## Privacy
 
-PDX Bus Tracker collects no accounts, no analytics, and no advertising data. Location is used on-device and, when you browse nearby stops or plan a trip from your current location, sent as coordinates to TriMet's public API to look up stops and routes near you. Full details: [Privacy Policy](docs/privacy-policy.md).
+PDX Bus Tracker collects no accounts, no analytics, and no advertising data. Location stays on your device, except that browsing nearby stops or planning a trip from where you are sends your coordinates to TriMet's public API to find stops and routes near you. Full details: [Privacy Policy](docs/privacy-policy.md).
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE). Third-party libraries keep their own licenses; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the list. Basemap tiles come from [OpenFreeMap](https://openfreemap.org/) (OpenStreetMap data), with attribution shown in the app.
 
-Third-party libraries are distributed under their own licenses; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the full list and license texts. Basemap tiles are provided by [OpenFreeMap](https://openfreemap.org/) (OpenStreetMap data), with attribution shown in-app.
+The launcher icon is original artwork: route lines drawn by hand over aerial imagery of Portland from the [USGS National Map](https://basemap.nationalmap.gov/), which is U.S. Geological Survey public-domain material.
 
-The launcher icon's background is aerial imagery of Portland from the [USGS National Map](https://basemap.nationalmap.gov/) (U.S. Geological Survey — public domain); the route-line artwork on top is original.
-
-The app uses TriMet's public Web Services API ([developer.trimet.org](https://developer.trimet.org)). TriMet data remains the property of TriMet. PDX Bus Tracker is an unofficial project — TriMet does not sponsor, endorse, or maintain it.
+TriMet data remains the property of TriMet. PDX Bus Tracker is an unofficial project; TriMet does not sponsor, endorse, or maintain it.
