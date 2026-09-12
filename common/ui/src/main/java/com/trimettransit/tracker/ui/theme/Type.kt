@@ -2,11 +2,27 @@ package com.trimettransit.tracker.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.trimettransit.tracker.ui.R
+
+/**
+ * App typeface: Bricolage Grotesque (SIL OFL 1.1, see THIRD-PARTY-NOTICES.md).
+ * Bundled as static Latin instances of the variable font at the weights the UI uses,
+ * so each weight renders from a real outline rather than a synthesized fake weight.
+ */
+val TriMetGoFontFamily = FontFamily(
+    Font(R.font.bricolage_grotesque_regular, FontWeight.Normal),
+    Font(R.font.bricolage_grotesque_medium, FontWeight.Medium),
+    Font(R.font.bricolage_grotesque_semibold, FontWeight.SemiBold),
+    Font(R.font.bricolage_grotesque_bold, FontWeight.Bold),
+    Font(R.font.bricolage_grotesque_extrabold, FontWeight.ExtraBold)
+)
 
 val TriMetGoTypography = Typography(
+    fontFamily = TriMetGoFontFamily,
     displayLarge = TextStyle(
         fontWeight = FontWeight.Bold,
         fontSize = 57.sp,
