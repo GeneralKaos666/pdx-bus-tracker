@@ -27,4 +27,7 @@
     <string name="arrival_delay_late">%1$d min late</string>
     <string name="arrival_delay_early">%1$d min early</string>
     <string name="arrival_on_time">On time</string>
+    <string name="tap_to_track_title">Track the bus live</string>
+    <string name="tap_to_track_message">Tap a bus line to see its live position on the map.</string>
+    <string name="got_it">Got it</string>
 </resources>

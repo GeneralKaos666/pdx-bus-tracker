@@ -24,12 +24,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -50,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -87,6 +90,7 @@ private const val PIP_REFRESH_MS = 20_000L
 private const val ARRIVALS_REFRESH_MS = 30_000L
 private const val ARRIVALS_FETCH_MINUTES = 30
 private const val ARRIVALS_FETCH_MAX = 15
+private const val PREF_TAP_TO_TRACK_HINT_SHOWN = "pref_key_tap_to_track_hint_shown"
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -127,6 +131,20 @@ fun ArrivalsScreen(
     var isLoadingStop by remember { mutableStateOf(false) }
     var isFavorite by remember { mutableStateOf(false) }
     val hasValidCoords = !isLoadingStop && stopLat != 0.0 && stopLng != 0.0
+
+    // One-time "tap to track" hint: shown once ever, on the first visit where the
+    // tracking map can actually open (arrivals loaded + valid coordinates).
+    var showTapHintDialog by remember {
+        mutableStateOf(
+            !PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(PREF_TAP_TO_TRACK_HINT_SHOWN, false)
+        )
+    }
+    fun dismissTapToTrackHint() {
+        showTapHintDialog = false
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .edit { putBoolean(PREF_TAP_TO_TRACK_HINT_SHOWN, true) }
+    }
 
     // Read initial favorite state from DB
     LaunchedEffect(stopId) {
@@ -415,6 +433,7 @@ fun ArrivalsScreen(
                                                         rowKey            // opens under this row; switches if another row is tracked
                                                     trackingRouteId = arrival.routeId
                                                     trackingVehicleId = arrival.vehicleID
+                                                    dismissTapToTrackHint()
                                                 }
                                             }
                                         },
@@ -497,6 +516,19 @@ fun ArrivalsScreen(
         AlertsDialog(
             detours = detoursForDialog,
             onDismiss = { selectedDetours = null }
+        )
+    }
+
+    if (showTapHintDialog && !inPip && !isLoading && arrivals.isNotEmpty() && hasValidCoords) {
+        AlertDialog(
+            onDismissRequest = { dismissTapToTrackHint() },
+            title = { Text(stringResource(R.string.tap_to_track_title)) },
+            text = { Text(stringResource(R.string.tap_to_track_message)) },
+            confirmButton = {
+                TextButton(onClick = { dismissTapToTrackHint() }) {
+                    Text(stringResource(R.string.got_it))
+                }
+            }
         )
     }
 }

@@ -7,6 +7,7 @@
 - **New typography:** the interface now uses Bricolage Grotesque, a self-hosted open-source font family, giving headings and route lists a crisper, friendlier look.
 - **Trip Planner map follows the streets:** bus and streetcar legs now trace the real route and stop sequence between your pickup and drop-off points instead of a straight line. MAX legs keep their route lines.
 - **Cards and pills, consistent:** card outlines, fill, and corner radius now apply uniformly to cards, pills, and badges throughout the app, matching your Card outline and corner-radius settings.
+- **New to arrivals:** the first time you open arrivals, a one-time tip explains that tapping a bus line opens its live tracking map — tap a row and you'll see the bus move on the map; tap it again to close.
 
 ## What's New in v4.16.0
 

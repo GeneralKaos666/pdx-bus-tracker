@@ -28,4 +28,7 @@
     <string name="arrival_delay_late">%1$d min tarde</string>
     <string name="arrival_delay_early">%1$d min antes</string>
     <string name="arrival_on_time">A tiempo</string>
+    <string name="tap_to_track_title">Sigue el autobús en vivo</string>
+    <string name="tap_to_track_message">Toca una línea de autobús para ver su posición en vivo en el mapa.</string>
+    <string name="got_it">Entendido</string>
 </resources>
