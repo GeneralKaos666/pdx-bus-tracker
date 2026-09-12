@@ -830,6 +830,7 @@ private fun tripPlannerErrorString(context: Context, error: TripPlannerError): S
         TripPlannerError.DESTINATION_NOT_FOUND -> context.getString(R.string.trip_planner_error_not_found)
         TripPlannerError.OUTSIDE_DISTRICT -> context.getString(R.string.trip_planner_error_outside_district)
         TripPlannerError.SYSTEM_OUTAGE -> context.getString(R.string.trip_planner_error_outage)
+        TripPlannerError.NETWORK -> context.getString(R.string.no_connection)
         TripPlannerError.UNKNOWN -> context.getString(R.string.trip_planner_error_unknown)
     }
 }

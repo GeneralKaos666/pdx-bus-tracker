@@ -308,31 +308,44 @@ object TransitApi {
             Timber.w("TriMet API key not configured")
             return@withContext null
         }
+        val requested = time.timeMillis?.let { DateTime(it) } ?: DateTime.now()
+        val date = DateTimeFormat.forPattern("M-d-yyyy").print(requested)
+        val clock = DateTimeFormat.forPattern("h:mm a").print(requested)
+        val baseUrl = context.getString(R.string.base_trip_planner_url)
+        val url = buildTripPlannerRequestUrl(
+            baseUrl = baseUrl,
+            apiKey = apiKey,
+            fromPlace = Uri.encode(from.description),
+            fromCoord = "${from.longitude},${from.latitude}",
+            toPlace = Uri.encode(to.description),
+            toCoord = "${to.longitude},${to.latitude}",
+            date = date,
+            clock = Uri.encode(clock),
+            arriveBy = time.arriveBy,
+            options = options
+        )
         try {
-            val now = DateTime.now()
-            val requested = time.timeMillis?.let { DateTime(it) } ?: now
-            val date = DateTimeFormat.forPattern("M-d-yyyy").print(requested)
-            val clock = DateTimeFormat.forPattern("h:mm a").print(requested)
-            val baseUrl = context.getString(R.string.base_trip_planner_url)
-            val url = buildTripPlannerRequestUrl(
-                baseUrl = baseUrl,
-                apiKey = apiKey,
-                fromPlace = Uri.encode(from.description),
-                fromCoord = "${from.longitude},${from.latitude}",
-                toPlace = Uri.encode(to.description),
-                toCoord = "${to.longitude},${to.latitude}",
-                date = date,
-                clock = Uri.encode(clock),
-                arriveBy = time.arriveBy,
-                options = options
-            )
             val xml = parser.fetchXml(url)
             TripPlannerXmlParser.parseTripPlanResponse(xml)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            val classified = TripPlanFailureClassifier.classify(e)
+            // Timeouts, DNS/TLS trouble, and WS 5xx hiccups are transient — give the
+            // request one retry before surfacing an error, mirroring the widget's fetch.
+            if (classified == TripPlannerError.NETWORK || classified == TripPlannerError.SYSTEM_OUTAGE) {
+                try {
+                    val xml = parser.fetchXml(url)
+                    return@withContext TripPlannerXmlParser.parseTripPlanResponse(xml)
+                } catch (e2: CancellationException) {
+                    throw e2
+                } catch (e2: Exception) {
+                    Timber.e(e2, "Failed to fetch trip plan (retry)")
+                    return@withContext TripPlanResult.Error(TripPlanFailureClassifier.classify(e2))
+                }
+            }
             Timber.e(e, "Failed to fetch trip plan")
-            TripPlanResult.Error(TripPlannerError.SYSTEM_OUTAGE)
+            TripPlanResult.Error(classified)
         }
     }
 

@@ -41,7 +41,7 @@ object JSONParser {
                 )
             }
             if (!response.isSuccessful) {
-                throw IOException("Unsuccessful response code: ${response.code}")
+                throw HttpResponseCodeException(response.code)
             }
             val responseBody = response.body.string()
             if (responseBody.trim().isEmpty()) {
@@ -74,7 +74,7 @@ object JSONParser {
                 )
             }
             if (!response.isSuccessful) {
-                throw IOException("Unsuccessful response code: ${response.code}")
+                throw HttpResponseCodeException(response.code)
             }
             val responseBody = response.body.string()
             if (responseBody.trim().isEmpty()) {
