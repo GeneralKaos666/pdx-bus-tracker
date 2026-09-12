@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.transit
 
+import com.trimettransit.tracker.model.Alert
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.BlockPosition
@@ -139,6 +140,39 @@ object TransitJsonMapper {
             stopLat = stopLat,
             stopLng = stopLng
         )
+    }
+
+    /** Parses the Alerts V2 feed. Each alert's routes ship under `"route"` (singular) with
+     *  a `"routes"` fallback, mirroring the arrivals feed's detour quirk. */
+    fun parseAlerts(resultSet: JSONObject): List<Alert> {
+        val alertArr = resultSet.optJSONArray("alert") ?: return emptyList()
+        val alerts = mutableListOf<Alert>()
+        for (i in 0 until alertArr.length()) {
+            val obj = alertArr.getJSONObject(i)
+            val routesArr = obj.optJSONArray("route")
+                ?: obj.optJSONArray("routes")
+            val routeIds = if (routesArr != null) {
+                MutableList(routesArr.length()) { k ->
+                    when (val el = routesArr.opt(k)) {
+                        is JSONObject -> el.optInt("route", 0)
+                        else -> routesArr.optInt(k, 0)
+                    }
+                }
+            } else {
+                emptyList()
+            }
+            alerts.add(
+                Alert(
+                    id = obj.optInt("id", 0),
+                    header = obj.optString("header_text", ""),
+                    desc = obj.optString("desc", ""),
+                    infoLinkUrl = obj.optString("info_link_url", "").takeIf { it.isNotBlank() },
+                    systemWide = obj.optBoolean("system_wide_flag", false),
+                    routeIds = routeIds
+                )
+            )
+        }
+        return alerts
     }
 
     fun parseVehicles(resultSet: JSONObject): List<VehiclePosition> {

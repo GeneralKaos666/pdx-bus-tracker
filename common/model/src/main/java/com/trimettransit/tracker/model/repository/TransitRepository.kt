@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.model.repository
 
+import com.trimettransit.tracker.model.Alert
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
@@ -20,6 +21,9 @@ interface TransitRepository {
     suspend fun getRoutes(): List<Route>?
     suspend fun getDirections(routeId: Int): List<Direction>?
     suspend fun getStops(routeId: Int, directionId: Int): List<Stop>?
+
+    /** All service alerts currently in effect (system-wide and route-scoped). Null = offline/missing key. */
+    suspend fun getAlerts(): List<Alert>?
     suspend fun getArrivals(
         locIds: List<Int>,
         showPosition: Boolean = false,
