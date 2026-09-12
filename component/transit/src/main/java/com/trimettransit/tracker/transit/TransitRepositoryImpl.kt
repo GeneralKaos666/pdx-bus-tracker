@@ -65,9 +65,18 @@ class TransitRepositoryImpl(
 
     override suspend fun searchStops(): List<Stop>? {
         searchCache.get()?.let { return it }
-        val fresh = TransitApi.fetchSearchStops(context) ?: return null
-        searchCache.put(fresh)
-        return fresh
+        val fresh = TransitApi.fetchSearchStops(context)
+        if (fresh != null && fresh.isNotEmpty()) {
+            StopSearchStore.write(context, fresh)
+            searchCache.put(fresh)
+            return fresh
+        }
+        val fallback = StopSearchStore.read(context)
+        if (fallback != null) {
+            searchCache.putFallback(fallback)
+            return fallback
+        }
+        return null
     }
 
     override suspend fun planTrip(
@@ -79,10 +88,11 @@ class TransitRepositoryImpl(
 }
 
 /**
- * Bounds fetchSearchStops to once per 30 minutes per process. The full-network
- * stop dump is several MB; re-parsing it per keystroke was the peak-memory hot
- * path. Guarded with @Synchronized because searchStops may be called from
- * concurrent scopes (home + trip planner share one repository instance).
+ * Bounds fetchSearchStops to once per 15 minutes per process, and keeps a
+ * 30-second memo of the on-disk fallback. The full-network stop dump is several
+ * MB; re-parsing it per keystroke was the peak-memory hot path. Guarded with
+ * @Synchronized because searchStops may be called from concurrent scopes (home +
+ * trip planner share one repository instance).
  */
 private class SearchStopCache {
     private data class Snapshot(val stops: List<Stop>, val fetchedAtMillis: Long)
@@ -100,7 +110,18 @@ private class SearchStopCache {
         snapshot = Snapshot(stops, System.currentTimeMillis())
     }
 
+    /**
+     * Memoizes the disk cache so repeated keys don't re-read it each time, but
+     * expires after [FALLBACK_HOLDOVER_MILLIS] so the next search still attempts
+     * a fresh network fetch once connectivity returns.
+     */
+    @Synchronized
+    fun putFallback(stops: List<Stop>) {
+        snapshot = Snapshot(stops, System.currentTimeMillis() - (TTL_MILLIS - FALLBACK_HOLDOVER_MILLIS))
+    }
+
     private companion object {
-        const val TTL_MILLIS = 30L * 60 * 1000
+        const val TTL_MILLIS = 15L * 60 * 1000
+        const val FALLBACK_HOLDOVER_MILLIS = 30L * 1000
     }
 }
