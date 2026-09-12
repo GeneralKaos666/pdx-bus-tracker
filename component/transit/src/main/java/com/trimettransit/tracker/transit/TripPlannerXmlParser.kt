@@ -15,6 +15,7 @@ import org.w3c.dom.Element
 import org.xml.sax.InputSource
 import timber.log.Timber
 import java.io.StringReader
+import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 
 /**
@@ -47,9 +48,14 @@ object TripPlannerXmlParser {
             val factory = DocumentBuilderFactory.newInstance()
             factory.isNamespaceAware = false
             factory.isExpandEntityReferences = false
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-            factory.setFeature("http://xml.org/sax/features/external-general-entities", false)
-            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+            // Harden against XXE where the runtime supports it. Android's DOM
+            // implementation rejects some of these flags with
+            // ParserConfigurationException ("unrecognized feature"), which would
+            // otherwise break every request — so each is opt-in.
+            factory.tryFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+            factory.tryFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+            factory.tryFeature("http://xml.org/sax/features/external-general-entities", false)
+            factory.tryFeature("http://xml.org/sax/features/external-parameter-entities", false)
             factory.newDocumentBuilder()
                 .parse(InputSource(StringReader(xml)))
                 .documentElement
@@ -163,4 +169,16 @@ object TripPlannerXmlParser {
 
     private fun Element.textOf(name: String): String =
         directChild(name)?.textContent?.trim() ?: ""
+}
+
+/**
+ * Applies an XML parser security feature only where the runtime supports it.
+ * ART's DOM implementation rejects some Apache/SAX flags with an unsupported-
+ * feature exception; doing this opt-in keeps parsing alive on every device.
+ */
+internal fun DocumentBuilderFactory.tryFeature(name: String, value: Boolean) {
+    try {
+        setFeature(name, value)
+    } catch (_: Exception) {
+    }
 }
