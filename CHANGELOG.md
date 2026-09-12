@@ -3,6 +3,7 @@
 ## What's New in v4.17.0
 
 - **Wide screens get two panes:** on tablets and in landscape, the app switches to a two-pane layout with a navigation rail — lists sit alongside detail content, so favorites and arrivals can be seen at a glance.
+- **Denser lists on wide screens:** when the window is wide enough, favorites, recent stops, stop search results, the route browser, and service alerts flow into two tidy columns instead of one stretched list.
 - **New typography:** the interface now uses Bricolage Grotesque, a self-hosted open-source font family, giving headings and route lists a crisper, friendlier look.
 - **Trip Planner map follows the streets:** bus and streetcar legs now trace the real route and stop sequence between your pickup and drop-off points instead of a straight line. MAX legs keep their route lines.
 - **Service alerts in Home:** a new "Service alerts" tab beside Favorites lists current service disruptions — system-wide notices first, then route-by-route alerts with the affected route numbers.

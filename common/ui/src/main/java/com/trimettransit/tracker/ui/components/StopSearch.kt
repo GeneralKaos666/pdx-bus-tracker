@@ -55,7 +55,8 @@ fun searchStops(allStops: List<Stop>, query: String): List<Stop> {
 fun StopSearchItem(
     stop: Stop,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    gridMode: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Row(
@@ -63,7 +64,7 @@ fun StopSearchItem(
             .fillMaxWidth()
             .pressScale(interactionSource)
             .clickable(interactionSource = interactionSource, indication = LocalIndication.current, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .then(if (gridMode) Modifier else Modifier.padding(horizontal = 16.dp, vertical = 12.dp)),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val colorScheme = MaterialTheme.colorScheme

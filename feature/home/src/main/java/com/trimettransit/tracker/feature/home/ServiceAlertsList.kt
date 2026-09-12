@@ -8,9 +8,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,6 +34,7 @@ import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
+import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.staggeredFadeIn
 import com.trimettransit.tracker.ui.theme.appCardShape
@@ -90,16 +92,22 @@ private fun AlertsList(
     alerts: List<Alert>,
     modifier: Modifier = Modifier
 ) {
-    val listState = rememberLazyListState()
+    val dense = rememberDenseGridEnabled()
+    val listState = rememberLazyGridState()
     val smoothFling = rememberSmoothFlingBehavior()
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(if (dense) 2 else 1),
         state = listState,
         modifier = modifier.fillMaxSize(),
         flingBehavior = smoothFling,
         contentPadding = PaddingValues(
             top = 8.dp,
+            start = 16.dp,
+            end = 16.dp,
             bottom = navPillBottomPadding() + 8.dp
-        )
+        ),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         itemsIndexed(alerts, key = { _, alert -> alert.id }, contentType = { _, _ -> "alert" }) { index, alert ->
             ServiceAlertItem(
@@ -122,7 +130,6 @@ private fun ServiceAlertItem(
         tonalElevation = 0.dp,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             if (alert.systemWide) {

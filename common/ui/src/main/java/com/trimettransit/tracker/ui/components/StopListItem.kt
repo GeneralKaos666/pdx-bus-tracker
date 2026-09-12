@@ -55,7 +55,8 @@ fun StopListItem(
     stop: Stop,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    zoomOnTap: Boolean = false
+    zoomOnTap: Boolean = false,
+    gridMode: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val scope = rememberCoroutineScope()
@@ -75,7 +76,7 @@ fun StopListItem(
         interactionSource = interactionSource,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .then(if (gridMode) Modifier else Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
             .pressScale(interactionSource)
             .graphicsLayer {
                 if (zoomOnTap) {

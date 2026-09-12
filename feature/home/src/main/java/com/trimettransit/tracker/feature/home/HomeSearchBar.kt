@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -21,9 +22,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -54,6 +56,7 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.searchStops
 import com.trimettransit.tracker.ui.components.StopSearchItem
@@ -236,19 +239,28 @@ private fun SearchResultsDropdown(
                 )
                 results.isEmpty() -> SearchPanelMessage(stringResource(R.string.no_stops_found))
                 else -> {
-                    val listState = rememberLazyListState()
+                    val dense = rememberDenseGridEnabled()
+                    val listState = rememberLazyGridState()
                     val smoothFling = rememberSmoothFlingBehavior()
-                    LazyColumn(
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(if (dense) 2 else 1),
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
                         flingBehavior = smoothFling,
-                        contentPadding = PaddingValues(bottom = navPillBottomPadding())
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            end = 16.dp,
+                            bottom = navPillBottomPadding()
+                        ),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(results, key = { it.locId }, contentType = { "stopSearch" }) { stop ->
                             StopSearchItem(
                                 stop = stop,
                                 onClick = { onStopClick(stop) },
-                                modifier = Modifier.animateItem()
+                                modifier = Modifier.animateItem(),
+                                gridMode = dense
                             )
                         }
                     }

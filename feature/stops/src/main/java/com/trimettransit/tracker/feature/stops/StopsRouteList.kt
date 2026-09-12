@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -38,6 +37,7 @@ import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.transit.ApiKeys
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
@@ -50,7 +50,7 @@ fun StopsRouteList(
     transitRepository: TransitRepository,
     selectedRoute: Route?,
     onRouteToggle: (Route) -> Unit,
-    routeTrailingContent: @Composable LazyItemScope.(Route) -> Unit
+    routeTrailingContent: @Composable (Route) -> Unit
 ) {
     var routes by remember { mutableStateOf<List<Route>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -70,6 +70,7 @@ fun StopsRouteList(
         isLoading = false
     }
 
+    val gridMode = rememberDenseGridEnabled()
     val safeRoutes = routes
     StopListContent(
         isLoading = isLoading,
@@ -78,6 +79,7 @@ fun StopsRouteList(
                        else stringResource(R.string.unable_to_load_routes),
         emptyMessage = stringResource(R.string.no_routes_available),
         stateLabel = "routesState",
+        gridMode = gridMode,
         key = { it.routeId },
         contentType = { "route" },
         onRetry = { retryKey++ },
@@ -86,12 +88,11 @@ fun StopsRouteList(
                 route = route,
                 isExpanded = selectedRoute?.routeId == route.routeId,
                 onClick = { onRouteToggle(route) },
-                modifier = Modifier.animateItem()
+                modifier = Modifier.animateItem(),
+                gridMode = gridMode
             )
         },
-        itemTrailingContent = { route ->
-            routeTrailingContent(route)
-        }
+        itemTrailingContent = routeTrailingContent
     )
 }
 
@@ -100,7 +101,8 @@ private fun RouteListItem(
     route: Route,
     isExpanded: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    gridMode: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Card(
@@ -108,7 +110,7 @@ private fun RouteListItem(
         interactionSource = interactionSource,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .then(if (gridMode) Modifier else Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
             .pressScale(interactionSource),
         shape = appCardShape(),
         colors = CardDefaults.cardColors(
