@@ -2,7 +2,7 @@ package com.trimettransit.tracker.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -71,12 +72,12 @@ import com.trimettransit.tracker.R
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.appearance.onColorFor
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialFast
-import com.trimettransit.tracker.ui.theme.m3SpatialSlow
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -146,8 +147,17 @@ internal fun MainBottomBar(
                 AnimatedContent(
                     targetState = contextLabelRes == null,
                     transitionSpec = {
-                        (fadeIn(m3EffectsDefault()) + scaleIn(initialScale = 0.85f, animationSpec = m3SpatialDefault())) togetherWith
-                            (fadeOut(m3EffectsFast()) + scaleOut(targetScale = 0.85f, animationSpec = m3SpatialFast()))
+                        val enter = if (AppMotion.reduceMotion) {
+                            fadeIn(m3EffectsDefault())
+                        } else {
+                            fadeIn(m3EffectsDefault()) + scaleIn(initialScale = 0.95f, animationSpec = m3SpatialDefault())
+                        }
+                        val exit = if (AppMotion.reduceMotion) {
+                            fadeOut(m3EffectsFast())
+                        } else {
+                            fadeOut(m3EffectsFast()) + scaleOut(targetScale = 0.95f, animationSpec = m3SpatialFast())
+                        }
+                        enter togetherWith exit
                     },
                     label = "nav_collapse"
                 ) { isTopLevel ->
@@ -287,11 +297,12 @@ private fun MainTabRow(
                 val isSelected = topPage == item.pageIndex
                 val icon = item.icon
                 val labelRes = item.labelRes
+                val showLabel = isSelected && !shouldHideLabel
 
-                val labelWidth by animateDpAsState(
-                    targetValue = if (isSelected && !shouldHideLabel) 80.dp else 0.dp,
-                    animationSpec = m3SpatialSlow(),
-                    label = "label_width_$index"
+                val labelAlpha by animateFloatAsState(
+                    targetValue = if (showLabel) 1f else 0f,
+                    animationSpec = m3EffectsDefault(),
+                    label = "label_alpha_$index"
                 )
 
                 val itemSource = remember { MutableInteractionSource() }
@@ -301,7 +312,7 @@ private fun MainTabRow(
                     },
                     interactionSource = itemSource,
                     modifier = Modifier
-                        .width(48.dp + labelWidth)
+                        .width(if (showLabel) 128.dp else 48.dp)
                         .height(itemHeight)
                         .onGloballyPositioned { coords ->
                             val pos = coords.positionInWindow()
@@ -310,7 +321,7 @@ private fun MainTabRow(
                                 width = coords.size.width
                             )
                         }
-                        .pressScale(itemSource, 0.92f)
+                        .pressScale(itemSource, 0.96f)
                         .semantics {
                             role = Role.Tab
                             selected = isSelected
@@ -337,13 +348,14 @@ private fun MainTabRow(
                             },
                             modifier = Modifier.size(item.iconSize)
                         )
-                        if (isSelected && !shouldHideLabel) {
+                        if (showLabel) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = stringResource(labelRes),
                                 style = MaterialTheme.typography.labelLarge,
                                 maxLines = 1,
-                                color = pillContent
+                                color = pillContent,
+                                modifier = Modifier.graphicsLayer { alpha = labelAlpha }
                             )
                         }
                     }

@@ -135,7 +135,7 @@ internal fun AccentPresetRow(
                         modifier = Modifier
                             .weight(1f)
                             .height(44.dp)
-                            .pressScale(source, 0.9f)
+                            .pressScale(source, 0.96f)
                             .clickable(
                                 interactionSource = source,
                                 indication = LocalIndication.current

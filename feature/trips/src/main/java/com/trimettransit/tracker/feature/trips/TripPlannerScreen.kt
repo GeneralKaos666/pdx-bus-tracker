@@ -84,9 +84,12 @@ import com.trimettransit.tracker.model.domain.sliceStopsForLeg
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
+import com.trimettransit.tracker.ui.theme.m3ContentExpand
+import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
@@ -392,10 +395,16 @@ fun TripPlannerScreen(
         // "Location permission is off" chip (mirrors the other location screens).
         AnimatedVisibility(
             visible = pageVisible && !locationPermissionGranted && hasAskedPermission,
-            enter = fadeIn(m3EffectsDefault()) +
-                slideInVertically(m3SpatialDefault()) { -it },
-            exit = fadeOut(m3EffectsFast()) +
-                slideOutVertically(m3SpatialFast()) { -it / 3 }
+            enter = if (AppMotion.reduceMotion) {
+                fadeIn(m3EffectsDefault())
+            } else {
+                fadeIn(m3EffectsDefault()) + slideInVertically(m3SpatialDefault()) { -it }
+            },
+            exit = if (AppMotion.reduceMotion) {
+                fadeOut(m3EffectsFast())
+            } else {
+                fadeOut(m3EffectsFast()) + slideOutVertically(m3SpatialFast()) { -it / 3 }
+            }
         ) {
             Surface(
                 onClick = { showLocationExplainer = true },
@@ -461,7 +470,11 @@ fun TripPlannerScreen(
                         }
                     }
 
-                    AnimatedVisibility(visible = plannerExpanded) {
+                    AnimatedVisibility(
+                        visible = plannerExpanded,
+                        enter = m3ContentExpand(),
+                        exit = m3ContentShrink()
+                    ) {
                         Column(
                             modifier = Modifier
                                 .heightIn(max = 320.dp)
@@ -622,10 +635,16 @@ fun TripPlannerScreen(
             // Map-pin hint when a slot is awaiting a map tap.
             AnimatedVisibility(
                 visible = picking != PickSlot.NONE,
-                enter = fadeIn(m3EffectsDefault()) +
-                    slideInVertically(m3SpatialDefault()) { -it },
-                exit = fadeOut(m3EffectsFast()) +
-                    slideOutVertically(m3SpatialFast()) { -it / 3 }
+                enter = if (AppMotion.reduceMotion) {
+                    fadeIn(m3EffectsDefault())
+                } else {
+                    fadeIn(m3EffectsDefault()) + slideInVertically(m3SpatialDefault()) { -it }
+                },
+                exit = if (AppMotion.reduceMotion) {
+                    fadeOut(m3EffectsFast())
+                } else {
+                    fadeOut(m3EffectsFast()) + slideOutVertically(m3SpatialFast()) { -it / 3 }
+                }
             ) {
                 Surface(
                     shape = appCardShape(),

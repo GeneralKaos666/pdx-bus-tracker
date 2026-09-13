@@ -2,10 +2,6 @@ package com.trimettransit.tracker.feature.settings
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -95,10 +91,9 @@ import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.TrimetBlue
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
-import com.trimettransit.tracker.ui.theme.m3EffectsDefault
-import com.trimettransit.tracker.ui.theme.m3EffectsFast
+import com.trimettransit.tracker.ui.theme.m3ContentExpand
+import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
-import com.trimettransit.tracker.ui.theme.m3SpatialFast
 
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -289,12 +284,8 @@ fun SettingsScreen(
                 }
                 AnimatedVisibility(
                     visible = coloursExpanded,
-                    enter = expandVertically(
-                        animationSpec = m3SpatialDefault()
-                    ) + fadeIn(m3EffectsDefault()),
-                    exit = shrinkVertically(
-                        animationSpec = m3SpatialFast()
-                    ) + fadeOut(m3EffectsFast())
+                    enter = m3ContentExpand(),
+                    exit = m3ContentShrink()
                 ) {
                     Column {
                         SettingsRadioOption(
@@ -319,8 +310,8 @@ fun SettingsScreen(
                         )
                         AnimatedVisibility(
                             visible = accentMode == "seed",
-                            enter = expandVertically(m3SpatialDefault()) + fadeIn(m3EffectsDefault()),
-                            exit = shrinkVertically(m3SpatialFast()) + fadeOut(m3EffectsFast())
+                            enter = m3ContentExpand(),
+                            exit = m3ContentShrink()
                         ) {
                             Column {
                                 AccentPresetRow(
@@ -479,12 +470,8 @@ fun SettingsScreen(
                 }
                 AnimatedVisibility(
                     visible = displayExpanded,
-                    enter = expandVertically(
-                        animationSpec = m3SpatialDefault()
-                    ) + fadeIn(m3EffectsDefault()),
-                    exit = shrinkVertically(
-                        animationSpec = m3SpatialFast()
-                    ) + fadeOut(m3EffectsFast())
+                    enter = m3ContentExpand(),
+                    exit = m3ContentShrink()
                 ) {
                     Column {
                         SettingsRadioOption(
@@ -625,12 +612,8 @@ fun SettingsScreen(
                 }
                 AnimatedVisibility(
                     visible = cardsExpanded,
-                    enter = expandVertically(
-                        animationSpec = m3SpatialDefault()
-                    ) + fadeIn(m3EffectsDefault()),
-                    exit = shrinkVertically(
-                        animationSpec = m3SpatialFast()
-                    ) + fadeOut(m3EffectsFast())
+                    enter = m3ContentExpand(),
+                    exit = m3ContentShrink()
                 ) {
                     Column {
                         SettingsSwitchOption(
@@ -645,8 +628,8 @@ fun SettingsScreen(
                         )
                         AnimatedVisibility(
                             visible = cardOutlines,
-                            enter = expandVertically(m3SpatialDefault()) + fadeIn(m3EffectsDefault()),
-                            exit = shrinkVertically(m3SpatialFast()) + fadeOut(m3EffectsFast())
+                            enter = m3ContentExpand(),
+                            exit = m3ContentShrink()
                         ) {
                             SettingsColourOption(
                                 label = stringResource(R.string.card_outline_colour),
@@ -992,12 +975,8 @@ fun SettingsScreen(
                 }
                 AnimatedVisibility(
                     visible = licensesExpanded,
-                    enter = expandVertically(
-                        animationSpec = m3SpatialDefault()
-                    ) + fadeIn(m3EffectsDefault()),
-                    exit = shrinkVertically(
-                        animationSpec = m3SpatialFast()
-                    ) + fadeOut(m3EffectsFast())
+                    enter = m3ContentExpand(),
+                    exit = m3ContentShrink()
                 ) {
                     Column(
                         modifier = Modifier.padding(start = 72.dp, end = 16.dp, bottom = 16.dp)

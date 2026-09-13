@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
@@ -44,8 +45,12 @@ fun ContentEntrance(
     AnimatedVisibility(
         visibleState = transitionState,
         modifier = modifier,
-        enter = fadeIn(m3EffectsDefault()) +
-                slideInVertically(m3SpatialDefault()) { it / 24 },
+        enter = if (AppMotion.reduceMotion) {
+            fadeIn(m3EffectsDefault())
+        } else {
+            fadeIn(m3EffectsDefault()) +
+                slideInVertically(m3SpatialDefault()) { it / 24 }
+        },
         exit = ExitTransition.None
     ) { content() }
 }
@@ -76,26 +81,38 @@ fun FadeInOnce(
  * MutableTransitionState trick) so the animation plays on first composition — unlike
  * `AnimatedVisibility(visible = true)`, which appears instantly. Delay caps at
  * [maxDelay] so far-off items never wait for the whole list.
+ *
+ * [enabled] gates the stagger for the whole screen: pass a state the screen flips off
+ * after the first visit so items never re-animate when scrolled back into view, and
+ * any in-flight item snaps to its final state. Under system reduced motion the items
+ * render immediately (no fade) instead of moving.
  */
 @Composable
 fun Modifier.staggeredFadeIn(
     index: Int,
     delayPerItem: Int = 60,
     maxDelay: Int = 360,
-    slideUp: Dp = 12.dp
+    slideUp: Dp = 12.dp,
+    enabled: Boolean = true
 ): Modifier {
     val delayMillis = min(index * delayPerItem, maxDelay)
     val slidePx = with(LocalDensity.current) { slideUp.toPx() }
+    val reduceMotion = AppMotion.reduceMotion
     val alpha = remember { Animatable(0f) }
     val translateY = remember { Animatable(slidePx) }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(enabled, reduceMotion) {
+        if (!enabled || reduceMotion) {
+            alpha.snapTo(1f)
+            translateY.snapTo(0f)
+            return@LaunchedEffect
+        }
         delay(delayMillis.toLong())
         launch { alpha.animateTo(1f, m3EffectsDefault()) }
         launch { translateY.animateTo(0f, m3SpatialDefault()) }
     }
     return graphicsLayer {
         this.alpha = alpha.value
-        translationY = translateY.value
+        translationY = if (reduceMotion) 0f else translateY.value
     }
 }
 

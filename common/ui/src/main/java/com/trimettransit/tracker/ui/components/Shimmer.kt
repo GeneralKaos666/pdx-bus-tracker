@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 
@@ -63,27 +64,30 @@ fun ShimmerBox(
             .clip(resolvedShape)
             .background(base)
     ) {
-        BoxWithConstraints(modifier = Modifier.matchParentSize()) {
-            val density = LocalDensity.current
-            val bandWidth = maxWidth * 0.45f
-            val bandPx = with(density) { bandWidth.toPx() }
-            val parentPx = with(density) { maxWidth.toPx() }
-            // Sweeps from off the left edge to off the right edge.
-            val x = -bandPx + (parentPx + bandPx) * progress
-            Box(
-                modifier = Modifier
-                    .width(bandWidth)
-                    .graphicsLayer { translationX = x }
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                highlight.copy(alpha = 0.85f),
-                                Color.Transparent
+        // Keep the skeleton shape but drop the moving sweep under system reduced motion.
+        if (!AppMotion.reduceMotion) {
+            BoxWithConstraints(modifier = Modifier.matchParentSize()) {
+                val density = LocalDensity.current
+                val bandWidth = maxWidth * 0.45f
+                val bandPx = with(density) { bandWidth.toPx() }
+                val parentPx = with(density) { maxWidth.toPx() }
+                // Sweeps from off the left edge to off the right edge.
+                val x = -bandPx + (parentPx + bandPx) * progress
+                Box(
+                    modifier = Modifier
+                        .width(bandWidth)
+                        .graphicsLayer { translationX = x }
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    highlight.copy(alpha = 0.85f),
+                                    Color.Transparent
+                                )
                             )
                         )
-                    )
-            )
+                )
+            }
         }
     }
 }

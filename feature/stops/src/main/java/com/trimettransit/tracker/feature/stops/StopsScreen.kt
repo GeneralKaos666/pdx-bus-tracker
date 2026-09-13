@@ -3,10 +3,6 @@ package com.trimettransit.tracker.feature.stops
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,10 +47,10 @@ import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
+import com.trimettransit.tracker.ui.theme.m3ContentExpand
+import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
-import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
-import com.trimettransit.tracker.ui.theme.m3SpatialFast
 
 /**
  * Routes list with an accordion drill-down, mirroring the arrivals map card:
@@ -77,8 +73,8 @@ fun StopsScreen(
         routeTrailingContent = { route ->
             AnimatedVisibility(
                 visible = selectedRoute?.routeId == route.routeId,
-                enter = expandVertically(m3SpatialDefault()) + fadeIn(m3EffectsDefault()),
-                exit = shrinkVertically(m3SpatialFast()) + fadeOut(m3EffectsFast())
+                enter = m3ContentExpand(),
+                exit = m3ContentShrink()
             ) {
                 DirectionsSubCard(
                     route = route,
@@ -88,8 +84,8 @@ fun StopsScreen(
                     directionTrailingContent = { direction ->
                         AnimatedVisibility(
                             visible = selectedDirection?.dir == direction.dir,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
+                            enter = m3ContentExpand(),
+                            exit = m3ContentShrink()
                         ) {
                             StopsSubCard(
                                 routeId = route.routeId,

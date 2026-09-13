@@ -148,69 +148,94 @@ import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialFast
+import com.trimettransit.tracker.util.systemReduceMotion
 import com.trimettransit.tracker.R
 
 private val AnimatedContentTransitionScope<*>.navEnter: EnterTransition
-    get() = slideInHorizontally(
-        initialOffsetX = { it },
-        animationSpec = m3SpatialDefault()
-    ) + fadeIn(
-        initialAlpha = 0.7f,
-        animationSpec = m3EffectsDefault()
-    )
+    get() = if (AppMotion.reduceMotion) {
+        fadeIn(initialAlpha = 0.7f, animationSpec = m3EffectsDefault())
+    } else {
+        slideInHorizontally(
+            initialOffsetX = { it },
+            animationSpec = m3SpatialDefault()
+        ) + fadeIn(
+            initialAlpha = 0.7f,
+            animationSpec = m3EffectsDefault()
+        )
+    }
 
 private val AnimatedContentTransitionScope<*>.navExit: ExitTransition
-    get() = slideOutHorizontally(
-        targetOffsetX = { -it },
-        animationSpec = m3SpatialFast()
-    ) + fadeOut(
-        targetAlpha = 0.7f,
-        animationSpec = m3EffectsFast()
-    )
+    get() = if (AppMotion.reduceMotion) {
+        fadeOut(targetAlpha = 0.7f, animationSpec = m3EffectsFast())
+    } else {
+        slideOutHorizontally(
+            targetOffsetX = { -it },
+            animationSpec = m3SpatialFast()
+        ) + fadeOut(
+            targetAlpha = 0.7f,
+            animationSpec = m3EffectsFast()
+        )
+    }
 
 private val AnimatedContentTransitionScope<*>.navPopEnter: EnterTransition
-    get() = slideInHorizontally(
-        initialOffsetX = { -it },
-        animationSpec = m3SpatialDefault()
-    ) + fadeIn(
-        initialAlpha = 0.7f,
-        animationSpec = m3EffectsDefault()
-    )
+    get() = if (AppMotion.reduceMotion) {
+        fadeIn(initialAlpha = 0.7f, animationSpec = m3EffectsDefault())
+    } else {
+        slideInHorizontally(
+            initialOffsetX = { -it },
+            animationSpec = m3SpatialDefault()
+        ) + fadeIn(
+            initialAlpha = 0.7f,
+            animationSpec = m3EffectsDefault()
+        )
+    }
 
 private val AnimatedContentTransitionScope<*>.navPopExit: ExitTransition
-    get() = slideOutHorizontally(
-        targetOffsetX = { it },
-        animationSpec = m3SpatialFast()
-    ) + fadeOut(
-        targetAlpha = 0.7f,
-        animationSpec = m3EffectsFast()
-    )
+    get() = if (AppMotion.reduceMotion) {
+        fadeOut(targetAlpha = 0.7f, animationSpec = m3EffectsFast())
+    } else {
+        slideOutHorizontally(
+            targetOffsetX = { it },
+            animationSpec = m3SpatialFast()
+        ) + fadeOut(
+            targetAlpha = 0.7f,
+            animationSpec = m3EffectsFast()
+        )
+    }
 
 /**
  * Enter transition for the Arrivals destination: the fast spatial spring so pushing to
  * Arrivals from Home/Routes reads tighter/snappier than the default [navEnter].
  */
 private val AnimatedContentTransitionScope<*>.navEnterArrivals: EnterTransition
-    get() = slideInHorizontally(
-        initialOffsetX = { it },
-        animationSpec = m3SpatialFast()
-    ) + fadeIn(
-        initialAlpha = 0.7f,
-        animationSpec = m3EffectsFast()
-    )
+    get() = if (AppMotion.reduceMotion) {
+        fadeIn(initialAlpha = 0.7f, animationSpec = m3EffectsFast())
+    } else {
+        slideInHorizontally(
+            initialOffsetX = { it },
+            animationSpec = m3SpatialFast()
+        ) + fadeIn(
+            initialAlpha = 0.7f,
+            animationSpec = m3EffectsFast()
+        )
+    }
 
 /**
  * Quick variant of [navExit] (fast effects/spatial springs) for the Home and Routes
  * destinations so the push to Arrivals reads tighter; same slide+fade shape.
  */
 private val AnimatedContentTransitionScope<*>.navExitQuick: ExitTransition
-    get() = slideOutHorizontally(
-        targetOffsetX = { -it },
-        animationSpec = m3SpatialFast()
-    ) + fadeOut(
-        targetAlpha = 0.7f,
-        animationSpec = m3EffectsFast()
-    )
+    get() = if (AppMotion.reduceMotion) {
+        fadeOut(targetAlpha = 0.7f, animationSpec = m3EffectsFast())
+    } else {
+        slideOutHorizontally(
+            targetOffsetX = { -it },
+            animationSpec = m3SpatialFast()
+        ) + fadeOut(
+            targetAlpha = 0.7f,
+            animationSpec = m3EffectsFast()
+        )
+    }
 
 
 // Type-safe navigation destinations, shared by the NavHost registration and every navigate()/popBackStack().
@@ -264,6 +289,7 @@ class MainActivity : ComponentActivity() {
         // androidx.activity's enableEdgeToEdge() backward-compat internals, not
         // app code. Known/benign — don't reimplement edge-to-edge to "fix" it.
         enableEdgeToEdge()
+        AppMotion.reduceMotion = systemReduceMotion(this)
         setContent {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
             var appearance by remember { mutableStateOf(readAppearanceStyle(prefs)) }
@@ -604,12 +630,16 @@ private fun MainAppContent(
                 AnimatedContent(
                     targetState = destination,
                     transitionSpec = {
-                        (fadeIn(m3EffectsDefault()) +
-                            slideInVertically(m3SpatialDefault()) { -it })
-                            .togetherWith(
-                                fadeOut(m3EffectsFast()) +
-                                    slideOutVertically(m3SpatialFast()) { -it / 3 }
-                            )
+                        if (AppMotion.reduceMotion) {
+                            fadeIn(m3EffectsDefault()) togetherWith fadeOut(m3EffectsFast())
+                        } else {
+                            (fadeIn(m3EffectsDefault()) +
+                                slideInVertically(m3SpatialDefault()) { -it })
+                                .togetherWith(
+                                    fadeOut(m3EffectsFast()) +
+                                        slideOutVertically(m3SpatialFast()) { -it / 3 }
+                                )
+                        }
                     },
                     label = "topBar"
                 ) { dest ->
@@ -891,10 +921,16 @@ private fun MainAppContent(
         }
     AnimatedVisibility(
         visible = !inPip && !expandedPane,
-        enter = slideInVertically(m3SpatialDefault()) { it } +
-            fadeIn(m3EffectsDefault()),
-        exit = slideOutVertically(m3SpatialFast()) { it } +
-            fadeOut(m3EffectsFast()),
+        enter = if (AppMotion.reduceMotion) {
+            fadeIn(m3EffectsDefault())
+        } else {
+            slideInVertically(m3SpatialDefault()) { it } + fadeIn(m3EffectsDefault())
+        },
+        exit = if (AppMotion.reduceMotion) {
+            fadeOut(m3EffectsFast())
+        } else {
+            slideOutVertically(m3SpatialFast()) { it } + fadeOut(m3EffectsFast())
+        },
         modifier = Modifier.align(Alignment.BottomCenter)
     ) {
         @SuppressLint("FrequentlyChangingValue")

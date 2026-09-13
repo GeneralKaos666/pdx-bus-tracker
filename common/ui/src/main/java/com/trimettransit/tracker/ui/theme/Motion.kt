@@ -1,16 +1,30 @@
 package com.trimettransit.tracker.ui.theme
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.ui.Alignment
 import com.trimettransit.tracker.ui.appearance.MotionIntensity
 
 /**
  * Hook through which the app-wide motion preset is applied. Set while composing the app
  * root (on appearance changes); the [m3Spatial*] / [m3Effects*] factories pick it up on
  * the next recomposition/navigation of the composables that use them.
+ *
+ * [reduceMotion] mirrors the system "remove animations" preference (animator/transition
+ * duration scale == 0). Call sites read it to drop movement while keeping opacity/color
+ * transitions, per the reduced-motion guidance.
  */
 object AppMotion {
     var intensity: MotionIntensity = MotionIntensity.EXPRESSIVE
+
+    /** Set once at app start from the system animation scales (see `MotionPrefs`). */
+    var reduceMotion: Boolean = false
 }
 
 /**
@@ -70,3 +84,26 @@ fun <T> m3EffectsSlow(): SpringSpec<T> = when (AppMotion.intensity) {
     MotionIntensity.DEFAULT -> spring(dampingRatio = 1.0f, stiffness = 650f)
     MotionIntensity.EXPRESSIVE -> spring(dampingRatio = 1.0f, stiffness = 800f)
 }
+
+/**
+ * Enter/exit for vertically expanding content areas (accordions, dropdowns): the M3
+ * expand + fade pair, reduced to a fade-only pop under system reduced motion so the
+ * height still lands but no movement plays.
+ */
+fun m3ContentExpand(
+    expandFrom: Alignment.Vertical = Alignment.Top
+): EnterTransition =
+    if (AppMotion.reduceMotion) {
+        fadeIn(m3EffectsDefault())
+    } else {
+        expandVertically(m3SpatialDefault(), expandFrom = expandFrom) + fadeIn(m3EffectsDefault())
+    }
+
+fun m3ContentShrink(
+    shrinkTowards: Alignment.Vertical = Alignment.CenterVertically
+): ExitTransition =
+    if (AppMotion.reduceMotion) {
+        fadeOut(m3EffectsFast())
+    } else {
+        shrinkVertically(m3SpatialFast(), shrinkTowards = shrinkTowards) + fadeOut(m3EffectsFast())
+    }

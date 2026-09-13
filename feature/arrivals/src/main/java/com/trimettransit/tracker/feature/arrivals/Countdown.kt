@@ -1,8 +1,7 @@
 package com.trimettransit.tracker.feature.arrivals
 
-import android.content.Context
-import android.provider.Settings
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,8 +31,13 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.trimettransit.tracker.util.systemReduceMotion
+import kotlinx.coroutines.delay
 
-private const val FLIP_DURATION_MS = 380
+private const val FLIP_DURATION_MS = 240
+
+/** Strong ease-out so the new value registers quickly and the flap settles softly. */
+private val FlipEasing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
 
 /**
  * Countdown "N min" / "Due" label rendered as a split-flap clock: when the minute
@@ -41,6 +45,8 @@ private const val FLIP_DURATION_MS = 380
  * underneath, like a mechanical flip board.
  *
  * Honors the system reduce-motion setting by falling back to a plain text swap.
+ * [flipDelayMs] staggers rows that roll over in the same second so they don't flap
+ * in unison.
  */
 @Composable
 internal fun CountdownLabel(
@@ -48,7 +54,8 @@ internal fun CountdownLabel(
     isEstimated: Boolean,
     color: Color,
     style: TextStyle,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    flipDelayMs: Long = 0
 ) {
     val visibleMinutes = minutesAway.coerceAtLeast(0L)
     val targetText = if (visibleMinutes <= 0) {
@@ -64,8 +71,9 @@ internal fun CountdownLabel(
 
     LaunchedEffect(targetText) {
         if (targetText != displayedText) {
+            delay(flipDelayMs)
             flip.snapTo(0f)
-            flip.animateTo(1f, animationSpec = tween(FLIP_DURATION_MS)) {
+            flip.animateTo(1f, animationSpec = tween(FLIP_DURATION_MS, easing = FlipEasing)) {
                 flipProgress = value
             }
             flipProgress = 1f
@@ -74,7 +82,7 @@ internal fun CountdownLabel(
     }
 
     val context = LocalContext.current
-    val reduceMotion = remember(context) { reduceMotionEnabled(context) }
+    val reduceMotion = remember(context) { systemReduceMotion(context) }
 
     if (reduceMotion || displayedText == targetText) {
         FlipLabelBox(
@@ -95,13 +103,6 @@ internal fun CountdownLabel(
             flipProgress = flipProgress
         )
     }
-}
-
-private fun reduceMotionEnabled(context: Context): Boolean {
-    val resolver = context.contentResolver
-    val animatorScale = Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
-    val transitionScale = Settings.Global.getFloat(resolver, Settings.Global.TRANSITION_ANIMATION_SCALE, 1f)
-    return animatorScale == 0f || transitionScale == 0f
 }
 
 /**

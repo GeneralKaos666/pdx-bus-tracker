@@ -1,10 +1,6 @@
 package com.trimettransit.tracker.feature.home
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -62,10 +58,8 @@ import com.trimettransit.tracker.ui.components.searchStops
 import com.trimettransit.tracker.ui.components.StopSearchItem
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
-import com.trimettransit.tracker.ui.theme.m3EffectsDefault
-import com.trimettransit.tracker.ui.theme.m3EffectsFast
-import com.trimettransit.tracker.ui.theme.m3SpatialDefault
-import com.trimettransit.tracker.ui.theme.m3SpatialFast
+import com.trimettransit.tracker.ui.theme.m3ContentExpand
+import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -197,8 +191,8 @@ private fun HomeSearchHeader(
     if (header == null) return
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(m3EffectsDefault()) + expandVertically(m3SpatialDefault()),
-        exit = fadeOut(m3EffectsFast()) + shrinkVertically(m3SpatialFast(), shrinkTowards = Alignment.Top)
+        enter = m3ContentExpand(),
+        exit = m3ContentShrink(shrinkTowards = Alignment.Top)
     ) {
         header()
     }
@@ -217,13 +211,8 @@ private fun SearchResultsDropdown(
     AnimatedVisibility(
         visible = query.isNotBlank(),
         modifier = modifier,
-        enter = expandVertically(
-            animationSpec = m3SpatialDefault()
-        ) + fadeIn(m3EffectsDefault()),
-        exit = shrinkVertically(
-            animationSpec = m3SpatialFast(),
-            shrinkTowards = Alignment.Top
-        ) + fadeOut(m3EffectsFast())
+        enter = m3ContentExpand(),
+        exit = m3ContentShrink(shrinkTowards = Alignment.Top)
     ) {
         Surface(
             shape = appCardShape(),

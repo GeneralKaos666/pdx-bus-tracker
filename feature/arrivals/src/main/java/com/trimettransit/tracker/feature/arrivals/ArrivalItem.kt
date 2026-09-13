@@ -37,6 +37,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Detour
+import com.trimettransit.tracker.model.domain.arrivalKey
 import com.trimettransit.tracker.model.domain.displayTimeMillis
 import com.trimettransit.tracker.model.domain.isCanceled
 import com.trimettransit.tracker.model.domain.isEstimated
@@ -140,8 +141,8 @@ internal fun ArrivalItem(
 
             AnimatedVisibility(
                 visible = lineDetours.isNotEmpty(),
-                enter = fadeIn(m3EffectsDefault()) + scaleIn(initialScale = 0.6f, animationSpec = m3SpatialDefault()),
-                exit = fadeOut(m3EffectsFast()) + scaleOut(targetScale = 0.6f, animationSpec = m3SpatialFast())
+                enter = fadeIn(m3EffectsDefault()) + scaleIn(initialScale = 0.9f, animationSpec = m3SpatialDefault()),
+                exit = fadeOut(m3EffectsFast()) + scaleOut(targetScale = 0.9f, animationSpec = m3SpatialFast())
             ) {
                 Row {
                     Spacer(modifier = Modifier.width(8.dp))
@@ -225,7 +226,8 @@ internal fun ArrivalItem(
                             minutesAway = minutesAway,
                             isEstimated = arrival.isEstimated,
                             color = MaterialTheme.colorScheme.surface,
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
+                            flipDelayMs = (arrivalKey(arrival).hashCode() and 0x7fffffff) % 5 * 40L
                         )
                         if (showVehicleInfo) {
                             val delayText = formatDelay(arrival, context)

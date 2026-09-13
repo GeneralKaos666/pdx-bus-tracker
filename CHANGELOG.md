@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Your device's "Remove animations" setting is now honored:** when it's on, the app keeps quick fade transitions but drops sliding screen changes, bouncing springs, list cascades, and the shimmer sweep — and countdown flips swap straight to the new time.
+- **Calmer, snappier motion:** the bottom navigation labels fade in without re-flowing the bar, arriving-bus countdowns flip faster and out of sync with each other, alert pills and the nav pill appear more subtly, and button press feedback is gentler.
+
 ## What's New in v4.18.0
 
 - **Pick your colour:** a new "Colours" section in Settings replaces the old dynamic-colour toggle. From here you can keep following your wallpaper or switch to a custom accent colour — choose one of eight curated swatches or design your own with a full colour wheel (hue, saturation, value, and opacity). Light and dark modes each get a palette from your choice.
