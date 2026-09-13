@@ -14,6 +14,7 @@
 - **Motion, your way:** a new motion preset in Settings chooses how the interface animates — Expressive keeps the lively springs with a gentle bounce, Balanced firms them up without overshoot, and Subtle calms everything down for a quieter, reserved feel.
 - **Map styles:** the trip-planner map and the stop map can use a different basemap — Streets (the default), a high-contrast Bright look, a quiet Light-grey map, or Always dark. Light maps switch to a dark basemap in dark mode automatically; "Always dark" stays dark everywhere.
 - **Arrivals rows, trimmed:** three new switches let you hide the scheduled clock time under each arrival, the coloured route badge on the left, or the on-time/early/late detail under the countdown — handy when you only want the countdown.
+- **Fixed:** choosing a refresh cadence in Settings (15 s / 30 s / 1 min / 2 min) once made the Arrivals screen crash on open when cadence was saved as an integer but read as text; the cadence is now stored and read consistently.
 
 ## What's New in v4.17.0
 

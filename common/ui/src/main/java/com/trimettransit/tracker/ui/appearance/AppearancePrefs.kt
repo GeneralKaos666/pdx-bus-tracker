@@ -8,33 +8,37 @@ import androidx.compose.runtime.remember
 /**
  * Single source of truth for appearance pref keys and their stored-value strings.
  * Phone screens and the app Activity read/write through here instead of duplicating literals.
+ *
+ * IMPORTANT: each key's stored type (noted per key below) is part of its API. A key written
+ * with one `put*` and read with a different `get*` throws ClassCastException (e.g. an Int
+ * under a `getString` read). Never change a key's type — add a new key instead.
  */
 object AppearancePrefs {
-    const val THEME = "theme"
-    const val DYNAMIC_COLOR = "pref_key_dynamic_color"
-    const val CARDS_OUTLINES = "pref_key_card_outlines"
-    const val CARDS_OUTLINE_COLOR = "pref_key_card_outline_color"
-    const val CARDS_CORNER_STYLE = "pref_key_card_corner_style"
-    const val CARDS_CORNER_RADIUS = "pref_key_card_corner_radius"
-    const val ARRIVALS_ONLY_SELECTED_ROUTE = "pref_key_only_show_route_selected"
+    const val THEME = "theme"                            // String: "system" | "light" | "dark"
+    const val DYNAMIC_COLOR = "pref_key_dynamic_color"   // Boolean (legacy, pre-v4.18)
+    const val CARDS_OUTLINES = "pref_key_card_outlines"  // Boolean
+    const val CARDS_OUTLINE_COLOR = "pref_key_card_outline_color" // String: "#AARRGGBB" or "" → "auto"
+    const val CARDS_CORNER_STYLE = "pref_key_card_corner_style"   // String: "rounded" | "cut"
+    const val CARDS_CORNER_RADIUS = "pref_key_card_corner_radius" // Int dp
+    const val ARRIVALS_ONLY_SELECTED_ROUTE = "pref_key_only_show_route_selected" // Boolean
 
-    const val COLOR_MODE = "pref_key_accent_mode"        // "dynamic" | "seed"
-    const val ACCENT_COLOR = "pref_key_accent_color"     // "#AARRGGBB" or "" (→ TrimetBlue)
-    const val VIBRANCY = "pref_key_vibrancy"             // "muted" | "default" | "vibrant"
-    const val AMOLED_DARK = "pref_key_amoled_dark"
-    const val PILL_ACCENT = "pref_key_pill_accent"       // "#AARRGGBB" or "" (→ scheme primary)
-    const val TRANSIT_BUS = "pref_key_transit_bus_color"
+    const val COLOR_MODE = "pref_key_accent_mode"        // String: "dynamic" | "seed"
+    const val ACCENT_COLOR = "pref_key_accent_color"     // String: "#AARRGGBB" or "" (→ TrimetBlue)
+    const val VIBRANCY = "pref_key_vibrancy"             // String: "muted" | "default" | "vibrant"
+    const val AMOLED_DARK = "pref_key_amoled_dark"       // Boolean
+    const val PILL_ACCENT = "pref_key_pill_accent"       // String: "#AARRGGBB" or "" (→ scheme primary)
+    const val TRANSIT_BUS = "pref_key_transit_bus_color" // String: "#AARRGGBB" or "" (→ scheme)
     const val TRANSIT_RAIL = "pref_key_transit_rail_color"
     const val TRANSIT_STREETCAR = "pref_key_transit_streetcar_color"
     const val TRANSIT_WES = "pref_key_transit_wes_color"
-    const val DENSITY = "pref_key_density"              // "comfortable" | "compact"
-    const val FONT_SCALE = "pref_key_font_scale"        // "smaller" | "default" | "larger"
-    const val MOTION = "pref_key_motion"                // "low" | "default" | "expressive"
-    const val ARRIVALS_REFRESH_SECONDS = "pref_key_arrivals_refresh_seconds"
-    const val ARRIVALS_SHOW_CLOCK = "pref_key_arrivals_show_clock"
-    const val ARRIVALS_SHOW_ROUTE_BADGES = "pref_key_arrivals_show_route_badges"
-    const val ARRIVALS_SHOW_VEHICLE_INFO = "pref_key_arrivals_show_vehicle_info"
-    const val MAP_STYLE = "pref_key_map_style"             // "streets" | "bright" | "positron" | "dark"
+    const val DENSITY = "pref_key_density"              // String: "comfortable" | "compact"
+    const val FONT_SCALE = "pref_key_font_scale"        // String: "smaller" | "default" | "larger"
+    const val MOTION = "pref_key_motion"                // String: "low" | "default" | "expressive"
+    const val ARRIVALS_REFRESH_SECONDS = "pref_key_arrivals_refresh_seconds" // Int: 15..300
+    const val ARRIVALS_SHOW_CLOCK = "pref_key_arrivals_show_clock"           // Boolean
+    const val ARRIVALS_SHOW_ROUTE_BADGES = "pref_key_arrivals_show_route_badges" // Boolean
+    const val ARRIVALS_SHOW_VEHICLE_INFO = "pref_key_arrivals_show_vehicle_info" // Boolean
+    const val MAP_STYLE = "pref_key_map_style" // String: "streets" | "bright" | "positron" | "dark"
 }
 
 /** Maps the persisted string prefs onto an [AppearanceStyle]. Pure, so it's unit-testable. */
@@ -127,3 +131,14 @@ fun readAppearanceStyle(prefs: SharedPreferences): AppearanceStyle {
         motion = prefs.getString(AppearancePrefs.MOTION, "expressive") ?: "expressive"
     )
 }
+
+/**
+ * Arrivals refresh cadence as a delay in millis, clamped to the tuning range (15 s – 5 min).
+ * The stored value is seconds under [AppearancePrefs.ARRIVALS_REFRESH_SECONDS]; read it as
+ * an Int — a previous build read this key as a String, which crashed at runtime.
+ */
+fun SharedPreferences.refreshDelayMillis(): Long =
+    refreshDelayMillis(getInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 30))
+
+/** Pure variant of [refreshDelayMillis] so clamping/defaulting is unit-testable. */
+fun refreshDelayMillis(secondsStored: Int): Long = secondsStored.coerceIn(15, 300) * 1000L

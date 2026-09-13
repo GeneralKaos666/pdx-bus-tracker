@@ -67,6 +67,7 @@ import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
+import com.trimettransit.tracker.ui.appearance.refreshDelayMillis
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
@@ -328,9 +329,8 @@ fun ArrivalsScreen(
     LaunchedEffect(inPip) {
         if (inPip) return@LaunchedEffect
         while (true) {
-            val seconds = prefs.getString(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, "30")
-                ?.toLongOrNull()?.coerceIn(15, 300) ?: 30L
-            delay(seconds * 1000L)
+            val delayMs = prefs.refreshDelayMillis()
+            delay(delayMs)
             if (isAppResumed) refreshArrivals(showLoading = false)
         }
     }
