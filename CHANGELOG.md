@@ -1,5 +1,14 @@
 # Changelog
 
+## What's New in v4.18.0
+
+- **Pick your colour:** a new "Colours" section in Settings replaces the old dynamic-colour toggle. From here you can keep following your wallpaper or switch to a custom accent colour — choose one of eight curated swatches or design your own with a full colour wheel (hue, saturation, value, and opacity). Light and dark modes each get a palette from your choice.
+- **Vibrancy control:** dial the saturation of the whole colour scheme up or down with three presets — Muted for calm, desaturated tones, Default for the standard look, and Vibrant for punchier colours.
+- **Pure-black dark mode:** an AMOLED option turns dark-mode backgrounds true black, for deeper contrast and kinder battery life on OLED screens.
+- **Bottom bar accent:** the selected icon in the bottom navigation pill (and its little label chip) can take on any colour you like; otherwise it keeps following the theme.
+- **Per-line colours:** the bus, MAX/rail, streetcar, and WES badges throughout the app — stop lists, arrivals, and the trip map — can each be set to your own colour, instead of always following the theme's palette.
+- **Widgets match:** the home-screen widget now follows those same choices — your accent colour, vibrancy, and AMOLED rendering apply to it too, alongside its own light/dark/auto option.
+
 ## What's New in v4.17.0
 
 - **Wide screens get two panes:** on tablets and in landscape, the app switches to a two-pane layout with a navigation rail — lists sit alongside detail content, so favorites and arrivals can be seen at a glance.

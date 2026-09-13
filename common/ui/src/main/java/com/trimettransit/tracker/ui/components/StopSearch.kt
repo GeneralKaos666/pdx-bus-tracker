@@ -25,6 +25,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import java.util.Locale
@@ -68,9 +69,11 @@ fun StopSearchItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         val colorScheme = MaterialTheme.colorScheme
-        val typeColor = remember(stop.transitType, colorScheme) {
-            transitColor(stop.transitType, colorScheme)
-        }
+        val typeColor = transitColor(
+            stop.transitType,
+            colorScheme,
+            LocalAppearanceStyle.current.transitTypeColors
+        )
         Surface(
             modifier = Modifier.size(40.dp),
             shape = appCardShape(),

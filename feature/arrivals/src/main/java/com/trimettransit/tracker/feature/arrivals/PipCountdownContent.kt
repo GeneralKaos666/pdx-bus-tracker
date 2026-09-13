@@ -30,6 +30,7 @@ import com.trimettransit.tracker.model.domain.isCanceled
 import com.trimettransit.tracker.model.domain.isEstimated
 import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.ui.components.transitBadgeLetter
+import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
@@ -68,7 +69,11 @@ internal fun PipCountdownContent(
         } else {
             arrivals.take(TOP_ARRIVAL_ROWS).forEach { arrival ->
                 val type = transitBadgeLetter(arrival.routeId)
-                val color = transitColor(type, scheme)
+                val color = transitColor(
+                    type,
+                    scheme,
+                    LocalAppearanceStyle.current.transitTypeColors
+                )
                 val displayTime = arrival.displayTimeMillis
                 val minutesAway = if (displayTime > 0L) minutesUntil(displayTime) else 0L
                 Row(

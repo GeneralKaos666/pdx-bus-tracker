@@ -25,6 +25,7 @@ import com.trimettransit.tracker.ui.components.badgeBitmap
 import com.trimettransit.tracker.ui.components.circleMarker
 import com.trimettransit.tracker.ui.components.transitBadgeLetter
 import com.trimettransit.tracker.ui.components.transitBadgeLetters
+import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitOnColor
@@ -80,11 +81,12 @@ internal fun StopMapCard(
     mapState.countdownMinFormat = stringResource(R.string.minutes)
     val density = LocalDensity.current.density
     val scheme = MaterialTheme.colorScheme
+    val overrides = LocalAppearanceStyle.current.transitTypeColors
     val badgeColors = remember(scheme) {
-        transitBadgeLetters().associateWith { transitColor(it, scheme) }
+        transitBadgeLetters().associateWith { transitColor(it, scheme, overrides) }
     }
     val badgeGlyphColors = remember(scheme) {
-        transitBadgeLetters().associateWith { transitOnColor(it, scheme) }
+        transitBadgeLetters().associateWith { transitOnColor(it, scheme, overrides) }
     }
     val context = LocalContext.current
     val mapStyleUrl = if (isDark) STOP_MAP_STYLE_URL_DARK else STOP_MAP_STYLE_URL

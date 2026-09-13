@@ -68,6 +68,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import com.trimettransit.tracker.R
+import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
+import com.trimettransit.tracker.ui.appearance.onColorFor
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
@@ -257,6 +259,14 @@ private fun MainTabRow(
                 boxLeft = coords.positionInWindow().x.roundToInt()
             }
     ) {
+        val appearance = LocalAppearanceStyle.current
+        val hasCustomPillAccent = appearance.pillAccent != null
+        val pillContainer = appearance.pillAccent ?: MaterialTheme.colorScheme.surfaceContainer
+        val pillContent = if (hasCustomPillAccent) {
+            onColorFor(appearance.pillAccent!!)
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        }
         if (pillTarget != null) {
             Box(
                 modifier = Modifier
@@ -268,7 +278,7 @@ private fun MainTabRow(
                         .width(indicatorWidth)
                         .height(itemHeight)
                         .clip(appCardShape())
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .background(pillContainer)
                 )
             }
         }
@@ -307,7 +317,7 @@ private fun MainTabRow(
                         },
                     colors = IconButtonDefaults.iconButtonColors(
                         contentColor = if (isSelected) {
-                            MaterialTheme.colorScheme.onSurface
+                            pillContainer
                         } else {
                             MaterialTheme.colorScheme.onPrimaryContainer
                         }
@@ -321,7 +331,7 @@ private fun MainTabRow(
                             imageVector = icon,
                             contentDescription = stringResource(labelRes),
                             tint = if (isSelected) {
-                                MaterialTheme.colorScheme.onSurface
+                                pillContent
                             } else {
                                 MaterialTheme.colorScheme.onPrimaryContainer
                             },
@@ -333,7 +343,7 @@ private fun MainTabRow(
                                 text = stringResource(labelRes),
                                 style = MaterialTheme.typography.labelLarge,
                                 maxLines = 1,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = pillContent
                             )
                         }
                     }

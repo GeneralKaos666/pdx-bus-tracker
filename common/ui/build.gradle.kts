@@ -32,4 +32,8 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.core:core:1.19.0")
     implementation("androidx.core:core-ktx:1.19.0")
+    implementation("com.materialkolor:material-kolor:5.0.1")
+
+    // Testing
+    testImplementation("junit:junit:4.13.2")
 }

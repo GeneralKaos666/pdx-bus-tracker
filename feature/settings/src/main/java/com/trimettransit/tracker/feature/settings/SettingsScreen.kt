@@ -67,6 +67,9 @@ import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.core.graphics.drawable.toBitmap
 import androidx.preference.PreferenceManager
+import com.trimettransit.tracker.ui.appearance.AppearancePrefs
+import com.trimettransit.tracker.ui.appearance.colorToSpec
+import com.trimettransit.tracker.ui.appearance.parseColorSpec
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.SectionHeader
@@ -76,7 +79,9 @@ import com.trimettransit.tracker.ui.components.SettingsIconCircle
 import com.trimettransit.tracker.ui.components.SettingsRadioOption
 import com.trimettransit.tracker.ui.components.SettingsSwitchOption
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
+import com.trimettransit.tracker.ui.theme.TrimetBlue
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
@@ -96,8 +101,38 @@ fun SettingsScreen(
     val context = LocalContext.current
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-    var selectedTheme by remember { mutableStateOf(prefs.getString("theme", "system") ?: "system") }
-    var dynamicColor by remember { mutableStateOf(prefs.getBoolean("pref_key_dynamic_color", true)) }
+    var selectedTheme by remember { mutableStateOf(prefs.getString(AppearancePrefs.THEME, "system") ?: "system") }
+    var accentMode by remember {
+        mutableStateOf(
+            prefs.getString(AppearancePrefs.COLOR_MODE, null) ?: if (
+                prefs.getBoolean(AppearancePrefs.DYNAMIC_COLOR, true)
+            ) "dynamic" else "seed"
+        )
+    }
+    var accentColorRaw by remember {
+        mutableStateOf(prefs.getString(AppearancePrefs.ACCENT_COLOR, "") ?: "")
+    }
+    var vibrancyRaw by remember {
+        mutableStateOf(prefs.getString(AppearancePrefs.VIBRANCY, "default") ?: "default")
+    }
+    var amoledDark by remember {
+        mutableStateOf(prefs.getBoolean(AppearancePrefs.AMOLED_DARK, false))
+    }
+    var pillAccentRaw by remember {
+        mutableStateOf(prefs.getString(AppearancePrefs.PILL_ACCENT, "") ?: "")
+    }
+    var transitBusRaw by remember {
+        mutableStateOf(prefs.getString(AppearancePrefs.TRANSIT_BUS, "") ?: "")
+    }
+    var transitRailRaw by remember {
+        mutableStateOf(prefs.getString(AppearancePrefs.TRANSIT_RAIL, "") ?: "")
+    }
+    var transitStreetcarRaw by remember {
+        mutableStateOf(prefs.getString(AppearancePrefs.TRANSIT_STREETCAR, "") ?: "")
+    }
+    var transitWesRaw by remember {
+        mutableStateOf(prefs.getString(AppearancePrefs.TRANSIT_WES, "") ?: "")
+    }
     var onlyShowSelectedRoute by remember {
         mutableStateOf(prefs.getBoolean("pref_key_only_show_route_selected", true))
     }
@@ -113,7 +148,7 @@ fun SettingsScreen(
     var cornerStyle by remember {
         mutableStateOf(prefs.getString("pref_key_card_corner_style", "rounded") ?: "rounded")
     }
-    var showColorPicker by remember { mutableStateOf(false) }
+    var colourTarget by remember { mutableStateOf<ColourTarget?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -143,7 +178,7 @@ fun SettingsScreen(
                     selected = selectedTheme == "system",
                     onClick = {
                         selectedTheme = "system"
-                        prefs.edit { putString("theme", "system") }
+                        prefs.edit { putString(AppearancePrefs.THEME, "system") }
                     }
                 )
                 SettingsRadioOption(
@@ -153,7 +188,7 @@ fun SettingsScreen(
                     selected = selectedTheme == "light",
                     onClick = {
                         selectedTheme = "light"
-                        prefs.edit { putString("theme", "light") }
+                        prefs.edit { putString(AppearancePrefs.THEME, "light") }
                     }
                 )
                 SettingsRadioOption(
@@ -163,22 +198,199 @@ fun SettingsScreen(
                     selected = selectedTheme == "dark",
                     onClick = {
                         selectedTheme = "dark"
-                        prefs.edit { putString("theme", "dark") }
+                        prefs.edit { putString(AppearancePrefs.THEME, "dark") }
                     }
                 )
+            }
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+            SectionHeader(title = stringResource(R.string.section_colours))
 
-                SettingsSwitchOption(
-                    label = stringResource(R.string.dynamic_colors),
-                    subtitle = stringResource(R.string.dynamic_colors_subtitle),
-                    icon = Icons.Filled.Palette,
-                    checked = dynamicColor,
-                    onCheckedChange = {
-                        dynamicColor = it
-                        prefs.edit { putBoolean("pref_key_dynamic_color", it) }
+            SettingsCard {
+                var coloursExpanded by remember { mutableStateOf(false) }
+                val coloursSource = remember { MutableInteractionSource() }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pressScale(coloursSource)
+                        .clickable(
+                            interactionSource = coloursSource,
+                            indication = LocalIndication.current
+                        ) { coloursExpanded = !coloursExpanded }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SettingsIconCircle(icon = Icons.Filled.Palette, highlighted = coloursExpanded)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.colour_accent),
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = stringResource(R.string.colour_accent_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
-                )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    val coloursChevron by animateFloatAsState(
+                        targetValue = if (coloursExpanded) 180f else 0f,
+                        animationSpec = m3SpatialDefault(),
+                        label = "coloursChevron"
+                    )
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowDown,
+                        contentDescription = if (coloursExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.rotate(coloursChevron)
+                    )
+                }
+                AnimatedVisibility(
+                    visible = coloursExpanded,
+                    enter = expandVertically(
+                        animationSpec = m3SpatialDefault()
+                    ) + fadeIn(m3EffectsDefault()),
+                    exit = shrinkVertically(
+                        animationSpec = m3SpatialFast()
+                    ) + fadeOut(m3EffectsFast())
+                ) {
+                    Column {
+                        SettingsRadioOption(
+                            label = stringResource(R.string.colour_mode_dynamic),
+                            subtitle = stringResource(R.string.colour_mode_dynamic_subtitle),
+                            icon = Icons.Filled.BrightnessAuto,
+                            selected = accentMode == "dynamic",
+                            onClick = {
+                                accentMode = "dynamic"
+                                prefs.edit { putString(AppearancePrefs.COLOR_MODE, "dynamic") }
+                            }
+                        )
+                        SettingsRadioOption(
+                            label = stringResource(R.string.colour_mode_seed),
+                            subtitle = stringResource(R.string.colour_mode_seed_subtitle),
+                            icon = Icons.Filled.Colorize,
+                            selected = accentMode == "seed",
+                            onClick = {
+                                accentMode = "seed"
+                                prefs.edit { putString(AppearancePrefs.COLOR_MODE, "seed") }
+                            }
+                        )
+                        AnimatedVisibility(
+                            visible = accentMode == "seed",
+                            enter = expandVertically(m3SpatialDefault()) + fadeIn(m3EffectsDefault()),
+                            exit = shrinkVertically(m3SpatialFast()) + fadeOut(m3EffectsFast())
+                        ) {
+                            Column {
+                                AccentPresetRow(
+                                    selected = parseColorSpec(accentColorRaw),
+                                    onSelect = { color ->
+                                        accentColorRaw = colorToSpec(color)
+                                        prefs.edit { putString(AppearancePrefs.ACCENT_COLOR, colorToSpec(color)) }
+                                    }
+                                )
+                                SettingsColourOption(
+                                    label = stringResource(R.string.accent_custom),
+                                    subtitle = stringResource(R.string.accent_custom_subtitle),
+                                    icon = Icons.Filled.Colorize,
+                                    colour = parseColorSpec(accentColorRaw) ?: TrimetBlue,
+                                    onClick = { colourTarget = ColourTarget.ACCENT }
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                        SettingsRadioOption(
+                            label = stringResource(R.string.vibrancy_muted),
+                            subtitle = stringResource(R.string.vibrancy_muted_subtitle),
+                            icon = Icons.Filled.BrightnessAuto,
+                            selected = vibrancyRaw == "muted",
+                            onClick = {
+                                vibrancyRaw = "muted"
+                                prefs.edit { putString(AppearancePrefs.VIBRANCY, "muted") }
+                            }
+                        )
+                        SettingsRadioOption(
+                            label = stringResource(R.string.vibrancy_default),
+                            subtitle = stringResource(R.string.vibrancy_default_subtitle),
+                            icon = Icons.Filled.Palette,
+                            selected = vibrancyRaw == "default",
+                            onClick = {
+                                vibrancyRaw = "default"
+                                prefs.edit { putString(AppearancePrefs.VIBRANCY, "default") }
+                            }
+                        )
+                        SettingsRadioOption(
+                            label = stringResource(R.string.vibrancy_vibrant),
+                            subtitle = stringResource(R.string.vibrancy_vibrant_subtitle),
+                            icon = Icons.Filled.Colorize,
+                            selected = vibrancyRaw == "vibrant",
+                            onClick = {
+                                vibrancyRaw = "vibrant"
+                                prefs.edit { putString(AppearancePrefs.VIBRANCY, "vibrant") }
+                            }
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                        SettingsSwitchOption(
+                            label = stringResource(R.string.amoled_dark),
+                            subtitle = stringResource(R.string.amoled_dark_subtitle),
+                            icon = Icons.Filled.DarkMode,
+                            checked = amoledDark,
+                            onCheckedChange = {
+                                amoledDark = it
+                                prefs.edit { putBoolean(AppearancePrefs.AMOLED_DARK, it) }
+                            }
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                        val scheme = MaterialTheme.colorScheme
+                        SettingsColourOption(
+                            label = stringResource(R.string.pill_accent),
+                            subtitle = stringResource(R.string.pill_accent_subtitle),
+                            icon = Icons.Filled.Colorize,
+                            colour = parseColorSpec(pillAccentRaw) ?: scheme.primary,
+                            onClick = { colourTarget = ColourTarget.PILL_ACCENT }
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                        SettingsColourOption(
+                            label = stringResource(R.string.transit_bus),
+                            subtitle = stringResource(R.string.transit_type_subtitle),
+                            icon = Icons.Filled.Route,
+                            colour = parseColorSpec(transitBusRaw) ?: transitColor("B", scheme),
+                            onClick = { colourTarget = ColourTarget.TRANSIT_BUS }
+                        )
+                        SettingsColourOption(
+                            label = stringResource(R.string.transit_rail),
+                            subtitle = stringResource(R.string.transit_type_subtitle),
+                            icon = Icons.Filled.Route,
+                            colour = parseColorSpec(transitRailRaw) ?: transitColor("M", scheme),
+                            onClick = { colourTarget = ColourTarget.TRANSIT_RAIL }
+                        )
+                        SettingsColourOption(
+                            label = stringResource(R.string.transit_streetcar),
+                            subtitle = stringResource(R.string.transit_type_subtitle),
+                            icon = Icons.Filled.Route,
+                            colour = parseColorSpec(transitStreetcarRaw) ?: transitColor("S", scheme),
+                            onClick = { colourTarget = ColourTarget.TRANSIT_STREETCAR }
+                        )
+                        SettingsColourOption(
+                            label = stringResource(R.string.transit_wes),
+                            subtitle = stringResource(R.string.transit_type_subtitle),
+                            icon = Icons.Filled.Route,
+                            colour = parseColorSpec(transitWesRaw) ?: transitColor("W", scheme),
+                            onClick = { colourTarget = ColourTarget.TRANSIT_WES }
+                        )
+                    }
+                }
             }
 
             SectionHeader(title = stringResource(R.string.section_cards))
@@ -257,7 +469,7 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.card_outline_colour_subtitle),
                                 icon = Icons.Filled.Colorize,
                                 colour = outlinePreviewColour(cardOutlineColorRaw),
-                                onClick = { showColorPicker = true }
+                                onClick = { colourTarget = ColourTarget.CARD_OUTLINE }
                             )
                         }
                         SettingsCornerOption(
@@ -487,6 +699,7 @@ fun SettingsScreen(
                         LicenseEntry(stringResource(R.string.license_timber), stringResource(R.string.license_apache_2))
                         LicenseEntry(stringResource(R.string.license_glance), stringResource(R.string.license_apache_2))
                         LicenseEntry(stringResource(R.string.license_workmanager), stringResource(R.string.license_apache_2))
+                        LicenseEntry(stringResource(R.string.license_materialkolor), stringResource(R.string.license_mit))
                         LicenseEntry(
                             stringResource(R.string.license_full_texts),
                             "",
@@ -500,20 +713,67 @@ fun SettingsScreen(
         }
     }
 
-    if (showColorPicker) {
-        CardOutlineColourDialog(
-            initial = cardOutlineColorRaw,
-            onDismiss = { showColorPicker = false },
+    colourTarget?.let { target ->
+        val title = when (target) {
+            ColourTarget.CARD_OUTLINE -> stringResource(R.string.card_outline_colour)
+            ColourTarget.ACCENT -> stringResource(R.string.accent_colour)
+            ColourTarget.PILL_ACCENT -> stringResource(R.string.pill_accent)
+            ColourTarget.TRANSIT_BUS -> stringResource(R.string.transit_bus)
+            ColourTarget.TRANSIT_RAIL -> stringResource(R.string.transit_rail)
+            ColourTarget.TRANSIT_STREETCAR -> stringResource(R.string.transit_streetcar)
+            ColourTarget.TRANSIT_WES -> stringResource(R.string.transit_wes)
+        }
+        val initial = when (target) {
+            ColourTarget.CARD_OUTLINE -> cardOutlineColorRaw
+            ColourTarget.ACCENT -> accentColorRaw
+            ColourTarget.PILL_ACCENT -> pillAccentRaw
+            ColourTarget.TRANSIT_BUS -> transitBusRaw
+            ColourTarget.TRANSIT_RAIL -> transitRailRaw
+            ColourTarget.TRANSIT_STREETCAR -> transitStreetcarRaw
+            ColourTarget.TRANSIT_WES -> transitWesRaw
+        }
+        fun applyRaw(raw: String) {
+            when (target) {
+                ColourTarget.CARD_OUTLINE -> cardOutlineColorRaw = raw
+                ColourTarget.ACCENT -> accentColorRaw = raw
+                ColourTarget.PILL_ACCENT -> pillAccentRaw = raw
+                ColourTarget.TRANSIT_BUS -> transitBusRaw = raw
+                ColourTarget.TRANSIT_RAIL -> transitRailRaw = raw
+                ColourTarget.TRANSIT_STREETCAR -> transitStreetcarRaw = raw
+                ColourTarget.TRANSIT_WES -> transitWesRaw = raw
+            }
+        }
+        fun applyPref(raw: String) {
+            when (target) {
+                ColourTarget.CARD_OUTLINE -> prefs.edit { putString(AppearancePrefs.CARDS_OUTLINE_COLOR, raw) }
+                ColourTarget.ACCENT -> prefs.edit { putString(AppearancePrefs.ACCENT_COLOR, raw) }
+                ColourTarget.PILL_ACCENT -> prefs.edit { putString(AppearancePrefs.PILL_ACCENT, raw) }
+                ColourTarget.TRANSIT_BUS -> prefs.edit { putString(AppearancePrefs.TRANSIT_BUS, raw) }
+                ColourTarget.TRANSIT_RAIL -> prefs.edit { putString(AppearancePrefs.TRANSIT_RAIL, raw) }
+                ColourTarget.TRANSIT_STREETCAR -> prefs.edit { putString(AppearancePrefs.TRANSIT_STREETCAR, raw) }
+                ColourTarget.TRANSIT_WES -> prefs.edit { putString(AppearancePrefs.TRANSIT_WES, raw) }
+            }
+        }
+        ColourPickerDialog(
+            title = title,
+            autoLabel = stringResource(R.string.follow_scheme),
+            initialArgb = initial.takeUnless { it.isBlank() },
+            onDismiss = { colourTarget = null },
             onAuto = {
-                cardOutlineColorRaw = "auto"
-                prefs.edit { putString("pref_key_card_outline_color", "auto") }
-                showColorPicker = false
+                applyRaw("")
+                applyPref("")
+                colourTarget = null
             },
             onConfirm = { argb ->
-                cardOutlineColorRaw = argb
-                prefs.edit { putString("pref_key_card_outline_color", argb) }
-                showColorPicker = false
+                applyRaw(argb)
+                applyPref(argb)
+                colourTarget = null
             }
         )
     }
+}
+
+/** Which colour pref the shared [ColourPickerDialog] is currently editing. */
+private enum class ColourTarget {
+    CARD_OUTLINE, ACCENT, PILL_ACCENT, TRANSIT_BUS, TRANSIT_RAIL, TRANSIT_STREETCAR, TRANSIT_WES
 }

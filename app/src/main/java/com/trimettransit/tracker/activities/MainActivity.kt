@@ -135,6 +135,10 @@ import com.trimettransit.tracker.feature.settings.SettingsScreen
 import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
 import com.trimettransit.tracker.feature.trips.TripPlannerScreen
+import com.trimettransit.tracker.ui.appearance.AppearancePrefs
+import com.trimettransit.tracker.ui.appearance.AppearanceStyle
+import com.trimettransit.tracker.ui.appearance.ThemePreference
+import com.trimettransit.tracker.ui.appearance.readAppearanceStyle
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
@@ -258,8 +262,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-            var themePref by remember { mutableStateOf(prefs.getString("theme", "system") ?: "system") }
-            var dynamicColorPref by remember { mutableStateOf(prefs.getBoolean("pref_key_dynamic_color", true)) }
+            var appearance by remember { mutableStateOf(readAppearanceStyle(prefs)) }
             var cardCornerRadiusPref by remember { mutableIntStateOf(prefs.getInt("pref_key_card_corner_radius", 16)) }
             var cardCornerStylePref by remember {
                 mutableStateOf(prefs.getString("pref_key_card_corner_style", "rounded") ?: "rounded")
@@ -271,8 +274,12 @@ class MainActivity : ComponentActivity() {
             DisposableEffect(prefs) {
                 val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                     when (key) {
-                        "theme" -> themePref = prefs.getString("theme", "system") ?: "system"
-                        "pref_key_dynamic_color" -> dynamicColorPref = prefs.getBoolean("pref_key_dynamic_color", true)
+                        AppearancePrefs.THEME, AppearancePrefs.COLOR_MODE, AppearancePrefs.ACCENT_COLOR,
+                        AppearancePrefs.VIBRANCY, AppearancePrefs.AMOLED_DARK, AppearancePrefs.PILL_ACCENT,
+                        AppearancePrefs.TRANSIT_BUS, AppearancePrefs.TRANSIT_RAIL,
+                        AppearancePrefs.TRANSIT_STREETCAR, AppearancePrefs.TRANSIT_WES,
+                        AppearancePrefs.DENSITY, AppearancePrefs.FONT_SCALE, AppearancePrefs.MOTION,
+                        AppearancePrefs.DYNAMIC_COLOR -> appearance = readAppearanceStyle(prefs)
                         "pref_key_card_corner_radius" -> cardCornerRadiusPref = prefs.getInt("pref_key_card_corner_radius", 16)
                         "pref_key_card_corner_style" -> cardCornerStylePref =
                             prefs.getString("pref_key_card_corner_style", "rounded") ?: "rounded"
@@ -283,14 +290,14 @@ class MainActivity : ComponentActivity() {
                 prefs.registerOnSharedPreferenceChangeListener(listener)
                 onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
             }
-            val isDark = when (themePref) {
-                "dark" -> true
-                "light" -> false
+            val isDark = when (appearance.theme) {
+                ThemePreference.DARK -> true
+                ThemePreference.LIGHT -> false
                 else -> isSystemInDarkTheme()
             }
             TriMetGoTheme(
                 darkTheme = isDark,
-                dynamicColor = dynamicColorPref,
+                appearance = appearance,
                 cardCornerRadius = cardCornerRadiusPref.dp,
                 cardCutCorners = cardCornerStylePref == "cut",
                 cardOutlinesEnabled = cardOutlinesPref,

@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.R
+import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
@@ -98,12 +99,16 @@ fun StopListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val colorScheme = MaterialTheme.colorScheme
-            val transitTypeColor = remember(stop.transitType, colorScheme) {
-                transitColor(stop.transitType, colorScheme)
-            }
-            val transitGlyphColor = remember(stop.transitType, colorScheme) {
-                transitOnColor(stop.transitType, colorScheme)
-            }
+            val transitTypeColor = transitColor(
+                stop.transitType,
+                colorScheme,
+                LocalAppearanceStyle.current.transitTypeColors
+            )
+            val transitGlyphColor = transitOnColor(
+                stop.transitType,
+                colorScheme,
+                LocalAppearanceStyle.current.transitTypeColors
+            )
             // Transit type indicator
             Surface(
                 modifier = Modifier.size(40.dp),

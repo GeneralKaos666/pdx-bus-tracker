@@ -38,6 +38,7 @@ import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.transit.ApiKeys
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
+import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
@@ -126,9 +127,11 @@ private fun RouteListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val colorScheme = MaterialTheme.colorScheme
-            val typeColor = remember(route.typeLetter, colorScheme) {
-                transitColor(route.typeLetter, colorScheme)
-            }
+            val typeColor = transitColor(
+                route.typeLetter,
+                colorScheme,
+                LocalAppearanceStyle.current.transitTypeColors
+            )
             Surface(
                 modifier = Modifier.size(44.dp),
                 shape = appCardShape(),

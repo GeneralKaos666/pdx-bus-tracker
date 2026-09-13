@@ -70,6 +70,13 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **Copyright:** Copyright The Android Open Source Project
 - **Project:** https://developer.android.com/jetpack/libraries/work
 
+### material-kolor
+- **Artifact:** `com.materialkolor:material-kolor` 5.0.1
+- **License:** MIT License (library license); bundles a port of Material Color Utilities,
+  Copyright Google LLC, used under the Apache License 2.0
+- **Copyright:** Copyright (c) 2025 Luiz Felipe Losovski Rocha
+- **Project:** https://github.com/lr-eng/material-kolor
+
 ### Launcher icon map imagery — USGS National Map
 - **Source:** [U.S. Geological Survey National Map](https://basemap.nationalmap.gov/) (USGSImageryTopo service), aerial imagery of Portland, Oregon.
 - **License / status:** Public domain — work of the U.S. federal government (no copyright; attribution not required). Credited here as a courtesy.

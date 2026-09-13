@@ -4,27 +4,58 @@ import androidx.annotation.StringRes
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import com.trimettransit.tracker.ui.R
+import com.trimettransit.tracker.ui.appearance.TransitTypeColors
+import com.trimettransit.tracker.ui.appearance.onColorFor
 
-/** Returns a transit-type color derived from the M3 color scheme. */
-fun transitColor(type: String?, scheme: ColorScheme): Color = when (type) {
-    "B", "S", "T" -> scheme.primary          // Bus, Streetcar
-    "R" -> scheme.tertiary               // Rail
-    "M" -> scheme.secondary              // MAX Light Rail
-    "W" -> scheme.outline                // WES (alt)
-    else -> scheme.primary
+/**
+ * Returns a transit-type color derived from the M3 color scheme, honouring any user-chosen
+ * [TransitTypeColors] override (per-type colors win over scheme-derived tokens).
+ */
+fun transitColor(
+    type: String?,
+    scheme: ColorScheme,
+    overrides: TransitTypeColors = TransitTypeColors()
+): Color {
+    val override = when (type) {
+        "B" -> overrides.bus
+        "M", "R" -> overrides.rail
+        "S", "T" -> overrides.streetcar
+        "W" -> overrides.wes
+        else -> null
+    }
+    return override ?: when (type) {
+        "B", "S", "T" -> scheme.primary          // Bus, Streetcar
+        "R" -> scheme.tertiary               // Rail
+        "M" -> scheme.secondary              // MAX Light Rail
+        "W" -> scheme.outline                // WES (alt)
+        else -> scheme.primary
+    }
 }
 
 /**
- * Returns the M3 on-color that pairs with [transitColor] for a transit type, for painting a
+ * Returns the on-color that pairs with [transitColor] for a transit type, for painting a
  * legible glyph/center inside a filled marker. In the light scheme these resolve to white (the
- * prior behavior); in the dark scheme they become dark inks on the light pastel fills, so the
- * icon no longer vanishes. WES is intentionally left white for now.
+ * prior behavior); in the dark scheme they become dark inks on the light pastel fills. A user
+ * override uses a contrast-picked ink so the glyph stays readable on any custom fill.
  */
-fun transitOnColor(type: String?, scheme: ColorScheme): Color = when (type) {
-    "R" -> scheme.onTertiary              // Rail
-    "M" -> scheme.onSecondary             // MAX Light Rail
-    "W" -> Color.White                    // WES: unchanged for now
-    else -> scheme.onPrimary              // Bus, Streetcar
+fun transitOnColor(
+    type: String?,
+    scheme: ColorScheme,
+    overrides: TransitTypeColors = TransitTypeColors()
+): Color {
+    val override = when (type) {
+        "B" -> overrides.bus
+        "M", "R" -> overrides.rail
+        "S", "T" -> overrides.streetcar
+        "W" -> overrides.wes
+        else -> null
+    }
+    return override?.let { onColorFor(it) } ?: when (type) {
+        "R" -> scheme.onTertiary              // Rail
+        "M" -> scheme.onSecondary             // MAX Light Rail
+        "W" -> Color.White                    // WES: unchanged for now
+        else -> scheme.onPrimary              // Bus, Streetcar
+    }
 }
 
 /** Returns the drawable resource ID for a transit-type icon. */

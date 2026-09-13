@@ -5,6 +5,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,8 +15,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
@@ -39,6 +45,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
+import com.trimettransit.tracker.ui.appearance.accentPresets
+import com.trimettransit.tracker.ui.appearance.onColorFor
 import com.trimettransit.tracker.ui.components.SettingsIconCircle
 import com.trimettransit.tracker.ui.components.SettingsRowOption
 import com.trimettransit.tracker.ui.components.pressScale
@@ -102,6 +110,61 @@ internal fun SettingsColourOption(
     )
 }
 
+/** Curated accent swatches in rows; the active one carries a check glyph and accent ring. */
+@Composable
+internal fun AccentPresetRow(
+    selected: Color?,
+    onSelect: (Color) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+    ) {
+        accentPresets.chunked(4).forEach { rowSwatches ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rowSwatches.forEach { preset ->
+                    val isSelected = preset.color == selected
+                    val source = remember { MutableInteractionSource() }
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .pressScale(source, 0.9f)
+                            .clickable(
+                                interactionSource = source,
+                                indication = LocalIndication.current
+                            ) { onSelect(preset.color) },
+                        shape = CircleShape,
+                        color = preset.color,
+                        border = BorderStroke(
+                            width = if (isSelected) 3.dp else 1.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.outlineVariant
+                        )
+                    ) {
+                        if (isSelected) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Filled.Check,
+                                    contentDescription = null,
+                                    tint = onColorFor(preset.color),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 internal fun SettingsSliderOption(
     label: String,
@@ -148,23 +211,26 @@ internal fun SettingsSliderOption(
 }
 
 @Composable
-internal fun CardOutlineColourDialog(
-    initial: String,
+internal fun ColourPickerDialog(
+    title: String,
+    autoLabel: String,
+    initialArgb: String? = null,
+    allowAuto: Boolean = true,
     onDismiss: () -> Unit,
     onAuto: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
     val scheme = MaterialTheme.colorScheme
     val fallback = scheme.outlineVariant
-    val startColor = parseOutlineColour(initial, fallback)
+    val startColor = initialArgb?.let { parseOutlineColour(it, fallback) } ?: fallback
     val initialHsv = remember(startColor) {
         FloatArray(3).also { AndroidColor.colorToHSV(startColor.toArgb(), it) }
     }
-    var isAuto by remember(initial) { mutableStateOf(initial == "auto") }
-    var hue by remember(initial) { mutableFloatStateOf(initialHsv[0]) }
-    var sat by remember(initial) { mutableFloatStateOf(initialHsv[1]) }
-    var value by remember(initial) { mutableFloatStateOf(initialHsv[2]) }
-    var alpha by remember(initial) { mutableFloatStateOf(startColor.alpha) }
+    var isAuto by remember(initialArgb) { mutableStateOf(allowAuto && initialArgb == null) }
+    var hue by remember(initialArgb) { mutableFloatStateOf(initialHsv[0]) }
+    var sat by remember(initialArgb) { mutableFloatStateOf(initialHsv[1]) }
+    var value by remember(initialArgb) { mutableFloatStateOf(initialHsv[2]) }
+    var alpha by remember(initialArgb) { mutableFloatStateOf(startColor.alpha) }
 
     val draft = remember(hue, sat, value, alpha) {
         Color(AndroidColor.HSVToColor((alpha * 255).roundToInt(), floatArrayOf(hue, sat, value)))
@@ -176,27 +242,29 @@ internal fun CardOutlineColourDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.card_outline_colour)) },
+        title = { Text(title) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
-                val autoSource = remember { MutableInteractionSource() }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .pressScale(autoSource)
-                        .clickable(
-                            interactionSource = autoSource,
-                            indication = LocalIndication.current
-                        ) { isAuto = true }
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.card_outline_auto),
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.weight(1f)
-                    )
-                    RadioButton(selected = isAuto, onClick = null)
+                if (allowAuto) {
+                    val autoSource = remember { MutableInteractionSource() }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .pressScale(autoSource)
+                            .clickable(
+                                interactionSource = autoSource,
+                                indication = LocalIndication.current
+                            ) { isAuto = true }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = autoLabel,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                        RadioButton(selected = isAuto, onClick = null)
+                    }
                 }
                 Surface(
                     modifier = Modifier

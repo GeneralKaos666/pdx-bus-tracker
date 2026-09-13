@@ -43,6 +43,7 @@ import com.trimettransit.tracker.model.domain.isEstimated
 import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.transitBadgeLetter
+import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitTypeLabel
@@ -69,9 +70,8 @@ internal fun ArrivalItem(
 ) {
     val type = transitBadgeLetter(arrival.routeId)
     val scheme = MaterialTheme.colorScheme
-    val color = remember(type, scheme) {
-        transitColor(type, scheme)
-    }
+    val overrides = LocalAppearanceStyle.current.transitTypeColors
+    val color = transitColor(type, scheme, overrides)
     val displayTime = arrival.displayTimeMillis
 
     val formattedTime = if (displayTime > 0L) formatDateTime(DateTime(displayTime), context) else ""

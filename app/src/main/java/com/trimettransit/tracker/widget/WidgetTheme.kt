@@ -1,10 +1,17 @@
 package com.trimettransit.tracker.widget
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.glance.color.ColorProviders
 import androidx.glance.color.DynamicThemeColorProviders
 import androidx.glance.material3.ColorProviders as material3ColorProviders
+import com.trimettransit.tracker.ui.appearance.AppearanceStyle
+import com.trimettransit.tracker.ui.appearance.ColorMode
+import com.trimettransit.tracker.ui.appearance.ThemePreference
+import com.trimettransit.tracker.ui.appearance.asAmoled
+import com.trimettransit.tracker.ui.appearance.seedColorSchemeFor
+import com.trimettransit.tracker.ui.appearance.withVibrancy
 import com.trimettransit.tracker.ui.theme.DarkBackground
 import com.trimettransit.tracker.ui.theme.DarkError
 import com.trimettransit.tracker.ui.theme.DarkErrorContainer
@@ -93,12 +100,54 @@ private val DarkScheme = darkColorScheme(
 )
 
 /**
- * Glance [ColorProviders] for the widget, derived from the configured [WidgetThemeOption].
- * Forced LIGHT/DARK schemes reuse the same palette in both modes so they ignore system dark mode,
- * whereas SYSTEM keeps today's dynamic behavior.
+ * Glance [ColorProviders] for the widget, derived from the configured [WidgetThemeOption] plus the
+ * app-wide [AppearanceStyle]. Forced LIGHT/DARK options keep the static palettes in dynamic mode so
+ * they ignore system dark mode; with a custom seed colour, LIGHT/DARK/SYSTEM all render the user's
+ * palette (SYSTEM also resolves the app's own theme preference against [isSystemDark]).
  */
-fun widgetColorProviders(option: WidgetThemeOption): ColorProviders = when (option) {
-    WidgetThemeOption.SYSTEM -> DynamicThemeColorProviders
-    WidgetThemeOption.LIGHT -> material3ColorProviders(LightScheme)
-    WidgetThemeOption.DARK -> material3ColorProviders(DarkScheme)
+fun widgetColorProviders(
+    option: WidgetThemeOption,
+    appearance: AppearanceStyle,
+    isSystemDark: Boolean
+): ColorProviders {
+    val seedActive = appearance.colorMode == ColorMode.SEED
+    val dark = when (appearance.theme) {
+        ThemePreference.DARK -> true
+        ThemePreference.LIGHT -> false
+        else -> isSystemDark
+    }
+    return when (option) {
+        WidgetThemeOption.SYSTEM -> when {
+            seedActive -> material3ColorProviders(
+                seedColorSchemeFor(
+                    appearance.seedColor,
+                    dark,
+                    appearance.amoledDark,
+                    appearance.vibrancy
+                )
+            )
+            else -> DynamicThemeColorProviders
+        }
+        WidgetThemeOption.LIGHT -> material3ColorProviders(
+            if (seedActive) {
+                seedColorSchemeFor(appearance.seedColor, false, false, appearance.vibrancy)
+            } else {
+                LightScheme.withVibrancy(appearance.vibrancy)
+            }
+        )
+        WidgetThemeOption.DARK -> material3ColorProviders(
+            if (seedActive) {
+                seedColorSchemeFor(appearance.seedColor, true, appearance.amoledDark, appearance.vibrancy)
+            } else {
+                applyWidgetPalette(DarkScheme, appearance)
+            }
+        )
+    }
+}
+
+/** Applies vibrancy and AMOLED-black to a static scheme (dynamic-mode forced dark). */
+private fun applyWidgetPalette(scheme: ColorScheme, appearance: AppearanceStyle): ColorScheme {
+    var styled = scheme.withVibrancy(appearance.vibrancy)
+    if (appearance.amoledDark) styled = styled.asAmoled()
+    return styled
 }

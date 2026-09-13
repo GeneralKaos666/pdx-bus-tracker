@@ -21,6 +21,7 @@ import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.ui.components.badgeBitmap
 import com.trimettransit.tracker.ui.components.transitBadgeLetters
+import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitOnColor
@@ -71,6 +72,7 @@ internal fun TripMap(
     val density = LocalDensity.current.density
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
+    val overrides = LocalAppearanceStyle.current.transitTypeColors
     val mapStyleUrl = if (isDark) TRIP_MAP_STYLE_URL_DARK else TRIP_MAP_STYLE_URL
 
     // Guarantee the route markers and lines track the selected itinerary even if the
@@ -120,23 +122,23 @@ internal fun TripMap(
                 "badge-$letter",
                 badgeBitmap(
                     context,
-                    transitColor(letter, scheme).toArgb(),
+                    transitColor(letter, scheme, overrides).toArgb(),
                     transitIconResource(letter),
                     density,
-                    transitOnColor(letter, scheme).toArgb()
+                    transitOnColor(letter, scheme, overrides).toArgb()
                 )
             )
         }
         mapState.letterColors = letters.associateWith {
-            String.format(Locale.US, "#%06X", 0xFFFFFF and transitColor(it, scheme).toArgb())
+            String.format(Locale.US, "#%06X", 0xFFFFFF and transitColor(it, scheme, overrides).toArgb())
         }
         style.addImage(
             "origin-dot",
-            originDotBitmap(transitColor("B", scheme).toArgb(), density)
+            originDotBitmap(transitColor("B", scheme, overrides).toArgb(), density)
         )
         style.addImage(
             "dest-dot",
-            destDotBitmap(transitColor("R", scheme).toArgb(), density)
+            destDotBitmap(transitColor("R", scheme, overrides).toArgb(), density)
         )
         style.addImage("stop-dot", stopDotBitmap(scheme.secondary.toArgb(), scheme.onSecondary.toArgb(), density))
         style.addImage("me-dot", meDotBitmap(scheme.primary.toArgb(), density))

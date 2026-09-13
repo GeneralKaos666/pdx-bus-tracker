@@ -2,6 +2,7 @@ package com.trimettransit.tracker.widget
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
@@ -25,25 +26,39 @@ import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.activities.MainActivity
+import com.trimettransit.tracker.ui.appearance.AppearanceStyle
+import com.trimettransit.tracker.ui.appearance.readAppearanceStyle
 import com.trimettransit.tracker.widget.WidgetSnapshotCache.Snapshot
 
 class NextArrivalsWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val snapshot = WidgetSnapshotCache.snapshot(context)
+        val appearance = readAppearanceStyle(
+            PreferenceManager.getDefaultSharedPreferences(context)
+        )
+        val isSystemDark =
+            (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                Configuration.UI_MODE_NIGHT_YES
         provideContent {
             val config = WidgetConfig.fromPersistentMap(currentState<Preferences>().toConfigMap())
-            Content(snapshot, config)
+            Content(snapshot, config, appearance, isSystemDark)
         }
     }
 }
 
 @Composable
-private fun Content(snapshot: Snapshot, config: WidgetConfig) {
+private fun Content(
+    snapshot: Snapshot,
+    config: WidgetConfig,
+    appearance: AppearanceStyle,
+    isSystemDark: Boolean
+) {
     val context = LocalContext.current
-    GlanceTheme(widgetColorProviders(config.theme)) {
+    GlanceTheme(widgetColorProviders(config.theme, appearance, isSystemDark)) {
         val c = GlanceTheme.colors
         Column(
             modifier = GlanceModifier

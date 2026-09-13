@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripLeg
 import com.trimettransit.tracker.model.TripPlan
+import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
@@ -187,9 +188,10 @@ internal fun RouteBadge(
     val scheme = MaterialTheme.colorScheme
     val letter = leg.mode.transitTypeLetter()
     val badgeDescription = contentDescription
+    val overrides = LocalAppearanceStyle.current.transitTypeColors
     Surface(
         shape = appCardShape(),
-        color = transitColor(letter, scheme),
+        color = transitColor(letter, scheme, overrides),
         modifier = if (badgeDescription != null) {
             modifier.semantics { this.contentDescription = badgeDescription }
         } else {
@@ -206,7 +208,7 @@ internal fun RouteBadge(
                 text = (leg.routeNumber?.takeIf { it.isNotEmpty() && letter == "B" }) ?: letter,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                color = transitOnColor(letter, scheme)
+                color = transitOnColor(letter, scheme, overrides)
             )
         }
     }
