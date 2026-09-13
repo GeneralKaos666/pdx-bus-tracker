@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Settings, organised into submenus:** Settings now opens to a menu of categories — Appearance, Colors, Display, Cards, Maps, Arrivals, Departure alerts, Widget, About, and Open source licenses — each its own screen, so the long scrolling list is gone. Every category row shows your current setting at a glance (for example, the theme under Appearance, or the refresh cadence under Arrivals), and tapping back returns to the menu. Inside each submenu all options are shown directly — no hidden dropdown cards — and user-facing text uses American spellings ("colors").
+- **Fixed: settings content no longer sits under the status bar.** Previously the top of the Settings screen drew beneath the status bar (most visible on the new submenu headers); the whole screen now clears it, and opening a submenu always starts at its top.
+
 - **Your device's "Remove animations" setting is now honored:** when it's on, the app keeps quick fade transitions but drops sliding screen changes, bouncing springs, list cascades, and the shimmer sweep — and countdown flips swap straight to the new time.
 - **Calmer, snappier motion:** the bottom navigation labels fade in without re-flowing the bar, arriving-bus countdowns flip faster and out of sync with each other, alert pills and the nav pill appear more subtly, and button press feedback is gentler.
 

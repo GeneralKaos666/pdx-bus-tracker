@@ -44,7 +44,6 @@
     <string name="widget_config_cancel">Cancel</string>
 
     <!-- Widget settings section (inside the app's Settings screen) -->
-    <string name="widget_settings_title">Widget</string>
     <string name="widget_settings_subtitle">Home-screen refresh frequency</string>
     <string name="widget_settings_interval_min">%1$d min</string>
     <plurals name="widget_settings_interval_desc">
@@ -84,7 +83,6 @@
     <string name="departure_alert_default_title">Bus arriving</string>
     <string name="departure_alert_minutes">%1$s \u00b7 Departs in %2$d min</string>
     <string name="departure_alert_now">%1$s \u00b7 Departing now</string>
-    <string name="notifications_section_title">Departure alerts</string>
     <string name="notifications_master_label">Departure alerts</string>
     <string name="notifications_master_subtitle">Remind me when the next trip at a monitored stop is about to leave</string>
     <string name="notifications_window_label_min">%1$d min</string>

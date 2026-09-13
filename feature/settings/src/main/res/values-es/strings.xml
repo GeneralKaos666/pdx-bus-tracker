@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_title">PDX Bus Tracker</string>
+    <string name="settings_title">Configuración</string>
+    <string name="back">Atrás</string>
+    <string name="value_on">Activadas</string>
+    <string name="value_off">Desactivadas</string>
+    <string name="about_subtitle">Versión, política de privacidad y fuente de datos</string>
+    <string name="menu_notifications">Alertas de salida</string>
+    <string name="menu_widget">Widget</string>
+    <string name="menu_widget_summary">%1$d min</string>
     <string name="version_license">Versión %1$s · Licencia MIT</string>
     <string name="unofficial_disclaimer">App no oficial — no está afiliada, patrocinada ni respaldada por TriMet.</string>
     <string name="data_provider">Los datos provienen de la API pública para desarrolladores de TriMet (developer.trimet.org).</string>
@@ -104,8 +112,6 @@
     <string name="refresh_cadence_120">Cada 2 minutos</string>
     <string name="refresh_cadence_subtitle">Actualiza silenciosamente los tiempos de llegada en la pantalla de llegadas</string>
     <string name="section_about">Acerca de</string>
-    <string name="collapse">Contraer</string>
-    <string name="expand">Expandir</string>
     <string name="license_androidx">AndroidX / Jetpack Compose (UI, Foundation, Material 3, Navigation, Activity, AppCompat, Preference)</string>
     <string name="license_apache_2">Apache License 2.0</string>
     <string name="license_kotlin">Kotlin Standard Library &amp; Coroutines</string>

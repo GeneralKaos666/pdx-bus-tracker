@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.R
-import com.trimettransit.tracker.ui.components.SectionHeader
 import com.trimettransit.tracker.ui.components.SettingsCard
 import com.trimettransit.tracker.ui.components.SettingsIconCircle
 import com.trimettransit.tracker.ui.components.SettingsRadioOption
@@ -58,8 +57,6 @@ fun WidgetSettingsSection() {
         mutableIntStateOf(prefs.getInt(WidgetScheduler.KEY_REFRESH_INTERVAL_MIN, DEFAULT_INTERVAL_MIN))
     }
     var placedWidgetIds by remember { mutableStateOf(placedWidgetIds(context)) }
-
-    SectionHeader(title = stringResource(R.string.widget_settings_title))
 
     SettingsCard {
         Text(

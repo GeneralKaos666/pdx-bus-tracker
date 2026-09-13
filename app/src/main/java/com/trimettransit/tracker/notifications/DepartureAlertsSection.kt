@@ -31,7 +31,6 @@ import com.trimettransit.tracker.R
 import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.ui.components.SectionHeader
 import com.trimettransit.tracker.ui.components.SettingsCard
 import com.trimettransit.tracker.ui.components.SettingsRadioOption
 import com.trimettransit.tracker.ui.components.SettingsSwitchOption
@@ -73,8 +72,6 @@ fun DepartureAlertsSection() {
             DepartureAlertScheduler.stop(context)
         }
     }
-
-    SectionHeader(title = stringResource(R.string.notifications_section_title))
 
     SettingsCard {
         SettingsSwitchOption(

@@ -1,7 +1,14 @@
 package com.trimettransit.tracker.feature.settings
 
+import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -16,12 +23,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.BorderAll
 import androidx.compose.material.icons.filled.BrightnessAuto
@@ -30,18 +40,20 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MotionPhotosOn
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material.icons.filled.TextIncrease
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewStream
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -51,7 +63,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,8 +71,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,15 +95,18 @@ import com.trimettransit.tracker.ui.components.SettingsCard
 import com.trimettransit.tracker.ui.components.SettingsCornerOption
 import com.trimettransit.tracker.ui.components.SettingsIconCircle
 import com.trimettransit.tracker.ui.components.SettingsRadioOption
+import com.trimettransit.tracker.ui.components.SettingsRowOption
 import com.trimettransit.tracker.ui.components.SettingsSwitchOption
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.transitColor
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.TrimetBlue
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 
 import kotlinx.coroutines.launch
@@ -102,6 +116,8 @@ import kotlin.math.roundToInt
 fun SettingsScreen(
     widgetSection: (@Composable ColumnScope.() -> Unit)? = null,
     notificationsSection: (@Composable ColumnScope.() -> Unit)? = null,
+    notificationsEnabled: Boolean? = null,
+    widgetRefreshIntervalMin: Int? = null,
     onRegisterScrollToTop: ((() -> Unit)?) -> Unit
 ) {
     val context = LocalContext.current
@@ -182,6 +198,7 @@ fun SettingsScreen(
         mutableStateOf(prefs.getString("pref_key_card_corner_style", "rounded") ?: "rounded")
     }
     var colourTarget by remember { mutableStateOf<ColourTarget?>(null) }
+    var currentSection by remember { mutableStateOf<SettingsSection?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -194,812 +211,740 @@ fun SettingsScreen(
         onDispose { onRegisterScrollToTop(null) }
     }
 
+    // Panes share one scroll state; snap it back to the top before switching so a
+    // pane never opens pre-scrolled at the previous pane's offset.
+    fun switchPane(section: SettingsSection?) {
+        coroutineScope.launch {
+            scrollState.scrollTo(0)
+            currentSection = section
+        }
+    }
+
+    // System back closes an open submenu before leaving the screen.
+    BackHandler(enabled = currentSection != null) { switchPane(null) }
+
     ContentEntrance(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(bottom = navPillBottomPadding() + 8.dp)
-        ) {
-            SectionHeader(title = stringResource(R.string.section_appearance))
-
-            SettingsCard {
-                SettingsRadioOption(
-                    label = stringResource(R.string.theme_system),
-                    subtitle = stringResource(R.string.theme_system_subtitle),
-                    icon = Icons.Filled.BrightnessAuto,
-                    selected = selectedTheme == "system",
-                    onClick = {
-                        selectedTheme = "system"
-                        prefs.edit { putString(AppearancePrefs.THEME, "system") }
+        AnimatedContent(
+            targetState = currentSection,
+            transitionSpec = {
+                if (AppMotion.reduceMotion) {
+                    fadeIn(m3EffectsDefault()).togetherWith(fadeOut(m3EffectsDefault()))
+                } else {
+                    val opening = initialState == null
+                    if (opening) {
+                        (slideInHorizontally(m3SpatialDefault()) { it } + fadeIn(m3EffectsDefault()))
+                            .togetherWith(
+                                slideOutHorizontally(m3SpatialDefault()) { -it / 4 } +
+                                    fadeOut(m3EffectsDefault())
+                            )
+                    } else {
+                        (slideInHorizontally(m3SpatialDefault()) { -it / 4 } + fadeIn(m3EffectsDefault()))
+                            .togetherWith(
+                                slideOutHorizontally(m3SpatialDefault()) { it } +
+                                    fadeOut(m3EffectsDefault())
+                            )
                     }
-                )
-                SettingsRadioOption(
-                    label = stringResource(R.string.theme_light),
-                    subtitle = stringResource(R.string.theme_light_subtitle),
-                    icon = Icons.Filled.LightMode,
-                    selected = selectedTheme == "light",
-                    onClick = {
-                        selectedTheme = "light"
-                        prefs.edit { putString(AppearancePrefs.THEME, "light") }
-                    }
-                )
-                SettingsRadioOption(
-                    label = stringResource(R.string.theme_dark),
-                    subtitle = stringResource(R.string.theme_dark_subtitle),
-                    icon = Icons.Filled.DarkMode,
-                    selected = selectedTheme == "dark",
-                    onClick = {
-                        selectedTheme = "dark"
-                        prefs.edit { putString(AppearancePrefs.THEME, "dark") }
-                    }
-                )
-            }
-
-            SectionHeader(title = stringResource(R.string.section_colours))
-
-            SettingsCard {
-                var coloursExpanded by remember { mutableStateOf(false) }
-                val coloursSource = remember { MutableInteractionSource() }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .pressScale(coloursSource)
-                        .clickable(
-                            interactionSource = coloursSource,
-                            indication = LocalIndication.current
-                        ) { coloursExpanded = !coloursExpanded }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    SettingsIconCircle(icon = Icons.Filled.Palette, highlighted = coloursExpanded)
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.colour_accent),
-                            style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = stringResource(R.string.colour_accent_subtitle),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    val coloursChevron by animateFloatAsState(
-                        targetValue = if (coloursExpanded) 180f else 0f,
-                        animationSpec = m3SpatialDefault(),
-                        label = "coloursChevron"
-                    )
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = if (coloursExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.rotate(coloursChevron)
-                    )
                 }
-                AnimatedVisibility(
-                    visible = coloursExpanded,
-                    enter = m3ContentExpand(),
-                    exit = m3ContentShrink()
-                ) {
-                    Column {
-                        SettingsRadioOption(
-                            label = stringResource(R.string.colour_mode_dynamic),
-                            subtitle = stringResource(R.string.colour_mode_dynamic_subtitle),
+            },
+            label = "settingsSubmenu"
+        ) { section ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .verticalScroll(scrollState)
+                    .padding(bottom = navPillBottomPadding() + 8.dp)
+            ) {
+                if (section == null) {
+                    SectionHeader(title = stringResource(R.string.settings_title))
+
+                    SettingsCard {
+                        MenuRow(
+                            label = stringResource(R.string.section_appearance),
+                            subtitle = themeSummary(selectedTheme),
                             icon = Icons.Filled.BrightnessAuto,
-                            selected = accentMode == "dynamic",
-                            onClick = {
-                                accentMode = "dynamic"
-                                prefs.edit { putString(AppearancePrefs.COLOR_MODE, "dynamic") }
-                            }
+                            onClick = { switchPane(SettingsSection.APPEARANCE) }
                         )
-                        SettingsRadioOption(
-                            label = stringResource(R.string.colour_mode_seed),
-                            subtitle = stringResource(R.string.colour_mode_seed_subtitle),
-                            icon = Icons.Filled.Colorize,
-                            selected = accentMode == "seed",
-                            onClick = {
-                                accentMode = "seed"
-                                prefs.edit { putString(AppearancePrefs.COLOR_MODE, "seed") }
-                            }
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        MenuRow(
+                            label = stringResource(R.string.section_colours),
+                            subtitle = coloursSummary(accentMode, amoledDark),
+                            icon = Icons.Filled.Palette,
+                            onClick = { switchPane(SettingsSection.COLOURS) }
                         )
-                        AnimatedVisibility(
-                            visible = accentMode == "seed",
-                            enter = m3ContentExpand(),
-                            exit = m3ContentShrink()
-                        ) {
-                            Column {
-                                AccentPresetRow(
-                                    selected = parseColorSpec(accentColorRaw),
-                                    onSelect = { color ->
-                                        accentColorRaw = colorToSpec(color)
-                                        prefs.edit { putString(AppearancePrefs.ACCENT_COLOR, colorToSpec(color)) }
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        MenuRow(
+                            label = stringResource(R.string.section_display),
+                            subtitle = displaySummary(densityRaw, fontScaleRaw),
+                            icon = Icons.Filled.ViewStream,
+                            onClick = { switchPane(SettingsSection.DISPLAY) }
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        MenuRow(
+                            label = stringResource(R.string.section_cards),
+                            subtitle = cardsSummary(cornerStyle, cornerRadius),
+                            icon = Icons.Filled.BorderAll,
+                            onClick = { switchPane(SettingsSection.CARDS) }
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        MenuRow(
+                            label = stringResource(R.string.section_maps),
+                            subtitle = mapsSummary(mapStyleRaw),
+                            icon = Icons.Filled.Map,
+                            onClick = { switchPane(SettingsSection.MAPS) }
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        MenuRow(
+                            label = stringResource(R.string.section_arrivals),
+                            subtitle = arrivalsSummary(arrivalsRefreshSeconds),
+                            icon = Icons.Filled.Schedule,
+                            onClick = { switchPane(SettingsSection.ARRIVALS) }
+                        )
+                        if (notificationsSection != null) {
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                            MenuRow(
+                                label = stringResource(R.string.menu_notifications),
+                                subtitle = notificationsEnabled?.let { on ->
+                                    if (on) stringResource(R.string.value_on) else stringResource(R.string.value_off)
+                                }.orEmpty(),
+                                icon = Icons.Filled.NotificationsActive,
+                                onClick = { switchPane(SettingsSection.NOTIFICATIONS) }
+                            )
+                        }
+                        if (widgetSection != null) {
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                            MenuRow(
+                                label = stringResource(R.string.menu_widget),
+                                subtitle = widgetRefreshIntervalMin
+                                    ?.let { stringResource(R.string.menu_widget_summary, it) }
+                                    .orEmpty(),
+                                icon = Icons.Filled.Widgets,
+                                onClick = { switchPane(SettingsSection.WIDGET) }
+                            )
+                        }
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        MenuRow(
+                            label = stringResource(R.string.section_about),
+                            subtitle = stringResource(R.string.about_subtitle),
+                            icon = Icons.Filled.Info,
+                            onClick = { switchPane(SettingsSection.ABOUT) }
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        MenuRow(
+                            label = stringResource(R.string.open_source_licenses),
+                            subtitle = stringResource(R.string.libraries_terms),
+                            icon = Icons.Filled.Info,
+                            onClick = { switchPane(SettingsSection.LICENSES) }
+                        )
+                    }
+                } else {
+                    SubmenuHeader(
+                        title = stringResource(section.titleRes),
+                        onBack = { switchPane(null) }
+                    )
+                    when (section) {
+                        SettingsSection.APPEARANCE -> {
+                            SettingsCard {
+                                SettingsRadioOption(
+                                    label = stringResource(R.string.theme_system),
+                                    subtitle = stringResource(R.string.theme_system_subtitle),
+                                    icon = Icons.Filled.BrightnessAuto,
+                                    selected = selectedTheme == "system",
+                                    onClick = {
+                                        selectedTheme = "system"
+                                        prefs.edit { putString(AppearancePrefs.THEME, "system") }
                                     }
                                 )
-                                SettingsColourOption(
-                                    label = stringResource(R.string.accent_custom),
-                                    subtitle = stringResource(R.string.accent_custom_subtitle),
-                                    icon = Icons.Filled.Colorize,
-                                    colour = parseColorSpec(accentColorRaw) ?: TrimetBlue,
-                                    onClick = { colourTarget = ColourTarget.ACCENT }
+                                SettingsRadioOption(
+                                    label = stringResource(R.string.theme_light),
+                                    subtitle = stringResource(R.string.theme_light_subtitle),
+                                    icon = Icons.Filled.LightMode,
+                                    selected = selectedTheme == "light",
+                                    onClick = {
+                                        selectedTheme = "light"
+                                        prefs.edit { putString(AppearancePrefs.THEME, "light") }
+                                    }
+                                )
+                                SettingsRadioOption(
+                                    label = stringResource(R.string.theme_dark),
+                                    subtitle = stringResource(R.string.theme_dark_subtitle),
+                                    icon = Icons.Filled.DarkMode,
+                                    selected = selectedTheme == "dark",
+                                    onClick = {
+                                        selectedTheme = "dark"
+                                        prefs.edit { putString(AppearancePrefs.THEME, "dark") }
+                                    }
                                 )
                             }
                         }
 
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        SettingsSection.COLOURS -> {
+                            SettingsCard {
+                                    Column {
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.colour_mode_dynamic),
+                                            subtitle = stringResource(R.string.colour_mode_dynamic_subtitle),
+                                            icon = Icons.Filled.BrightnessAuto,
+                                            selected = accentMode == "dynamic",
+                                            onClick = {
+                                                accentMode = "dynamic"
+                                                prefs.edit { putString(AppearancePrefs.COLOR_MODE, "dynamic") }
+                                            }
+                                        )
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.colour_mode_seed),
+                                            subtitle = stringResource(R.string.colour_mode_seed_subtitle),
+                                            icon = Icons.Filled.Colorize,
+                                            selected = accentMode == "seed",
+                                            onClick = {
+                                                accentMode = "seed"
+                                                prefs.edit { putString(AppearancePrefs.COLOR_MODE, "seed") }
+                                            }
+                                        )
+                                        AnimatedVisibility(
+                                            visible = accentMode == "seed",
+                                            enter = m3ContentExpand(),
+                                            exit = m3ContentShrink()
+                                        ) {
+                                            Column {
+                                                AccentPresetRow(
+                                                    selected = parseColorSpec(accentColorRaw),
+                                                    onSelect = { color ->
+                                                        accentColorRaw = colorToSpec(color)
+                                                        prefs.edit { putString(AppearancePrefs.ACCENT_COLOR, colorToSpec(color)) }
+                                                    }
+                                                )
+                                                SettingsColourOption(
+                                                    label = stringResource(R.string.accent_custom),
+                                                    subtitle = stringResource(R.string.accent_custom_subtitle),
+                                                    icon = Icons.Filled.Colorize,
+                                                    colour = parseColorSpec(accentColorRaw) ?: TrimetBlue,
+                                                    onClick = { colourTarget = ColourTarget.ACCENT }
+                                                )
+                                            }
+                                        }
 
-                        SettingsRadioOption(
-                            label = stringResource(R.string.vibrancy_muted),
-                            subtitle = stringResource(R.string.vibrancy_muted_subtitle),
-                            icon = Icons.Filled.BrightnessAuto,
-                            selected = vibrancyRaw == "muted",
-                            onClick = {
-                                vibrancyRaw = "muted"
-                                prefs.edit { putString(AppearancePrefs.VIBRANCY, "muted") }
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.vibrancy_muted),
+                                            subtitle = stringResource(R.string.vibrancy_muted_subtitle),
+                                            icon = Icons.Filled.BrightnessAuto,
+                                            selected = vibrancyRaw == "muted",
+                                            onClick = {
+                                                vibrancyRaw = "muted"
+                                                prefs.edit { putString(AppearancePrefs.VIBRANCY, "muted") }
+                                            }
+                                        )
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.vibrancy_default),
+                                            subtitle = stringResource(R.string.vibrancy_default_subtitle),
+                                            icon = Icons.Filled.Palette,
+                                            selected = vibrancyRaw == "default",
+                                            onClick = {
+                                                vibrancyRaw = "default"
+                                                prefs.edit { putString(AppearancePrefs.VIBRANCY, "default") }
+                                            }
+                                        )
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.vibrancy_vibrant),
+                                            subtitle = stringResource(R.string.vibrancy_vibrant_subtitle),
+                                            icon = Icons.Filled.Colorize,
+                                            selected = vibrancyRaw == "vibrant",
+                                            onClick = {
+                                                vibrancyRaw = "vibrant"
+                                                prefs.edit { putString(AppearancePrefs.VIBRANCY, "vibrant") }
+                                            }
+                                        )
+
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                                        SettingsSwitchOption(
+                                            label = stringResource(R.string.amoled_dark),
+                                            subtitle = stringResource(R.string.amoled_dark_subtitle),
+                                            icon = Icons.Filled.DarkMode,
+                                            checked = amoledDark,
+                                            onCheckedChange = {
+                                                amoledDark = it
+                                                prefs.edit { putBoolean(AppearancePrefs.AMOLED_DARK, it) }
+                                            }
+                                        )
+
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                                        val scheme = MaterialTheme.colorScheme
+                                        SettingsColourOption(
+                                            label = stringResource(R.string.pill_accent),
+                                            subtitle = stringResource(R.string.pill_accent_subtitle),
+                                            icon = Icons.Filled.Colorize,
+                                            colour = parseColorSpec(pillAccentRaw) ?: scheme.primary,
+                                            onClick = { colourTarget = ColourTarget.PILL_ACCENT }
+                                        )
+
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                                        SettingsColourOption(
+                                            label = stringResource(R.string.transit_bus),
+                                            subtitle = stringResource(R.string.transit_type_subtitle),
+                                            icon = Icons.Filled.Route,
+                                            colour = parseColorSpec(transitBusRaw) ?: transitColor("B", scheme),
+                                            onClick = { colourTarget = ColourTarget.TRANSIT_BUS }
+                                        )
+                                        SettingsColourOption(
+                                            label = stringResource(R.string.transit_rail),
+                                            subtitle = stringResource(R.string.transit_type_subtitle),
+                                            icon = Icons.Filled.Route,
+                                            colour = parseColorSpec(transitRailRaw) ?: transitColor("M", scheme),
+                                            onClick = { colourTarget = ColourTarget.TRANSIT_RAIL }
+                                        )
+                                        SettingsColourOption(
+                                            label = stringResource(R.string.transit_streetcar),
+                                            subtitle = stringResource(R.string.transit_type_subtitle),
+                                            icon = Icons.Filled.Route,
+                                            colour = parseColorSpec(transitStreetcarRaw) ?: transitColor("S", scheme),
+                                            onClick = { colourTarget = ColourTarget.TRANSIT_STREETCAR }
+                                        )
+                                        SettingsColourOption(
+                                            label = stringResource(R.string.transit_wes),
+                                            subtitle = stringResource(R.string.transit_type_subtitle),
+                                            icon = Icons.Filled.Route,
+                                            colour = parseColorSpec(transitWesRaw) ?: transitColor("W", scheme),
+                                            onClick = { colourTarget = ColourTarget.TRANSIT_WES }
+                                        )
+                                    }
                             }
-                        )
-                        SettingsRadioOption(
-                            label = stringResource(R.string.vibrancy_default),
-                            subtitle = stringResource(R.string.vibrancy_default_subtitle),
-                            icon = Icons.Filled.Palette,
-                            selected = vibrancyRaw == "default",
-                            onClick = {
-                                vibrancyRaw = "default"
-                                prefs.edit { putString(AppearancePrefs.VIBRANCY, "default") }
-                            }
-                        )
-                        SettingsRadioOption(
-                            label = stringResource(R.string.vibrancy_vibrant),
-                            subtitle = stringResource(R.string.vibrancy_vibrant_subtitle),
-                            icon = Icons.Filled.Colorize,
-                            selected = vibrancyRaw == "vibrant",
-                            onClick = {
-                                vibrancyRaw = "vibrant"
-                                prefs.edit { putString(AppearancePrefs.VIBRANCY, "vibrant") }
-                            }
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-
-                        SettingsSwitchOption(
-                            label = stringResource(R.string.amoled_dark),
-                            subtitle = stringResource(R.string.amoled_dark_subtitle),
-                            icon = Icons.Filled.DarkMode,
-                            checked = amoledDark,
-                            onCheckedChange = {
-                                amoledDark = it
-                                prefs.edit { putBoolean(AppearancePrefs.AMOLED_DARK, it) }
-                            }
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-
-                        val scheme = MaterialTheme.colorScheme
-                        SettingsColourOption(
-                            label = stringResource(R.string.pill_accent),
-                            subtitle = stringResource(R.string.pill_accent_subtitle),
-                            icon = Icons.Filled.Colorize,
-                            colour = parseColorSpec(pillAccentRaw) ?: scheme.primary,
-                            onClick = { colourTarget = ColourTarget.PILL_ACCENT }
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-
-                        SettingsColourOption(
-                            label = stringResource(R.string.transit_bus),
-                            subtitle = stringResource(R.string.transit_type_subtitle),
-                            icon = Icons.Filled.Route,
-                            colour = parseColorSpec(transitBusRaw) ?: transitColor("B", scheme),
-                            onClick = { colourTarget = ColourTarget.TRANSIT_BUS }
-                        )
-                        SettingsColourOption(
-                            label = stringResource(R.string.transit_rail),
-                            subtitle = stringResource(R.string.transit_type_subtitle),
-                            icon = Icons.Filled.Route,
-                            colour = parseColorSpec(transitRailRaw) ?: transitColor("M", scheme),
-                            onClick = { colourTarget = ColourTarget.TRANSIT_RAIL }
-                        )
-                        SettingsColourOption(
-                            label = stringResource(R.string.transit_streetcar),
-                            subtitle = stringResource(R.string.transit_type_subtitle),
-                            icon = Icons.Filled.Route,
-                            colour = parseColorSpec(transitStreetcarRaw) ?: transitColor("S", scheme),
-                            onClick = { colourTarget = ColourTarget.TRANSIT_STREETCAR }
-                        )
-                        SettingsColourOption(
-                            label = stringResource(R.string.transit_wes),
-                            subtitle = stringResource(R.string.transit_type_subtitle),
-                            icon = Icons.Filled.Route,
-                            colour = parseColorSpec(transitWesRaw) ?: transitColor("W", scheme),
-                            onClick = { colourTarget = ColourTarget.TRANSIT_WES }
-                        )
-                    }
-                }
-            }
-
-            SectionHeader(title = stringResource(R.string.section_display))
-
-            SettingsCard {
-                var displayExpanded by remember { mutableStateOf(true) }
-                val displaySource = remember { MutableInteractionSource() }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .pressScale(displaySource)
-                        .clickable(
-                            interactionSource = displaySource,
-                            indication = LocalIndication.current
-                        ) { displayExpanded = !displayExpanded }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    SettingsIconCircle(icon = Icons.Filled.ViewStream, highlighted = displayExpanded)
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.section_display),
-                            style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = stringResource(R.string.section_display_subtitle),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    val displayChevronRotation by animateFloatAsState(
-                        targetValue = if (displayExpanded) 180f else 0f,
-                        animationSpec = m3SpatialDefault(),
-                        label = "displayChevron"
-                    )
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = if (displayExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.rotate(displayChevronRotation)
-                    )
-                }
-                AnimatedVisibility(
-                    visible = displayExpanded,
-                    enter = m3ContentExpand(),
-                    exit = m3ContentShrink()
-                ) {
-                    Column {
-                        SettingsRadioOption(
-                            label = stringResource(R.string.density_comfortable),
-                            subtitle = stringResource(R.string.density_comfortable_subtitle),
-                            icon = Icons.Filled.ViewStream,
-                            selected = densityRaw == "comfortable",
-                            onClick = {
-                                densityRaw = "comfortable"
-                                prefs.edit { putString(AppearancePrefs.DENSITY, "comfortable") }
-                            }
-                        )
-                        SettingsRadioOption(
-                            label = stringResource(R.string.density_compact),
-                            subtitle = stringResource(R.string.density_compact_subtitle),
-                            icon = Icons.Filled.ViewAgenda,
-                            selected = densityRaw == "compact",
-                            onClick = {
-                                densityRaw = "compact"
-                                prefs.edit { putString(AppearancePrefs.DENSITY, "compact") }
-                            }
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-
-                        SettingsRadioOption(
-                            label = stringResource(R.string.font_smaller),
-                            subtitle = stringResource(R.string.font_smaller_subtitle),
-                            icon = Icons.Filled.TextDecrease,
-                            selected = fontScaleRaw == "smaller",
-                            onClick = {
-                                fontScaleRaw = "smaller"
-                                prefs.edit { putString(AppearancePrefs.FONT_SCALE, "smaller") }
-                            }
-                        )
-                        SettingsRadioOption(
-                            label = stringResource(R.string.font_default),
-                            subtitle = stringResource(R.string.font_default_subtitle),
-                            icon = Icons.Filled.FormatSize,
-                            selected = fontScaleRaw == "default",
-                            onClick = {
-                                fontScaleRaw = "default"
-                                prefs.edit { putString(AppearancePrefs.FONT_SCALE, "default") }
-                            }
-                        )
-                        SettingsRadioOption(
-                            label = stringResource(R.string.font_larger),
-                            subtitle = stringResource(R.string.font_larger_subtitle),
-                            icon = Icons.Filled.TextIncrease,
-                            selected = fontScaleRaw == "larger",
-                            onClick = {
-                                fontScaleRaw = "larger"
-                                prefs.edit { putString(AppearancePrefs.FONT_SCALE, "larger") }
-                            }
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-
-                        SettingsRadioOption(
-                            label = stringResource(R.string.motion_expressive),
-                            subtitle = stringResource(R.string.motion_expressive_subtitle),
-                            icon = Icons.Filled.MotionPhotosOn,
-                            selected = motionRaw == "expressive",
-                            onClick = {
-                                motionRaw = "expressive"
-                                prefs.edit { putString(AppearancePrefs.MOTION, "expressive") }
-                            }
-                        )
-                        SettingsRadioOption(
-                            label = stringResource(R.string.motion_default),
-                            subtitle = stringResource(R.string.motion_default_subtitle),
-                            icon = Icons.Filled.MotionPhotosOn,
-                            selected = motionRaw == "default",
-                            onClick = {
-                                motionRaw = "default"
-                                prefs.edit { putString(AppearancePrefs.MOTION, "default") }
-                            }
-                        )
-                        SettingsRadioOption(
-                            label = stringResource(R.string.motion_low),
-                            subtitle = stringResource(R.string.motion_low_subtitle),
-                            icon = Icons.Filled.MotionPhotosOn,
-                            selected = motionRaw == "low",
-                            onClick = {
-                                motionRaw = "low"
-                                prefs.edit { putString(AppearancePrefs.MOTION, "low") }
-                            }
-                        )
-                    }
-                }
-            }
-
-            SectionHeader(title = stringResource(R.string.section_cards))
-
-            SettingsCard {
-                var cardsExpanded by remember { mutableStateOf(false) }
-                val cardsInteractionSource = remember { MutableInteractionSource() }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .pressScale(cardsInteractionSource)
-                        .clickable(
-                            interactionSource = cardsInteractionSource,
-                            indication = LocalIndication.current
-                        ) { cardsExpanded = !cardsExpanded }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    SettingsIconCircle(icon = Icons.Filled.BorderAll, highlighted = cardsExpanded)
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.card_style),
-                            style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = stringResource(R.string.card_style_subtitle),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    val cardsChevronRotation by animateFloatAsState(
-                        targetValue = if (cardsExpanded) 180f else 0f,
-                        animationSpec = m3SpatialDefault(),
-                        label = "cardsChevron"
-                    )
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = if (cardsExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.rotate(cardsChevronRotation)
-                    )
-                }
-                AnimatedVisibility(
-                    visible = cardsExpanded,
-                    enter = m3ContentExpand(),
-                    exit = m3ContentShrink()
-                ) {
-                    Column {
-                        SettingsSwitchOption(
-                            label = stringResource(R.string.card_outlines),
-                            subtitle = stringResource(R.string.card_outlines_subtitle),
-                            icon = Icons.Filled.BorderAll,
-                            checked = cardOutlines,
-                            onCheckedChange = {
-                                cardOutlines = it
-                                prefs.edit { putBoolean("pref_key_card_outlines", it) }
-                            }
-                        )
-                        AnimatedVisibility(
-                            visible = cardOutlines,
-                            enter = m3ContentExpand(),
-                            exit = m3ContentShrink()
-                        ) {
-                            SettingsColourOption(
-                                label = stringResource(R.string.card_outline_colour),
-                                subtitle = stringResource(R.string.card_outline_colour_subtitle),
-                                icon = Icons.Filled.Colorize,
-                                colour = outlinePreviewColour(cardOutlineColorRaw),
-                                onClick = { colourTarget = ColourTarget.CARD_OUTLINE }
-                            )
                         }
-                        SettingsCornerOption(
-                            label = stringResource(R.string.corner_style_rounded),
-                            subtitle = stringResource(R.string.corner_style_rounded_subtitle),
-                            cut = false,
-                            selected = cornerStyle == "rounded",
-                            onClick = {
-                                cornerStyle = "rounded"
-                                prefs.edit { putString("pref_key_card_corner_style", "rounded") }
+
+                        SettingsSection.DISPLAY -> {
+                            SettingsCard {
+                                    Column {
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.density_comfortable),
+                                            subtitle = stringResource(R.string.density_comfortable_subtitle),
+                                            icon = Icons.Filled.ViewStream,
+                                            selected = densityRaw == "comfortable",
+                                            onClick = {
+                                                densityRaw = "comfortable"
+                                                prefs.edit { putString(AppearancePrefs.DENSITY, "comfortable") }
+                                            }
+                                        )
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.density_compact),
+                                            subtitle = stringResource(R.string.density_compact_subtitle),
+                                            icon = Icons.Filled.ViewAgenda,
+                                            selected = densityRaw == "compact",
+                                            onClick = {
+                                                densityRaw = "compact"
+                                                prefs.edit { putString(AppearancePrefs.DENSITY, "compact") }
+                                            }
+                                        )
+
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.font_smaller),
+                                            subtitle = stringResource(R.string.font_smaller_subtitle),
+                                            icon = Icons.Filled.TextDecrease,
+                                            selected = fontScaleRaw == "smaller",
+                                            onClick = {
+                                                fontScaleRaw = "smaller"
+                                                prefs.edit { putString(AppearancePrefs.FONT_SCALE, "smaller") }
+                                            }
+                                        )
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.font_default),
+                                            subtitle = stringResource(R.string.font_default_subtitle),
+                                            icon = Icons.Filled.FormatSize,
+                                            selected = fontScaleRaw == "default",
+                                            onClick = {
+                                                fontScaleRaw = "default"
+                                                prefs.edit { putString(AppearancePrefs.FONT_SCALE, "default") }
+                                            }
+                                        )
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.font_larger),
+                                            subtitle = stringResource(R.string.font_larger_subtitle),
+                                            icon = Icons.Filled.TextIncrease,
+                                            selected = fontScaleRaw == "larger",
+                                            onClick = {
+                                                fontScaleRaw = "larger"
+                                                prefs.edit { putString(AppearancePrefs.FONT_SCALE, "larger") }
+                                            }
+                                        )
+
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.motion_expressive),
+                                            subtitle = stringResource(R.string.motion_expressive_subtitle),
+                                            icon = Icons.Filled.MotionPhotosOn,
+                                            selected = motionRaw == "expressive",
+                                            onClick = {
+                                                motionRaw = "expressive"
+                                                prefs.edit { putString(AppearancePrefs.MOTION, "expressive") }
+                                            }
+                                        )
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.motion_default),
+                                            subtitle = stringResource(R.string.motion_default_subtitle),
+                                            icon = Icons.Filled.MotionPhotosOn,
+                                            selected = motionRaw == "default",
+                                            onClick = {
+                                                motionRaw = "default"
+                                                prefs.edit { putString(AppearancePrefs.MOTION, "default") }
+                                            }
+                                        )
+                                        SettingsRadioOption(
+                                            label = stringResource(R.string.motion_low),
+                                            subtitle = stringResource(R.string.motion_low_subtitle),
+                                            icon = Icons.Filled.MotionPhotosOn,
+                                            selected = motionRaw == "low",
+                                            onClick = {
+                                                motionRaw = "low"
+                                                prefs.edit { putString(AppearancePrefs.MOTION, "low") }
+                                            }
+                                        )
+                                    }
                             }
-                        )
-                        SettingsCornerOption(
-                            label = stringResource(R.string.corner_style_cut),
-                            subtitle = stringResource(R.string.corner_style_cut_subtitle),
-                            cut = true,
-                            selected = cornerStyle == "cut",
-                            onClick = {
-                                cornerStyle = "cut"
-                                prefs.edit { putString("pref_key_card_corner_style", "cut") }
+                        }
+
+                        SettingsSection.CARDS -> {
+                            SettingsCard {
+                                    Column {
+                                        SettingsSwitchOption(
+                                            label = stringResource(R.string.card_outlines),
+                                            subtitle = stringResource(R.string.card_outlines_subtitle),
+                                            icon = Icons.Filled.BorderAll,
+                                            checked = cardOutlines,
+                                            onCheckedChange = {
+                                                cardOutlines = it
+                                                prefs.edit { putBoolean("pref_key_card_outlines", it) }
+                                            }
+                                        )
+                                        AnimatedVisibility(
+                                            visible = cardOutlines,
+                                            enter = m3ContentExpand(),
+                                            exit = m3ContentShrink()
+                                        ) {
+                                            SettingsColourOption(
+                                                label = stringResource(R.string.card_outline_colour),
+                                                subtitle = stringResource(R.string.card_outline_colour_subtitle),
+                                                icon = Icons.Filled.Colorize,
+                                                colour = outlinePreviewColour(cardOutlineColorRaw),
+                                                onClick = { colourTarget = ColourTarget.CARD_OUTLINE }
+                                            )
+                                        }
+                                        SettingsCornerOption(
+                                            label = stringResource(R.string.corner_style_rounded),
+                                            subtitle = stringResource(R.string.corner_style_rounded_subtitle),
+                                            cut = false,
+                                            selected = cornerStyle == "rounded",
+                                            onClick = {
+                                                cornerStyle = "rounded"
+                                                prefs.edit { putString("pref_key_card_corner_style", "rounded") }
+                                            }
+                                        )
+                                        SettingsCornerOption(
+                                            label = stringResource(R.string.corner_style_cut),
+                                            subtitle = stringResource(R.string.corner_style_cut_subtitle),
+                                            cut = true,
+                                            selected = cornerStyle == "cut",
+                                            onClick = {
+                                                cornerStyle = "cut"
+                                                prefs.edit { putString("pref_key_card_corner_style", "cut") }
+                                            }
+                                        )
+                                        SettingsSliderOption(
+                                            label = stringResource(R.string.card_corner_radius),
+                                            icon = Icons.Filled.Tune,
+                                            value = cornerRadius,
+                                            valueLabel = stringResource(R.string.card_corner_radius_dp, cornerRadius.roundToInt()),
+                                            valueRange = 0f..28f,
+                                            onValueChange = { cornerRadius = it },
+                                            onValueChangeFinished = {
+                                                prefs.edit { putInt("pref_key_card_corner_radius", cornerRadius.roundToInt()) }
+                                            }
+                                        )
+                                    }
                             }
-                        )
-                        SettingsSliderOption(
-                            label = stringResource(R.string.card_corner_radius),
-                            icon = Icons.Filled.Tune,
-                            value = cornerRadius,
-                            valueLabel = stringResource(R.string.card_corner_radius_dp, cornerRadius.roundToInt()),
-                            valueRange = 0f..28f,
-                            onValueChange = { cornerRadius = it },
-                            onValueChangeFinished = {
-                                prefs.edit { putInt("pref_key_card_corner_radius", cornerRadius.roundToInt()) }
+                        }
+
+                        SettingsSection.MAPS -> {
+                            SettingsCard {
+                                SettingsRadioOption(
+                                    label = stringResource(R.string.map_style_streets),
+                                    subtitle = stringResource(R.string.map_style_streets_subtitle),
+                                    icon = Icons.Filled.Map,
+                                    selected = mapStyleRaw == MapStyles.DEFAULT,
+                                    onClick = {
+                                        mapStyleRaw = MapStyles.DEFAULT
+                                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) }
+                                    }
+                                )
+                                SettingsRadioOption(
+                                    label = stringResource(R.string.map_style_bright),
+                                    subtitle = stringResource(R.string.map_style_bright_subtitle),
+                                    icon = Icons.Filled.Map,
+                                    selected = mapStyleRaw == MapStyles.BRIGHT,
+                                    onClick = {
+                                        mapStyleRaw = MapStyles.BRIGHT
+                                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.BRIGHT) }
+                                    }
+                                )
+                                SettingsRadioOption(
+                                    label = stringResource(R.string.map_style_positron),
+                                    subtitle = stringResource(R.string.map_style_positron_subtitle),
+                                    icon = Icons.Filled.Map,
+                                    selected = mapStyleRaw == MapStyles.POSITRON,
+                                    onClick = {
+                                        mapStyleRaw = MapStyles.POSITRON
+                                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.POSITRON) }
+                                    }
+                                )
+                                SettingsRadioOption(
+                                    label = stringResource(R.string.map_style_dark),
+                                    subtitle = stringResource(R.string.map_style_dark_subtitle),
+                                    icon = Icons.Filled.Map,
+                                    selected = mapStyleRaw == MapStyles.DARK,
+                                    onClick = {
+                                        mapStyleRaw = MapStyles.DARK
+                                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.DARK) }
+                                    }
+                                )
                             }
-                        )
-                    }
-                }
-            }
-
-            SectionHeader(title = stringResource(R.string.section_maps))
-
-            SettingsCard {
-                SettingsRadioOption(
-                    label = stringResource(R.string.map_style_streets),
-                    subtitle = stringResource(R.string.map_style_streets_subtitle),
-                    icon = Icons.Filled.Map,
-                    selected = mapStyleRaw == MapStyles.DEFAULT,
-                    onClick = {
-                        mapStyleRaw = MapStyles.DEFAULT
-                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) }
-                    }
-                )
-                SettingsRadioOption(
-                    label = stringResource(R.string.map_style_bright),
-                    subtitle = stringResource(R.string.map_style_bright_subtitle),
-                    icon = Icons.Filled.Map,
-                    selected = mapStyleRaw == MapStyles.BRIGHT,
-                    onClick = {
-                        mapStyleRaw = MapStyles.BRIGHT
-                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.BRIGHT) }
-                    }
-                )
-                SettingsRadioOption(
-                    label = stringResource(R.string.map_style_positron),
-                    subtitle = stringResource(R.string.map_style_positron_subtitle),
-                    icon = Icons.Filled.Map,
-                    selected = mapStyleRaw == MapStyles.POSITRON,
-                    onClick = {
-                        mapStyleRaw = MapStyles.POSITRON
-                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.POSITRON) }
-                    }
-                )
-                SettingsRadioOption(
-                    label = stringResource(R.string.map_style_dark),
-                    subtitle = stringResource(R.string.map_style_dark_subtitle),
-                    icon = Icons.Filled.Map,
-                    selected = mapStyleRaw == MapStyles.DARK,
-                    onClick = {
-                        mapStyleRaw = MapStyles.DARK
-                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.DARK) }
-                    }
-                )
-            }
-
-            SectionHeader(title = stringResource(R.string.section_arrivals))
-
-            SettingsCard {
-                SettingsSwitchOption(
-                    label = stringResource(R.string.only_show_selected_route),
-                    subtitle = stringResource(R.string.only_show_selected_route_subtitle),
-                    icon = Icons.Filled.Route,
-                    checked = onlyShowSelectedRoute,
-                    onCheckedChange = {
-                        onlyShowSelectedRoute = it
-                        prefs.edit { putBoolean("pref_key_only_show_route_selected", it) }
-                    }
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-
-                SettingsSwitchOption(
-                    label = stringResource(R.string.arrival_show_clock),
-                    subtitle = stringResource(R.string.arrival_show_clock_subtitle),
-                    icon = Icons.Filled.AccessTime,
-                    checked = showArrivalClock,
-                    onCheckedChange = {
-                        showArrivalClock = it
-                        prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, it) }
-                    }
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-
-                SettingsSwitchOption(
-                    label = stringResource(R.string.arrival_show_route_badges),
-                    subtitle = stringResource(R.string.arrival_show_route_badges_subtitle),
-                    icon = Icons.Filled.Route,
-                    checked = showArrivalRouteBadges,
-                    onCheckedChange = {
-                        showArrivalRouteBadges = it
-                        prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_ROUTE_BADGES, it) }
-                    }
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-
-                SettingsSwitchOption(
-                    label = stringResource(R.string.arrival_show_vehicle_info),
-                    subtitle = stringResource(R.string.arrival_show_vehicle_info_subtitle),
-                    icon = Icons.Filled.DirectionsBus,
-                    checked = showArrivalVehicleInfo,
-                    onCheckedChange = {
-                        showArrivalVehicleInfo = it
-                        prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_VEHICLE_INFO, it) }
-                    }
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-
-                SettingsRadioOption(
-                    label = stringResource(R.string.refresh_cadence_15),
-                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
-                    icon = Icons.Filled.Refresh,
-                    selected = arrivalsRefreshSeconds == 15,
-                    onClick = {
-                        arrivalsRefreshSeconds = 15
-                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 15) }
-                    }
-                )
-                SettingsRadioOption(
-                    label = stringResource(R.string.refresh_cadence_30),
-                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
-                    icon = Icons.Filled.Refresh,
-                    selected = arrivalsRefreshSeconds == 30,
-                    onClick = {
-                        arrivalsRefreshSeconds = 30
-                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 30) }
-                    }
-                )
-                SettingsRadioOption(
-                    label = stringResource(R.string.refresh_cadence_60),
-                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
-                    icon = Icons.Filled.Refresh,
-                    selected = arrivalsRefreshSeconds == 60,
-                    onClick = {
-                        arrivalsRefreshSeconds = 60
-                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 60) }
-                    }
-                )
-                SettingsRadioOption(
-                    label = stringResource(R.string.refresh_cadence_120),
-                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
-                    icon = Icons.Filled.Refresh,
-                    selected = arrivalsRefreshSeconds == 120,
-                    onClick = {
-                        arrivalsRefreshSeconds = 120
-                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 120) }
-                    }
-                )
-            }
-
-            // App-owned sections (e.g. Departure alerts, Widget settings) injected from the host module.
-            if (notificationsSection != null) {
-                notificationsSection()
-            }
-            if (widgetSection != null) {
-                widgetSection()
-            }
-
-            SectionHeader(title = stringResource(R.string.section_about))
-
-            SettingsCard {
-                val appIcon = remember {
-                    context.packageManager.getApplicationIcon(context.packageName)
-                        .toBitmap().asImageBitmap()
-                }
-                val versionName = remember {
-                    runCatching {
-                        val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
-                        } else {
-                            context.packageManager.getPackageInfo(context.packageName, 0)
                         }
-                        info.versionName
-                    }.getOrNull() ?: "0.0.0"
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        modifier = Modifier.size(48.dp),
-                        shape = appCardShape(),
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Image(
-                                bitmap = appIcon,
-                                contentDescription = null,
-                                modifier = Modifier.size(32.dp)
-                            )
+
+                        SettingsSection.ARRIVALS -> {
+                            SettingsCard {
+                                SettingsSwitchOption(
+                                    label = stringResource(R.string.only_show_selected_route),
+                                    subtitle = stringResource(R.string.only_show_selected_route_subtitle),
+                                    icon = Icons.Filled.Route,
+                                    checked = onlyShowSelectedRoute,
+                                    onCheckedChange = {
+                                        onlyShowSelectedRoute = it
+                                        prefs.edit { putBoolean("pref_key_only_show_route_selected", it) }
+                                    }
+                                )
+
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                                SettingsSwitchOption(
+                                    label = stringResource(R.string.arrival_show_clock),
+                                    subtitle = stringResource(R.string.arrival_show_clock_subtitle),
+                                    icon = Icons.Filled.AccessTime,
+                                    checked = showArrivalClock,
+                                    onCheckedChange = {
+                                        showArrivalClock = it
+                                        prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, it) }
+                                    }
+                                )
+
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                                SettingsSwitchOption(
+                                    label = stringResource(R.string.arrival_show_route_badges),
+                                    subtitle = stringResource(R.string.arrival_show_route_badges_subtitle),
+                                    icon = Icons.Filled.Route,
+                                    checked = showArrivalRouteBadges,
+                                    onCheckedChange = {
+                                        showArrivalRouteBadges = it
+                                        prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_ROUTE_BADGES, it) }
+                                    }
+                                )
+
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                                SettingsSwitchOption(
+                                    label = stringResource(R.string.arrival_show_vehicle_info),
+                                    subtitle = stringResource(R.string.arrival_show_vehicle_info_subtitle),
+                                    icon = Icons.Filled.DirectionsBus,
+                                    checked = showArrivalVehicleInfo,
+                                    onCheckedChange = {
+                                        showArrivalVehicleInfo = it
+                                        prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_VEHICLE_INFO, it) }
+                                    }
+                                )
+
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                                SettingsRadioOption(
+                                    label = stringResource(R.string.refresh_cadence_15),
+                                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
+                                    icon = Icons.Filled.Refresh,
+                                    selected = arrivalsRefreshSeconds == 15,
+                                    onClick = {
+                                        arrivalsRefreshSeconds = 15
+                                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 15) }
+                                    }
+                                )
+                                SettingsRadioOption(
+                                    label = stringResource(R.string.refresh_cadence_30),
+                                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
+                                    icon = Icons.Filled.Refresh,
+                                    selected = arrivalsRefreshSeconds == 30,
+                                    onClick = {
+                                        arrivalsRefreshSeconds = 30
+                                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 30) }
+                                    }
+                                )
+                                SettingsRadioOption(
+                                    label = stringResource(R.string.refresh_cadence_60),
+                                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
+                                    icon = Icons.Filled.Refresh,
+                                    selected = arrivalsRefreshSeconds == 60,
+                                    onClick = {
+                                        arrivalsRefreshSeconds = 60
+                                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 60) }
+                                    }
+                                )
+                                SettingsRadioOption(
+                                    label = stringResource(R.string.refresh_cadence_120),
+                                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
+                                    icon = Icons.Filled.Refresh,
+                                    selected = arrivalsRefreshSeconds == 120,
+                                    onClick = {
+                                        arrivalsRefreshSeconds = 120
+                                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 120) }
+                                    }
+                                )
+                            }
+                        }
+
+                        SettingsSection.NOTIFICATIONS -> notificationsSection?.invoke(this)
+
+                        SettingsSection.WIDGET -> widgetSection?.invoke(this)
+
+                        SettingsSection.ABOUT -> {
+                            SettingsCard {
+                                val appIcon = remember {
+                                    context.packageManager.getApplicationIcon(context.packageName)
+                                        .toBitmap().asImageBitmap()
+                                }
+                                val versionName = remember {
+                                    runCatching {
+                                        val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
+                                        } else {
+                                            context.packageManager.getPackageInfo(context.packageName, 0)
+                                        }
+                                        info.versionName
+                                    }.getOrNull() ?: "0.0.0"
+                                }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(48.dp),
+                                        shape = appCardShape(),
+                                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Image(
+                                                bitmap = appIcon,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(32.dp)
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = stringResource(R.string.app_title),
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.version_license, versionName),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = stringResource(R.string.unofficial_disclaimer),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
+                                )
+                                Text(
+                                    text = stringResource(R.string.data_provider),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
+                                )
+                                Text(
+                                    text = stringResource(R.string.trademark_notice),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                                )
+
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+                                val policyInteractionSource = remember { MutableInteractionSource() }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .pressScale(policyInteractionSource)
+                                        .clickable(
+                                            interactionSource = policyInteractionSource,
+                                            indication = LocalIndication.current
+                                        ) {
+                                            val intent = Intent(
+                                                Intent.ACTION_VIEW,
+                                                "https://github.com/GeneralKaos666/pdx-bus-tracker/blob/master/docs/privacy-policy.md".toUri()
+                                            )
+                                            context.startActivity(intent)
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    SettingsIconCircle(icon = Icons.Filled.Info, highlighted = false)
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Text(
+                                        text = stringResource(R.string.privacy_policy),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+
+                        SettingsSection.LICENSES -> {
+                            SettingsCard {
+                                    Column(
+                                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                                    ) {
+                                        LicenseEntry(stringResource(R.string.license_androidx), stringResource(R.string.license_apache_2))
+                                        LicenseEntry(stringResource(R.string.license_kotlin), stringResource(R.string.license_apache_2))
+                                        LicenseEntry(stringResource(R.string.license_okhttp), stringResource(R.string.license_apache_2))
+                                        LicenseEntry(stringResource(R.string.license_maplibre), stringResource(R.string.license_bsd_2))
+                                        LicenseEntry(stringResource(R.string.license_joda), stringResource(R.string.license_apache_2))
+                                        LicenseEntry(stringResource(R.string.license_timber), stringResource(R.string.license_apache_2))
+                                        LicenseEntry(stringResource(R.string.license_glance), stringResource(R.string.license_apache_2))
+                                        LicenseEntry(stringResource(R.string.license_workmanager), stringResource(R.string.license_apache_2))
+                                        LicenseEntry(stringResource(R.string.license_materialkolor), stringResource(R.string.license_mit))
+                                        LicenseEntry(
+                                            stringResource(R.string.license_full_texts),
+                                            "",
+                                            isNote = true
+                                        )
+                                    }
+                            }
                         }
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = stringResource(R.string.app_title),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = stringResource(R.string.version_license, versionName),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
-                Text(
-                    text = stringResource(R.string.unofficial_disclaimer),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
-                )
-                Text(
-                    text = stringResource(R.string.data_provider),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
-                )
-                Text(
-                    text = stringResource(R.string.trademark_notice),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                )
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
-                val policyInteractionSource = remember { MutableInteractionSource() }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .pressScale(policyInteractionSource)
-                        .clickable(
-                            interactionSource = policyInteractionSource,
-                            indication = LocalIndication.current
-                        ) {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                "https://github.com/GeneralKaos666/pdx-bus-tracker/blob/master/docs/privacy-policy.md".toUri()
-                            )
-                            context.startActivity(intent)
-                        }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    SettingsIconCircle(icon = Icons.Filled.Info, highlighted = false)
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = stringResource(R.string.privacy_policy),
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
-
-            SectionHeader(title = stringResource(R.string.open_source_licenses))
-
-            SettingsCard {
-                var licensesExpanded by remember { mutableStateOf(false) }
-                val licenseInteractionSource = remember { MutableInteractionSource() }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .pressScale(licenseInteractionSource)
-                        .clickable(
-                            interactionSource = licenseInteractionSource,
-                            indication = LocalIndication.current
-                        ) { licensesExpanded = !licensesExpanded }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    SettingsIconCircle(icon = Icons.Filled.Info, highlighted = licensesExpanded)
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.open_source_licenses),
-                            style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = stringResource(R.string.libraries_terms),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    val chevronRotation by animateFloatAsState(
-                        targetValue = if (licensesExpanded) 180f else 0f,
-                        animationSpec = m3SpatialDefault(),
-                        label = "licensesChevron"
-                    )
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = if (licensesExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.rotate(chevronRotation)
-                    )
-                }
-                AnimatedVisibility(
-                    visible = licensesExpanded,
-                    enter = m3ContentExpand(),
-                    exit = m3ContentShrink()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(start = 72.dp, end = 16.dp, bottom = 16.dp)
-                    ) {
-                        LicenseEntry(stringResource(R.string.license_androidx), stringResource(R.string.license_apache_2))
-                        LicenseEntry(stringResource(R.string.license_kotlin), stringResource(R.string.license_apache_2))
-                        LicenseEntry(stringResource(R.string.license_okhttp), stringResource(R.string.license_apache_2))
-                        LicenseEntry(stringResource(R.string.license_maplibre), stringResource(R.string.license_bsd_2))
-                        LicenseEntry(stringResource(R.string.license_joda), stringResource(R.string.license_apache_2))
-                        LicenseEntry(stringResource(R.string.license_timber), stringResource(R.string.license_apache_2))
-                        LicenseEntry(stringResource(R.string.license_glance), stringResource(R.string.license_apache_2))
-                        LicenseEntry(stringResource(R.string.license_workmanager), stringResource(R.string.license_apache_2))
-                        LicenseEntry(stringResource(R.string.license_materialkolor), stringResource(R.string.license_mit))
-                        LicenseEntry(
-                            stringResource(R.string.license_full_texts),
-                            "",
-                            isNote = true
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 
@@ -1063,7 +1008,134 @@ fun SettingsScreen(
     }
 }
 
+/** One tappable category row on the root Settings menu, with a chevron filler. */
+@Composable
+private fun MenuRow(
+    label: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    SettingsRowOption(
+        label = label,
+        subtitle = subtitle,
+        icon = icon,
+        highlighted = false,
+        onClick = onClick,
+        trailing = {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    )
+}
+
+/** Top-of-pane header: back arrow + title. Tapping it returns to the Settings menu. */
+@Composable
+private fun SubmenuHeader(title: String, onBack: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressScale(interactionSource)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                onClick = onBack
+            )
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        SettingsIconCircle(icon = Icons.AutoMirrored.Filled.ArrowBack, highlighted = false)
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun themeSummary(selectedTheme: String): String =
+    when (selectedTheme) {
+        "system" -> stringResource(R.string.theme_system)
+        "light" -> stringResource(R.string.theme_light)
+        else -> stringResource(R.string.theme_dark)
+    }
+
+@Composable
+private fun coloursSummary(accentMode: String, amoledDark: Boolean): String {
+    val mode = when (accentMode) {
+        "dynamic" -> stringResource(R.string.colour_mode_dynamic)
+        else -> stringResource(R.string.colour_mode_seed)
+    }
+    return if (amoledDark) {
+        mode + " · " + stringResource(R.string.amoled_dark)
+    } else {
+        mode
+    }
+}
+
+@Composable
+private fun displaySummary(densityRaw: String, fontScaleRaw: String): String {
+    val density = when (densityRaw) {
+        "compact" -> stringResource(R.string.density_compact)
+        else -> stringResource(R.string.density_comfortable)
+    }
+    val font = when (fontScaleRaw) {
+        "smaller" -> stringResource(R.string.font_smaller)
+        "larger" -> stringResource(R.string.font_larger)
+        else -> stringResource(R.string.font_default)
+    }
+    return density + " · " + font
+}
+
+@Composable
+private fun cardsSummary(cornerStyle: String, cornerRadius: Float): String {
+    val style = when (cornerStyle) {
+        "cut" -> stringResource(R.string.corner_style_cut)
+        else -> stringResource(R.string.corner_style_rounded)
+    }
+    return style + " · " + stringResource(R.string.card_corner_radius_dp, cornerRadius.roundToInt())
+}
+
+@Composable
+private fun mapsSummary(mapStyleRaw: String): String =
+    when (mapStyleRaw) {
+        MapStyles.BRIGHT -> stringResource(R.string.map_style_bright)
+        MapStyles.POSITRON -> stringResource(R.string.map_style_positron)
+        MapStyles.DARK -> stringResource(R.string.map_style_dark)
+        else -> stringResource(R.string.map_style_streets)
+    }
+
+@Composable
+private fun arrivalsSummary(refreshSeconds: Int): String =
+    when (refreshSeconds) {
+        15 -> stringResource(R.string.refresh_cadence_15)
+        60 -> stringResource(R.string.refresh_cadence_60)
+        120 -> stringResource(R.string.refresh_cadence_120)
+        else -> stringResource(R.string.refresh_cadence_30)
+    }
+
 /** Which colour pref the shared [ColourPickerDialog] is currently editing. */
 private enum class ColourTarget {
     CARD_OUTLINE, ACCENT, PILL_ACCENT, TRANSIT_BUS, TRANSIT_RAIL, TRANSIT_STREETCAR, TRANSIT_WES
+}
+
+/** The Settings categories reachable from the root menu as submenus. */
+private enum class SettingsSection(@StringRes val titleRes: Int) {
+    APPEARANCE(R.string.section_appearance),
+    COLOURS(R.string.section_colours),
+    DISPLAY(R.string.section_display),
+    CARDS(R.string.section_cards),
+    MAPS(R.string.section_maps),
+    ARRIVALS(R.string.section_arrivals),
+    NOTIFICATIONS(R.string.menu_notifications),
+    WIDGET(R.string.menu_widget),
+    ABOUT(R.string.section_about),
+    LICENSES(R.string.open_source_licenses)
 }

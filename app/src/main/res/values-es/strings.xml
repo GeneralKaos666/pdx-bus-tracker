@@ -45,7 +45,6 @@
     <string name="widget_config_cancel">Cancelar</string>
 
     <!-- Widget settings section (inside the app's Settings screen) -->
-    <string name="widget_settings_title">Widget</string>
     <string name="widget_settings_subtitle">Frecuencia de actualización de la pantalla de inicio</string>
     <string name="widget_settings_interval_min">%1$d min</string>
     <plurals name="widget_settings_interval_desc">
@@ -62,7 +61,6 @@
     <string name="departure_alert_default_title">Llegada de autobús</string>
     <string name="departure_alert_minutes">%1$s \u00b7 Sale en %2$d min</string>
     <string name="departure_alert_now">%1$s \u00b7 Saliendo ahora</string>
-    <string name="notifications_section_title">Alertas de salida</string>
     <string name="notifications_master_label">Alertas de salida</string>
     <string name="notifications_master_subtitle">Avísame cuando el próximo viaje de una parada supervisada esté por salir</string>
     <string name="notifications_window_label_min">%1$d min</string>
