@@ -8,6 +8,9 @@
 - **Bottom bar accent:** the selected icon in the bottom navigation pill (and its little label chip) can take on any colour you like; otherwise it keeps following the theme.
 - **Per-line colours:** the bus, MAX/rail, streetcar, and WES badges throughout the app — stop lists, arrivals, and the trip map — can each be set to your own colour, instead of always following the theme's palette.
 - **Widgets match:** the home-screen widget now follows those same choices — your accent colour, vibrancy, and AMOLED rendering apply to it too, alongside its own light/dark/auto option.
+- **Compact lists:** a new Displays setting switches stop lists, arrivals, and route lists from roomy "Comfortable" rows to a tighter "Compact" layout that fits more on screen.
+- **Text size override:** the same Display section adds an in-app text-size setting (Smaller / Default / Larger) that scales text on top of the system font size, without changing spacing.
+- **Tunable arrivals refresh:** the arrivals screen can silently re-fetch every 15 or 30 seconds, every minute, or every two minutes — balance freshness against battery as you like.
 
 ## What's New in v4.17.0
 

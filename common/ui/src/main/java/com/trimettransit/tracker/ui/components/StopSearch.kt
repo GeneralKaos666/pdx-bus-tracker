@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
+import com.trimettransit.tracker.ui.appearance.rowContentPadding
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import java.util.Locale
@@ -65,7 +66,10 @@ fun StopSearchItem(
             .fillMaxWidth()
             .pressScale(interactionSource)
             .clickable(interactionSource = interactionSource, indication = LocalIndication.current, onClick = onClick)
-            .then(if (gridMode) Modifier else Modifier.padding(horizontal = 16.dp, vertical = 12.dp)),
+            .then(if (gridMode) Modifier else Modifier.padding(
+                horizontal = 16.dp,
+                vertical = rowContentPadding(comfortable = 12.dp, compact = 6.dp)
+            )),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val colorScheme = MaterialTheme.colorScheme

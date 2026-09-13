@@ -66,6 +66,7 @@ import com.trimettransit.tracker.model.domain.detoursForLine
 import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
+import com.trimettransit.tracker.ui.appearance.AppearancePrefs
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.EmptyState
 import com.trimettransit.tracker.ui.components.ErrorState
@@ -87,7 +88,6 @@ import kotlinx.coroutines.withContext
 
 private const val POSITION_REFRESH_MS = 15_000L
 private const val PIP_REFRESH_MS = 20_000L
-private const val ARRIVALS_REFRESH_MS = 30_000L
 private const val ARRIVALS_FETCH_MINUTES = 30
 private const val ARRIVALS_FETCH_MAX = 15
 private const val PREF_TAP_TO_TRACK_HINT_SHOWN = "pref_key_tap_to_track_hint_shown"
@@ -108,6 +108,7 @@ fun ArrivalsScreen(
     onRegisterScrollToTop: ((() -> Unit)?) -> Unit
 ) {
     val context = LocalContext.current
+    val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     var arrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
     var blockPositions by remember { mutableStateOf<List<BlockPosition>>(emptyList()) }
     var detours by remember { mutableStateOf<List<Detour>>(emptyList()) }
@@ -323,10 +324,13 @@ fun ArrivalsScreen(
     // Foreground silent refresh: re-fetch while the user watches so a bus flipping
     // to drop-off-only (or a canceled/delayed status) shows up without a manual
     // pull-to-refresh. PiP skips this — it already refreshes on its own loop.
+    // The cadence is user-tunable (15s–5min); re-read each cycle so changes apply live.
     LaunchedEffect(inPip) {
         if (inPip) return@LaunchedEffect
         while (true) {
-            delay(ARRIVALS_REFRESH_MS)
+            val seconds = prefs.getString(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, "30")
+                ?.toLongOrNull()?.coerceIn(15, 300) ?: 30L
+            delay(seconds * 1000L)
             if (isAppResumed) refreshArrivals(showLoading = false)
         }
     }

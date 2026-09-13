@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.R
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
+import com.trimettransit.tracker.ui.appearance.rowContentPadding
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
@@ -95,7 +96,7 @@ fun StopListItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = rowContentPadding()),
             verticalAlignment = Alignment.CenterVertically
         ) {
             val colorScheme = MaterialTheme.colorScheme

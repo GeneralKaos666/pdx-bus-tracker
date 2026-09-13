@@ -66,6 +66,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -107,6 +108,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
@@ -137,6 +139,7 @@ import com.trimettransit.tracker.feature.stops.StopsScreen
 import com.trimettransit.tracker.feature.trips.TripPlannerScreen
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
 import com.trimettransit.tracker.ui.appearance.AppearanceStyle
+import com.trimettransit.tracker.ui.appearance.FontScale
 import com.trimettransit.tracker.ui.appearance.ThemePreference
 import com.trimettransit.tracker.ui.appearance.readAppearanceStyle
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
@@ -314,7 +317,21 @@ class MainActivity : ComponentActivity() {
                         ).isAppearanceLightNavigationBars = !isDark
                     }
                 }
-                MainAppContent(isDark = isDark)
+                // In-app text-size override on top of the system font scale (sp-based only,
+                // so dp paddings stay put).
+                val fontScaleFactor = when (appearance.fontScale) {
+                    FontScale.SMALLER -> 0.9f
+                    FontScale.LARGER -> 1.15f
+                    else -> 1.0f
+                }
+                CompositionLocalProvider(
+                    LocalDensity provides Density(
+                        density = LocalDensity.current.density,
+                        fontScale = LocalDensity.current.fontScale * fontScaleFactor
+                    )
+                ) {
+                    MainAppContent(isDark = isDark)
+                }
             }
         }
     }

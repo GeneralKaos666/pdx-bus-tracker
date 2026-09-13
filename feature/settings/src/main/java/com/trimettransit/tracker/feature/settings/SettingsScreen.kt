@@ -30,12 +30,18 @@ import androidx.compose.material.icons.filled.BorderAll
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Colorize
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.TextDecrease
+import androidx.compose.material.icons.filled.TextIncrease
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.filled.ViewStream
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -132,6 +138,15 @@ fun SettingsScreen(
     }
     var transitWesRaw by remember {
         mutableStateOf(prefs.getString(AppearancePrefs.TRANSIT_WES, "") ?: "")
+    }
+    var densityRaw by remember {
+        mutableStateOf(prefs.getString(AppearancePrefs.DENSITY, "comfortable") ?: "comfortable")
+    }
+    var fontScaleRaw by remember {
+        mutableStateOf(prefs.getString(AppearancePrefs.FONT_SCALE, "default") ?: "default")
+    }
+    var arrivalsRefreshSeconds by remember {
+        mutableStateOf(prefs.getInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 30))
     }
     var onlyShowSelectedRoute by remember {
         mutableStateOf(prefs.getBoolean("pref_key_only_show_route_selected", true))
@@ -393,6 +408,119 @@ fun SettingsScreen(
                 }
             }
 
+            SectionHeader(title = stringResource(R.string.section_display))
+
+            SettingsCard {
+                var displayExpanded by remember { mutableStateOf(true) }
+                val displaySource = remember { MutableInteractionSource() }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pressScale(displaySource)
+                        .clickable(
+                            interactionSource = displaySource,
+                            indication = LocalIndication.current
+                        ) { displayExpanded = !displayExpanded }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SettingsIconCircle(icon = Icons.Filled.ViewStream, highlighted = displayExpanded)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.section_display),
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = stringResource(R.string.section_display_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    val displayChevronRotation by animateFloatAsState(
+                        targetValue = if (displayExpanded) 180f else 0f,
+                        animationSpec = m3SpatialDefault(),
+                        label = "displayChevron"
+                    )
+                    Icon(
+                        imageVector = Icons.Filled.KeyboardArrowDown,
+                        contentDescription = if (displayExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.rotate(displayChevronRotation)
+                    )
+                }
+                AnimatedVisibility(
+                    visible = displayExpanded,
+                    enter = expandVertically(
+                        animationSpec = m3SpatialDefault()
+                    ) + fadeIn(m3EffectsDefault()),
+                    exit = shrinkVertically(
+                        animationSpec = m3SpatialFast()
+                    ) + fadeOut(m3EffectsFast())
+                ) {
+                    Column {
+                        SettingsRadioOption(
+                            label = stringResource(R.string.density_comfortable),
+                            subtitle = stringResource(R.string.density_comfortable_subtitle),
+                            icon = Icons.Filled.ViewStream,
+                            selected = densityRaw == "comfortable",
+                            onClick = {
+                                densityRaw = "comfortable"
+                                prefs.edit { putString(AppearancePrefs.DENSITY, "comfortable") }
+                            }
+                        )
+                        SettingsRadioOption(
+                            label = stringResource(R.string.density_compact),
+                            subtitle = stringResource(R.string.density_compact_subtitle),
+                            icon = Icons.Filled.ViewAgenda,
+                            selected = densityRaw == "compact",
+                            onClick = {
+                                densityRaw = "compact"
+                                prefs.edit { putString(AppearancePrefs.DENSITY, "compact") }
+                            }
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                        SettingsRadioOption(
+                            label = stringResource(R.string.font_smaller),
+                            subtitle = stringResource(R.string.font_smaller_subtitle),
+                            icon = Icons.Filled.TextDecrease,
+                            selected = fontScaleRaw == "smaller",
+                            onClick = {
+                                fontScaleRaw = "smaller"
+                                prefs.edit { putString(AppearancePrefs.FONT_SCALE, "smaller") }
+                            }
+                        )
+                        SettingsRadioOption(
+                            label = stringResource(R.string.font_default),
+                            subtitle = stringResource(R.string.font_default_subtitle),
+                            icon = Icons.Filled.FormatSize,
+                            selected = fontScaleRaw == "default",
+                            onClick = {
+                                fontScaleRaw = "default"
+                                prefs.edit { putString(AppearancePrefs.FONT_SCALE, "default") }
+                            }
+                        )
+                        SettingsRadioOption(
+                            label = stringResource(R.string.font_larger),
+                            subtitle = stringResource(R.string.font_larger_subtitle),
+                            icon = Icons.Filled.TextIncrease,
+                            selected = fontScaleRaw == "larger",
+                            onClick = {
+                                fontScaleRaw = "larger"
+                                prefs.edit { putString(AppearancePrefs.FONT_SCALE, "larger") }
+                            }
+                        )
+                    }
+                }
+            }
+
             SectionHeader(title = stringResource(R.string.section_cards))
 
             SettingsCard {
@@ -518,6 +646,49 @@ fun SettingsScreen(
                     onCheckedChange = {
                         onlyShowSelectedRoute = it
                         prefs.edit { putBoolean("pref_key_only_show_route_selected", it) }
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                SettingsRadioOption(
+                    label = stringResource(R.string.refresh_cadence_15),
+                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
+                    icon = Icons.Filled.Refresh,
+                    selected = arrivalsRefreshSeconds == 15,
+                    onClick = {
+                        arrivalsRefreshSeconds = 15
+                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 15) }
+                    }
+                )
+                SettingsRadioOption(
+                    label = stringResource(R.string.refresh_cadence_30),
+                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
+                    icon = Icons.Filled.Refresh,
+                    selected = arrivalsRefreshSeconds == 30,
+                    onClick = {
+                        arrivalsRefreshSeconds = 30
+                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 30) }
+                    }
+                )
+                SettingsRadioOption(
+                    label = stringResource(R.string.refresh_cadence_60),
+                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
+                    icon = Icons.Filled.Refresh,
+                    selected = arrivalsRefreshSeconds == 60,
+                    onClick = {
+                        arrivalsRefreshSeconds = 60
+                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 60) }
+                    }
+                )
+                SettingsRadioOption(
+                    label = stringResource(R.string.refresh_cadence_120),
+                    subtitle = stringResource(R.string.refresh_cadence_subtitle),
+                    icon = Icons.Filled.Refresh,
+                    selected = arrivalsRefreshSeconds == 120,
+                    onClick = {
+                        arrivalsRefreshSeconds = 120
+                        prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 120) }
                     }
                 )
             }

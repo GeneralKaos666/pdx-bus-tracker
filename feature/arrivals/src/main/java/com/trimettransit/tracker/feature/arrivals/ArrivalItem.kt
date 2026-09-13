@@ -44,6 +44,7 @@ import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.transitBadgeLetter
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
+import com.trimettransit.tracker.ui.appearance.rowContentPadding
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitTypeLabel
@@ -98,7 +99,7 @@ internal fun ArrivalItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = rowContentPadding(comfortable = 12.dp, compact = 6.dp)),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(

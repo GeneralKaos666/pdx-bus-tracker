@@ -95,6 +95,24 @@ class AppearanceTest {
     }
 
     @Test
+    fun `unknown density and font scale fall back to defaults`() {
+        val style = appearanceStyleFromPrefs(
+            theme = "system",
+            colorMode = "dynamic",
+            accentColor = "",
+            vibrancy = "default",
+            amoledDark = false,
+            pillAccent = "",
+            density = "custom",
+            fontScale = "huge",
+            motion = "silly"
+        )
+        assertEquals(Density.COMFORTABLE, style.density)
+        assertEquals(FontScale.DEFAULT, style.fontScale)
+        assertEquals(MotionIntensity.EXPRESSIVE, style.motionIntensity)
+    }
+
+    @Test
     fun `seed scheme produces distinct light and dark palettes`() {
         val light = dynamicColorScheme(seedColor = TrimetBlue, isDark = false)
         val dark = dynamicColorScheme(seedColor = TrimetBlue, isDark = true)
