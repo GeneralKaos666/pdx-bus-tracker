@@ -11,6 +11,9 @@
 - **Compact lists:** a new Displays setting switches stop lists, arrivals, and route lists from roomy "Comfortable" rows to a tighter "Compact" layout that fits more on screen.
 - **Text size override:** the same Display section adds an in-app text-size setting (Smaller / Default / Larger) that scales text on top of the system font size, without changing spacing.
 - **Tunable arrivals refresh:** the arrivals screen can silently re-fetch every 15 or 30 seconds, every minute, or every two minutes — balance freshness against battery as you like.
+- **Motion, your way:** a new motion preset in Settings chooses how the interface animates — Expressive keeps the lively springs with a gentle bounce, Balanced firms them up without overshoot, and Subtle calms everything down for a quieter, reserved feel.
+- **Map styles:** the trip-planner map and the stop map can use a different basemap — Streets (the default), a high-contrast Bright look, a quiet Light-grey map, or Always dark. Light maps switch to a dark basemap in dark mode automatically; "Always dark" stays dark everywhere.
+- **Arrivals rows, trimmed:** three new switches let you hide the scheduled clock time under each arrival, the coloured route badge on the left, or the on-time/early/late detail under the countdown — handy when you only want the countdown.
 
 ## What's New in v4.17.0
 

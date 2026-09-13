@@ -142,6 +142,7 @@ import com.trimettransit.tracker.ui.appearance.AppearanceStyle
 import com.trimettransit.tracker.ui.appearance.FontScale
 import com.trimettransit.tracker.ui.appearance.ThemePreference
 import com.trimettransit.tracker.ui.appearance.readAppearanceStyle
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3EffectsFast
@@ -298,6 +299,7 @@ class MainActivity : ComponentActivity() {
                 ThemePreference.LIGHT -> false
                 else -> isSystemInDarkTheme()
             }
+            AppMotion.intensity = appearance.motionIntensity
             TriMetGoTheme(
                 darkTheme = isDark,
                 appearance = appearance,

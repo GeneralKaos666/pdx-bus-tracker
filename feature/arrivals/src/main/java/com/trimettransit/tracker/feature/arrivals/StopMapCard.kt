@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.map.MapLibreMapHost
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.BlockPosition
@@ -25,7 +26,9 @@ import com.trimettransit.tracker.ui.components.badgeBitmap
 import com.trimettransit.tracker.ui.components.circleMarker
 import com.trimettransit.tracker.ui.components.transitBadgeLetter
 import com.trimettransit.tracker.ui.components.transitBadgeLetters
+import com.trimettransit.tracker.ui.appearance.AppearancePrefs
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
+import com.trimettransit.tracker.ui.appearance.MapStyles
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitOnColor
@@ -60,9 +63,6 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
 
-internal const val STOP_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
-internal const val STOP_MAP_STYLE_URL_DARK = "https://tiles.openfreemap.org/styles/dark"
-
 @Composable
 internal fun StopMapCard(
     lat: Double,
@@ -89,7 +89,9 @@ internal fun StopMapCard(
         transitBadgeLetters().associateWith { transitOnColor(it, scheme, overrides) }
     }
     val context = LocalContext.current
-    val mapStyleUrl = if (isDark) STOP_MAP_STYLE_URL_DARK else STOP_MAP_STYLE_URL
+    val mapPreset = PreferenceManager.getDefaultSharedPreferences(context)
+        .getString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) ?: MapStyles.DEFAULT
+    val mapStyleUrl = MapStyles.styleUrlFor(mapPreset, isDark)
     // MapLibre halo/text colors are chosen for legibility against the basemap: light basemap
     // wants a light halo over dark glyphs, the dark basemap wants a dark halo over light glyphs.
     val countdownTextColor = scheme.onSurface.toArgb()

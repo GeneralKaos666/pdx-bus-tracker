@@ -26,14 +26,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.BorderAll
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Colorize
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MotionPhotosOn
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Route
@@ -74,6 +78,7 @@ import androidx.core.net.toUri
 import androidx.core.graphics.drawable.toBitmap
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
+import com.trimettransit.tracker.ui.appearance.MapStyles
 import com.trimettransit.tracker.ui.appearance.colorToSpec
 import com.trimettransit.tracker.ui.appearance.parseColorSpec
 import com.trimettransit.tracker.ui.components.ContentEntrance
@@ -147,6 +152,24 @@ fun SettingsScreen(
     }
     var arrivalsRefreshSeconds by remember {
         mutableStateOf(prefs.getInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 30))
+    }
+    var showArrivalClock by remember {
+        mutableStateOf(prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, true))
+    }
+    var showArrivalRouteBadges by remember {
+        mutableStateOf(prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_ROUTE_BADGES, true))
+    }
+    var showArrivalVehicleInfo by remember {
+        mutableStateOf(prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_VEHICLE_INFO, true))
+    }
+    var motionRaw by remember {
+        mutableStateOf(prefs.getString(AppearancePrefs.MOTION, "expressive") ?: "expressive")
+    }
+    var mapStyleRaw by remember {
+        mutableStateOf(
+            prefs.getString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT)
+                ?: MapStyles.DEFAULT
+        )
     }
     var onlyShowSelectedRoute by remember {
         mutableStateOf(prefs.getBoolean("pref_key_only_show_route_selected", true))
@@ -517,6 +540,39 @@ fun SettingsScreen(
                                 prefs.edit { putString(AppearancePrefs.FONT_SCALE, "larger") }
                             }
                         )
+
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                        SettingsRadioOption(
+                            label = stringResource(R.string.motion_expressive),
+                            subtitle = stringResource(R.string.motion_expressive_subtitle),
+                            icon = Icons.Filled.MotionPhotosOn,
+                            selected = motionRaw == "expressive",
+                            onClick = {
+                                motionRaw = "expressive"
+                                prefs.edit { putString(AppearancePrefs.MOTION, "expressive") }
+                            }
+                        )
+                        SettingsRadioOption(
+                            label = stringResource(R.string.motion_default),
+                            subtitle = stringResource(R.string.motion_default_subtitle),
+                            icon = Icons.Filled.MotionPhotosOn,
+                            selected = motionRaw == "default",
+                            onClick = {
+                                motionRaw = "default"
+                                prefs.edit { putString(AppearancePrefs.MOTION, "default") }
+                            }
+                        )
+                        SettingsRadioOption(
+                            label = stringResource(R.string.motion_low),
+                            subtitle = stringResource(R.string.motion_low_subtitle),
+                            icon = Icons.Filled.MotionPhotosOn,
+                            selected = motionRaw == "low",
+                            onClick = {
+                                motionRaw = "low"
+                                prefs.edit { putString(AppearancePrefs.MOTION, "low") }
+                            }
+                        )
                     }
                 }
             }
@@ -635,6 +691,51 @@ fun SettingsScreen(
                 }
             }
 
+            SectionHeader(title = stringResource(R.string.section_maps))
+
+            SettingsCard {
+                SettingsRadioOption(
+                    label = stringResource(R.string.map_style_streets),
+                    subtitle = stringResource(R.string.map_style_streets_subtitle),
+                    icon = Icons.Filled.Map,
+                    selected = mapStyleRaw == MapStyles.DEFAULT,
+                    onClick = {
+                        mapStyleRaw = MapStyles.DEFAULT
+                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) }
+                    }
+                )
+                SettingsRadioOption(
+                    label = stringResource(R.string.map_style_bright),
+                    subtitle = stringResource(R.string.map_style_bright_subtitle),
+                    icon = Icons.Filled.Map,
+                    selected = mapStyleRaw == MapStyles.BRIGHT,
+                    onClick = {
+                        mapStyleRaw = MapStyles.BRIGHT
+                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.BRIGHT) }
+                    }
+                )
+                SettingsRadioOption(
+                    label = stringResource(R.string.map_style_positron),
+                    subtitle = stringResource(R.string.map_style_positron_subtitle),
+                    icon = Icons.Filled.Map,
+                    selected = mapStyleRaw == MapStyles.POSITRON,
+                    onClick = {
+                        mapStyleRaw = MapStyles.POSITRON
+                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.POSITRON) }
+                    }
+                )
+                SettingsRadioOption(
+                    label = stringResource(R.string.map_style_dark),
+                    subtitle = stringResource(R.string.map_style_dark_subtitle),
+                    icon = Icons.Filled.Map,
+                    selected = mapStyleRaw == MapStyles.DARK,
+                    onClick = {
+                        mapStyleRaw = MapStyles.DARK
+                        prefs.edit { putString(AppearancePrefs.MAP_STYLE, MapStyles.DARK) }
+                    }
+                )
+            }
+
             SectionHeader(title = stringResource(R.string.section_arrivals))
 
             SettingsCard {
@@ -646,6 +747,45 @@ fun SettingsScreen(
                     onCheckedChange = {
                         onlyShowSelectedRoute = it
                         prefs.edit { putBoolean("pref_key_only_show_route_selected", it) }
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                SettingsSwitchOption(
+                    label = stringResource(R.string.arrival_show_clock),
+                    subtitle = stringResource(R.string.arrival_show_clock_subtitle),
+                    icon = Icons.Filled.AccessTime,
+                    checked = showArrivalClock,
+                    onCheckedChange = {
+                        showArrivalClock = it
+                        prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, it) }
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                SettingsSwitchOption(
+                    label = stringResource(R.string.arrival_show_route_badges),
+                    subtitle = stringResource(R.string.arrival_show_route_badges_subtitle),
+                    icon = Icons.Filled.Route,
+                    checked = showArrivalRouteBadges,
+                    onCheckedChange = {
+                        showArrivalRouteBadges = it
+                        prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_ROUTE_BADGES, it) }
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                SettingsSwitchOption(
+                    label = stringResource(R.string.arrival_show_vehicle_info),
+                    subtitle = stringResource(R.string.arrival_show_vehicle_info_subtitle),
+                    icon = Icons.Filled.DirectionsBus,
+                    checked = showArrivalVehicleInfo,
+                    onCheckedChange = {
+                        showArrivalVehicleInfo = it
+                        prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_VEHICLE_INFO, it) }
                     }
                 )
 

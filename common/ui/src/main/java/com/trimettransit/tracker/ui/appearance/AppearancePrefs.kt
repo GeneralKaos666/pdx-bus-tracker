@@ -34,6 +34,7 @@ object AppearancePrefs {
     const val ARRIVALS_SHOW_CLOCK = "pref_key_arrivals_show_clock"
     const val ARRIVALS_SHOW_ROUTE_BADGES = "pref_key_arrivals_show_route_badges"
     const val ARRIVALS_SHOW_VEHICLE_INFO = "pref_key_arrivals_show_vehicle_info"
+    const val MAP_STYLE = "pref_key_map_style"             // "streets" | "bright" | "positron" | "dark"
 }
 
 /** Maps the persisted string prefs onto an [AppearanceStyle]. Pure, so it's unit-testable. */

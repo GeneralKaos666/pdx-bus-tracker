@@ -426,6 +426,9 @@ fun ArrivalsScreen(
                                         context = context,
                                         refreshKey = countdownTick,
                                         lineDetours = lineDetours,
+                                        showClock = prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, true),
+                                        showRouteBadge = prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_ROUTE_BADGES, true),
+                                        showVehicleInfo = prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_VEHICLE_INFO, true),
                                         onShowAlerts = { selectedDetours = lineDetours },
                                         onClick = {
                                             if (hasValidCoords) {

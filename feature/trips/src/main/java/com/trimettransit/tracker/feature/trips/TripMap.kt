@@ -16,9 +16,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.map.MapLibreMapHost
 import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripPoint
+import com.trimettransit.tracker.ui.appearance.AppearancePrefs
+import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
+import com.trimettransit.tracker.ui.appearance.MapStyles
 import com.trimettransit.tracker.ui.components.badgeBitmap
 import com.trimettransit.tracker.ui.components.transitBadgeLetters
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
@@ -41,8 +45,6 @@ import org.maplibre.android.style.layers.PropertyFactory.iconImage
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 import java.util.Locale
-private const val TRIP_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
-private const val TRIP_MAP_STYLE_URL_DARK = "https://tiles.openfreemap.org/styles/dark"
 private const val PLAN_CAMERA_ZOOM = 14.0
 private const val MAX_CAMERA_FIT_ATTEMPTS = 3
 
@@ -73,7 +75,9 @@ internal fun TripMap(
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val overrides = LocalAppearanceStyle.current.transitTypeColors
-    val mapStyleUrl = if (isDark) TRIP_MAP_STYLE_URL_DARK else TRIP_MAP_STYLE_URL
+    val mapPreset = PreferenceManager.getDefaultSharedPreferences(context)
+        .getString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) ?: MapStyles.DEFAULT
+    val mapStyleUrl = MapStyles.styleUrlFor(mapPreset, isDark)
 
     // Guarantee the route markers and lines track the selected itinerary even if the
     // AndroidView update pass is skipped on a future recomposition.

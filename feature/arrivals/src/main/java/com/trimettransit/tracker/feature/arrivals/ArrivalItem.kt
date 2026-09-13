@@ -66,6 +66,9 @@ internal fun ArrivalItem(
     modifier: Modifier = Modifier,
     refreshKey: Int = 0,
     lineDetours: List<Detour> = emptyList(),
+    showClock: Boolean = true,
+    showRouteBadge: Boolean = true,
+    showVehicleInfo: Boolean = true,
     onShowAlerts: (List<Detour>) -> Unit = {},
     onClick: () -> Unit = {}
 ) {
@@ -102,33 +105,37 @@ internal fun ArrivalItem(
                 .padding(horizontal = 16.dp, vertical = rowContentPadding(comfortable = 12.dp, compact = 6.dp)),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = appCardShape(),
-                color = color
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(id = transitIconResource(type)),
-                        contentDescription = stringResource(transitTypeLabel(type)),
-                        tint = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.size(24.dp)
-                    )
+            if (showRouteBadge) {
+                Surface(
+                    modifier = Modifier.size(44.dp),
+                    shape = appCardShape(),
+                    color = color
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(id = transitIconResource(type)),
+                            contentDescription = stringResource(transitTypeLabel(type)),
+                            tint = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
-            }
 
-            Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+            }
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = arrival.shortSign,
                     style = MaterialTheme.typography.titleMedium
                 )
-                Text(
-                    text = formattedTime,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (showClock && formattedTime.isNotEmpty()) {
+                    Text(
+                        text = formattedTime,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             AnimatedVisibility(
@@ -220,19 +227,21 @@ internal fun ArrivalItem(
                             color = MaterialTheme.colorScheme.surface,
                             style = MaterialTheme.typography.titleMedium
                         )
-                        val delayText = formatDelay(arrival, context)
-                        if (delayText != null) {
-                            Text(
-                                text = delayText,
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        } else if (!arrival.isEstimated) {
-                            Text(
-                                text = stringResource(R.string.scheduled),
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                style = MaterialTheme.typography.labelSmall
-                            )
+                        if (showVehicleInfo) {
+                            val delayText = formatDelay(arrival, context)
+                            if (delayText != null) {
+                                Text(
+                                    text = delayText,
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            } else if (!arrival.isEstimated) {
+                                Text(
+                                    text = stringResource(R.string.scheduled),
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
                         }
                     }
                 }
