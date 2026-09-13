@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## What's New in v4.18.2
 
 - **Settings sections explain themselves:** each settings submenu now opens with a short description of what it controls under its title — Appearance, Colors, Display, Cards, Maps, and Arrivals each say what you can change there, so the menu reads clearly even before you dive into the options.
 
