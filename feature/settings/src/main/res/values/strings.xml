@@ -17,7 +17,9 @@
     <string name="open_source_licenses">Open source licenses</string>
     <string name="libraries_terms">Libraries used by this app and their terms</string>
     <string name="section_appearance">Appearance</string>
+    <string name="section_appearance_intro">Choose whether the whole app follows your system theme or stays light or dark.</string>
     <string name="section_cards">Cards</string>
+    <string name="section_cards_intro">Styles cards and panels with outlines, corner shape, and corner radius.</string>
     <string name="card_style">Card style</string>
     <string name="card_style_subtitle">Outlines, color, and corner radius</string>
     <string name="theme_system">System default</string>
@@ -27,6 +29,7 @@
     <string name="theme_dark">Dark</string>
     <string name="theme_dark_subtitle">Always use the dark theme</string>
     <string name="section_colours">Colors</string>
+    <string name="section_colours_intro">Sets the accent color, transit badge colors, and color intensity.</string>
     <string name="colour_accent">Accent color</string>
     <string name="colour_accent_subtitle">Accent customisation, vibrancy, dark boost, per-mode colors</string>
     <string name="accent_colour">Choose accent color</string>
@@ -53,6 +56,7 @@
     <string name="transit_type_subtitle">Route badge color (follows the scheme when unset)</string>
     <string name="follow_scheme">Follow color scheme</string>
     <string name="section_display">Display</string>
+    <string name="section_display_intro">Adjusts list density, text size, and animation motion.</string>
     <string name="section_display_subtitle">List density and text size</string>
     <string name="density_comfortable">Comfortable</string>
     <string name="density_comfortable_subtitle">Roomier rows and spacing</string>
@@ -71,6 +75,7 @@
     <string name="motion_low">Subtle</string>
     <string name="motion_low_subtitle">Calmer, slower, no overshoot</string>
     <string name="section_maps">Maps</string>
+    <string name="section_maps_intro">Chooses the basemap for the trip planner and arrivals maps.</string>
     <string name="map_style_streets">Streets</string>
     <string name="map_style_streets_subtitle">Default color basemap, dark in dark mode</string>
     <string name="map_style_bright">Bright</string>
@@ -98,6 +103,7 @@
     <string name="done">Done</string>
     <string name="cancel">Cancel</string>
     <string name="section_arrivals">Arrivals</string>
+    <string name="section_arrivals_intro">Controls what an arrivals screen shows and how often it refreshes.</string>
     <string name="only_show_selected_route">Only show selected route\'s arrivals</string>
     <string name="only_show_selected_route_subtitle">Filters the arrivals list when opened from a route</string>
     <string name="arrival_show_clock">Show scheduled time</string>

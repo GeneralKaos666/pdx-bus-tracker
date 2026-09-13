@@ -17,7 +17,9 @@
     <string name="open_source_licenses">Licencias de código abierto</string>
     <string name="libraries_terms">Librerías usadas por esta app y sus términos</string>
     <string name="section_appearance">Apariencia</string>
+    <string name="section_appearance_intro">Elige si toda la app sigue el tema del sistema o se mantiene clara u oscura.</string>
     <string name="section_cards">Tarjetas</string>
+    <string name="section_cards_intro">Estiliza tarjetas y paneles con contornos, forma de esquina y radio de las esquinas.</string>
     <string name="card_style">Estilo de tarjeta</string>
     <string name="card_style_subtitle">Contornos, color y radio de las esquinas</string>
     <string name="theme_system">Predeterminado del sistema</string>
@@ -27,6 +29,7 @@
     <string name="theme_dark">Oscuro</string>
     <string name="theme_dark_subtitle">Usar siempre el tema oscuro</string>
     <string name="section_colours">Colores</string>
+    <string name="section_colours_intro">Define el color de acento, los colores de las insignias de ruta y la intensidad del color.</string>
     <string name="colour_accent">Color de acento</string>
     <string name="colour_accent_subtitle">Personalización del acento, intensidad, refuerzo oscuro y colores por modo</string>
     <string name="accent_colour">Elegir color de acento</string>
@@ -53,6 +56,7 @@
     <string name="transit_type_subtitle">Color de la insignia de ruta (sigue el esquema si no se define)</string>
     <string name="follow_scheme">Seguir el esquema de color</string>
     <string name="section_display">Pantalla</string>
+    <string name="section_display_intro">Ajusta la densidad de las listas, el tamaño del texto y la animación.</string>
     <string name="section_display_subtitle">Densidad de listas y tamaño de texto</string>
     <string name="density_comfortable">Cómoda</string>
     <string name="density_comfortable_subtitle">Filas y separaciones más amplias</string>
@@ -71,6 +75,7 @@
     <string name="motion_low">Sutil</string>
     <string name="motion_low_subtitle">Más tranquilo y lento, sin rebote</string>
     <string name="section_maps">Mapas</string>
+    <string name="section_maps_intro">Elige el mapa base para el planificador de viajes y los mapas de llegadas.</string>
     <string name="map_style_streets">Calles</string>
     <string name="map_style_streets_subtitle">Mapa base de color predeterminado, oscuro en modo oscuro</string>
     <string name="map_style_bright">Brillante</string>
@@ -98,6 +103,7 @@
     <string name="done">Listo</string>
     <string name="cancel">Cancelar</string>
     <string name="section_arrivals">Llegadas</string>
+    <string name="section_arrivals_intro">Controla qué muestra la pantalla de llegadas y cada cuánto se actualiza.</string>
     <string name="only_show_selected_route">Mostrar solo las llegadas de la ruta seleccionada</string>
     <string name="only_show_selected_route_subtitle">Filtra la lista de llegadas cuando se abre desde una ruta</string>
     <string name="arrival_show_clock">Mostrar hora programada</string>

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Settings sections explain themselves:** each settings submenu now opens with a short description of what it controls under its title — Appearance, Colors, Display, Cards, Maps, and Arrivals each say what you can change there, so the menu reads clearly even before you dive into the options.
+
 - **Settings, organised into submenus:** Settings now opens to a menu of categories — Appearance, Colors, Display, Cards, Maps, Arrivals, Departure alerts, Widget, About, and Open source licenses — each its own screen, so the long scrolling list is gone. Every category row shows your current setting at a glance (for example, the theme under Appearance, or the refresh cadence under Arrivals), and tapping back returns to the menu. Inside each submenu all options are shown directly — no hidden dropdown cards — and user-facing text uses American spellings ("colors").
 - **Fixed: settings content no longer sits under the status bar.** Previously the top of the Settings screen drew beneath the status bar (most visible on the new submenu headers); the whole screen now clears it, and opening a submenu always starts at its top.
 

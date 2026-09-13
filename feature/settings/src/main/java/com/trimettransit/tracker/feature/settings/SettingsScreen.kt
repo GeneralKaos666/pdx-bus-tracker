@@ -340,6 +340,7 @@ fun SettingsScreen(
                 } else {
                     SubmenuHeader(
                         title = stringResource(section.titleRes),
+                        subtitle = section.subtitleRes?.let { stringResource(it) },
                         onBack = { switchPane(null) }
                     )
                     when (section) {
@@ -1032,30 +1033,40 @@ private fun MenuRow(
     )
 }
 
-/** Top-of-pane header: back arrow + title. Tapping it returns to the Settings menu. */
+/** Top-of-pane header: back arrow + title, plus an optional intro line. Tapping the header row returns to the Settings menu. */
 @Composable
-private fun SubmenuHeader(title: String, onBack: () -> Unit) {
-    val interactionSource = remember { MutableInteractionSource() }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pressScale(interactionSource)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = LocalIndication.current,
-                onClick = onBack
+private fun SubmenuHeader(title: String, subtitle: String? = null, onBack: () -> Unit) {
+    Column {
+        val interactionSource = remember { MutableInteractionSource() }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .pressScale(interactionSource)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = LocalIndication.current,
+                    onClick = onBack
+                )
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SettingsIconCircle(icon = Icons.AutoMirrored.Filled.ArrowBack, highlighted = false)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SettingsIconCircle(icon = Icons.AutoMirrored.Filled.ArrowBack, highlighted = false)
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        }
+        if (subtitle != null) {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 60.dp, end = 16.dp, bottom = 8.dp)
+            )
+        }
     }
 }
 
@@ -1127,13 +1138,13 @@ private enum class ColourTarget {
 }
 
 /** The Settings categories reachable from the root menu as submenus. */
-private enum class SettingsSection(@StringRes val titleRes: Int) {
-    APPEARANCE(R.string.section_appearance),
-    COLOURS(R.string.section_colours),
-    DISPLAY(R.string.section_display),
-    CARDS(R.string.section_cards),
-    MAPS(R.string.section_maps),
-    ARRIVALS(R.string.section_arrivals),
+private enum class SettingsSection(@StringRes val titleRes: Int, @StringRes val subtitleRes: Int? = null) {
+    APPEARANCE(R.string.section_appearance, R.string.section_appearance_intro),
+    COLOURS(R.string.section_colours, R.string.section_colours_intro),
+    DISPLAY(R.string.section_display, R.string.section_display_intro),
+    CARDS(R.string.section_cards, R.string.section_cards_intro),
+    MAPS(R.string.section_maps, R.string.section_maps_intro),
+    ARRIVALS(R.string.section_arrivals, R.string.section_arrivals_intro),
     NOTIFICATIONS(R.string.menu_notifications),
     WIDGET(R.string.menu_widget),
     ABOUT(R.string.section_about),
