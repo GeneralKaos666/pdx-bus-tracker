@@ -1,5 +1,11 @@
 # Changelog
 
+## What's New (in development)
+
+- **Accent swatches announce themselves:** in Settings → Colors, screen readers now say each curated swatch's name (TriMet blue, Transit orange, …), and the active one is announced as "Selected".
+- **Trip Planner errors show their cause:** when a trip request fails because you're offline (or an API key isn't configured), the planner now displays the reason instead of quietly showing nothing.
+- **Stop search is faster and safer on relaunch:** the stop database behind search and the Trip Planner is now shared across the app and written atomically, so it isn't rebuilt on every screen (first search after opening the app is noticeably quicker) and an interrupted write can't corrupt it.
+
 ## What's New in v4.18.2
 
 - **Settings sections explain themselves:** each settings submenu now opens with a short description of what it controls under its title — Appearance, Colors, Display, Cards, Maps, and Arrivals each say what you can change there, so the menu reads clearly even before you dive into the options.
