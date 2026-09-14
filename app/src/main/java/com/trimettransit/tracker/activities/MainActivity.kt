@@ -35,8 +35,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import kotlin.math.roundToInt
@@ -54,7 +52,6 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import com.trimettransit.tracker.activities.toggleFavorite
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -219,23 +216,6 @@ private val AnimatedContentTransitionScope<*>.navEnterArrivals: EnterTransition
             animationSpec = m3SpatialFast()
         ) + fadeIn(
             initialAlpha = 0.7f,
-            animationSpec = m3EffectsFast()
-        )
-    }
-
-/**
- * Quick variant of [navExit] (fast effects/spatial springs) for the Home and Routes
- * destinations so the push to Arrivals reads tighter; same slide+fade shape.
- */
-private val AnimatedContentTransitionScope<*>.navExitQuick: ExitTransition
-    get() = if (AppMotion.reduceMotion) {
-        fadeOut(targetAlpha = 0.7f, animationSpec = m3EffectsFast())
-    } else {
-        slideOutHorizontally(
-            targetOffsetX = { -it },
-            animationSpec = m3SpatialFast()
-        ) + fadeOut(
-            targetAlpha = 0.7f,
             animationSpec = m3EffectsFast()
         )
     }
@@ -794,7 +774,6 @@ private fun MainAppContent(
                 }
             }
             },
-            bottomBar = {},
             snackbarHost = {
                 SnackbarHost(
                     hostState = outerSnackbarHostState,
@@ -830,7 +809,7 @@ private fun MainAppContent(
                 popEnterTransition = { navPopEnter },
                 popExitTransition = { navPopExit }
             ) {
-                composable<HomeDestination>(exitTransition = { navExitQuick }) {
+                composable<HomeDestination> {
                     val topLevelPage: @Composable (Int) -> Unit = { page ->
                         saveableStateHolder.SaveableStateProvider(page) {
                             when (page) {

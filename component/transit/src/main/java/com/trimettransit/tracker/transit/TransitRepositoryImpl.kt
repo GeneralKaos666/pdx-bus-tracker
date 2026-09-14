@@ -9,7 +9,6 @@ import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
-import com.trimettransit.tracker.model.VehiclePosition
 import com.trimettransit.tracker.model.repository.TransitRepository
 
 /**
@@ -37,19 +36,6 @@ class TransitRepositoryImpl(
         maxArrivals: Int
     ): ArrivalsResult? =
         TransitApi.fetchArrivals(context, locIds, showPosition, minutes, maxArrivals)
-
-    override suspend fun getVehicles(
-        routes: List<Int>?,
-        blocks: List<Int>?,
-        ids: List<Int>?,
-        bbox: String?,
-        showNonRevenue: Boolean,
-        onRouteOnly: Boolean,
-        showStale: Boolean
-    ): List<VehiclePosition>? =
-        TransitApi.fetchVehicles(
-            context, routes, blocks, ids, bbox, showNonRevenue, onRouteOnly, showStale
-        )
 
     override suspend fun getStopsByLocation(
         ll: String,

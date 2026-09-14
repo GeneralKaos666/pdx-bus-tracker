@@ -12,7 +12,6 @@ import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
-import com.trimettransit.tracker.model.VehiclePosition
 import com.trimettransit.tracker.model.computeTransitType
 import com.trimettransit.tracker.util.ConnectionUtils
 import kotlinx.coroutines.CancellationException
@@ -167,53 +166,6 @@ object TransitApi {
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Failed to fetch arrivals")
-            null
-        }
-    }
-
-    suspend fun fetchVehicles(
-        context: Context,
-        routes: List<Int>? = null,
-        blocks: List<Int>? = null,
-        ids: List<Int>? = null,
-        bbox: String? = null,
-        showNonRevenue: Boolean = false,
-        onRouteOnly: Boolean = true,
-        showStale: Boolean = false
-    ): List<VehiclePosition>? = withContext(Dispatchers.IO) {
-        if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = ApiKeys.getTrimetApiKey()
-        if (apiKey.isBlank()) {
-            Timber.w("TriMet API key not configured")
-            return@withContext null
-        }
-        try {
-            val baseUrl = context.getString(R.string.base_vehicles_url)
-            val url = buildString {
-                append(baseUrl)
-                append("/appID/").append(apiKey)
-                if (routes != null && routes.isNotEmpty()) {
-                    append("/routes/").append(routes.joinToString(","))
-                }
-                if (blocks != null && blocks.isNotEmpty()) {
-                    append("/blocks/").append(blocks.joinToString(","))
-                }
-                if (ids != null && ids.isNotEmpty()) {
-                    append("/ids/").append(ids.joinToString(","))
-                }
-                if (bbox != null) {
-                    append("/bbox/").append(bbox)
-                }
-                if (showNonRevenue) append("/showNonRevenue/true")
-                if (!onRouteOnly) append("/onRouteOnly/false")
-                if (showStale) append("/showStale/true")
-            }
-            val json = parser.fetch(url)
-            TransitJsonMapper.parseVehicles(json.getJSONObject("resultSet"))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch vehicles")
             null
         }
     }

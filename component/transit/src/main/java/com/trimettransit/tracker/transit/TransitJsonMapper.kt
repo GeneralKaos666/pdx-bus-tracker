@@ -6,7 +6,6 @@ import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.model.VehiclePosition
 import com.trimettransit.tracker.model.computeTransitType
 import org.joda.time.DateTime
 import org.json.JSONObject
@@ -139,46 +138,6 @@ object TransitJsonMapper {
             stopLat = stopLat,
             stopLng = stopLng
         )
-    }
-
-    fun parseVehicles(resultSet: JSONObject): List<VehiclePosition> {
-        val vehicleArr = resultSet.optJSONArray("vehicle")
-        if (vehicleArr == null) return emptyList()
-
-        val vehicles = mutableListOf<VehiclePosition>()
-        for (i in 0 until vehicleArr.length()) {
-            val obj = vehicleArr.getJSONObject(i)
-            val vp = VehiclePosition(
-                vehicleID = obj.optInt("vehicleID", 0),
-                type = obj.optString("type", ""),
-                blockID = obj.optInt("blockID", 0),
-                latitude = obj.optDouble("latitude", 0.0),
-                longitude = obj.optDouble("longitude", 0.0),
-                bearing = obj.optDouble("bearing", 0.0).toFloat(),
-                routeNumber = obj.optInt("routeNumber", 0),
-                direction = obj.optInt("direction", 0),
-                tripID = obj.optString("tripID", ""),
-                isNewTrip = obj.optBoolean("newTrip", false),
-                delay = obj.optInt("delay", 0),
-                signMessage = obj.optString("signMessage", ""),
-                signMessageLong = obj.optString("signMessageLong", ""),
-                nextLocID = obj.optInt("nextLocID", 0),
-                nextStopSeq = obj.optInt("nextStopSeq", 0),
-                lastLocID = obj.optInt("lastLocID", 0),
-                lastStopSeq = obj.optInt("lastStopSeq", 0),
-                serviceDate = obj.optLong("serviceDate", 0),
-                locationInScheduleDay = obj.optInt("locationInScheduleDay", 0),
-                time = obj.optLong("time", 0),
-                expires = obj.optLong("expires", 0),
-                isInCongestion = obj.optBoolean("inCongestion", false),
-                loadPercentage = obj.optInt("loadPercentage", 0),
-                garage = obj.optString("garage", ""),
-                extraBlockID = obj.optString("extrablockID", ""),
-                isOffRoute = obj.optBoolean("offRoute", false)
-            )
-            vehicles.add(vp)
-        }
-        return vehicles
     }
 
     fun parseStopsByLocation(resultSet: JSONObject): List<Stop> {

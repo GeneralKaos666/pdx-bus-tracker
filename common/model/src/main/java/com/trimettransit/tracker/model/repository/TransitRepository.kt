@@ -8,7 +8,6 @@ import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
-import com.trimettransit.tracker.model.VehiclePosition
 
 /**
  * Data-access boundary for the TriMet live transit API. Implementations live in
@@ -27,15 +26,6 @@ interface TransitRepository {
         minutes: Int = 20,
         maxArrivals: Int = 2
     ): ArrivalsResult?
-    suspend fun getVehicles(
-        routes: List<Int>? = null,
-        blocks: List<Int>? = null,
-        ids: List<Int>? = null,
-        bbox: String? = null,
-        showNonRevenue: Boolean = false,
-        onRouteOnly: Boolean = true,
-        showStale: Boolean = false
-    ): List<VehiclePosition>?
     suspend fun getStopsByLocation(
         ll: String,
         feet: Int? = null,
