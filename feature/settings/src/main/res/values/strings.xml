@@ -33,6 +33,7 @@
     <string name="colour_accent">Accent color</string>
     <string name="colour_accent_subtitle">Accent customisation, vibrancy, dark boost, per-mode colors</string>
     <string name="accent_colour">Choose accent color</string>
+    <string name="accent_preset_selected">Selected</string>
     <string name="colour_mode_dynamic">Dynamic</string>
     <string name="colour_mode_dynamic_subtitle">Follow your wallpaper\'s colors (Material You)</string>
     <string name="colour_mode_seed">Custom color</string>

@@ -41,6 +41,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -130,12 +132,17 @@ internal fun AccentPresetRow(
             ) {
                 rowSwatches.forEach { preset ->
                     val isSelected = preset.color == selected
+                    val selectedLabel = stringResource(R.string.accent_preset_selected)
                     val source = remember { MutableInteractionSource() }
                     Surface(
                         modifier = Modifier
                             .weight(1f)
                             .height(44.dp)
                             .pressScale(source, 0.96f)
+                            .semantics {
+                                contentDescription =
+                                    if (isSelected) "${preset.name}, $selectedLabel" else preset.name
+                            }
                             .clickable(
                                 interactionSource = source,
                                 indication = LocalIndication.current

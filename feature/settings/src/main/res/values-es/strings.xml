@@ -33,6 +33,7 @@
     <string name="colour_accent">Color de acento</string>
     <string name="colour_accent_subtitle">Personalización del acento, intensidad, refuerzo oscuro y colores por modo</string>
     <string name="accent_colour">Elegir color de acento</string>
+    <string name="accent_preset_selected">Seleccionado</string>
     <string name="colour_mode_dynamic">Dinámico</string>
     <string name="colour_mode_dynamic_subtitle">Seguir los colores de tu fondo de pantalla (Material You)</string>
     <string name="colour_mode_seed">Color personalizado</string>

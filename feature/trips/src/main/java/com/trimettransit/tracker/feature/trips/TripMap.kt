@@ -25,7 +25,6 @@ import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.appearance.MapStyles
 import com.trimettransit.tracker.ui.components.badgeBitmap
 import com.trimettransit.tracker.ui.components.transitBadgeLetters
-import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitOnColor
