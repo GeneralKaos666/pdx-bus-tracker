@@ -92,8 +92,11 @@ fun WidgetConfigScreen(
     val titleText = remember { mutableStateOf(initial.titleText.orEmpty()) }
     val hideTitle = remember { mutableStateOf(initial.hideTitle) }
     val favorites = remember { mutableStateOf(listOf<Stop>()) }
+    val favoritesError = remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        favorites.value = runCatching { favoritesRepository.getFavorites() }.getOrDefault(emptyList())
+        runCatching { favoritesRepository.getFavorites() }
+            .onSuccess { favorites.value = it }
+            .onFailure { favoritesError.value = true }
     }
 
     fun toggleStop(stop: Stop) {
@@ -192,7 +195,14 @@ fun WidgetConfigScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            if (favorites.value.isEmpty()) {
+            if (favoritesError.value) {
+                Text(
+                    text = stringResource(R.string.widget_config_favorites_error),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            } else if (favorites.value.isEmpty()) {
                 Text(
                     text = stringResource(R.string.widget_config_no_favorites),
                     style = MaterialTheme.typography.bodyMedium,

@@ -26,6 +26,7 @@ object TripPlannerXmlParser {
 
     private const val TRIP_TIME_12H = "M/d/yy h:mm a"
     private const val TRIP_TIME_24H = "M/d/yy HH:mm"
+    private const val INTERLINE_ORDER_ATTR = "thru-route"
 
     internal fun parseMillis(date: String, timeValue: String): Long? {
         val t = timeValue.trim()
@@ -147,6 +148,9 @@ object TripPlannerXmlParser {
             direction = route.textOf("direction")
         }
         if (direction.isBlank()) direction = obj.textOf("direction")
+        // The WS marks an interlined leg (stay on the same vehicle across trips) with
+        // order="thru-route" — this exact lowercase-hyphenated value, not camelCase.
+        val stayOnBoard = obj.getAttribute("order") == INTERLINE_ORDER_ATTR
         return TripLeg(
             mode = TripLegMode.fromCode(obj.getAttribute("mode")),
             routeNumber = routeNumber,
@@ -156,7 +160,7 @@ object TripPlannerXmlParser {
             to = to,
             departure = start?.let(::DateTime),
             arrival = end?.let(::DateTime),
-            stayOnBoard = obj.getAttribute("order") == "thru-route"
+            stayOnBoard = stayOnBoard
         )
     }
 

@@ -27,6 +27,7 @@ import com.trimettransit.tracker.widget.NextArrivalsWidget
 import com.trimettransit.tracker.widget.WidgetConfig
 import com.trimettransit.tracker.widget.toPersistentMap
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * Hosts [WidgetConfigScreen] for both first-time widget placement and long-press
@@ -83,7 +84,13 @@ class WidgetConfigActivity : ComponentActivity() {
                 .toConfigMap()
         )
 
+    private var saving = false
+
     private fun saveAndFinish(config: WidgetConfig) {
+        // Guard against double-tapping Done, which would otherwise enqueue two save
+        // coroutines and finish() the activity twice.
+        if (saving) return
+        saving = true
         val id = glanceId
         if (id == null) {
             appWidgetId?.let { setResult(RESULT_OK, resultIntent(it)) }
@@ -91,14 +98,18 @@ class WidgetConfigActivity : ComponentActivity() {
             return
         }
         lifecycleScope.launch {
-            // Writes exactly the Task 1 persistent-map keys; the title key is omitted
-            // when the title is null.
-            updateAppWidgetState(this@WidgetConfigActivity, id) { mutable ->
-                config.toPersistentMap().forEach { (key, value) ->
-                    mutable[stringPreferencesKey(key)] = value
+            try {
+                // Writes exactly the Task 1 persistent-map keys; the title key is omitted
+                // when the title is null.
+                updateAppWidgetState(this@WidgetConfigActivity, id) { mutable ->
+                    config.toPersistentMap().forEach { (key, value) ->
+                        mutable[stringPreferencesKey(key)] = value
+                    }
                 }
+                NextArrivalsWidget().update(this@WidgetConfigActivity, id)
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to save widget config")
             }
-            NextArrivalsWidget().update(this@WidgetConfigActivity, id)
             appWidgetId?.let { setResult(RESULT_OK, resultIntent(it)) }
             finish()
         }

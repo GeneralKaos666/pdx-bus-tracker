@@ -50,10 +50,20 @@ fun DepartureAlertsSection() {
     var windowMinutes by remember { mutableIntStateOf(DepartureAlertPrefs.windowMinutes(context)) }
     var favorites by remember { mutableStateOf<List<Stop>>(emptyList()) }
     var alertedIds by remember { mutableStateOf(favoritesAlertedIds(context)) }
+    var permissionDenied by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { }
+    ) { granted ->
+        if (!granted) {
+            // Revert the master switch so the worker chain doesn't keep firing into a
+            // silently-dropping notification post permission.
+            permissionDenied = true
+            enabled = false
+            DepartureAlertPrefs.setEnabled(context, false)
+            DepartureAlertScheduler.stop(context)
+        }
+    }
 
     LaunchedEffect(Unit) {
         favorites = FavoritesRepositoryImpl(DatabaseHelper(context)).getFavorites()
@@ -61,6 +71,7 @@ fun DepartureAlertsSection() {
 
     fun setEnabled(value: Boolean) {
         enabled = value
+        permissionDenied = false
         DepartureAlertPrefs.setEnabled(context, value)
         if (value) {
             DepartureNotifications.ensureChannel(context)
@@ -81,6 +92,15 @@ fun DepartureAlertsSection() {
             checked = enabled,
             onCheckedChange = { setEnabled(it) }
         )
+
+        if (permissionDenied) {
+            Text(
+                text = stringResource(R.string.notifications_permission_denied),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
 
         if (enabled) {
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))

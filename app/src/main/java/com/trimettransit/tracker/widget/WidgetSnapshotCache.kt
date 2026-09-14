@@ -8,6 +8,7 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.util.minutesUntil
 import org.json.JSONArray
 import org.json.JSONObject
+import timber.log.Timber
 
 /**
  * SharedPreferences snapshot backing the "Next arrivals" home-screen widget. The widget
@@ -61,7 +62,13 @@ object WidgetSnapshotCache {
                 hasFavorites = root.optBoolean("hasFavorites", false),
                 updatedAtMillis = root.optLong("updated", 0L)
             )
-        }.getOrDefault(Snapshot(emptyList(), false, 0L))
+        }.getOrElse { e ->
+            // A stale or schema-mismatched snapshot shouldn't crash the launcher's render
+            // thread, but it must not be invisible either — the widget would otherwise stay
+            // blank on "refreshing…" with no signal.
+            Timber.w(e, "Failed to parse the widget snapshot")
+            Snapshot(emptyList(), false, 0L)
+        }
     }
 
     fun update(context: Context, favorites: List<Stop>, rows: List<Row>) {

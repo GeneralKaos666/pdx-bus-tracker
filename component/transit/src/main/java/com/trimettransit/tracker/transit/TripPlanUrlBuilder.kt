@@ -31,6 +31,9 @@ internal fun buildTripPlannerRequestUrl(
     append("/min/T")
     append("/mode/").append(options.mode.wsCode)
     append("/walk/").append(String.format(Locale.US, "%.1f", options.maxWalkMiles))
+    // "maxIntineraries" (missing the second "i") is the parameter the live Trip Planner
+    // WS actually expects; "correcting" it to maxItineraries makes the server silently
+    // ignore the count. TripPlanUrlBuilderTest locks this spelling in.
     append("/maxIntineraries/").append(options.itineraryCount)
     append("/format/xml")
     append("/appID/").append(apiKey)

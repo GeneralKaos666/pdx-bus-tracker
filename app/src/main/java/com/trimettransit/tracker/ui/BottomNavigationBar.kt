@@ -193,10 +193,6 @@ internal fun MainBottomBar(
     }
 }
 
-/** Sharable pill shape so the bottom bar consistently tracks the user's card radius. */
-@Composable
-internal fun appCardShape(): Shape = appCardShape()
-
 private data class PillBounds(val x: Int, val width: Int)
 
 @Composable

@@ -126,6 +126,7 @@ import com.trimettransit.tracker.widget.WidgetLaunch
 import com.trimettransit.tracker.notifications.DepartureAlertPrefs
 import com.trimettransit.tracker.notifications.DepartureAlertsSection
 import com.trimettransit.tracker.widget.settings.WidgetSettingsSection
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import com.trimettransit.tracker.model.Direction
@@ -151,6 +152,7 @@ import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import com.trimettransit.tracker.util.systemReduceMotion
 import com.trimettransit.tracker.R
+import timber.log.Timber
 
 private val AnimatedContentTransitionScope<*>.navEnter: EnterTransition
     get() = if (AppMotion.reduceMotion) {
@@ -399,6 +401,9 @@ private fun MainAppContent(
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val refreshRotation = remember { Animatable(0f) }
     val destination = currentBackStackEntry?.destination
+    val arrivalsDest = currentBackStackEntry
+        ?.takeIf { it.destination.hasRoute<ArrivalsDestination>() }
+        ?.toRoute<ArrivalsDestination>()
     val isTopLevel = destination?.hasRoute<HomeDestination>() == true
     val isArrivals = destination?.hasRoute<ArrivalsDestination>() == true
     val isNearbyStops = destination?.hasRoute<NearbyStopsDestination>() == true
@@ -427,6 +432,7 @@ private fun MainAppContent(
         }
     }
     val outerSnackbarHostState = remember { SnackbarHostState() }
+    val favoriteLocationUnavailable = stringResource(R.string.favorite_location_unavailable)
 
     var arrivalsStopName by remember { mutableStateOf("") }
     var arrivalsIsFavorite by remember { mutableStateOf(false) }
@@ -434,6 +440,36 @@ private fun MainAppContent(
     var arrivalsLng by remember { mutableDoubleStateOf(0.0) }
     var arrivalsOnRefresh by remember { mutableStateOf<(() -> Unit)?>(null) }
     var onScrollToTop by remember { mutableStateOf<(() -> Unit)?>(null) }
+    // The stop id the lifted arrivals state above belongs to. Two ArrivalsScreen instances
+    // (nav destination and two-pane detail) write through this shared state; keying it by
+    // stop id stops a slower fetch from a previous stop from overwriting the current one
+    // and lets the top bar/pane fall back to the destination's own name instead of flashing
+    // the previous stop's title.
+    var arrivalsStateStopId by remember { mutableStateOf(-1) }
+
+    /** Stages the lifted arrivals state for [stopId], clearing any previous stop's data. */
+    fun resetArrivalsStateFor(stopId: Int) {
+        if (arrivalsStateStopId == stopId) return
+        arrivalsStateStopId = stopId
+        arrivalsStopName = ""
+        arrivalsIsFavorite = false
+        arrivalsLat = 0.0
+        arrivalsLng = 0.0
+        arrivalsOnRefresh = null
+    }
+
+    /** Ignores reports from a stale (previous stop's) ArrivalsScreen still in flight. */
+    fun applyArrivalsState(stopId: Int, name: String, fav: Boolean, lat: Double, lng: Double) {
+        if (arrivalsStateStopId != stopId) return
+        arrivalsStopName = name
+        arrivalsIsFavorite = fav
+        arrivalsLat = lat
+        arrivalsLng = lng
+    }
+
+    /** Stop name to show for [stopId], falling back when the staged state isn't from it. */
+    fun activeArrivalsName(stopId: Int, fallback: String): String =
+        if (arrivalsStateStopId == stopId) arrivalsStopName.ifBlank { fallback } else fallback
 
     val topPagerState = rememberPagerState(pageCount = { bottomNavItems.size })
     var selectedStopsRoute by remember { mutableStateOf<Route?>(null) }
@@ -443,7 +479,13 @@ private fun MainAppContent(
     fun navigateToArrivals(stop: Stop, routeId: Int) {
         val stopToRecord = if (routeId > 0) stop.copy(routeNum = routeId) else stop
         scope.launch {
-            recentStopsRepository.addRecentStop(stopToRecord)
+            try {
+                recentStopsRepository.addRecentStop(stopToRecord)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to record recent stop")
+            }
         }
         if (expandedPane) {
             detailStop = ArrivalsDestination(stop.locId, stop.desc, routeId, stop.latitude, stop.longitude)
@@ -459,7 +501,7 @@ private fun MainAppContent(
     LaunchedEffect(widgetLaunchIntentValue) {
         val intent = widgetLaunchIntentValue ?: return@LaunchedEffect
         val stopId = intent.getLongExtra(WidgetLaunch.EXTRA_STOP_ID, -1L)
-        if (stopId <= 0L) return@LaunchedEffect
+        if (stopId <= 0L || stopId > Int.MAX_VALUE.toLong()) return@LaunchedEffect
         val stop = Stop(
             desc = intent.getStringExtra(WidgetLaunch.EXTRA_STOP_NAME).orEmpty(),
             latitude = intent.getDoubleExtra(WidgetLaunch.EXTRA_LAT, 0.0),
@@ -505,11 +547,15 @@ private fun MainAppContent(
             var lng = arrivalsLng
             if (!arrivalsIsFavorite && lat == 0.0 && lng == 0.0) {
                 // Coords not resolved yet (fetch still in flight or offline):
-                // resolve them now so the favorite isn't parked at 0,0.
-                transitRepository.getStopById(locId)?.let {
-                    lat = it.latitude
-                    lng = it.longitude
+                // resolve them now so the favorite isn't parked at 0,0. If they can't
+                // be resolved, abort rather than save a favorite at the origin.
+                val resolved = transitRepository.getStopById(locId)
+                if (resolved == null) {
+                    outerSnackbarHostState.showSnackbar(favoriteLocationUnavailable)
+                    return@launch
                 }
+                lat = resolved.latitude
+                lng = resolved.longitude
             }
             val result = toggleFavorite(favoritesRepository, context, locId, stopName, arrivalsIsFavorite, routeId, lat, lng)
             if (result.first) {
@@ -533,9 +579,10 @@ private fun MainAppContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = arrivalsStopName.ifBlank {
+                    text = activeArrivalsName(
+                        dest.stopId,
                         dest.stopName.ifBlank { stringResource(R.string.stop) }
-                    },
+                    ),
                     style = MaterialTheme.typography.titleLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -589,6 +636,7 @@ private fun MainAppContent(
                 }
             }
             key(dest.stopId, dest.routeId) {
+                LaunchedEffect(dest.stopId) { resetArrivalsStateFor(dest.stopId) }
                 ArrivalsScreen(
                     transitRepository = transitRepository,
                     favoritesRepository = favoritesRepository,
@@ -599,12 +647,11 @@ private fun MainAppContent(
                     longitude = dest.lng,
                     isDark = isDark,
                     onArrivalsStateChange = { name, fav, lat, lng ->
-                        arrivalsStopName = name
-                        arrivalsIsFavorite = fav
-                        arrivalsLat = lat
-                        arrivalsLng = lng
+                        applyArrivalsState(dest.stopId, name, fav, lat, lng)
                     },
-                    onRegisterRefresh = { arrivalsOnRefresh = it },
+                    onRegisterRefresh = {
+                        if (arrivalsStateStopId == dest.stopId) arrivalsOnRefresh = it
+                    },
                     onRegisterScrollToTop = { onScrollToTop = it }
                 )
             }
@@ -657,7 +704,7 @@ private fun MainAppContent(
                         )
                     )
                     dest?.hasRoute<ArrivalsDestination>() == true && !inPip -> TopAppBar(
-                        title = { Text(arrivalsStopName.ifBlank { stringResource(R.string.stop) }) },
+                        title = { Text(activeArrivalsName(arrivalsDest?.stopId ?: -1, stringResource(R.string.stop))) },
                         navigationIcon = { BackNavigationIcon(onClick = { navController.popBackStack() }) },
                         contentPadding = PaddingValues(0.dp),
                         windowInsets = TopAppBarDefaults.windowInsets,
@@ -906,6 +953,7 @@ private fun MainAppContent(
                 }
                 composable<ArrivalsDestination>(enterTransition = { navEnterArrivals }) { backStackEntry ->
                     val dest: ArrivalsDestination = backStackEntry.toRoute()
+                    LaunchedEffect(dest.stopId) { resetArrivalsStateFor(dest.stopId) }
                     ArrivalsScreen(
                         transitRepository = transitRepository,
                         favoritesRepository = favoritesRepository,
@@ -916,12 +964,11 @@ private fun MainAppContent(
                         longitude = dest.lng,
                         isDark = isDark,
                         onArrivalsStateChange = { name, fav, lat, lng ->
-                            arrivalsStopName = name
-                            arrivalsIsFavorite = fav
-                            arrivalsLat = lat
-                            arrivalsLng = lng
+                            applyArrivalsState(dest.stopId, name, fav, lat, lng)
                         },
-                        onRegisterRefresh = { arrivalsOnRefresh = it },
+                        onRegisterRefresh = {
+                            if (arrivalsStateStopId == dest.stopId) arrivalsOnRefresh = it
+                        },
                         onRegisterScrollToTop = { onScrollToTop = it }
                     )
                 }

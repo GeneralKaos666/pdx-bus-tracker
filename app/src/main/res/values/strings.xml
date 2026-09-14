@@ -15,6 +15,7 @@
     <string name="widget_config_stops">Stops</string>
     <string name="widget_config_stops_hint">Leave unchecked to include every favorite</string>
     <string name="widget_config_no_favorites">No favorites yet — add some in the app</string>
+    <string name="widget_config_favorites_error">Couldn’t load your favorites — check your connection and open this screen again</string>
     <string name="widget_config_arrivals">Arrivals</string>
     <string name="widget_config_arrivals_per_stop">Arrivals per stop</string>
     <string name="widget_config_time">Time</string>
@@ -74,6 +75,7 @@
     <string name="favorite_does_not_exist_text">Favorite does not exist.</string>
     <string name="favorite_exists_text">Favorite already exists.</string>
     <string name="failed_to_update_favorite">Failed to update favorite</string>
+    <string name="favorite_location_unavailable">Couldn’t load stop details — check your connection</string>
     <string name="refresh">Refresh</string>
     <string name="close_detail">Close arrival details</string>
     <string name="expanded_arrivals_placeholder">Select a stop to view arrivals</string>
@@ -92,4 +94,5 @@
     </plurals>
     <string name="notifications_stops_header">Stops with alerts</string>
     <string name="notifications_no_favorites">No favorites yet — add some to choose which stops are monitored</string>
+    <string name="notifications_permission_denied">Notifications are turned off. Grant the notification permission in system settings to use departure alerts.</string>
 </resources>

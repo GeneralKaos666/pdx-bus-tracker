@@ -15,6 +15,7 @@
     <string name="widget_config_stops">Paradas</string>
     <string name="widget_config_stops_hint">Deja sin marcar para incluir todos los favoritos</string>
     <string name="widget_config_no_favorites">Aún no hay favoritos — añádelos en la app</string>
+    <string name="widget_config_favorites_error">No se pudieron cargar tus favoritos — comprueba tu conexión y vuelve a abrir esta pantalla</string>
     <string name="widget_config_arrivals">Llegadas</string>
     <string name="widget_config_arrivals_per_stop">Llegadas por parada</string>
     <string name="widget_config_time">Hora</string>
@@ -71,6 +72,7 @@
     </plurals>
     <string name="notifications_stops_header">Paradas con alertas</string>
     <string name="notifications_no_favorites">Aún no hay favoritos — añade algunos para elegir qué paradas supervisar</string>
+    <string name="notifications_permission_denied">Las notificaciones están desactivadas. Concede el permiso de notificaciones en los ajustes del sistema para usar las alertas de salida.</string>
 
     <!-- Bottom navigation -->
     <string name="nav_favorites">Favoritos</string>
@@ -92,6 +94,7 @@
     <string name="favorite_does_not_exist_text">El favorito no existe.</string>
     <string name="favorite_exists_text">El favorito ya existe.</string>
     <string name="failed_to_update_favorite">No se pudo actualizar el favorito</string>
+    <string name="favorite_location_unavailable">No se pudieron cargar los detalles de la parada — comprueba tu conexión</string>
     <string name="refresh">Actualizar</string>
     <string name="close_detail">Cerrar detalles de llegada</string>
     <string name="expanded_arrivals_placeholder">Selecciona una parada para ver las llegadas</string>

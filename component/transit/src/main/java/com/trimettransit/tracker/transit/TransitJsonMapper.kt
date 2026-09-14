@@ -269,6 +269,9 @@ object TransitJsonMapper {
                 for (si in 0 until stopArr.length()) {
                     val obj = stopArr.getJSONObject(si)
                     val locId = obj.optInt("locid", 0)
+                    // A zero/missing locid is unaddressable; skip it rather than collapse
+                    // multiple malformed rows onto key 0 and merge their route lists.
+                    if (locId == 0) continue
                     val builder = buildersById[locId]
                     if (builder == null) {
                         val stopDir = obj.optString("dir", "")
