@@ -1,6 +1,6 @@
 # Changelog
 
-## What's New (in development)
+## What's New in v4.18.3
 
 - **Accent swatches announce themselves:** in Settings → Colors, screen readers now say each curated swatch's name (TriMet blue, Transit orange, …), and the active one is announced as "Selected".
 - **Trip Planner errors show their cause:** when a trip request fails because you're offline (or an API key isn't configured), the planner now displays the reason instead of quietly showing nothing.
