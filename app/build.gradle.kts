@@ -13,6 +13,16 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.4.20"
 }
 
+// AGP's produceMergeComposeMapping tokenizer cannot parse the compiler-generated
+// suspend descriptor for Glance's provideGlance (NextArrivalsWidget), which emits a
+// benign "Failed to collect Compose stack trace mapping" warning, dropping that single
+// method's group-key mapping. The app never enables ComposeStackTraceMode.GroupKeys, so
+// the mapping file has no runtime consumer; disable it to silence the warning.
+// Re-enable (remove this block) if group-key stack traces are ever turned on.
+composeCompiler {
+    includeComposeMappingFile.set(false)
+}
+
 // Single source of truth for the release versionCode fallback. With Play credentials
 // configured, GPP's AUTO strategy overrides this with `default + max(0, liveMax - default + 1)`;
 // without credentials this exact value is what's baked into release builds.
