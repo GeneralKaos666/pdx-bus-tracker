@@ -13,16 +13,14 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.activities.MainActivity
-import com.trimettransit.tracker.data.local.DatabaseHelper
-import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
+import com.trimettransit.tracker.repos
+import com.trimettransit.tracker.retryFetch
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.transit.ApiKeys
-import com.trimettransit.tracker.transit.TransitRepositoryImpl
 import com.trimettransit.tracker.widget.WidgetLaunch
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -45,8 +43,8 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
         val now = System.currentTimeMillis()
         if (DepartureAlertRules.isQuietHours(now)) return Result.success()
         return withContext(Dispatchers.IO) {
-            val favoritesRepository = FavoritesRepositoryImpl(DatabaseHelper(app))
-            val transitRepository = TransitRepositoryImpl(app)
+            val favoritesRepository = app.repos().favorites
+            val transitRepository = app.repos().transit
             val stops = DepartureAlertPrefs.monitoredStops(app, favoritesRepository.getFavorites())
             if (stops.isEmpty()) return@withContext Result.success()
 
@@ -68,7 +66,7 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
         windowMinutes: Int,
         fired: MutableSet<String>
     ) {
-        val result = retryFetch {
+        val result = retryFetch(attempts = MAX_ATTEMPTS, label = "Departure") {
             transitRepository.getArrivals(
                 locIds = listOf(stop.locId),
                 minutes = windowMinutes + SLACK_MINUTES,
@@ -88,16 +86,6 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
             post(app, stop, arrival)
             fired.add(DepartureAlertRules.firedKey(stop.locId, arrival.tripID))
         }
-    }
-
-    private suspend fun <T> retryFetch(attempt: Int = 0, block: suspend () -> T?): T? {
-        val result = block()
-        if (result != null || attempt >= MAX_ATTEMPTS - 1) {
-            if (result == null) Timber.w("Departure fetch failed after ${attempt + 1} attempts")
-            return result
-        }
-        delay(RETRY_DELAY_MS / 2 * (1L shl attempt))
-        return retryFetch(attempt + 1, block)
     }
 
     private fun post(app: Context, stop: Stop, arrival: Arrival) {
@@ -143,6 +131,5 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
         const val SLACK_MINUTES = 5
         const val MAX_ARRIVALS = 4
         const val MAX_ATTEMPTS = 2
-        const val RETRY_DELAY_MS = 2_000L
     }
 }

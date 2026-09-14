@@ -48,7 +48,6 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -63,8 +62,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -79,8 +76,6 @@ import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
-import com.trimettransit.tracker.model.domain.matchDirection
-import com.trimettransit.tracker.model.domain.sliceStopsForLeg
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
@@ -797,127 +792,4 @@ fun TripPlannerScreen(
             )
         }
     }
-}
-@Composable
-private fun EndpointRow(
-    label: String,
-    point: TripPoint?,
-    accentColor: Color,
-    onClick: () -> Unit,
-    onClear: () -> Unit
-) {
-    val source = remember { MutableInteractionSource() }
-    Surface(
-        onClick = onClick,
-        interactionSource = source,
-        shape = appCardShape(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .pressScale(source)
-            .semantics { role = Role.Button }
-    ) {
-        Row(
-            modifier = Modifier.padding(start = 16.dp, top = 10.dp, bottom = 10.dp, end = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(accentColor, appCardShape())
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Crossfade(
-                targetState = point,
-                animationSpec = m3EffectsDefault(),
-                label = "endpointContent",
-                modifier = Modifier.weight(1f)
-            ) { currentPoint ->
-                Text(
-                    text = currentPoint?.description?.takeIf { it.isNotBlank() } ?: label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (currentPoint != null) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            AnimatedVisibility(
-                visible = point != null,
-                enter = fadeIn(m3EffectsDefault()),
-                exit = fadeOut(m3EffectsFast())
-            ) {
-                IconButton(onClick = onClear, modifier = Modifier.size(48.dp)) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = stringResource(R.string.clear),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-private fun tripPlannerErrorString(context: Context, error: TripPlannerError): String {
-    return when (error) {
-        TripPlannerError.NO_STOPS_NEAR_ORIGIN,
-        TripPlannerError.NO_STOPS_NEAR_DESTINATION -> context.getString(R.string.trip_planner_error_no_stops)
-        TripPlannerError.NO_SERVICE_AT_ORIGIN,
-        TripPlannerError.NO_SERVICE_AT_DESTINATION -> context.getString(R.string.trip_planner_error_no_service)
-        TripPlannerError.TRIP_NOT_POSSIBLE -> context.getString(R.string.trip_planner_error_not_possible)
-        TripPlannerError.TRIVIAL_DISTANCE -> context.getString(R.string.trip_planner_error_trivial)
-        TripPlannerError.AMBIGUOUS_ORIGIN -> context.getString(R.string.trip_planner_error_ambiguous_origin)
-        TripPlannerError.AMBIGUOUS_DESTINATION -> context.getString(R.string.trip_planner_error_ambiguous_destination)
-        TripPlannerError.ORIGIN_NOT_FOUND,
-        TripPlannerError.DESTINATION_NOT_FOUND -> context.getString(R.string.trip_planner_error_not_found)
-        TripPlannerError.OUTSIDE_DISTRICT -> context.getString(R.string.trip_planner_error_outside_district)
-        TripPlannerError.SYSTEM_OUTAGE -> context.getString(R.string.trip_planner_error_outage)
-        TripPlannerError.NETWORK -> context.getString(R.string.no_connection)
-        TripPlannerError.UNKNOWN -> context.getString(R.string.trip_planner_error_unknown)
-    }
-}
-
-/**
- * Resolves the itinerary's transit legs into real route geometry. The Trip Planner WS
- * returns no geometry, so each non-walk leg with a numeric route number is matched to its
- * route config direction (via the leg's compass label) and the stop sequence is sliced
- * between the boarding and alighting points. Legs that can't be resolved contribute no
- * entry and the map keeps its straight stick line. Directions and stop sequences are
- * memoized per (route, direction) so multi-leg or repeated plans avoid re-fetching.
- */
-private suspend fun fetchLegGeometries(
-    transitRepository: TransitRepository,
-    itinerary: TripItinerary?,
-    directionsCache: MutableState<Map<Int, List<Direction>>>,
-    stopsCache: MutableState<Map<Pair<Int, Int>, List<Stop>>>
-): Map<Int, List<GeoPoint>> {
-    val result = mutableMapOf<Int, List<GeoPoint>>()
-    val plan = itinerary ?: return result
-    plan.legs.forEachIndexed { legIndex, leg ->
-        if (leg.isWalk) return@forEachIndexed
-        val routeId = leg.routeNumber?.toIntOrNull() ?: return@forEachIndexed
-        val dirSnapshot = directionsCache.value
-        val directions = dirSnapshot[routeId]
-            ?: transitRepository.getDirections(routeId)
-                ?.also { directionsCache.value = dirSnapshot + (routeId to it) }
-            ?: return@forEachIndexed
-        val direction = matchDirection(directions, leg.direction) ?: return@forEachIndexed
-        val key = routeId to direction.dir
-        val stopsSnapshot = stopsCache.value
-        val sequence = stopsSnapshot[key]
-            ?: transitRepository.getStops(routeId, direction.dir)
-                ?.also { stopsCache.value = stopsSnapshot + (key to it) }
-            ?: return@forEachIndexed
-        val slice = sliceStopsForLeg(
-            sequence,
-            leg.from.latitude, leg.from.longitude,
-            leg.to.latitude, leg.to.longitude
-        )
-        if (slice.size < 2) return@forEachIndexed
-        result[legIndex] = slice.map { GeoPoint(it.latitude, it.longitude) }
-    }
-    return result
 }

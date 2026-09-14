@@ -1,7 +1,6 @@
 package com.trimettransit.tracker.feature.arrivals
 
 import timber.log.Timber
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
@@ -66,9 +65,7 @@ import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
 import com.trimettransit.tracker.ui.appearance.refreshDelayMillis
 import com.trimettransit.tracker.ui.components.ContentEntrance
-import com.trimettransit.tracker.ui.components.EmptyState
-import com.trimettransit.tracker.ui.components.ErrorState
-import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
+import com.trimettransit.tracker.ui.components.ListStateShell
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberIsInPipMode
@@ -370,41 +367,23 @@ fun ArrivalsScreen(
             )
         }
     ) {
-        Crossfade(
-            targetState = when {
-                isLoading && arrivals.isEmpty() -> 0
-                isError && arrivals.isEmpty() -> 1
-                arrivals.isEmpty() -> 2
-                else -> 3
-            },
-            animationSpec = m3EffectsDefault(),
+        ListStateShell(
+            isLoading = isLoading,
+            isError = isError,
+            isEmpty = arrivals.isEmpty(),
+            emptyMessage = if (unfilteredArrivals.isNotEmpty())
+                stringResource(R.string.no_upcoming_for_route)
+            else stringResource(R.string.empty_no_arrivals),
+            errorMessage = stringResource(R.string.arrivals_load_error),
             label = "arrivalsState"
-        ) { state ->
-            when (state) {
-                0 -> {
-                    ListLoadingSkeleton()
-                }
-
-                1 -> {
-                    ErrorState(message = stringResource(R.string.arrivals_load_error))
-                }
-
-                2 -> {
-                    EmptyState(
-                        message = if (unfilteredArrivals.isNotEmpty())
-                            stringResource(R.string.no_upcoming_for_route)
-                        else stringResource(R.string.empty_no_arrivals)
-                    )
-                }
-
-                else -> {
-                    ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier.fillMaxSize(),
-                            flingBehavior = smoothFling,
-                            contentPadding = PaddingValues(
-                                start = 12.dp,
+        ) {
+            ContentEntrance(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    flingBehavior = smoothFling,
+                    contentPadding = PaddingValues(
+                        start = 12.dp,
                                 end = 12.dp,
                                 top = 8.dp,
                                 bottom = navPillBottomPadding() + 8.dp
@@ -512,8 +491,6 @@ fun ArrivalsScreen(
 
                         }
                     }
-                }
-            }
         }
     }
     }

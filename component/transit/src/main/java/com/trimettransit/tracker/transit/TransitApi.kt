@@ -23,7 +23,11 @@ import org.joda.time.format.DateTimeFormat
 object TransitApi {
     private val parser = JSONParser
 
-    suspend fun fetchRoutes(context: Context): List<Route>? = withContext(Dispatchers.IO) {
+    private suspend fun <T> guarded(
+        context: Context,
+        label: String,
+        block: suspend (String) -> T?
+    ): T? = withContext(Dispatchers.IO) {
         if (!ConnectionUtils.isOnline(context)) return@withContext null
         val apiKey = ApiKeys.getTrimetApiKey()
         if (apiKey.isBlank()) {
@@ -31,41 +35,39 @@ object TransitApi {
             return@withContext null
         }
         try {
-            val baseUrl = context.getString(R.string.base_route_url)
-            val url = "$baseUrl/appID/$apiKey"
-            val json = parser.fetch(url)
-            val routes = mutableListOf<Route>()
-            val arr = json.getJSONObject("resultSet").getJSONArray("route")
-            for (i in 0 until arr.length()) {
-                val obj = arr.getJSONObject(i)
-                val route = TransitJsonMapper.parseRoute(obj)
-                if (route.desc != "Portland Aerial Tram") {
-                    routes.add(route)
-                }
-            }
-            routes
+            block(apiKey)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch routes")
+            Timber.e(e, "Failed to $label")
             null
         }
     }
 
-    suspend fun fetchDirections(context: Context, routeId: Int): List<Direction>? = withContext(Dispatchers.IO) {
-        if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = ApiKeys.getTrimetApiKey()
-        if (apiKey.isBlank()) {
-            Timber.w("TriMet API key not configured")
-            return@withContext null
+    suspend fun fetchRoutes(context: Context): List<Route>? = guarded(context, "fetch routes") { apiKey ->
+        val baseUrl = context.getString(R.string.base_route_url)
+        val url = "$baseUrl/appID/$apiKey"
+        val json = parser.fetch(url)
+        val routes = mutableListOf<Route>()
+        val arr = json.getJSONObject("resultSet").getJSONArray("route")
+        for (i in 0 until arr.length()) {
+            val obj = arr.getJSONObject(i)
+            val route = TransitJsonMapper.parseRoute(obj)
+            if (route.desc != "Portland Aerial Tram") {
+                routes.add(route)
+            }
         }
-        try {
+        routes
+    }
+
+    suspend fun fetchDirections(context: Context, routeId: Int): List<Direction>? =
+        guarded(context, "fetch directions") { apiKey ->
             val baseUrl = context.getString(R.string.base_route_url)
             val url = "$baseUrl/appID/$apiKey/route/$routeId/dir/true"
             val json = parser.fetch(url)
             val dirs = mutableListOf<Direction>()
             val routeArr = json.getJSONObject("resultSet").optJSONArray("route")
-            if (routeArr == null || routeArr.length() == 0) return@withContext emptyList()
+            if (routeArr == null || routeArr.length() == 0) return@guarded emptyList()
             val routeObj = routeArr.getJSONObject(0)
             val route = TransitJsonMapper.parseRoute(routeObj)
             val arr = routeObj.getJSONArray("dir")
@@ -79,36 +81,24 @@ object TransitApi {
                 dirs.add(dir)
             }
             dirs
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch directions")
-            null
         }
-    }
 
-    suspend fun fetchStops(context: Context, routeId: Int, directionId: Int): List<Stop>? = withContext(Dispatchers.IO) {
-        if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = ApiKeys.getTrimetApiKey()
-        if (apiKey.isBlank()) {
-            Timber.w("TriMet API key not configured")
-            return@withContext null
-        }
-        try {
+    suspend fun fetchStops(context: Context, routeId: Int, directionId: Int): List<Stop>? =
+        guarded(context, "fetch stops") { apiKey ->
             val baseUrl = context.getString(R.string.base_route_url)
             val url = "$baseUrl/appID/$apiKey/route/$routeId/dir/$directionId/stops/true"
             val json = parser.fetch(url)
-            val resultSet = json.optJSONObject("resultSet") ?: return@withContext null
+            val resultSet = json.optJSONObject("resultSet") ?: return@guarded null
             val routeArr = resultSet.optJSONArray("route")
-            if (routeArr == null || routeArr.length() == 0) return@withContext null
+            if (routeArr == null || routeArr.length() == 0) return@guarded null
 
             val route0 = routeArr.getJSONObject(0)
             val dirArr = route0.optJSONArray("dir")
-            if (dirArr == null || dirArr.length() == 0) return@withContext null
+            if (dirArr == null || dirArr.length() == 0) return@guarded null
 
             val dir0 = dirArr.getJSONObject(0)
             val stopArr = dir0.optJSONArray("stop")
-            if (stopArr == null || stopArr.length() == 0) return@withContext emptyList()
+            if (stopArr == null || stopArr.length() == 0) return@guarded emptyList()
 
             val route = TransitJsonMapper.parseRoute(route0)
             val stops = mutableListOf<Stop>()
@@ -129,13 +119,7 @@ object TransitApi {
                 )
             }
             stops
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch stops")
-            null
         }
-    }
 
     suspend fun fetchArrivals(
         context: Context,
@@ -143,31 +127,18 @@ object TransitApi {
         showPosition: Boolean = false,
         minutes: Int = 20,
         maxArrivals: Int = 2
-    ): ArrivalsResult? = withContext(Dispatchers.IO) {
-        if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = ApiKeys.getTrimetApiKey()
-        if (apiKey.isBlank()) {
-            Timber.w("TriMet API key not configured")
-            return@withContext null
+    ): ArrivalsResult? = guarded(context, "fetch arrivals") { apiKey ->
+        val baseUrl = context.getString(R.string.base_arrival_url)
+        val url = buildString {
+            append(baseUrl)
+            append("/appID/").append(apiKey)
+            append("/locIDs/").append(locIds.joinToString(","))
+            if (showPosition) append("/showPosition/true")
+            append("/minutes/").append(minutes)
+            append("/arrivals/").append(maxArrivals)
         }
-        try {
-            val baseUrl = context.getString(R.string.base_arrival_url)
-            val url = buildString {
-                append(baseUrl)
-                append("/appID/").append(apiKey)
-                append("/locIDs/").append(locIds.joinToString(","))
-                if (showPosition) append("/showPosition/true")
-                append("/minutes/").append(minutes)
-                append("/arrivals/").append(maxArrivals)
-            }
-            val json = parser.fetch(url)
-            TransitJsonMapper.parseArrivals(json.getJSONObject("resultSet"))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch arrivals")
-            null
-        }
+        val json = parser.fetch(url)
+        TransitJsonMapper.parseArrivals(json.getJSONObject("resultSet"))
     }
 
     suspend fun fetchStopsByLocation(
@@ -178,74 +149,39 @@ object TransitApi {
         bbox: String? = null,
         maxStops: Int? = null,
         showRoutes: Boolean = true
-    ): List<Stop>? = withContext(Dispatchers.IO) {
-        if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = ApiKeys.getTrimetApiKey()
-        if (apiKey.isBlank()) {
-            Timber.w("TriMet API key not configured")
-            return@withContext null
+    ): List<Stop>? = guarded(context, "fetch stops by location") { apiKey ->
+        val baseUrl = context.getString(R.string.base_stop_location_v2_url)
+        val url = buildString {
+            append(baseUrl)
+            append("/appID/").append(apiKey)
+            append("/ll/").append(ll)
+            if (feet != null) append("/feet/").append(feet)
+            if (meters != null) append("/meters/").append(meters)
+            if (bbox != null) append("/bbox/").append(bbox)
+            if (maxStops != null) append("/maxStops/").append(maxStops)
+            if (showRoutes) append("/showRoutes/true")
         }
-        try {
-            val baseUrl = context.getString(R.string.base_stop_location_v2_url)
-            val url = buildString {
-                append(baseUrl)
-                append("/appID/").append(apiKey)
-                append("/ll/").append(ll)
-                if (feet != null) append("/feet/").append(feet)
-                if (meters != null) append("/meters/").append(meters)
-                if (bbox != null) append("/bbox/").append(bbox)
-                if (maxStops != null) append("/maxStops/").append(maxStops)
-                if (showRoutes) append("/showRoutes/true")
-            }
-            val json = parser.fetch(url)
-            TransitJsonMapper.parseStopsByLocation(json.getJSONObject("resultSet"))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch stops by location")
-            null
-        }
+        val json = parser.fetch(url)
+        TransitJsonMapper.parseStopsByLocation(json.getJSONObject("resultSet"))
     }
 
-    suspend fun fetchStopById(context: Context, locId: Int): Stop? = withContext(Dispatchers.IO) {
-        if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = ApiKeys.getTrimetApiKey()
-        if (apiKey.isBlank()) return@withContext null
-        try {
+    suspend fun fetchStopById(context: Context, locId: Int): Stop? =
+        guarded(context, "fetch stop by ID") { apiKey ->
             val baseUrl = context.getString(R.string.base_stop_location_v2_url)
             val url = "$baseUrl/appID/$apiKey/locIDs/$locId"
             val json = parser.fetch(url)
             TransitJsonMapper.parseStopById(json.getJSONObject("resultSet"))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch stop by ID")
-            null
         }
-    }
 
-    suspend fun fetchSearchStops(context: Context): List<Stop>? = withContext(Dispatchers.IO) {
-        if (!ConnectionUtils.isOnline(context)) return@withContext null
-        val apiKey = ApiKeys.getTrimetApiKey()
-        if (apiKey.isBlank()) {
-            Timber.w("TriMet API key not configured")
-            return@withContext null
-        }
-        try {
+    suspend fun fetchSearchStops(context: Context): List<Stop>? =
+        guarded(context, "fetch search stops") { apiKey ->
             val baseUrl = context.getString(R.string.base_route_url)
             val url = "$baseUrl/appID/$apiKey/dir/true/stops/true"
             val json = parser.fetch(url)
-            val result = TransitJsonMapper.parseSearchStops(
-                json.optJSONObject("resultSet") ?: return@withContext null
-            ) ?: return@withContext null
-            result
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to fetch search stops")
-            null
+            TransitJsonMapper.parseSearchStops(
+                json.optJSONObject("resultSet") ?: return@guarded null
+            ) ?: return@guarded null
         }
-    }
 
     suspend fun fetchTripPlan(
         context: Context,

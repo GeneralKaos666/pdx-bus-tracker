@@ -19,8 +19,7 @@ import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.lifecycle.lifecycleScope
-import com.trimettransit.tracker.data.local.DatabaseHelper
-import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
+import com.trimettransit.tracker.repos
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.ui.theme.TriMetGoTheme
 import com.trimettransit.tracker.widget.NextArrivalsWidget
@@ -36,7 +35,7 @@ import timber.log.Timber
 class WidgetConfigActivity : ComponentActivity() {
 
     private val favoritesRepository: FavoritesRepository by lazy {
-        FavoritesRepositoryImpl(DatabaseHelper(applicationContext))
+        applicationContext.repos().favorites
     }
 
     /** ID of the widget being configured; absent only on a deep-launch outside the launcher. */

@@ -28,8 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.R
-import com.trimettransit.tracker.data.local.DatabaseHelper
-import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
+import com.trimettransit.tracker.repos
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.components.SettingsCard
 import com.trimettransit.tracker.ui.components.SettingsRadioOption
@@ -66,7 +65,7 @@ fun DepartureAlertsSection() {
     }
 
     LaunchedEffect(Unit) {
-        favorites = FavoritesRepositoryImpl(DatabaseHelper(context)).getFavorites()
+        favorites = context.repos().favorites.getFavorites()
     }
 
     fun setEnabled(value: Boolean) {

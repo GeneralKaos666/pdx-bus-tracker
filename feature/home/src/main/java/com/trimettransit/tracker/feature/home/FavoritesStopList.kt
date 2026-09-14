@@ -1,6 +1,5 @@
 package com.trimettransit.tracker.feature.home
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,15 +18,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.feature.home.R
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.ui.components.EmptyState
-import com.trimettransit.tracker.ui.components.ErrorState
-import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
+import com.trimettransit.tracker.ui.components.ListStateShell
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.staggeredFadeIn
-import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import kotlinx.coroutines.delay
 
 @Composable
@@ -38,25 +34,18 @@ fun FavoritesStopList(
     emptyText: String,
     onNavigateToArrivals: (Stop) -> Unit
 ) {
-    Crossfade(
-        targetState = when {
-            isLoading && stops.isEmpty() -> 0
-            isError && stops.isEmpty() -> 1
-            stops.isEmpty() -> 2
-            else -> 3
-        },
-        animationSpec = m3EffectsDefault(),
+    ListStateShell(
+        isLoading = isLoading,
+        isError = isError,
+        isEmpty = stops.isEmpty(),
+        emptyMessage = emptyText,
+        errorMessage = stringResource(R.string.unable_to_load),
         label = "favoritesStopList"
-    ) { state ->
-        when (state) {
-            0 -> ListLoadingSkeleton()
-            1 -> ErrorState(message = stringResource(R.string.unable_to_load))
-            2 -> EmptyState(message = emptyText)
-            else -> FavoritesList(
-                stops = stops,
-                onNavigateToArrivals = onNavigateToArrivals
-            )
-        }
+    ) {
+        FavoritesList(
+            stops = stops,
+            onNavigateToArrivals = onNavigateToArrivals
+        )
     }
 }
 

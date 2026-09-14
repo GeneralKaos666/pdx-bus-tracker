@@ -43,7 +43,6 @@ import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
@@ -82,16 +81,11 @@ import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
@@ -114,10 +108,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import androidx.preference.PreferenceManager
-import com.trimettransit.tracker.data.local.DatabaseHelper
-import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
-import com.trimettransit.tracker.data.local.RecentStopsRepositoryImpl
-import com.trimettransit.tracker.transit.TransitRepositoryImpl
+import com.trimettransit.tracker.repos
 import com.trimettransit.tracker.widget.WidgetScheduler
 import com.trimettransit.tracker.widget.WidgetLaunch
 import com.trimettransit.tracker.notifications.DepartureAlertPrefs
@@ -125,7 +116,6 @@ import com.trimettransit.tracker.notifications.DepartureAlertsSection
 import com.trimettransit.tracker.widget.settings.WidgetSettingsSection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
@@ -150,109 +140,6 @@ import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import com.trimettransit.tracker.util.systemReduceMotion
 import com.trimettransit.tracker.R
 import timber.log.Timber
-
-private val AnimatedContentTransitionScope<*>.navEnter: EnterTransition
-    get() = if (AppMotion.reduceMotion) {
-        fadeIn(initialAlpha = 0.7f, animationSpec = m3EffectsDefault())
-    } else {
-        slideInHorizontally(
-            initialOffsetX = { it },
-            animationSpec = m3SpatialDefault()
-        ) + fadeIn(
-            initialAlpha = 0.7f,
-            animationSpec = m3EffectsDefault()
-        )
-    }
-
-private val AnimatedContentTransitionScope<*>.navExit: ExitTransition
-    get() = if (AppMotion.reduceMotion) {
-        fadeOut(targetAlpha = 0.7f, animationSpec = m3EffectsFast())
-    } else {
-        slideOutHorizontally(
-            targetOffsetX = { -it },
-            animationSpec = m3SpatialFast()
-        ) + fadeOut(
-            targetAlpha = 0.7f,
-            animationSpec = m3EffectsFast()
-        )
-    }
-
-private val AnimatedContentTransitionScope<*>.navPopEnter: EnterTransition
-    get() = if (AppMotion.reduceMotion) {
-        fadeIn(initialAlpha = 0.7f, animationSpec = m3EffectsDefault())
-    } else {
-        slideInHorizontally(
-            initialOffsetX = { -it },
-            animationSpec = m3SpatialDefault()
-        ) + fadeIn(
-            initialAlpha = 0.7f,
-            animationSpec = m3EffectsDefault()
-        )
-    }
-
-private val AnimatedContentTransitionScope<*>.navPopExit: ExitTransition
-    get() = if (AppMotion.reduceMotion) {
-        fadeOut(targetAlpha = 0.7f, animationSpec = m3EffectsFast())
-    } else {
-        slideOutHorizontally(
-            targetOffsetX = { it },
-            animationSpec = m3SpatialFast()
-        ) + fadeOut(
-            targetAlpha = 0.7f,
-            animationSpec = m3EffectsFast()
-        )
-    }
-
-/**
- * Enter transition for the Arrivals destination: the fast spatial spring so pushing to
- * Arrivals from Home/Routes reads tighter/snappier than the default [navEnter].
- */
-private val AnimatedContentTransitionScope<*>.navEnterArrivals: EnterTransition
-    get() = if (AppMotion.reduceMotion) {
-        fadeIn(initialAlpha = 0.7f, animationSpec = m3EffectsFast())
-    } else {
-        slideInHorizontally(
-            initialOffsetX = { it },
-            animationSpec = m3SpatialFast()
-        ) + fadeIn(
-            initialAlpha = 0.7f,
-            animationSpec = m3EffectsFast()
-        )
-    }
-
-
-// Type-safe navigation destinations, shared by the NavHost registration and every navigate()/popBackStack().
-@Serializable
-object HomeDestination
-
-@Serializable
-object SettingsDestination
-
-@Serializable
-object NearbyStopsDestination
-
-@Serializable
-data class ArrivalsDestination(
-    val stopId: Int,
-    val stopName: String = "",
-    val routeId: Int = -1,
-    val lat: Double = 0.0,
-    val lng: Double = 0.0
-)
-
-/** Back arrow used by every non-top-level top app bar. */
-@Composable
-private fun BackNavigationIcon(onClick: () -> Unit) {
-    val backSource = remember { MutableInteractionSource() }
-    IconButton(
-        onClick = onClick,
-        interactionSource = backSource,
-        modifier = Modifier.pressScale(backSource)
-    ) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-    }
-}
-
 
 class MainActivity : ComponentActivity() {
 
@@ -389,11 +276,12 @@ private fun MainAppContent(
     val isNearbyStops = destination?.hasRoute<NearbyStopsDestination>() == true
     val isSettings = destination?.hasRoute<SettingsDestination>() == true
 
-    // Manual dependency wiring: one shared DatabaseHelper drives both local-data repos.
+    // Manual dependency wiring: one shared RepositoryHelper drives all three repos.
     val appContext = context.applicationContext
-    val favoritesRepository = remember { FavoritesRepositoryImpl(DatabaseHelper(appContext)) }
-    val recentStopsRepository = remember { RecentStopsRepositoryImpl(DatabaseHelper(appContext)) }
-    val transitRepository = remember { TransitRepositoryImpl(appContext) }
+    val repos = remember(appContext) { appContext.repos() }
+    val favoritesRepository = repos.favorites
+    val recentStopsRepository = repos.recentStops
+    val transitRepository = repos.transit
     // Sub-screens brand the collapsed pill with their own icon and name.
     var contextLabelRes: Int? = null
     var contextIcon: ImageVector? = null
