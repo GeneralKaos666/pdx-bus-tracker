@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# Creates the GitHub release ONLY. Uploading to Google Play is done separately via fastlane
+# (`bundle fastlane && fastlane android deploy_phone`): that lane runs `clean :app:bundleRelease`
+# (baking the GPP AUTO-resolved versionCode into the AAB) and uploads to the alpha track with
+# `release_status: "completed"`. Confirm the baked code first with `./gradlew printReleaseVersionCode`;
+# release builds for Play intent must pass `-PpublishToPlay` while credentials are configured.
 set -euo pipefail
 
 DRY_RUN=false

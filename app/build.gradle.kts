@@ -13,6 +13,11 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.4.20"
 }
 
+// Single source of truth for the release versionCode fallback. With Play credentials
+// configured, GPP's AUTO strategy overrides this with `default + max(0, liveMax - default + 1)`;
+// without credentials this exact value is what's baked into release builds.
+val releaseVersionCode = 7710
+
 abstract class RenameApkTask : DefaultTask() {
     @get:Internal
     abstract val builtArtifactsLoader: Property<BuiltArtifactsLoader>
@@ -44,6 +49,37 @@ abstract class RenameApkTask : DefaultTask() {
     }
 }
 
+abstract class PrintVersionCodeTask : DefaultTask() {
+    @get:Input
+    abstract val hardcodedVersionCode: Property<Int>
+
+    @get:Input
+    @get:Optional
+    abstract val credentialsConfigured: Property<Boolean>
+
+    /** GPP's processReleaseVersionCodes output; present only when Play credentials are configured. */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
+    @get:Optional
+    abstract val resolvedCodesFile: RegularFileProperty
+
+    @TaskAction
+    fun print() {
+        val codesFile = resolvedCodesFile.orNull?.asFile
+        if (credentialsConfigured.getOrElse(false) && codesFile != null && codesFile.exists()) {
+            val code = codesFile.readLines().firstOrNull { it.isNotBlank() }?.trim()
+            if (code != null) {
+                logger.lifecycle("PDX Bus Tracker release versionCode: $code (AUTO-resolved from Play)")
+                return
+            }
+        }
+        logger.lifecycle(
+            "PDX Bus Tracker release versionCode: ${hardcodedVersionCode.get()} " +
+                "(GPP disabled - hardcoded defaultConfig fallback, cannot be uploaded to Play)"
+        )
+    }
+}
+
 android {
     namespace = "com.trimettransit.tracker"
     compileSdk = 37
@@ -52,7 +88,7 @@ android {
         applicationId = "com.trimettransit.tracker"
         minSdk = 31
         targetSdk = 37
-        versionCode = 7710
+        versionCode = releaseVersionCode
         versionName = "4.18.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -134,6 +170,16 @@ play {
     }
 }
 
+// Explicit opt-in guard: attempt to build for Play with no credentials would silently bake the
+// hardcoded fallback code (possibly stale vs. the live Play max). Fail fast instead.
+if (providers.gradleProperty("publishToPlay").isPresent && !playCredentialsConfigured) {
+    throw GradleException(
+        "-PpublishToPlay requested but no Play credentials are configured. " +
+            "Set ANDROID_PUBLISHER_CREDENTIALS or the playServiceAccountJsonPath property " +
+            "(in ~/.gradle/gradle.properties) so the AUTO versionCode bump can run."
+    )
+}
+
 androidComponents {
     onVariants(selector().all()) { variant ->
         val renameTask = tasks.register(
@@ -147,6 +193,25 @@ androidComponents {
         variant.artifacts.use(renameTask)
             .wiredWith { it.input }
             .toListenTo(SingleArtifact.APK)
+    }
+
+    onVariants(selector().withBuildType("release")) { variant ->
+        val fallbackCode = releaseVersionCode
+        val codesTask = if (playCredentialsConfigured) {
+            tasks.named("processReleaseVersionCodes")
+        } else {
+            null
+        }
+        tasks.register("printReleaseVersionCode", PrintVersionCodeTask::class.java) {
+            group = "Publishing"
+            description = "Prints the effective release versionCode (AUTO-resolved from Play, or the hardcoded fallback)."
+            hardcodedVersionCode.set(fallbackCode)
+            credentialsConfigured.set(playCredentialsConfigured)
+            if (codesTask != null) {
+                dependsOn(codesTask)
+                resolvedCodesFile.set(layout.buildDirectory.file("intermediates/gpp/release/available-version-codes.txt"))
+            }
+        }
     }
 }
 
