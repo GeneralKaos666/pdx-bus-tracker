@@ -23,11 +23,11 @@ fun computeTransitType(routes: List<Route>): String {
     for (route in routes) {
         hasShuttleBus = hasShuttleBus || route.isBus
         when {
-            route.isStreetcar -> return "S"
-            route.isBus && !route.desc.contains("Shuttle") -> return "B"
-            route.isMax || route.desc.contains("Vintage Trolley") -> return "M"
-            route.isWes -> return "W"
+            route.isStreetcar -> return TransitTypeLetter.STREETCAR
+            route.isBus && !route.desc.contains("Shuttle") -> return TransitTypeLetter.BUS
+            route.isMax || route.desc.contains("Vintage Trolley") -> return TransitTypeLetter.MAX
+            route.isWes -> return TransitTypeLetter.WES
         }
     }
-    return if (hasShuttleBus) "B" else "Z"
+    return if (hasShuttleBus) TransitTypeLetter.BUS else TransitTypeLetter.NONE
 }

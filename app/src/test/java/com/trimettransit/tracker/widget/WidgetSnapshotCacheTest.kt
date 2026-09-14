@@ -88,7 +88,7 @@ class WidgetSnapshotCacheTest {
         val detours = listOf(
             Detour(id = 7, desc = "Closure on 5th", routes = listOf(4, 17)),
             Detour(id = 7, desc = "Duplicate closure", routes = listOf(4)),
-            Detour(id = 9, desc = "MAX disruptions", routes = null),
+            Detour(id = 9, desc = "MAX disruptions", routes = emptyList()),
             Detour(id = 0, desc = "No id, kept once", routes = listOf(1))
         )
         val result = WidgetSnapshotCache.dedupeDetours(detours)

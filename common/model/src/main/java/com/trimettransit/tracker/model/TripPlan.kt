@@ -37,12 +37,12 @@ enum class TripLegMode {
         }
     }
 
-    /** The badge letter ("B"/"M"/"S") this mode renders as, for route-look coloring. */
+    /** The badge letter this mode renders as, consistent with [TransitTypeLetter]. */
     fun transitTypeLetter(): String = when (this) {
-        BUS -> "B"
-        LIGHT_RAIL, COMMUTER_RAIL, RAIL -> "M"
-        STREETCAR -> "S"
-        WALK -> "Z"
+        BUS -> TransitTypeLetter.BUS
+        LIGHT_RAIL, COMMUTER_RAIL, RAIL -> TransitTypeLetter.MAX
+        STREETCAR -> TransitTypeLetter.STREETCAR
+        WALK -> TransitTypeLetter.NONE
     }
 }
 

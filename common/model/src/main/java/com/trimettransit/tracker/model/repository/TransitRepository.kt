@@ -37,11 +37,11 @@ interface TransitRepository {
     suspend fun getStopById(locId: Int): Stop?
     suspend fun searchStops(): List<Stop>?
 
-    /** Plans a from→to trip via the TriMet Trip Planner WS. Null = offline or missing API key. */
+    /** Plans a from→to trip via the TriMet Trip Planner WS. Offline/missing key surfaces as [TripPlanResult.Error]. */
     suspend fun planTrip(
         from: TripPoint,
         to: TripPoint,
         time: TripRequestTime = TripRequestTime(),
         options: TripRequestOptions = TripRequestOptions()
-    ): TripPlanResult?
+    ): TripPlanResult
 }

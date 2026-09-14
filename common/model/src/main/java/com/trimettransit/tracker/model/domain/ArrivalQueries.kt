@@ -28,9 +28,9 @@ fun dedupeArrivals(arrivals: List<Arrival>): List<Arrival> {
 fun filterArrivalsByRoute(arrivals: List<Arrival>, routeId: Int): List<Arrival> =
     if (routeId > 0) arrivals.filter { it.routeId == routeId } else arrivals
 
-/** Alerts that apply to a specific [routeId]. */
+/** Alerts that apply to a specific [routeId]; detours with empty routes never match. */
 fun detoursForLine(detours: List<Detour>?, routeId: Int): List<Detour> =
-    detours.orEmpty().filter { it.routes?.contains(routeId) == true }
+    detours.orEmpty().filter { it.routes.contains(routeId) }
 
 /** TriMet arrival status tokens used by the API parse and the UI. */
 private const val STATUS_ESTIMATED = "estimated"

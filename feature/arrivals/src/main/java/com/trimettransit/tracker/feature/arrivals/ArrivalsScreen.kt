@@ -77,8 +77,8 @@ import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.util.SingleJobRunner
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -168,7 +168,9 @@ fun ArrivalsScreen(
         }
     }
 
-    var arrivalsJob by remember { mutableStateOf<Job?>(null) }
+    // Single-flight runner: cancels any in-flight arrivals fetch when a newer
+    // one is launched, so a slower superseded read can't overwrite newer data.
+    val arrivalsRunner = remember { SingleJobRunner(coroutineScope) }
 
     /**
      * Re-fetches arrivals. [showLoading] toggles the loading UI; silent refreshes
@@ -176,8 +178,7 @@ fun ArrivalsScreen(
      * the user is looking at never blinks into an error state.
      */
     fun refreshArrivals(showLoading: Boolean) {
-        arrivalsJob?.cancel()
-        arrivalsJob = coroutineScope.launch {
+        arrivalsRunner.launch {
             if (showLoading) isLoading = true
             val result = transitRepository.getArrivals(
                 locIds = listOf(stopId),

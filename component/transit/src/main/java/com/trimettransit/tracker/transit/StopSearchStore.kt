@@ -5,6 +5,7 @@ import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.io.FileNotFoundException
 
 /**
@@ -92,11 +93,23 @@ internal fun deserializeStops(json: String): List<Stop>? {
 internal object StopSearchStore {
     private const val FILE_NAME = "all_stops_cache.json"
 
-    /** Writes the dump; never overwrites a good cache with an empty one. */
+    /**
+     * Writes the dump to a temp file then atomically renames it into place, so a
+     * kill mid-write can never leave a truncated cache (read treats corrupt payloads
+     * as "no cache", but avoiding them entirely keeps the fallback fast).
+     */
     fun write(context: Context, stops: List<Stop>) {
         if (stops.isEmpty()) return
-        context.openFileOutput(FILE_NAME, Context.MODE_PRIVATE).use {
-            it.write(serializeStops(stops).toByteArray(Charsets.UTF_8))
+        val payload = serializeStops(stops).toByteArray(Charsets.UTF_8)
+        val target = File(context.filesDir, FILE_NAME)
+        val tmp = File(context.filesDir, "${FILE_NAME}.tmp")
+        try {
+            tmp.outputStream().use { it.write(payload) }
+            if (!tmp.renameTo(target)) {
+                target.outputStream().use { it.write(payload) }
+            }
+        } finally {
+            tmp.delete()
         }
     }
 

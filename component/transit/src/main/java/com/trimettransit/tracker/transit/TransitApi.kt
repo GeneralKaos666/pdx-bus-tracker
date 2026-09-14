@@ -189,12 +189,12 @@ object TransitApi {
         to: TripPoint,
         time: TripRequestTime,
         options: TripRequestOptions = TripRequestOptions()
-    ): TripPlanResult? = withContext(Dispatchers.IO) {
-        if (!ConnectionUtils.isOnline(context)) return@withContext null
+    ): TripPlanResult = withContext(Dispatchers.IO) {
+        if (!ConnectionUtils.isOnline(context)) return@withContext TripPlanResult.Error(TripPlannerError.NETWORK)
         val apiKey = ApiKeys.getTrimetApiKey()
         if (apiKey.isBlank()) {
             Timber.w("TriMet API key not configured")
-            return@withContext null
+            return@withContext TripPlanResult.Error(TripPlannerError.NETWORK)
         }
         val requested = time.timeMillis?.let { DateTime(it) } ?: DateTime.now()
         val date = DateTimeFormat.forPattern("M-d-yyyy").print(requested)
@@ -215,6 +215,7 @@ object TransitApi {
         try {
             val xml = parser.fetchXml(url)
             TripPlannerXmlParser.parseTripPlanResponse(xml)
+                ?: TripPlanResult.Error(TripPlannerError.UNKNOWN)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -225,6 +226,7 @@ object TransitApi {
                 try {
                     val xml = parser.fetchXml(url)
                     return@withContext TripPlannerXmlParser.parseTripPlanResponse(xml)
+                        ?: TripPlanResult.Error(TripPlannerError.UNKNOWN)
                 } catch (e2: CancellationException) {
                     throw e2
                 } catch (e2: Exception) {

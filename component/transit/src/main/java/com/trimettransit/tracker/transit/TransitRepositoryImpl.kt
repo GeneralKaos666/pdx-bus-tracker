@@ -70,7 +70,7 @@ class TransitRepositoryImpl(
         to: TripPoint,
         time: TripRequestTime,
         options: TripRequestOptions
-    ): TripPlanResult? = TransitApi.fetchTripPlan(context, from, to, time, options)
+    ): TripPlanResult = TransitApi.fetchTripPlan(context, from, to, time, options)
 }
 
 /**

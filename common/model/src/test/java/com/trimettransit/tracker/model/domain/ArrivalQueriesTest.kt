@@ -107,7 +107,7 @@ class ArrivalQueriesTest {
 
     @Test
     fun `detoursForLine hides elements with null or empty routes`() {
-        val nullRoutes = Detour(id = 3, desc = "Null", routes = null)
+        val nullRoutes = Detour(id = 3, desc = "Null", routes = emptyList())
         val emptyRoutes = Detour(id = 4, desc = "Empty", routes = emptyList())
         val match = Detour(id = 1, desc = "Match", routes = listOf(12))
         assertEquals(listOf(match), detoursForLine(listOf(nullRoutes, emptyRoutes, match), 12))

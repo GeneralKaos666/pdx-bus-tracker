@@ -18,10 +18,24 @@ data class Repos(
 
 /** Builds the standard app repositories, sharing one [DatabaseHelper]. */
 fun Context.repos(): Repos {
-    val db = DatabaseHelper(this)
+    val appContext = applicationContext
+    val db = DatabaseHelper(appContext)
     return Repos(
         favorites = FavoritesRepositoryImpl(db),
         recentStops = RecentStopsRepositoryImpl(db),
-        transit = TransitRepositoryImpl(this)
+        transit = sharedTransitRepository(appContext)
     )
 }
+
+/**
+ * One [TransitRepositoryImpl] per process, so the stop-search cache (15-min TTL
+ * on a several-MB dump) is genuinely shared between the Home list and the trip
+ * planner instead of being rebuilt per screen.
+ */
+private val transitRepoLock = Any()
+private var transitRepository: TransitRepository? = null
+
+private fun sharedTransitRepository(context: Context): TransitRepository =
+    transitRepository ?: synchronized(transitRepoLock) {
+        transitRepository ?: TransitRepositoryImpl(context).also { transitRepository = it }
+    }
