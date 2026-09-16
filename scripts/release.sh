@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-# Creates the GitHub release ONLY. Uploading to Google Play is done separately via fastlane
-# (`bundle fastlane && fastlane android deploy_phone`): that lane runs `clean :app:bundleRelease`
-# (baking the GPP AUTO-resolved versionCode into the AAB) and uploads to the alpha track with
-# `release_status: "completed"`. Confirm the baked code first with `./gradlew printReleaseVersionCode`;
-# release builds for Play intent must pass `-PpublishToPlay` while credentials are configured.
+# Creates the GitHub release, and optionally uploads to Google Play first.
+# Play upload (opt-in via --to-play) runs the `deploy_phone` fastlane lane: it runs
+# `clean :app:bundleRelease` (baking the GPP AUTO-resolved versionCode into the AAB) and
+# uploads to the alpha track with `release_status: "completed"`. Play runs BEFORE the
+# GitHub release, and any lane failure aborts the whole script (set -euo pipefail), so a
+# failed Play upload never leaves behind a GitHub release without a Play rollout.
+# Confirm the baked code first with `./gradlew printReleaseVersionCode -PpublishToPlay`
+# while credentials are configured.
 set -euo pipefail
 
 DRY_RUN=false
+TO_PLAY=false
 for arg in "$@"; do
 	case "$arg" in
 	--dry-run | -n) DRY_RUN=true ;;
+	--to-play) TO_PLAY=true ;;
 	*)
 		echo "Unknown argument: $arg" >&2
 		exit 2
@@ -75,13 +80,35 @@ fi
 echo "Version:  $VERSION"
 echo "Tag:      $TAG"
 echo "APK:      $APK"
+echo "To Play:  $TO_PLAY"
 echo "--- release notes ---"
 echo "$NOTES"
 echo "---------------------"
 
 if [[ "$DRY_RUN" == true ]]; then
+	if [[ "$TO_PLAY" == true ]]; then
+		echo "[dry-run] Would run: bundle exec fastlane android deploy_phone"
+	fi
 	echo "[dry-run] Would run: gh release create \"$TAG\" \"$APK\" --title \"$TAG\" --notes-file <extracted notes>"
 	exit 0
+fi
+
+# Play upload runs BEFORE the GitHub release: any lane failure aborts this script
+# (set -euo pipefail) before any tag or GitHub release is created.
+if [[ "$TO_PLAY" == true ]]; then
+	if [[ -z "${ANDROID_PUBLISHER_CREDENTIALS:-}" ]] && ! grep -q "^playServiceAccountJsonPath=" ~/.gradle/gradle.properties 2>/dev/null; then
+		echo "Error: --to-play requested but no Play credentials are configured." >&2
+		echo "Set ANDROID_PUBLISHER_CREDENTIALS or the playServiceAccountJsonPath property" >&2
+		echo "(in ~/.gradle/gradle.properties) so the lane can authenticate." >&2
+		exit 1
+	fi
+	if ! command -v bundle >/dev/null 2>&1; then
+		echo "Error: --to-play requested but 'bundle' is not on PATH (fastlane unavailable)." >&2
+		exit 1
+	fi
+	echo "Uploading to Google Play (alpha) via fastlane..."
+	bundle exec fastlane android deploy_phone
+	echo "Play upload finished."
 fi
 
 NOTES_FILE="$(mktemp)"
