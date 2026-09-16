@@ -107,7 +107,8 @@ internal fun MainBottomBar(
     onBackClick: () -> Unit = {},
     onContextClick: () -> Unit = {},
     contextLabelRes: Int? = null,
-    contextIcon: ImageVector? = null
+    contextIcon: ImageVector? = null,
+    showSettingsAction: Boolean = true
 ) {
     val windowInfo = LocalWindowInfo.current
     val density = LocalDensity.current
@@ -180,15 +181,17 @@ internal fun MainBottomBar(
                     }
                 }
             }
-            PillActionButton(
-                onClick = onSettingsClick,
-                icon = Icons.Default.Settings,
-                contentDescription = stringResource(R.string.settings),
-                shape = appCardShape(),
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                size = itemHeight
-            )
+            if (showSettingsAction) {
+                PillActionButton(
+                    onClick = onSettingsClick,
+                    icon = Icons.Default.Settings,
+                    contentDescription = stringResource(R.string.settings),
+                    shape = appCardShape(),
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    size = itemHeight
+                )
+            }
         }
     }
 }
@@ -367,7 +370,8 @@ private fun MainTabRow(
 internal fun MainNavigationRail(
     topPage: Int,
     onNavigate: (Int) -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    settingsSelected: Boolean = false
 ) {
     NavigationRail(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -386,7 +390,7 @@ internal fun MainNavigationRail(
         }
         Spacer(modifier = Modifier.weight(1f))
         NavigationRailItem(
-            selected = false,
+            selected = settingsSelected,
             onClick = onSettingsClick,
             icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
             label = { Text(stringResource(R.string.settings)) },

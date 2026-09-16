@@ -35,7 +35,6 @@ import com.trimettransit.tracker.ui.appearance.rowContentPadding
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
-import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import kotlinx.coroutines.launch
 
 @Composable
@@ -51,11 +50,13 @@ fun StopListItem(
     val zoom = remember { Animatable(1f) }
     Card(
         onClick = {
+            // Keep a gentle press feedback but drop the separate post-press pop: the
+            // tap navigates immediately, so animating 1->1.08 then back 1.08->1 mid-nav
+            // reads as a jitter. [pressScale] (0.96) below already gives tactile feedback.
             if (zoomOnTap && !zoom.isRunning) {
                 scope.launch {
                     zoom.animateTo(1.08f, m3SpatialDefault())
                     onClick()
-                    zoom.animateTo(1f, m3SpatialFast())
                 }
             } else {
                 onClick()

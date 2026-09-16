@@ -51,6 +51,29 @@ class DateUtilsTest {
         assertEquals(0L, minutesUntil(now - 60_000L, now).coerceAtLeast(0L))
     }
 
+    // nextMinuteBoundaryDelayMillis(nowMillis) -> ms until the next wall-clock minute boundary
+
+    @Test
+    fun `nextMinuteBoundaryDelayMillis waits a full minute on the boundary`() {
+        // 60_000ms is exactly a boundary (unlike 100_000ms, which sits 40s into a minute),
+        // so the next boundary is a full minute away rather than a zero delay.
+        assertEquals(60_000L, nextMinuteBoundaryDelayMillis(60_000L))
+    }
+
+    @Test
+    fun `nextMinuteBoundaryDelayMillis counts the seconds remaining in the minute`() {
+        // 100_000ms = 1min 40s into the hour; 20s remain to the next minute boundary.
+        assertEquals(20_000L, nextMinuteBoundaryDelayMillis(100_000L))
+        assertEquals(1_000L, nextMinuteBoundaryDelayMillis(119_000L))
+    }
+
+    @Test
+    fun `nextMinuteBoundaryDelayMillis rolls back up at the top of the minute`() {
+        // 120_000ms is exactly a boundary, so the next one is a full minute away.
+        assertEquals(60_000L, nextMinuteBoundaryDelayMillis(120_000L))
+        assertEquals(59_000L, nextMinuteBoundaryDelayMillis(121_000L))
+    }
+
     // clockTime
 
     @Test

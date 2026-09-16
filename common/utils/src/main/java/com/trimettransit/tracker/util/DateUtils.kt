@@ -33,3 +33,13 @@ fun formatDateTime(dateTime: DateTime, context: Context): String {
 fun minutesUntil(epochMillis: Long, nowMillis: Long = System.currentTimeMillis()): Long {
     return (epochMillis - nowMillis) / 60000
 }
+
+/**
+ * Milliseconds until the start of the next wall-clock-minute boundary (second 0 of the
+ * upcoming minute) — a full minute when already exactly on a boundary, so a tick loop
+ * doing `delay(nextMinuteBoundaryDelayMillis())` never spins on a zero delay. Used to
+ * re-align countdown ticks so an arrivals flip rolls exactly when "8 min" becomes
+ * "7 min" instead of up to ~30s late on a fixed-interval timer.
+ */
+fun nextMinuteBoundaryDelayMillis(nowMillis: Long = System.currentTimeMillis()): Long =
+    60_000L - nowMillis % 60_000L

@@ -9,6 +9,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.withFrameNanos
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -21,6 +26,7 @@ import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.domain.displayTimeMillis
 import com.trimettransit.tracker.util.minutesUntil
+import com.trimettransit.tracker.util.systemReduceMotion
 import com.trimettransit.tracker.ui.components.DotCircle
 import com.trimettransit.tracker.ui.components.badgeBitmap
 import com.trimettransit.tracker.ui.components.circleMarker
@@ -89,6 +95,11 @@ internal fun StopMapCard(
         transitBadgeLetters().associateWith { transitOnColor(it, scheme, overrides) }
     }
     val context = LocalContext.current
+    // Capture the glide scope here (the map's onUpdate callback can't remember one), and
+    // read the reduce-motion preference once so glideTracked knows whether to degrade to a
+    // plain teleport. Both are configuration-aware, matching the neighboring label lookups.
+    val glideScope = rememberCoroutineScope()
+    val reduceMotion = systemReduceMotion(context)
     val mapPreset = PreferenceManager.getDefaultSharedPreferences(context)
         .getString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) ?: MapStyles.DEFAULT
     val mapStyleUrl = MapStyles.styleUrlFor(mapPreset, isDark)
@@ -193,7 +204,21 @@ internal fun StopMapCard(
             onUpdate = { view, map ->
                 mapState.positions = blockPositions
                 mapState.arrivals = arrivals
-                mapState.applyPositions()
+                mapState.trackedVehicleId = trackedVehicleId
+                val followTarget = if (map != null && view.width > 0 && view.height > 0) {
+                    trackedTarget(blockPositions, trackedVehicleId)
+                } else {
+                    null
+                }
+                if (followTarget != null) {
+                    // Ease the tracked bus's marker to its fresh fix; every other bus still
+                    // teleports (they are not being followed). glideTracked degrades to a plain
+                    // teleport whenever the glide is unsafe or unwanted (reduce motion, first
+                    // fix, unchanged target, source not ready), exactly matching old behavior.
+                    mapState.glideTracked(followTarget, reduceMotion, glideScope)
+                } else {
+                    mapState.applyPositions()
+                }
                 // Follow the tracked bus instead of framing the stop together with it,
                 // so the camera stays centered on the vehicle and its "N min" label never
                 // clips at the map's top edge. The stop marker still renders but simply
@@ -214,6 +239,15 @@ private class MapState {
     var positions: List<BlockPosition> = emptyList()
     var arrivals: List<Arrival> = emptyList()
 
+    /** The bus whose marker currently eases toward its live fix (0 = none / teleport). */
+    var trackedVehicleId: Int = 0
+
+    /** The last tracked live fix, used as the glide origin so the marker eases from it. */
+    var trackedOrigin: LatLng? = null
+
+    /** In-flight eased-tracking job (cancelled on every new position push). */
+    var glideJob: Job? = null
+
     /** Resolved "Dropoff Only" label, set when the map is configured. */
     var dropoffLabel: String = ""
 
@@ -223,12 +257,60 @@ private class MapState {
 
     /** Pushes the latest bus positions into the GeoJsonSource (no-op until style is ready). */
     fun applyPositions() {
+        writeFeatures(null)
+    }
+
+    /**
+     * Eases the tracked bus's marker from its last live fix to a fresh one instead of
+     * teleporting, so the vehicle you're following visibly moves instead of snapping.
+     * Every other bus still teleports (they are not being followed). Degrades to a plain
+     * teleport — exactly today's behavior — whenever the animation is unsafe or unwanted:
+     * reduce-motion preference, missing scope, first fix (no origin to ease from), an
+     * unchanged target, or a source that still isn't ready.
+     */
+    fun glideTracked(to: LatLng, reduceMotion: Boolean, scope: CoroutineScope) {
+        val source = busSource
+        val origin = trackedOrigin
+        val sourceReady = busSource != null
+        glideJob?.cancel()
+        if (reduceMotion || source == null || !sourceReady || origin == null || origin == to) {
+            trackedOrigin = to
+            writeFeatures(null)
+            return
+        }
+        glideJob = scope.launch {
+            val start = withFrameNanos { it }
+            val duration = 600_000_000L
+            while (true) {
+                val now = withFrameNanos { it }
+                val t = ((now - start).toFloat() / duration).coerceIn(0f, 1f)
+                val eased = easeOutCubic(t)
+                val lat = origin.latitude + (to.latitude - origin.latitude) * eased
+                val lng = origin.longitude + (to.longitude - origin.longitude) * eased
+                writeFeatures(LatLng(lat, lng))
+                if (t >= 1f) break
+            }
+            trackedOrigin = to
+            writeFeatures(null)
+        }
+    }
+
+    /**
+     * Builds the FeatureCollection from the current [positions], substituting [trackedAt]
+     * as the tracked vehicle's coordinates so a glide can repaint just that one marker.
+     */
+    private fun writeFeatures(trackedAt: LatLng?) {
         val source = busSource ?: return
         val features = positions
             .filter { it.lat != 0.0 || it.lng != 0.0 }
             .map { bp ->
+            val at = if (bp.vehicleID == trackedVehicleId && trackedAt != null) {
+                trackedAt
+            } else {
+                LatLng(bp.lat, bp.lng)
+            }
             val letter = transitBadgeLetter(bp.routeNumber).ifBlank { "B" }
-            val feature = Feature.fromGeometry(Point.fromLngLat(bp.lng, bp.lat))
+            val feature = Feature.fromGeometry(Point.fromLngLat(at.longitude, at.latitude))
             feature.addStringProperty("icon", "badge-$letter")
             feature.addNumberProperty("bearing", bp.bearing)
             // Time-left label shown above the icon: the tracked arrival for this vehicle,
@@ -249,6 +331,12 @@ private class MapState {
         }
         source.setGeoJson(FeatureCollection.fromFeatures(features))
     }
+}
+
+/** Ease-out-cubic 0..1 curve for the tracked-marker glide (fast start, soft landing). */
+private fun easeOutCubic(t: Float): Float {
+    val u = 1f - t
+    return 1f - u * u * u
 }
 
 /** The bus to follow: the tracked vehicle, else the first live position on that route. */

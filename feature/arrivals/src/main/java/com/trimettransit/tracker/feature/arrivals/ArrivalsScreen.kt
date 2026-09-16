@@ -78,6 +78,7 @@ import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import com.trimettransit.tracker.util.SingleJobRunner
+import com.trimettransit.tracker.util.nextMinuteBoundaryDelayMillis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -243,9 +244,12 @@ fun ArrivalsScreen(
 
     // Countdown tick: only advance while the app is resumed, so a backgrounded
     // screen doesn't keep waking the coroutine every 30s for invisible rows.
+    // The delay re-aligns to the next wall-clock minute boundary so a row's
+    // "8 min -> 7 min" flip rolls exactly on the minute, not up to ~30s late
+    // on a fixed 30s interval.
     LaunchedEffect(Unit) {
         while (true) {
-            delay(30_000)
+            delay(nextMinuteBoundaryDelayMillis())
             if (isAppResumed) countdownTick++
         }
     }

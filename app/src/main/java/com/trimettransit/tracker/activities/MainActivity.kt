@@ -534,7 +534,8 @@ private fun MainAppContent(
                     onNavigate = ::navigateToTopPage,
                     onSettingsClick = {
                         navController.navigate(SettingsDestination) { launchSingleTop = true }
-                    }
+                    },
+                    settingsSelected = isSettings
                 )
             }
             Scaffold(
@@ -867,6 +868,7 @@ private fun MainAppContent(
                 navController.navigate(SettingsDestination) { launchSingleTop = true }
             },
             showBack = !isTopLevel,
+            showSettingsAction = !isSettings,
             onBackClick = { navController.popBackStack() },
             onContextClick = { onScrollToTop?.invoke() },
             contextLabelRes = contextLabelRes,
