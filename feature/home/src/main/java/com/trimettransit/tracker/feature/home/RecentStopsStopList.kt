@@ -72,7 +72,6 @@ private fun RecentStopsList(
                     stop = stop,
                     onClick = { onNavigateToArrivals(stop) },
                     modifier = Modifier.animateItem(),
-                    zoomOnTap = true,
                     gridMode = dense
                 )
             }

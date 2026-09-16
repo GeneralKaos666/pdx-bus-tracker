@@ -10,6 +10,8 @@ import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.model.repository.TransitRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Adapter exposing the singleton [TransitApi] behind the [TransitRepository]
@@ -20,6 +22,8 @@ class TransitRepositoryImpl(
 ) : TransitRepository {
 
     private val searchCache = SearchStopCache()
+
+    override fun isConfigured(): Boolean = ApiKeys.getTrimetApiKey().isNotBlank()
 
     override suspend fun getRoutes(): List<Route>? = TransitApi.fetchRoutes(context)
 
@@ -49,20 +53,20 @@ class TransitRepositoryImpl(
 
     override suspend fun getStopById(locId: Int): Stop? = TransitApi.fetchStopById(context, locId)
 
-    override suspend fun searchStops(): List<Stop>? {
-        searchCache.get()?.let { return it }
+    override suspend fun searchStops(): List<Stop>? = withContext(Dispatchers.IO) {
+        searchCache.get()?.let { return@withContext it }
         val fresh = TransitApi.fetchSearchStops(context)
         if (fresh != null && fresh.isNotEmpty()) {
             StopSearchStore.write(context, fresh)
             searchCache.put(fresh)
-            return fresh
+            return@withContext fresh
         }
         val fallback = StopSearchStore.read(context)
         if (fallback != null) {
             searchCache.putFallback(fallback)
-            return fallback
+            return@withContext fallback
         }
-        return null
+        null
     }
 
     override suspend fun planTrip(

@@ -529,6 +529,8 @@ private fun MainAppContent(
     Box(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxSize()) {
             if (expandedPane) {
+                // Rail marks Settings selected; the bottom pill hides it instead — no room
+                // for a disabled affordance there. Both use launchSingleTop, no dupes.
                 MainNavigationRail(
                     topPage = topPagerState.currentPage,
                     onNavigate = ::navigateToTopPage,

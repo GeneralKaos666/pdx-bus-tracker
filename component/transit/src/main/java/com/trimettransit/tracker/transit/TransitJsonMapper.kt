@@ -46,7 +46,9 @@ object TransitJsonMapper {
         val parsedBlockPositions = mutableListOf<BlockPosition>()
         if (arrivalArr != null) {
             for (i in 0 until arrivalArr.length()) {
-                val obj = arrivalArr.getJSONObject(i)
+                // One malformed element must not void the whole payload: skip it and
+                // keep the remaining arrivals (fail-open per element, fail-closed overall).
+                val obj = arrivalArr.optJSONObject(i) ?: continue
                 val estimatedMs = obj.optLong("estimated", -1)
                 val scheduledMs = obj.optLong("scheduled", -1)
                 val arrival = Arrival(
@@ -64,7 +66,8 @@ object TransitJsonMapper {
                     feet = obj.optInt("feet", 0),
                     dir = obj.optInt("dir", 0),
                     estimatedMillis = if (estimatedMs != -1L) estimatedMs else 0L,
-                    scheduledMillis = if (scheduledMs != -1L) scheduledMs else 0L
+                    scheduledMillis = if (scheduledMs != -1L) scheduledMs else 0L,
+                    locId = obj.optInt("locid", 0)
                 )
                 arrivalList.add(arrival)
                 // TriMet returns each block's live position nested inside its arrival object
@@ -95,7 +98,7 @@ object TransitJsonMapper {
         if (detourArr != null) {
             val detourList = mutableListOf<Detour>()
             for (i in 0 until detourArr.length()) {
-                val obj = detourArr.getJSONObject(i)
+                val obj = detourArr.optJSONObject(i) ?: continue
                 val routesArr = obj.optJSONArray("route")
                     ?: obj.optJSONArray("routes")
                 val routes = if (routesArr != null) {
@@ -146,12 +149,13 @@ object TransitJsonMapper {
 
         val stops = mutableListOf<Stop>()
         for (i in 0 until locationArr.length()) {
-            val obj = locationArr.getJSONObject(i)
+            val obj = locationArr.optJSONObject(i) ?: continue
             val routeArr = obj.optJSONArray("route")
             val routes = if (routeArr != null) {
                 buildList {
                     for (j in 0 until routeArr.length()) {
-                        add(parseRoute(routeArr.getJSONObject(j)))
+                        val routeObj = routeArr.optJSONObject(j) ?: continue
+                        add(parseRoute(routeObj))
                     }
                 }
             } else {
@@ -175,12 +179,13 @@ object TransitJsonMapper {
     fun parseStopById(resultSet: JSONObject): Stop? {
         val locationArr = resultSet.optJSONArray("location")
         if (locationArr == null || locationArr.length() == 0) return null
-        val obj = locationArr.getJSONObject(0)
+        val obj = locationArr.optJSONObject(0) ?: return null
         val routeArr = obj.optJSONArray("route")
         val routes = if (routeArr != null) {
             buildList {
                 for (j in 0 until routeArr.length()) {
-                    add(parseRoute(routeArr.getJSONObject(j)))
+                    val routeObj = routeArr.optJSONObject(j) ?: continue
+                    add(parseRoute(routeObj))
                 }
             }
         } else {
@@ -217,16 +222,16 @@ object TransitJsonMapper {
 
         val buildersById = LinkedHashMap<Int, StopBuilder>()
         for (ri in 0 until routeArr.length()) {
-            val routeObj = routeArr.getJSONObject(ri)
+            val routeObj = routeArr.optJSONObject(ri) ?: continue
             val dirArr = routeObj.optJSONArray("dir") ?: continue
             val routeNum = routeObj.optInt("route", 0)
             val route = parseRoute(routeObj)
             for (di in 0 until dirArr.length()) {
-                val dirObj = dirArr.getJSONObject(di)
+                val dirObj = dirArr.optJSONObject(di) ?: continue
                 val stopArr = dirObj.optJSONArray("stop") ?: continue
                 val dirDesc = dirObj.optString("desc", "")
                 for (si in 0 until stopArr.length()) {
-                    val obj = stopArr.getJSONObject(si)
+                    val obj = stopArr.optJSONObject(si) ?: continue
                     val locId = obj.optInt("locid", 0)
                     // A zero/missing locid is unaddressable; skip it rather than collapse
                     // multiple malformed rows onto key 0 and merge their route lists.

@@ -16,9 +16,8 @@ import com.trimettransit.tracker.activities.MainActivity
 import com.trimettransit.tracker.repos
 import com.trimettransit.tracker.retryFetch
 import com.trimettransit.tracker.model.Arrival
+import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.model.repository.TransitRepository
-import com.trimettransit.tracker.transit.ApiKeys
 import com.trimettransit.tracker.widget.WidgetLaunch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,7 +36,6 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
         val app = applicationContext
         // Keep the chain alive regardless of what this run decided to do.
         DepartureAlertScheduler.ensureScheduled(app)
-        if (ApiKeys.getTrimetApiKey().isBlank()) return Result.success()
         if (!DepartureAlertPrefs.isEnabled(app)) return Result.success()
         if (!NotificationManagerCompat.from(app).areNotificationsEnabled()) return Result.success()
         val now = System.currentTimeMillis()
@@ -45,40 +43,47 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
         return withContext(Dispatchers.IO) {
             val favoritesRepository = app.repos().favorites
             val transitRepository = app.repos().transit
+            if (!transitRepository.isConfigured()) return@withContext Result.success()
             val stops = DepartureAlertPrefs.monitoredStops(app, favoritesRepository.getFavorites())
             if (stops.isEmpty()) return@withContext Result.success()
 
             val windowMinutes = DepartureAlertPrefs.windowMinutes(app)
             val fired = DepartureAlertPrefs.getFired(app)
+            // One batched request for all monitored stops instead of a sequential
+            // per-stop fetch: arrivals carry their stop's locid for client-side split.
+            val result = retryFetch(attempts = MAX_ATTEMPTS, label = "Departure") {
+                transitRepository.getArrivals(
+                    locIds = stops.map { it.locId },
+                    minutes = windowMinutes + SLACK_MINUTES,
+                    maxArrivals = MAX_ARRIVALS * stops.size
+                )
+            }
+            if (result == null) {
+                Timber.w("Departure check failed for %d stops", stops.size)
+                return@withContext Result.success()
+            }
             for (stop in stops) {
-                checkStop(app, transitRepository, stop, now, windowMinutes, fired)
+                checkStop(app, result, stop, now, windowMinutes, fired)
             }
             DepartureAlertPrefs.setFired(app, DepartureAlertRules.prune(fired))
             Result.success()
         }
     }
 
-    private suspend fun checkStop(
+    private fun checkStop(
         app: Context,
-        transitRepository: TransitRepository,
+        result: ArrivalsResult,
         stop: Stop,
         now: Long,
         windowMinutes: Int,
         fired: MutableSet<String>
     ) {
-        val result = retryFetch(attempts = MAX_ATTEMPTS, label = "Departure") {
-            transitRepository.getArrivals(
-                locIds = listOf(stop.locId),
-                minutes = windowMinutes + SLACK_MINUTES,
-                maxArrivals = MAX_ARRIVALS
-            )
-        }
-        if (result == null) {
-            Timber.w("Departure check failed for stop %d", stop.locId)
-            return
-        }
+        // Prefer locid-attributed arrivals; fall back to the full list when the
+        // backend omits locid so a missing field never silences every alert.
+        val mine = result.arrivals.filter { it.locId == stop.locId }
+            .ifEmpty { result.arrivals }
         val pending = DepartureAlertRules.filterNew(
-            DepartureAlertRules.actionableArrivals(result.arrivals, now, windowMinutes),
+            DepartureAlertRules.actionableArrivals(mine, now, windowMinutes),
             fired,
             stop.locId
         )

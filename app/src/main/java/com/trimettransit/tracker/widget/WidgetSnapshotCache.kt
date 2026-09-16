@@ -14,7 +14,8 @@ import timber.log.Timber
  * SharedPreferences snapshot backing the "Next arrivals" home-screen widget. The widget
  * provider runs on the launcher's render thread and must return fast, so this cache hands
  * it pre-fetched arrival data without network calls or SQLite. Grouping stays per stop: each row
- * carries its own arrivals, refreshed one request per stop by [WidgetRefreshWorker].
+ * carries its own arrivals, refreshed by one batched [WidgetRefreshWorker] request and split
+ * per stop on arrival locid.
  */
 object WidgetSnapshotCache {
     private const val PREF_NAME = "widget_cache"

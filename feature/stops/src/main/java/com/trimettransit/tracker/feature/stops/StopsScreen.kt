@@ -275,8 +275,7 @@ private fun StopsSubCard(
                     safeStops.orEmpty().forEach { stop ->
                         StopListItem(
                             stop = stop,
-                            onClick = { onStopSelected(stop) },
-                            zoomOnTap = true
+                            onClick = { onStopSelected(stop) }
                         )
                     }
                 }

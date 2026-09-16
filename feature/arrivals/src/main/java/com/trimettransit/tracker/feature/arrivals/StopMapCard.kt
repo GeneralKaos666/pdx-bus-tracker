@@ -8,6 +8,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.withFrameNanos
@@ -41,6 +42,7 @@ import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
+import com.trimettransit.tracker.ui.theme.AppMotion
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
@@ -96,10 +98,12 @@ internal fun StopMapCard(
     }
     val context = LocalContext.current
     // Capture the glide scope here (the map's onUpdate callback can't remember one), and
-    // read the reduce-motion preference once so glideTracked knows whether to degrade to a
+    // read the reduce-motion preference so glideTracked knows whether to degrade to a
     // plain teleport. Both are configuration-aware, matching the neighboring label lookups.
+    // Bridge the app-wide value (set at app root) with a live system read so a mid-session
+    // "Remove animations" toggle takes effect on the next recomposition.
     val glideScope = rememberCoroutineScope()
-    val reduceMotion = systemReduceMotion(context)
+    val reduceMotion = AppMotion.reduceMotion || systemReduceMotion(context)
     val mapPreset = PreferenceManager.getDefaultSharedPreferences(context)
         .getString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) ?: MapStyles.DEFAULT
     val mapStyleUrl = MapStyles.styleUrlFor(mapPreset, isDark)
@@ -175,6 +179,9 @@ internal fun StopMapCard(
         )
     }
 
+    DisposableEffect(mapState) {
+        onDispose { mapState.glideJob?.cancel() }
+    }
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -205,28 +212,28 @@ internal fun StopMapCard(
                 mapState.positions = blockPositions
                 mapState.arrivals = arrivals
                 mapState.trackedVehicleId = trackedVehicleId
-                val followTarget = if (map != null && view.width > 0 && view.height > 0) {
-                    trackedTarget(blockPositions, trackedVehicleId)
-                } else {
-                    null
-                }
-                if (followTarget != null) {
-                    // Ease the tracked bus's marker to its fresh fix; every other bus still
-                    // teleports (they are not being followed). glideTracked degrades to a plain
-                    // teleport whenever the glide is unsafe or unwanted (reduce motion, first
-                    // fix, unchanged target, source not ready), exactly matching old behavior.
-                    mapState.glideTracked(followTarget, reduceMotion, glideScope)
-                } else {
-                    mapState.applyPositions()
-                }
-                // Follow the tracked bus instead of framing the stop together with it,
-                // so the camera stays centered on the vehicle and its "N min" label never
-                // clips at the map's top edge. The stop marker still renders but simply
-                // scrolls out of frame once a bus position is available.
                 if (map != null && view.width > 0 && view.height > 0) {
-                    trackedTarget(blockPositions, trackedVehicleId)?.let { target ->
+                    val glideTarget = glideTarget(blockPositions, trackedVehicleId)
+                    if (glideTarget != null) {
+                        // Ease the tracked bus's marker to its fresh fix; every other bus still
+                        // teleports (they are not being followed). glideTracked degrades to a plain
+                        // teleport whenever the glide is unsafe or unwanted (reduce motion, first
+                        // fix, unchanged target, source not ready), exactly matching old behavior.
+                        mapState.glideTracked(trackedVehicleId, glideTarget, reduceMotion, glideScope)
+                    } else {
+                        mapState.clearTracking()
+                        mapState.applyPositions()
+                    }
+                    // Follow the tracked bus instead of framing the stop together with it,
+                    // so the camera stays centered on the vehicle and its "N min" label never
+                    // clips at the map's top edge. The stop marker still renders but simply
+                    // scrolls out of frame once a bus position is available.
+                    cameraTarget(blockPositions, trackedVehicleId)?.let { target ->
                         keepBusCentered(map, target, view.width, view.height, density)
                     }
+                } else {
+                    mapState.clearTracking()
+                    mapState.applyPositions()
                 }
             }
         )
@@ -241,6 +248,9 @@ private class MapState {
 
     /** The bus whose marker currently eases toward its live fix (0 = none / teleport). */
     var trackedVehicleId: Int = 0
+
+    /** The vehicle [trackedOrigin] belongs to; a re-track must not glide from the old bus. */
+    var lastTrackedId: Int = 0
 
     /** The last tracked live fix, used as the glide origin so the marker eases from it. */
     var trackedOrigin: LatLng? = null
@@ -261,6 +271,17 @@ private class MapState {
     }
 
     /**
+     * Forgets the glide origin (and cancels any in-flight glide) when nothing trackable is
+     * on screen, so the next appearance teleports instead of easing from a stale fix.
+     */
+    fun clearTracking() {
+        glideJob?.cancel()
+        glideJob = null
+        trackedOrigin = null
+        lastTrackedId = 0
+    }
+
+    /**
      * Eases the tracked bus's marker from its last live fix to a fresh one instead of
      * teleporting, so the vehicle you're following visibly moves instead of snapping.
      * Every other bus still teleports (they are not being followed). Degrades to a plain
@@ -268,12 +289,21 @@ private class MapState {
      * reduce-motion preference, missing scope, first fix (no origin to ease from), an
      * unchanged target, or a source that still isn't ready.
      */
-    fun glideTracked(to: LatLng, reduceMotion: Boolean, scope: CoroutineScope) {
+    fun glideTracked(vehicleId: Int, to: LatLng, reduceMotion: Boolean, scope: CoroutineScope) {
+        // A re-track must teleport: easing from the previous bus's fix would streak across
+        // the map on the first frame batch after switching rows.
+        if (vehicleId != lastTrackedId) {
+            lastTrackedId = vehicleId
+            trackedOrigin = to
+            glideJob?.cancel()
+            glideJob = null
+            writeFeatures(null)
+            return
+        }
         val source = busSource
         val origin = trackedOrigin
-        val sourceReady = busSource != null
         glideJob?.cancel()
-        if (reduceMotion || source == null || !sourceReady || origin == null || origin == to) {
+        if (reduceMotion || source == null || origin == null || origin == to) {
             trackedOrigin = to
             writeFeatures(null)
             return
@@ -339,8 +369,8 @@ private fun easeOutCubic(t: Float): Float {
     return 1f - u * u * u
 }
 
-/** The bus to follow: the tracked vehicle, else the first live position on that route. */
-private fun trackedTarget(
+/** Camera target: the tracked vehicle when present, else the first live position. */
+private fun cameraTarget(
     blockPositions: List<BlockPosition>,
     trackedVehicleId: Int
 ): LatLng? {
@@ -349,6 +379,21 @@ private fun trackedTarget(
     return valid.firstOrNull { it.vehicleID == trackedVehicleId }
         ?.let { LatLng(it.lat, it.lng) }
         ?: LatLng(valid.first().lat, valid.first().lng)
+}
+
+/**
+ * Marker-glide target: non-null only when the requested vehicle is actually on screen.
+ * Unlike [cameraTarget] there is no first-bus fallback — gliding toward the wrong bus's
+ * fix would repaint invisible frames and pollute the glide origin.
+ */
+private fun glideTarget(
+    blockPositions: List<BlockPosition>,
+    trackedVehicleId: Int
+): LatLng? {
+    if (trackedVehicleId == 0) return null
+    return blockPositions.firstOrNull {
+        it.vehicleID == trackedVehicleId && (it.lat != 0.0 || it.lng != 0.0)
+    }?.let { LatLng(it.lat, it.lng) }
 }
 
 /**

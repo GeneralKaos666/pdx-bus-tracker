@@ -8,10 +8,6 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.repos
 import com.trimettransit.tracker.retryFetch
-import com.trimettransit.tracker.transit.ApiKeys
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 
@@ -19,11 +15,11 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
     CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        if (ApiKeys.getTrimetApiKey().isBlank()) return Result.success()
         val app = applicationContext
         return withContext(Dispatchers.IO) {
             val favoritesRepository = app.repos().favorites
             val transitRepository = app.repos().transit
+            if (!transitRepository.isConfigured()) return@withContext Result.success()
             val favorites = favoritesRepository.getFavorites().take(MAX_STOPS)
             if (favorites.isEmpty()) {
                 WidgetSnapshotCache.update(app, emptyList(), emptyList())
@@ -31,13 +27,40 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
                 return@withContext Result.success()
             }
 
-            val rows = coroutineScope {
-                favorites.map { stop -> async { fetchRow(transitRepository, stop) } }.awaitAll()
+            // One batched request for all stops instead of N per-stop requests: the
+            // arrivals endpoint accepts comma-joined locIDs and each arrival carries
+            // its stop's locid, so rows split client-side below.
+            val ids = favorites.map { it.locId }
+            val result = retryFetch(attempts = MAX_ATTEMPTS, label = "Widget") {
+                transitRepository.getArrivals(
+                    locIds = ids,
+                    minutes = WINDOW_MINUTES,
+                    maxArrivals = ARRIVALS_PER_STOP * ids.size
+                )
             }
+            val arrivals = result?.arrivals.orEmpty()
+            val detours = result?.detours.orEmpty()
+            val rows = favorites.map { stop -> buildRow(stop, arrivals, detours) }
             WidgetSnapshotCache.update(app, favorites, rows)
             NextArrivalsWidget().updateAll(app)
             Result.success()
         }
+    }
+
+    private fun buildRow(
+        stop: Stop,
+        arrivals: List<com.trimettransit.tracker.model.Arrival>,
+        detours: List<com.trimettransit.tracker.model.Detour>
+    ): WidgetSnapshotCache.Row {
+        // Prefer locid-attributed arrivals; fall back to the full list when the
+        // backend omits locid (single-stop responses, legacy shapes) so the widget
+        // never renders an empty row it could have filled.
+        val mine = arrivals.filter { it.locId == stop.locId }.ifEmpty { arrivals }
+        return WidgetSnapshotCache.Row(
+            stop = stop,
+            arrivals = WidgetSnapshotCache.cleanArrivals(mine),
+            detours = WidgetSnapshotCache.dedupeDetours(detours)
+        )
     }
 
     private suspend fun fetchRow(
@@ -51,11 +74,7 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
                 maxArrivals = ARRIVALS_PER_STOP
             )
         }
-        return WidgetSnapshotCache.Row(
-            stop = stop,
-            arrivals = WidgetSnapshotCache.cleanArrivals(result?.arrivals.orEmpty()),
-            detours = WidgetSnapshotCache.dedupeDetours(result?.detours.orEmpty())
-        )
+        return buildRow(stop, result?.arrivals.orEmpty(), result?.detours.orEmpty())
     }
 
     companion object {

@@ -17,5 +17,7 @@ data class Arrival(
     val feet: Int = 0,
     val dir: Int = 0,
     val estimatedMillis: Long = 0,
-    val scheduledMillis: Long = 0
+    val scheduledMillis: Long = 0,
+    /** Stop this arrival belongs to (present in batched multi-stop responses; 0 if absent). */
+    val locId: Int = 0
 )

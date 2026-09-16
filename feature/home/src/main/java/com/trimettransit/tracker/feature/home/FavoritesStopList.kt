@@ -82,7 +82,6 @@ private fun FavoritesList(
                 stop = stop,
                 onClick = { onNavigateToArrivals(stop) },
                 modifier = Modifier.animateItem().staggeredFadeIn(index, enabled = !entranceDone),
-                zoomOnTap = true,
                 gridMode = dense
             )
         }

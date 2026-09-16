@@ -1,6 +1,5 @@
 package com.trimettransit.tracker.ui.components
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,10 +18,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,45 +31,22 @@ import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.appearance.rowContentPadding
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
-import com.trimettransit.tracker.ui.theme.m3SpatialDefault
-import kotlinx.coroutines.launch
 
 @Composable
 fun StopListItem(
     stop: Stop,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    zoomOnTap: Boolean = false,
     gridMode: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val scope = rememberCoroutineScope()
-    val zoom = remember { Animatable(1f) }
     Card(
-        onClick = {
-            // Keep a gentle press feedback but drop the separate post-press pop: the
-            // tap navigates immediately, so animating 1->1.08 then back 1.08->1 mid-nav
-            // reads as a jitter. [pressScale] (0.96) below already gives tactile feedback.
-            if (zoomOnTap && !zoom.isRunning) {
-                scope.launch {
-                    zoom.animateTo(1.08f, m3SpatialDefault())
-                    onClick()
-                }
-            } else {
-                onClick()
-            }
-        },
+        onClick = onClick,
         interactionSource = interactionSource,
         modifier = modifier
             .fillMaxWidth()
             .then(if (gridMode) Modifier else Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
-            .pressScale(interactionSource)
-            .graphicsLayer {
-                if (zoomOnTap) {
-                    scaleX = zoom.value
-                    scaleY = zoom.value
-                }
-            },
+            .pressScale(interactionSource),
         shape = appCardShape(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer

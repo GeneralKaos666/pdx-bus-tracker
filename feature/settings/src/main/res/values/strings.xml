@@ -131,5 +131,8 @@
     <string name="license_workmanager">AndroidX WorkManager</string>
     <string name="license_materialkolor">material-kolor (Material Color Utilities port)</string>
     <string name="license_mit">MIT License</string>
+    <string name="license_bricolage">Bricolage Grotesque (app typeface)</string>
+    <string name="license_ofl">SIL Open Font License 1.1</string>
+    <string name="license_map_data">Map data © OpenStreetMap contributors (ODbL), tiles via OpenFreeMap; launcher imagery: USGS National Map (public domain)</string>
     <string name="license_full_texts">Full license texts: see THIRD-PARTY-NOTICES.md in the project repository.</string>
 </resources>

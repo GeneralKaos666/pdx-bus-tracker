@@ -16,6 +16,8 @@ import com.trimettransit.tracker.model.TripRequestTime
  * source can be substituted or tested.
  */
 interface TransitRepository {
+    /** True when a TriMet API key is configured; false means live calls will no-op. */
+    fun isConfigured(): Boolean
     suspend fun getRoutes(): List<Route>?
     suspend fun getDirections(routeId: Int): List<Direction>?
     suspend fun getStops(routeId: Int, directionId: Int): List<Stop>?

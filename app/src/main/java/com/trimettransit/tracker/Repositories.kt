@@ -16,16 +16,27 @@ data class Repos(
     val transit: TransitRepository
 )
 
-/** Builds the standard app repositories, sharing one [DatabaseHelper]. */
+/** Builds the standard app repositories over the shared singletons below. */
 fun Context.repos(): Repos {
     val appContext = applicationContext
-    val db = DatabaseHelper(appContext)
+    val db = sharedDatabaseHelper(appContext)
     return Repos(
         favorites = FavoritesRepositoryImpl(db),
         recentStops = RecentStopsRepositoryImpl(db),
         transit = sharedTransitRepository(appContext)
     )
 }
+
+/** One [DatabaseHelper] per process: [SQLiteOpenHelper] is thread-safe and built for
+ * sharing, so UI + widget + alert workers reuse one connection pool instead of opening
+ * a fresh helper (and fresh SQLite connections) per [repos] call. */
+private val dbLock = Any()
+private var databaseHelper: DatabaseHelper? = null
+
+private fun sharedDatabaseHelper(context: Context): DatabaseHelper =
+    databaseHelper ?: synchronized(dbLock) {
+        databaseHelper ?: DatabaseHelper(context).also { databaseHelper = it }
+    }
 
 /**
  * One [TransitRepositoryImpl] per process, so the stop-search cache (15-min TTL

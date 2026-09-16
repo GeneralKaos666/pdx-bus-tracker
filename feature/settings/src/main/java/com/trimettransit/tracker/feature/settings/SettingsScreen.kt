@@ -931,6 +931,12 @@ fun SettingsScreen(
                                         LicenseEntry(stringResource(R.string.license_glance), stringResource(R.string.license_apache_2))
                                         LicenseEntry(stringResource(R.string.license_workmanager), stringResource(R.string.license_apache_2))
                                         LicenseEntry(stringResource(R.string.license_materialkolor), stringResource(R.string.license_mit))
+                                        LicenseEntry(stringResource(R.string.license_bricolage), stringResource(R.string.license_ofl))
+                                        LicenseEntry(
+                                            stringResource(R.string.license_map_data),
+                                            "",
+                                            isNote = true
+                                        )
                                         LicenseEntry(
                                             stringResource(R.string.license_full_texts),
                                             "",

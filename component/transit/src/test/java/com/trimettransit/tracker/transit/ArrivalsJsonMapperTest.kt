@@ -151,4 +151,40 @@ class ArrivalsJsonMapperTest {
         assertEquals(0.0, result.stopLat, 0.0)
         assertEquals(0.0, result.stopLng, 0.0)
     }
+
+    @Test
+    fun `parseArrivals keeps locid for batched per-stop split`() {
+        val json = """
+            {
+              "arrival": [
+                { "tripID": "1", "locid": 100, "route": 4, "scheduled": 1700000060000 },
+                { "tripID": "2", "locid": 200, "route": 9, "scheduled": 1700000060000 },
+                { "tripID": "3", "route": 4, "scheduled": 1700000060000 }
+              ]
+            }
+        """.trimIndent()
+
+        val result = TransitJsonMapper.parseArrivals(JSONObject(json))
+        assertEquals(3, result.arrivals.size)
+        assertEquals(100, result.arrivals[0].locId)
+        assertEquals(200, result.arrivals[1].locId)
+        assertEquals(0, result.arrivals[2].locId)
+    }
+
+    @Test
+    fun `parseArrivals skips a malformed element without voiding the payload`() {
+        val json = JSONObject()
+        val arr = org.json.JSONArray()
+        arr.put(JSONObject("""{ "tripID": "1", "locid": 100, "route": 4 }"""))
+        arr.put("not-an-object")
+        arr.put(JSONObject("""{ "tripID": "2", "locid": 200, "route": 9 }"""))
+        json.put("arrival", arr)
+        json.put("detour", org.json.JSONArray().put("not-an-object"))
+
+        val result = TransitJsonMapper.parseArrivals(json)
+        assertEquals(2, result.arrivals.size)
+        assertEquals("1", result.arrivals[0].tripID)
+        assertEquals("2", result.arrivals[1].tripID)
+        assertTrue(result.detours.isEmpty())
+    }
 }

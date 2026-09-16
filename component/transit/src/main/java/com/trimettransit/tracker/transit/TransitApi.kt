@@ -51,7 +51,7 @@ object TransitApi {
         val routes = mutableListOf<Route>()
         val arr = json.getJSONObject("resultSet").getJSONArray("route")
         for (i in 0 until arr.length()) {
-            val obj = arr.getJSONObject(i)
+            val obj = arr.optJSONObject(i) ?: continue
             val route = TransitJsonMapper.parseRoute(obj)
             if (route.desc != "Portland Aerial Tram") {
                 routes.add(route)
@@ -68,11 +68,11 @@ object TransitApi {
             val dirs = mutableListOf<Direction>()
             val routeArr = json.getJSONObject("resultSet").optJSONArray("route")
             if (routeArr == null || routeArr.length() == 0) return@guarded emptyList()
-            val routeObj = routeArr.getJSONObject(0)
+            val routeObj = routeArr.optJSONObject(0) ?: return@guarded emptyList()
             val route = TransitJsonMapper.parseRoute(routeObj)
-            val arr = routeObj.getJSONArray("dir")
+            val arr = routeObj.optJSONArray("dir") ?: return@guarded emptyList()
             for (i in 0 until arr.length()) {
-                val obj = arr.getJSONObject(i)
+                val obj = arr.optJSONObject(i) ?: continue
                 val dir = Direction(
                     dir = obj.optInt("dir", 0),
                     desc = obj.optString("desc", ""),
@@ -92,18 +92,18 @@ object TransitApi {
             val routeArr = resultSet.optJSONArray("route")
             if (routeArr == null || routeArr.length() == 0) return@guarded null
 
-            val route0 = routeArr.getJSONObject(0)
+            val route0 = routeArr.optJSONObject(0) ?: return@guarded null
             val dirArr = route0.optJSONArray("dir")
             if (dirArr == null || dirArr.length() == 0) return@guarded null
 
-            val dir0 = dirArr.getJSONObject(0)
+            val dir0 = dirArr.optJSONObject(0) ?: return@guarded null
             val stopArr = dir0.optJSONArray("stop")
             if (stopArr == null || stopArr.length() == 0) return@guarded emptyList()
 
             val route = TransitJsonMapper.parseRoute(route0)
             val stops = mutableListOf<Stop>()
             for (i in 0 until stopArr.length()) {
-                val obj = stopArr.getJSONObject(i)
+                val obj = stopArr.optJSONObject(i) ?: continue
                 val dirField = obj.optString("dir", "")
                 val dirDesc = if (dirField == "") context.getString(R.string.stop_bidirectional_text) else dirField
                 stops.add(

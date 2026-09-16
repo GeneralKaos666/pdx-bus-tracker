@@ -45,7 +45,7 @@ itself is licensed under the MIT License (see `LICENSE`).
   (OpenStreetMap data, ODbL); map attribution is displayed in-app.
 
 ### Joda-Time Android
-- **Artifact:** `net.danlew:android.joda` 2.14.2.1
+- **Artifact:** `net.danlew:android.joda` 2.14.3.1
 - **License:** Apache License 2.0
 - **Copyright:** Copyright Daniel Lew; based on Joda-Time, Copyright 2001-2006 Stephen Colebourne
   and contributors

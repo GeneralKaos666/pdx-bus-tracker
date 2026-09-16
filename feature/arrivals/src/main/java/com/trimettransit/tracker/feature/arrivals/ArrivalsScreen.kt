@@ -119,8 +119,8 @@ fun ArrivalsScreen(
     var trackingVehicleId by remember { mutableIntStateOf(0) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
     var onlySelectedRoute by remember { mutableStateOf(true) }
-    // 30s tick forcing the arrival rows' countdowns to recompute in the foreground,
-    // so "8 min" doesn't sit frozen until the next manual refresh.
+    // Minute-aligned tick forcing the arrival rows' countdowns to recompute in the
+    // foreground, so "8 min" doesn't sit frozen until the next manual refresh.
     // The loop itself lives below the lifecycle observer so it can pause in background.
     var countdownTick by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
@@ -242,15 +242,16 @@ fun ArrivalsScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // Countdown tick: only advance while the app is resumed, so a backgrounded
-    // screen doesn't keep waking the coroutine every 30s for invisible rows.
-    // The delay re-aligns to the next wall-clock minute boundary so a row's
-    // "8 min -> 7 min" flip rolls exactly on the minute, not up to ~30s late
-    // on a fixed 30s interval.
-    LaunchedEffect(Unit) {
+    // Countdown tick: minute-aligned to the wall clock so a row's "8 min -> 7 min"
+    // flip rolls exactly on the minute. The loop sleeps while backgrounded instead of
+    // waking every minute for invisible rows, and fires immediately on resume so the
+    // countdown never sits up to a minute stale after returning to the app.
+    LaunchedEffect(isAppResumed) {
+        if (!isAppResumed) return@LaunchedEffect
+        countdownTick++
         while (true) {
             delay(nextMinuteBoundaryDelayMillis())
-            if (isAppResumed) countdownTick++
+            countdownTick++
         }
     }
 

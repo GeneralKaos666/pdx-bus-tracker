@@ -23,8 +23,6 @@ Gemfile
 Gemfile.lock
 fastlane
 app/my-release-key.jks
-app/my-release-key.jks
-app/my-release-key.jks
 screenshot-editor
 .gplay
 scripts/verify-16kb-alignment.sh

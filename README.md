@@ -91,7 +91,7 @@ For a local smoke test without real credentials, build with `-PreleaseSigningFal
 | Kotlin / Compose compiler plugin | 2.4.20 |
 | Jetpack Compose | BOM 2026.09.00 (Material 3 1.5.0-alpha28, Navigation 2.10.1) |
 | OkHttp | 5.5.0 |
-| Joda-Time (android.joda) | 2.14.2.1 |
+| Joda-Time (android.joda) | 2.14.3.1 |
 | Kotlin coroutines | 1.11.0 |
 | MapLibre GL Native (OpenGL backend) | 13.6.1 + OpenFreeMap tiles |
 
