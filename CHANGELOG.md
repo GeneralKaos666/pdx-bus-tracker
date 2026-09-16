@@ -1,11 +1,12 @@
 # Changelog
 
-## What's New (in development)
+## What's New in v4.18.4
 
 - **Tracked buses glide on the stop map:** the bus you're following now eases smoothly to each new live position instead of snapping, while every other bus still updates instantly. Turning on your device's "Remove animations" setting keeps the instant updates.
 - **Countdowns flip exactly on the minute:** arrival countdowns now re-align to the clock, so "8 min" becomes "7 min" right on time instead of up to half a minute late.
 - **Calmer stop-list taps:** tapping a stop keeps its gentle press feedback but no longer plays a second bounce mid-navigation.
 - **Settings icon steps aside:** while you're in Settings, its navigation icon hides so the bar shows only the destinations you can go to.
+- **Fixed:** switching which bus you follow no longer streaks the marker across the map, countdowns refresh the moment you return to the app, and background workers fetch all stops in one request instead of one per stop.
 
 ## What's New in v4.18.3
 
