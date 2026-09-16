@@ -64,6 +64,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -159,7 +160,7 @@ fun SettingsScreen(
         mutableStateOf(prefs.getString(AppearancePrefs.FONT_SCALE, "default") ?: "default")
     }
     var arrivalsRefreshSeconds by remember {
-        mutableStateOf(prefs.getInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 30))
+        mutableIntStateOf(prefs.getInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 30))
     }
     var showArrivalClock by remember {
         mutableStateOf(prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, true))

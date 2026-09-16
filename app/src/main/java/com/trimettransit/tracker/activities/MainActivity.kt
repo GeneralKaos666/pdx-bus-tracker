@@ -313,7 +313,7 @@ private fun MainAppContent(
     // stop id stops a slower fetch from a previous stop from overwriting the current one
     // and lets the top bar/pane fall back to the destination's own name instead of flashing
     // the previous stop's title.
-    var arrivalsStateStopId by remember { mutableStateOf(-1) }
+    var arrivalsStateStopId by remember { mutableIntStateOf(-1) }
 
     /** Stages the lifted arrivals state for [stopId], clearing any previous stop's data. */
     fun resetArrivalsStateFor(stopId: Int) {
