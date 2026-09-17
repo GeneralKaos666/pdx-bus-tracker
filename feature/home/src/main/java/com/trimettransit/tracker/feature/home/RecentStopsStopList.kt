@@ -1,11 +1,9 @@
 package com.trimettransit.tracker.feature.home
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -84,31 +82,28 @@ private fun RecentStopsList(
         ) {
             items(stops.size, key = { stops[it].locId }, contentType = { "stop" }) { index ->
                 val stop = stops[index]
-                Column(modifier = Modifier.animateItem()) {
-                    StopListItem(
-                        stop = stop,
-                        onClick = { onNavigateToArrivals(stop) },
-                        gridMode = dense
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = { onPromote(stop) }) {
-                            Icon(
-                                imageVector = Icons.Filled.Star,
-                                contentDescription = stringResource(R.string.add_to_favorites)
-                            )
-                        }
-                        IconButton(onClick = { onDismiss(stop) }) {
-                            Icon(
-                                imageVector = Icons.Filled.Delete,
-                                contentDescription = stringResource(R.string.remove_recent)
-                            )
+                StopListItem(
+                    stop = stop,
+                    onClick = { onNavigateToArrivals(stop) },
+                    modifier = Modifier.animateItem(),
+                    gridMode = dense,
+                    trailingContent = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { onPromote(stop) }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Star,
+                                    contentDescription = stringResource(R.string.add_to_favorites)
+                                )
+                            }
+                            IconButton(onClick = { onDismiss(stop) }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = stringResource(R.string.remove_recent)
+                                )
+                            }
                         }
                     }
-                }
+                )
             }
         }
     }
