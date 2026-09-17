@@ -21,4 +21,15 @@
     <string name="move_up">Move up</string>
     <string name="move_down">Move down</string>
     <string name="remove_favorite">Remove</string>
+    <string name="add_to_favorites">Save to favorites</string>
+    <string name="added_to_favorites">Saved to favorites</string>
+    <string name="remove_recent">Remove from recents</string>
+    <string name="clear_recents">Clear all</string>
+    <string name="clear_recents_title">Clear recent stops?</string>
+    <string name="clear_recents_message">This removes all stops from your recent history. Favorites are not affected.</string>
+    <string name="browse_routes">Browse routes</string>
+    <string name="find_nearby">Find nearby stops</string>
+    <string name="welcome_title">Never miss your ride</string>
+    <string name="welcome_message">Save the stops you use every day as favorites, find stops near you, or browse routes to get started. Tap any arrival to watch its bus move live on the map.</string>
+    <string name="got_it">Got it</string>
 </resources>

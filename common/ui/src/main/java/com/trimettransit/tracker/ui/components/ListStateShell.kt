@@ -1,8 +1,15 @@
 package com.trimettransit.tracker.ui.components
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 
 /**
@@ -21,6 +28,7 @@ fun ListStateShell(
     label: String,
     modifier: Modifier = Modifier,
     loadingContent: @Composable () -> Unit = { ListLoadingSkeleton() },
+    emptyActions: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     Crossfade(
@@ -37,7 +45,20 @@ fun ListStateShell(
         when (state) {
             0 -> loadingContent()
             1 -> ErrorState(message = errorMessage)
-            2 -> EmptyState(message = emptyMessage)
+            2 -> if (emptyActions == null) {
+                EmptyState(message = emptyMessage)
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        EmptyState(message = emptyMessage)
+                    }
+                    emptyActions()
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
             else -> content()
         }
     }

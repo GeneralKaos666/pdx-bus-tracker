@@ -21,4 +21,15 @@
     <string name="move_up">Subir</string>
     <string name="move_down">Bajar</string>
     <string name="remove_favorite">Quitar</string>
+    <string name="add_to_favorites">Guardar en favoritos</string>
+    <string name="added_to_favorites">Guardado en favoritos</string>
+    <string name="remove_recent">Quitar de recientes</string>
+    <string name="clear_recents">Borrar todo</string>
+    <string name="clear_recents_title">¿Borrar las paradas recientes?</string>
+    <string name="clear_recents_message">Esto elimina todas las paradas de tu historial reciente. Tus favoritos no se verán afectados.</string>
+    <string name="browse_routes">Explorar rutas</string>
+    <string name="find_nearby">Buscar paradas cercanas</string>
+    <string name="welcome_title">No pierdas tu viaje</string>
+    <string name="welcome_message">Guarda como favoritas las paradas que usas cada día, busca paradas cerca de ti o explora las rutas para empezar. Toca cualquier llegada para ver su autobús en vivo en el mapa.</string>
+    <string name="got_it">Entendido</string>
 </resources>

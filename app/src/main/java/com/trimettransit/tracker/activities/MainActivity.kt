@@ -709,13 +709,17 @@ private fun MainAppContent(
                                     transitRepository = transitRepository,
                                     onNavigateToArrivals = { stop: Stop ->
                                         navigateToArrivals(stop, stop.routeNum)
-                                    }
+                                    },
+                                    onBrowseRoutes = { navigateToTopPage(2) },
+                                    onFindNearby = { navController.navigate(NearbyStopsDestination) }
                                 )
                                 1 -> RecentStopsScreen(
                                     recentStopsRepository = recentStopsRepository,
+                                    favoritesRepository = favoritesRepository,
                                     onNavigateToArrivals = { stop: Stop ->
                                         navigateToArrivals(stop, stop.routeNum)
-                                    }
+                                    },
+                                    onFindNearby = { navController.navigate(NearbyStopsDestination) }
                                 )
                                 2 -> StopsScreen(
                                     transitRepository = transitRepository,

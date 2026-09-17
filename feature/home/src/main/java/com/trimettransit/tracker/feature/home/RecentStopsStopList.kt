@@ -1,13 +1,21 @@
 package com.trimettransit.tracker.feature.home
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -26,7 +34,10 @@ fun RecentStopsStopList(
     isLoading: Boolean,
     isError: Boolean,
     emptyText: String,
-    onNavigateToArrivals: (Stop) -> Unit
+    onNavigateToArrivals: (Stop) -> Unit,
+    onPromote: (Stop) -> Unit,
+    onDismiss: (Stop) -> Unit,
+    emptyActions: @Composable (() -> Unit)? = null
 ) {
     ListStateShell(
         isLoading = isLoading,
@@ -34,11 +45,14 @@ fun RecentStopsStopList(
         isEmpty = stops.isEmpty(),
         emptyMessage = emptyText,
         errorMessage = stringResource(R.string.unable_to_load),
-        label = "recentStopsStopList"
+        label = "recentStopsStopList",
+        emptyActions = emptyActions
     ) {
         RecentStopsList(
             stops = stops,
-            onNavigateToArrivals = onNavigateToArrivals
+            onNavigateToArrivals = onNavigateToArrivals,
+            onPromote = onPromote,
+            onDismiss = onDismiss
         )
     }
 }
@@ -46,7 +60,9 @@ fun RecentStopsStopList(
 @Composable
 private fun RecentStopsList(
     stops: List<Stop>,
-    onNavigateToArrivals: (Stop) -> Unit
+    onNavigateToArrivals: (Stop) -> Unit,
+    onPromote: (Stop) -> Unit,
+    onDismiss: (Stop) -> Unit
 ) {
     ContentEntrance(modifier = Modifier.fillMaxSize()) {
         val dense = rememberDenseGridEnabled()
@@ -68,12 +84,31 @@ private fun RecentStopsList(
         ) {
             items(stops.size, key = { stops[it].locId }, contentType = { "stop" }) { index ->
                 val stop = stops[index]
-                StopListItem(
-                    stop = stop,
-                    onClick = { onNavigateToArrivals(stop) },
-                    modifier = Modifier.animateItem(),
-                    gridMode = dense
-                )
+                Column(modifier = Modifier.animateItem()) {
+                    StopListItem(
+                        stop = stop,
+                        onClick = { onNavigateToArrivals(stop) },
+                        gridMode = dense
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { onPromote(stop) }) {
+                            Icon(
+                                imageVector = Icons.Filled.Star,
+                                contentDescription = stringResource(R.string.add_to_favorites)
+                            )
+                        }
+                        IconButton(onClick = { onDismiss(stop) }) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = stringResource(R.string.remove_recent)
+                            )
+                        }
+                    }
+                }
             }
         }
     }

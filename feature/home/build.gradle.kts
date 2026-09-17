@@ -37,4 +37,5 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.core:core:1.19.0")
     implementation("androidx.core:core-ktx:1.19.0")
+    implementation("androidx.preference:preference:1.2.1")
 }

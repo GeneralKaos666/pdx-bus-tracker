@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.home
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,9 +25,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.preference.PreferenceManager
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.core.content.edit
 import com.trimettransit.tracker.feature.home.R
 import com.trimettransit.tracker.model.FavoriteEdits
 import com.trimettransit.tracker.model.Stop
@@ -35,11 +41,15 @@ import com.trimettransit.tracker.model.repository.TransitRepository
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+private const val PREF_WELCOME_SHOWN = "pref_key_favorites_welcome_shown"
+
 @Composable
 fun FavoritesScreen(
     favoritesRepository: FavoritesRepository,
     transitRepository: TransitRepository,
-    onNavigateToArrivals: (Stop) -> Unit
+    onNavigateToArrivals: (Stop) -> Unit,
+    onBrowseRoutes: () -> Unit,
+    onFindNearby: () -> Unit
 ) {
     val favorites = rememberStopListLoader(read = { favoritesRepository.getFavorites() })
     var editable by remember(favorites.stops) { mutableStateOf(favorites.stops) }
@@ -48,6 +58,19 @@ fun FavoritesScreen(
     val scope = rememberCoroutineScope()
     val removedMessage = stringResource(R.string.favorite_removed)
     val undoLabel = stringResource(R.string.undo)
+    val context = LocalContext.current
+
+    var showWelcome by remember {
+        mutableStateOf(
+            !PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(PREF_WELCOME_SHOWN, false)
+        )
+    }
+    fun dismissWelcome() {
+        showWelcome = false
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .edit { putBoolean(PREF_WELCOME_SHOWN, true) }
+    }
 
     fun persistOrder(stops: List<Stop>) {
         scope.launch {
@@ -104,7 +127,13 @@ fun FavoritesScreen(
                     onNavigateToArrivals = onNavigateToArrivals,
                     onMove = ::handleMove,
                     onRemove = ::handleRemove,
-                    onRename = { renameTarget = it }
+                    onRename = { renameTarget = it },
+                    emptyActions = {
+                        FavoritesEmptyActions(
+                            onBrowseRoutes = onBrowseRoutes,
+                            onFindNearby = onFindNearby
+                        )
+                    }
                 )
             }
         }
@@ -124,6 +153,67 @@ fun FavoritesScreen(
             }
         )
     }
+
+    if (showWelcome && !favorites.isLoading) {
+        WelcomeDialog(
+            onDismiss = { dismissWelcome() },
+            onBrowseRoutes = {
+                dismissWelcome()
+                onBrowseRoutes()
+            },
+            onFindNearby = {
+                dismissWelcome()
+                onFindNearby()
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FavoritesEmptyActions(
+    onBrowseRoutes: () -> Unit,
+    onFindNearby: () -> Unit
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        TextButton(onClick = onBrowseRoutes) {
+            Text(stringResource(R.string.browse_routes))
+        }
+        TextButton(onClick = onFindNearby) {
+            Text(stringResource(R.string.find_nearby))
+        }
+    }
+}
+
+@Composable
+private fun WelcomeDialog(
+    onDismiss: () -> Unit,
+    onBrowseRoutes: () -> Unit,
+    onFindNearby: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.welcome_title)) },
+        text = { Text(stringResource(R.string.welcome_message)) },
+        confirmButton = {
+            TextButton(onClick = onFindNearby) {
+                Text(stringResource(R.string.find_nearby))
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onBrowseRoutes) {
+                    Text(stringResource(R.string.browse_routes))
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.got_it))
+                }
+            }
+        }
+    )
 }
 
 @Composable
