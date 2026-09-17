@@ -55,6 +55,10 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         }
 
     override fun onCreate(db: SQLiteDatabase) {
+        // `label` is reserved for the deferred custom favorite-name feature: nothing
+        // reads or writes it yet, but the v8 upgrade path already adds the column
+        // on existing installs, so fresh installs keep it for schema parity. Do not
+        // drop it without a new versioned migration.
         db.execSQL("CREATE TABLE IF NOT EXISTS favorites(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER,sort_order INTEGER DEFAULT 0,label TEXT DEFAULT '')")
         db.execSQL("CREATE TABLE IF NOT EXISTS recent_stops(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER)")
     }
@@ -84,6 +88,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         }
         if (oldVersion < 8) {
             runCatching { db.execSQL("ALTER TABLE favorites ADD COLUMN sort_order INTEGER DEFAULT 0") }
+            // Reserved for the deferred custom favorite-name feature (see onCreate):
+            // kept deliberately so v7 databases match the v8 schema.
             runCatching { db.execSQL("ALTER TABLE favorites ADD COLUMN label TEXT DEFAULT ''") }
             runCatching { db.execSQL("UPDATE favorites SET sort_order = id WHERE sort_order = 0 OR sort_order IS NULL") }
         }
@@ -91,19 +97,22 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
 
     fun addFavorite(stop: Stop): Boolean {
         val db = writableDatabase
-        val values = stopValues(stop)
-        db.rawQuery("SELECT COALESCE(MAX(sort_order), 0) FROM favorites", null).use { cursor ->
-            val next = if (cursor.moveToFirst()) cursor.getInt(0) + 1 else 1
-            values.put("sort_order", next)
+        // The MAX(sort_order) read and the insert must be atomic or two
+        // concurrent adds can compute the same sort_order.
+        return db.transaction {
+            val values = stopValues(stop)
+            rawQuery("SELECT COALESCE(MAX(sort_order), 0) FROM favorites", null).use { cursor ->
+                val next = if (cursor.moveToFirst()) cursor.getInt(0) + 1 else 1
+                values.put("sort_order", next)
+            }
+            val rowId = insertWithOnConflict(
+                "favorites",
+                null,
+                values,
+                SQLiteDatabase.CONFLICT_IGNORE
+            )
+            rowId != -1L
         }
-        val rowId = db.insertWithOnConflict(
-            "favorites",
-            null,
-            values,
-            SQLiteDatabase.CONFLICT_IGNORE
-        )
-        val added = rowId != -1L
-        return added
     }
 
     fun isFavorite(locId: Int): Boolean {

@@ -111,7 +111,9 @@ if [[ "$TO_PLAY" == true ]]; then
 	echo "Play upload finished."
 fi
 
-NOTES_FILE="$(mktemp)"
+# Explicit template under a writable dir: bare `mktemp` targets /tmp, which is
+# not writable in this Termux environment.
+NOTES_FILE="$(mktemp "${TMPDIR:-$HOME}/release-notes-XXXXXX")"
 trap 'rm -f "$NOTES_FILE"' EXIT
 printf '%s\n' "$NOTES" >"$NOTES_FILE"
 

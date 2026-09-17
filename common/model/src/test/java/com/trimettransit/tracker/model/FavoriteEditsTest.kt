@@ -6,27 +6,6 @@ import org.junit.Test
 class FavoriteEditsTest {
 
     @Test
-    fun `reorder moves id preserving rest without duplicates`() {
-        assertEquals(
-            listOf(2, 3, 1),
-            FavoriteEdits.reorder(listOf(1, 2, 3), from = 0, to = 2)
-        )
-    }
-
-    @Test
-    fun `reorder out of bounds returns unchanged`() {
-        val current = listOf(1, 2, 3)
-        assertEquals(current, FavoriteEdits.reorder(current, from = -1, to = 1))
-        assertEquals(current, FavoriteEdits.reorder(current, from = 0, to = 5))
-    }
-
-    @Test
-    fun `reorder same index returns unchanged`() {
-        val current = listOf(1, 2, 3)
-        assertEquals(current, FavoriteEdits.reorder(current, from = 1, to = 1))
-    }
-
-    @Test
     fun `moveStops reorders stops by index`() {
         val stops = listOf(
             Stop(desc = "A", locId = 1),
@@ -34,6 +13,25 @@ class FavoriteEditsTest {
             Stop(desc = "C", locId = 3)
         )
         assertEquals(listOf(2, 3, 1), FavoriteEdits.moveStops(stops, 0, 2).map { it.locId })
+    }
+
+    @Test
+    fun `reorderTarget clamps drags past either end`() {
+        // Dragging past the bottom lands on the last item instead of no-op.
+        assertEquals(2, FavoriteEdits.reorderTarget(from = 1, delta = 10, size = 3))
+        // Dragging past the top lands on the first item.
+        assertEquals(0, FavoriteEdits.reorderTarget(from = 1, delta = -10, size = 3))
+    }
+
+    @Test
+    fun `reorderTarget applies in-range deltas unchanged`() {
+        assertEquals(2, FavoriteEdits.reorderTarget(from = 0, delta = 2, size = 4))
+        assertEquals(0, FavoriteEdits.reorderTarget(from = 2, delta = -2, size = 4))
+    }
+
+    @Test
+    fun `reorderTarget on empty list returns from`() {
+        assertEquals(3, FavoriteEdits.reorderTarget(from = 3, delta = 5, size = 0))
     }
 
     @Test

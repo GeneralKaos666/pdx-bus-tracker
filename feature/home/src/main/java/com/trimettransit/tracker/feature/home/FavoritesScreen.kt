@@ -61,14 +61,11 @@ fun FavoritesScreen(
     val removedMessage = stringResource(R.string.favorite_removed)
     val undoLabel = stringResource(R.string.undo)
     val context = LocalContext.current
-
-    val welcomeAlreadyShown = PreferenceManager.getDefaultSharedPreferences(context)
-        .getBoolean(PREF_WELCOME_SHOWN, false)
-    var showWelcome by remember { mutableStateOf(!welcomeAlreadyShown) }
+    val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+    var welcomeDismissed by remember { mutableStateOf(prefs.getBoolean(PREF_WELCOME_SHOWN, false)) }
     fun dismissWelcome() {
-        showWelcome = false
-        PreferenceManager.getDefaultSharedPreferences(context)
-            .edit { putBoolean(PREF_WELCOME_SHOWN, true) }
+        welcomeDismissed = true
+        prefs.edit { putBoolean(PREF_WELCOME_SHOWN, true) }
     }
 
     fun persistOrder(stops: List<Stop>) {
@@ -79,7 +76,9 @@ fun FavoritesScreen(
     }
 
     fun handleMove(from: Int, to: Int) {
-        val reordered = FavoriteEdits.moveStops(editable, from, to)
+        if (editable.isEmpty()) return
+        val target = FavoriteEdits.reorderTarget(from, to - from, editable.size)
+        val reordered = FavoriteEdits.moveStops(editable, from, target)
         if (reordered === editable) return
         editable = reordered
         persistOrder(reordered)
@@ -174,7 +173,7 @@ fun FavoritesScreen(
     }
 
     if (FavoriteEdits.shouldShowWelcome(
-            alreadyShown = !showWelcome,
+            alreadyShown = welcomeDismissed,
             isEmpty = editable.isEmpty(),
             isLoading = favorites.isLoading
         )

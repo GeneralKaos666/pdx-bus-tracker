@@ -25,9 +25,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.trimettransit.tracker.feature.home.R
+import com.trimettransit.tracker.model.FavoriteEdits
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.components.ListStateShell
 import com.trimettransit.tracker.ui.components.StopListItem
@@ -100,14 +104,38 @@ private fun FavoritesList(
     ) {
         items(stops.size, key = { stops[it].locId }, contentType = { "stop" }) { index ->
             val stop = stops[index]
+            val moveUpLabel = stringResource(R.string.move_favorite_up)
+            val moveDownLabel = stringResource(R.string.move_favorite_down)
             StopListItem(
                 stop = stop,
                 onClick = { onNavigateToArrivals(stop) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .animateItem()
+                    .semantics {
+                        customActions = listOf(
+                            CustomAccessibilityAction(moveUpLabel) {
+                                if (index > 0) {
+                                    onMove(index, index - 1)
+                                    true
+                                } else {
+                                    false
+                                }
+                            },
+                            CustomAccessibilityAction(moveDownLabel) {
+                                if (index < stops.size - 1) {
+                                    onMove(index, index + 1)
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                        )
+                    }
                     .favoriteDragToReorder(
                         index = index,
+                        itemCount = stops.size,
+                        spanCount = if (dense) 2 else 1,
                         onMove = onMove,
                         onDraggingChange = { dragging = it }
                     )
@@ -129,13 +157,18 @@ private fun FavoritesList(
 /**
  * Vertical long-press-drag reorder. The dragged item follows the finger via
  * [graphicsLayer] (draw-phase only); on release the target index is derived
- * from the accumulated offset over the measured item height. A press without
- * movement is a no-op. [onDraggingChange] lets the host freeze list scrolling
- * while a drag is in flight so the two never fight over one finger.
+ * from the accumulated offset over the measured item height, scaled by
+ * [spanCount] so dragging one row moves one grid row in two-column mode.
+ * The target is clamped to list bounds so drags past either end land on the
+ * first/last item instead of silently doing nothing. A press without movement
+ * is a no-op. [onDraggingChange] lets the host freeze list scrolling while a
+ * drag is in flight so the two never fight over one finger.
  */
 @Composable
 private fun Modifier.favoriteDragToReorder(
     index: Int,
+    itemCount: Int,
+    spanCount: Int,
     onMove: (from: Int, to: Int) -> Unit,
     onDraggingChange: (Boolean) -> Unit
 ): Modifier {
@@ -143,6 +176,8 @@ private fun Modifier.favoriteDragToReorder(
     val dragOffset = remember { mutableFloatStateOf(0f) }
     val dragged = remember { mutableStateOf(false) }
     val currentIndex = rememberUpdatedState(index)
+    val currentItemCount = rememberUpdatedState(itemCount)
+    val currentSpanCount = rememberUpdatedState(spanCount)
     val currentOnMove = rememberUpdatedState(onMove)
     val currentOnDraggingChange = rememberUpdatedState(onDraggingChange)
     return this
@@ -165,10 +200,15 @@ private fun Modifier.favoriteDragToReorder(
                     currentOnDraggingChange.value(false)
                     dragOffset.floatValue = 0f
                     if (h > 0f && offset != 0f) {
-                        val delta = (offset / h).roundToInt()
-                        val target = (currentIndex.value + delta).coerceIn(0, Int.MAX_VALUE)
-                        if (target != currentIndex.value) {
-                            currentOnMove.value(currentIndex.value, target)
+                        val rows = (offset / h).roundToInt()
+                        val from = currentIndex.value
+                        val target = FavoriteEdits.reorderTarget(
+                            from = from,
+                            delta = rows * currentSpanCount.value.coerceAtLeast(1),
+                            size = currentItemCount.value
+                        )
+                        if (target != from) {
+                            currentOnMove.value(from, target)
                         }
                     }
                 },

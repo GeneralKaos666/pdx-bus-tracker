@@ -47,29 +47,50 @@ fun RecentStopsScreen(
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val addedMessage = stringResource(R.string.added_to_favorites)
+    val alreadyFavoriteMessage = stringResource(R.string.already_in_favorites)
 
     fun handlePromote(stop: Stop) {
         scope.launch {
-            val ok = runCatching { favoritesRepository.addFavorite(stop) }
+            val result = runCatching { favoritesRepository.addFavorite(stop) }
                 .onFailure { Timber.e(it, "Failed to promote recent to favorite") }
-                .getOrDefault(false)
-            if (ok) snackbarHost.showSnackbar(addedMessage)
+            result.onSuccess { added ->
+                // addFavorite returns false (no exception) only when the stop is
+                // already a favorite: the insert is CONFLICT_IGNORE.
+                snackbarHost.showSnackbar(if (added) addedMessage else alreadyFavoriteMessage)
+            }
         }
     }
 
     fun handleDismiss(stop: Stop) {
+        val index = editable.indexOfFirst { it.locId == stop.locId }
+        if (index < 0) return
         editable = editable.filterNot { it.locId == stop.locId }
         scope.launch {
-            runCatching { recentStopsRepository.removeRecent(stop.locId) }
+            val removed = runCatching { recentStopsRepository.removeRecent(stop.locId) }
                 .onFailure { Timber.e(it, "Failed to remove recent stop") }
+                .getOrDefault(false)
+            if (!removed) {
+                // DB delete failed: roll back instead of diverging from the DB.
+                editable = editable.toMutableList()
+                    .also { it.add(index.coerceIn(0, it.size), stop) }
+            }
         }
     }
 
     fun handleClearAll() {
+        val snapshot = editable
         editable = emptyList()
         scope.launch {
-            runCatching { recentStopsRepository.clearRecents() }
+            val cleared = runCatching {
+                recentStopsRepository.clearRecents()
+                true
+            }
                 .onFailure { Timber.e(it, "Failed to clear recent stops") }
+                .getOrDefault(false)
+            if (!cleared) {
+                // DB clear failed: roll back instead of diverging from the DB.
+                editable = snapshot
+            }
         }
     }
 

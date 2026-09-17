@@ -2,7 +2,7 @@
 
 ## What's New in v4.18.5
 
-- **Favorites, your order:** long-press and drag favorite stops into any order (or use the up/down buttons in compact mode), give any favorite a custom name, and swipe one away with a chance to undo.
+- **Favorites, your order:** long-press and drag favorite stops into any order, and remove one with a confirmation plus a chance to undo.
 - **Recent stops you can tidy:** save a recent stop to favorites with one tap, remove single entries, or clear the whole history with a confirmation — favorites are never affected.
 - **A friendlier first launch:** new installs get a one-time welcome explaining favorites, nearby stops, and live bus tracking, and empty Favorites and Recents screens now offer direct shortcuts to browse routes or find nearby stops.
 
