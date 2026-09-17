@@ -25,7 +25,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.trimettransit.tracker.model.FavoriteEdits
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.R
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
@@ -38,7 +37,8 @@ fun StopListItem(
     stop: Stop,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    gridMode: Boolean = false
+    gridMode: Boolean = false,
+    trailingContent: @Composable (() -> Unit)? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Card(
@@ -109,7 +109,7 @@ fun StopListItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = FavoriteEdits.displayName(stop.desc, stop.label),
+                    text = stop.desc,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -130,6 +130,12 @@ fun StopListItem(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
+            }
+            if (trailingContent != null) {
+                Spacer(modifier = Modifier.width(4.dp))
+                Box(contentAlignment = Alignment.Center) {
+                    trailingContent()
+                }
             }
         }
     }

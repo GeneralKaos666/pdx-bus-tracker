@@ -27,13 +27,6 @@ class FavoriteEditsTest {
     }
 
     @Test
-    fun `sanitizeLabel trims and caps length`() {
-        assertEquals("Home", FavoriteEdits.sanitizeLabel("  Home  "))
-        assertEquals("", FavoriteEdits.sanitizeLabel("   "))
-        assertEquals(60, FavoriteEdits.sanitizeLabel("a".repeat(200)).length)
-    }
-
-    @Test
     fun `moveStops reorders stops by index`() {
         val stops = listOf(
             Stop(desc = "A", locId = 1),
@@ -44,8 +37,10 @@ class FavoriteEditsTest {
     }
 
     @Test
-    fun `displayName prefers label over desc`() {
-        assertEquals("Home", FavoriteEdits.displayName("SW 6th & Stark", "Home"))
-        assertEquals("SW 6th & Stark", FavoriteEdits.displayName("SW 6th & Stark", "  "))
+    fun `welcome shows only for first-run empty loaded list`() {
+        assertEquals(true, FavoriteEdits.shouldShowWelcome(alreadyShown = false, isEmpty = true, isLoading = false))
+        assertEquals(false, FavoriteEdits.shouldShowWelcome(alreadyShown = true, isEmpty = true, isLoading = false))
+        assertEquals(false, FavoriteEdits.shouldShowWelcome(alreadyShown = false, isEmpty = false, isLoading = false))
+        assertEquals(false, FavoriteEdits.shouldShowWelcome(alreadyShown = false, isEmpty = true, isLoading = true))
     }
 }

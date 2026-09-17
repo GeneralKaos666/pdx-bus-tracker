@@ -13,7 +13,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         get() {
             val stops = mutableListOf<Stop>()
             val db = readableDatabase
-            db.rawQuery("SELECT desc, dir_desc, transit_type, loc_id, longitude, latitude, route_num, sort_order, label FROM favorites ORDER BY sort_order ASC, id ASC", null).use { cursor ->
+            db.rawQuery("SELECT desc, dir_desc, transit_type, loc_id, longitude, latitude, route_num FROM favorites ORDER BY sort_order ASC, id ASC", null).use { cursor ->
                 while (cursor.moveToNext()) {
                     stops.add(
                         Stop(
@@ -23,8 +23,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
                             locId = cursor.getInt(cursor.getColumnIndexOrThrow("loc_id")),
                             longitude = cursor.getDouble(cursor.getColumnIndexOrThrow("longitude")),
                             latitude = cursor.getDouble(cursor.getColumnIndexOrThrow("latitude")),
-                            routeNum = cursor.getInt(cursor.getColumnIndexOrThrow("route_num")),
-                            label = cursor.getString(cursor.getColumnIndexOrThrow("label")) ?: ""
+                            routeNum = cursor.getInt(cursor.getColumnIndexOrThrow("route_num"))
                         )
                     )
                 }
@@ -131,12 +130,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         }
     }
 
-    fun updateFavoriteLabel(locId: Int, label: String): Boolean {
-        val db = writableDatabase
-        val values = ContentValues().apply { put("label", label) }
-        return db.update("favorites", values, "loc_id = ?", arrayOf(locId.toString())) > 0
-    }
-
     fun removeRecentStop(locId: Int): Boolean {
         val db = writableDatabase
         return db.delete("recent_stops", "loc_id = ?", arrayOf(locId.toString())) > 0
@@ -170,7 +163,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         put("longitude", stop.longitude)
         put("latitude", stop.latitude)
         put("route_num", stop.routeNum)
-        put("label", stop.label)
     }
 
     companion object {

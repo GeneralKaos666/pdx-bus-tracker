@@ -1,6 +1,5 @@
 package com.trimettransit.tracker.data.local
 
-import com.trimettransit.tracker.model.FavoriteEdits
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import kotlinx.coroutines.Dispatchers
@@ -32,9 +31,5 @@ class FavoritesRepositoryImpl(
 
     override suspend fun setOrder(idsInOrder: List<Int>) = withContext(Dispatchers.IO) {
         dbHelper.setFavoriteOrder(idsInOrder)
-    }
-
-    override suspend fun updateLabel(locId: Int, label: String): Boolean = withContext(Dispatchers.IO) {
-        dbHelper.updateFavoriteLabel(locId, FavoriteEdits.sanitizeLabel(label))
     }
 }

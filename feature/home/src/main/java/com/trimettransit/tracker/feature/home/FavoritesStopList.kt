@@ -2,9 +2,7 @@ package com.trimettransit.tracker.feature.home
 
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -12,15 +10,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,7 +20,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -56,8 +46,7 @@ fun FavoritesStopList(
     emptyText: String,
     onNavigateToArrivals: (Stop) -> Unit,
     onMove: (from: Int, to: Int) -> Unit,
-    onRemove: (Stop) -> Unit,
-    onRename: (Stop) -> Unit,
+    onDeleteRequest: (Stop) -> Unit,
     emptyActions: @Composable (() -> Unit)? = null
 ) {
     ListStateShell(
@@ -73,8 +62,7 @@ fun FavoritesStopList(
             stops = stops,
             onNavigateToArrivals = onNavigateToArrivals,
             onMove = onMove,
-            onRemove = onRemove,
-            onRename = onRename
+            onDeleteRequest = onDeleteRequest
         )
     }
 }
@@ -84,13 +72,13 @@ private fun FavoritesList(
     stops: List<Stop>,
     onNavigateToArrivals: (Stop) -> Unit,
     onMove: (from: Int, to: Int) -> Unit,
-    onRemove: (Stop) -> Unit,
-    onRename: (Stop) -> Unit
+    onDeleteRequest: (Stop) -> Unit
 ) {
     val dense = rememberDenseGridEnabled()
     val listState = rememberLazyGridState()
     val smoothFling = rememberSmoothFlingBehavior()
     var entranceDone by remember { mutableStateOf(false) }
+    var dragging by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(700)
         entranceDone = true
@@ -100,6 +88,7 @@ private fun FavoritesList(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         flingBehavior = smoothFling,
+        userScrollEnabled = !dragging,
         contentPadding = PaddingValues(
             top = 8.dp,
             start = 16.dp,
@@ -111,118 +100,60 @@ private fun FavoritesList(
     ) {
         items(stops.size, key = { stops[it].locId }, contentType = { "stop" }) { index ->
             val stop = stops[index]
-            val dismissState = rememberSwipeToDismissBoxState()
-            LaunchedEffect(dismissState.currentValue) {
-                if (dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd ||
-                    dismissState.currentValue == SwipeToDismissBoxValue.EndToStart
-                ) {
-                    onRemove(stop)
-                }
-            }
-            SwipeToDismissBox(
-                state = dismissState,
-                backgroundContent = {
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+            StopListItem(
+                stop = stop,
+                onClick = { onNavigateToArrivals(stop) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateItem()
+                    .favoriteDragToReorder(
+                        index = index,
+                        onMove = onMove,
+                        onDraggingChange = { dragging = it }
+                    )
+                    .staggeredFadeIn(index, enabled = !entranceDone),
+                gridMode = dense,
+                trailingContent = {
+                    IconButton(onClick = { onDeleteRequest(stop) }) {
                         Icon(
                             imageVector = Icons.Filled.Delete,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
+                            contentDescription = stringResource(R.string.remove_favorite)
                         )
                     }
-                },
-                modifier = Modifier.animateItem()
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    StopListItem(
-                        stop = stop,
-                        onClick = { onNavigateToArrivals(stop) },
-                        modifier = if (dense) {
-                            Modifier.staggeredFadeIn(index, enabled = !entranceDone)
-                        } else {
-                            Modifier
-                                .favoriteDragToReorder(index = index, onMove = onMove)
-                                .staggeredFadeIn(index, enabled = !entranceDone)
-                        },
-                        gridMode = dense
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (dense) {
-                            IconButton(
-                                onClick = { onMove(index, index - 1) },
-                                enabled = index > 0
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.KeyboardArrowUp,
-                                    contentDescription = stringResource(R.string.move_up)
-                                )
-                            }
-                            IconButton(
-                                onClick = { onMove(index, index + 1) },
-                                enabled = index < stops.size - 1
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.KeyboardArrowDown,
-                                    contentDescription = stringResource(R.string.move_down)
-                                )
-                            }
-                        }
-                        IconButton(onClick = { onRename(stop) }) {
-                            Icon(
-                                imageVector = Icons.Filled.Edit,
-                                contentDescription = stringResource(R.string.rename_favorite)
-                            )
-                        }
-                        IconButton(onClick = { onRemove(stop) }) {
-                            Icon(
-                                imageVector = Icons.Filled.Delete,
-                                contentDescription = stringResource(R.string.remove_favorite)
-                            )
-                        }
-                    }
                 }
-            }
+            )
         }
     }
 }
 
 /**
- * Vertical long-press-drag reorder for the 1-column list. The dragged item
- * follows the finger via [graphicsLayer] (draw-phase only); on release the
- * target index is derived from the accumulated offset over the measured item
- * height. A press without movement is a no-op.
+ * Vertical long-press-drag reorder. The dragged item follows the finger via
+ * [graphicsLayer] (draw-phase only); on release the target index is derived
+ * from the accumulated offset over the measured item height. A press without
+ * movement is a no-op. [onDraggingChange] lets the host freeze list scrolling
+ * while a drag is in flight so the two never fight over one finger.
  */
 @Composable
 private fun Modifier.favoriteDragToReorder(
     index: Int,
-    onMove: (from: Int, to: Int) -> Unit
-): Modifier {
-    return this.then(FavoriteDragModifier(index, onMove))
-}
-
-@Composable
-private fun FavoriteDragModifier(
-    index: Int,
-    onMove: (from: Int, to: Int) -> Unit
+    onMove: (from: Int, to: Int) -> Unit,
+    onDraggingChange: (Boolean) -> Unit
 ): Modifier {
     val itemHeightPx = remember { mutableFloatStateOf(0f) }
     val dragOffset = remember { mutableFloatStateOf(0f) }
     val dragged = remember { mutableStateOf(false) }
     val currentIndex = rememberUpdatedState(index)
     val currentOnMove = rememberUpdatedState(onMove)
-    return Modifier
+    val currentOnDraggingChange = rememberUpdatedState(onDraggingChange)
+    return this
         .onSizeChanged { itemHeightPx.floatValue = it.height.toFloat() }
         .zIndex(if (dragged.value) 1f else 0f)
         .pointerInput(Unit) {
             detectDragGesturesAfterLongPress(
-                onDragStart = { dragged.value = true },
+                onDragStart = {
+                    dragged.value = true
+                    currentOnDraggingChange.value(true)
+                },
                 onDrag = { change, dragAmount ->
                     change.consume()
                     dragOffset.floatValue += dragAmount.y
@@ -231,6 +162,7 @@ private fun FavoriteDragModifier(
                     val h = itemHeightPx.floatValue
                     val offset = dragOffset.floatValue
                     dragged.value = false
+                    currentOnDraggingChange.value(false)
                     dragOffset.floatValue = 0f
                     if (h > 0f && offset != 0f) {
                         val delta = (offset / h).roundToInt()
@@ -242,6 +174,7 @@ private fun FavoriteDragModifier(
                 },
                 onDragCancel = {
                     dragged.value = false
+                    currentOnDraggingChange.value(false)
                     dragOffset.floatValue = 0f
                 }
             )

@@ -29,6 +29,7 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.ui.components.ContentEntrance
+import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -42,6 +43,7 @@ fun RecentStopsScreen(
     val recent = rememberStopListLoader(read = { recentStopsRepository.getRecentStops() })
     var editable by remember(recent.stops) { mutableStateOf(recent.stops) }
     var showClearConfirm by remember { mutableStateOf(false) }
+    var dismissTarget by remember { mutableStateOf<Stop?>(null) }
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val addedMessage = stringResource(R.string.added_to_favorites)
@@ -106,7 +108,7 @@ fun RecentStopsScreen(
                     emptyText = stringResource(R.string.no_recent_stops),
                     onNavigateToArrivals = onNavigateToArrivals,
                     onPromote = ::handlePromote,
-                    onDismiss = ::handleDismiss,
+                    onDismiss = { dismissTarget = it },
                     emptyActions = {
                         TextButton(onClick = onFindNearby) {
                             Text(stringResource(R.string.find_nearby))
@@ -117,7 +119,30 @@ fun RecentStopsScreen(
         }
         SnackbarHost(
             hostState = snackbarHost,
-            modifier = Modifier.align(Alignment.BottomCenter)
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = navPillBottomPadding() + 8.dp)
+        )
+    }
+
+    dismissTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { dismissTarget = null },
+            title = { Text(stringResource(R.string.remove_recent_title)) },
+            text = { Text(target.desc) },
+            confirmButton = {
+                TextButton(onClick = {
+                    dismissTarget = null
+                    handleDismiss(target)
+                }) {
+                    Text(stringResource(R.string.remove_recent))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { dismissTarget = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
         )
     }
 

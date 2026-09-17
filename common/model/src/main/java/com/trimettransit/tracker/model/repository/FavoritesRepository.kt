@@ -12,5 +12,4 @@ interface FavoritesRepository {
     suspend fun removeFavorite(locId: Int): Boolean
     suspend fun isFavorite(locId: Int): Boolean
     suspend fun setOrder(idsInOrder: List<Int>)
-    suspend fun updateLabel(locId: Int, label: String): Boolean
 }

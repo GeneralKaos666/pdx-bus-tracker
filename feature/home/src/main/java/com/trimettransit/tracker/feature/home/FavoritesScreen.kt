@@ -3,6 +3,8 @@ package com.trimettransit.tracker.feature.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,14 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,16 +29,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.preference.PreferenceManager
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.core.content.edit
+import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.feature.home.R
 import com.trimettransit.tracker.model.FavoriteEdits
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
+import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 
 private const val PREF_WELCOME_SHOWN = "pref_key_favorites_welcome_shown"
@@ -53,19 +54,17 @@ fun FavoritesScreen(
 ) {
     val favorites = rememberStopListLoader(read = { favoritesRepository.getFavorites() })
     var editable by remember(favorites.stops) { mutableStateOf(favorites.stops) }
-    var renameTarget by remember { mutableStateOf<Stop?>(null) }
+    var deleteTarget by remember { mutableStateOf<Stop?>(null) }
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val removeMutex = remember { Mutex() }
     val removedMessage = stringResource(R.string.favorite_removed)
     val undoLabel = stringResource(R.string.undo)
     val context = LocalContext.current
 
-    var showWelcome by remember {
-        mutableStateOf(
-            !PreferenceManager.getDefaultSharedPreferences(context)
-                .getBoolean(PREF_WELCOME_SHOWN, false)
-        )
-    }
+    val welcomeAlreadyShown = PreferenceManager.getDefaultSharedPreferences(context)
+        .getBoolean(PREF_WELCOME_SHOWN, false)
+    var showWelcome by remember { mutableStateOf(!welcomeAlreadyShown) }
     fun dismissWelcome() {
         showWelcome = false
         PreferenceManager.getDefaultSharedPreferences(context)
@@ -87,28 +86,37 @@ fun FavoritesScreen(
     }
 
     fun handleRemove(stop: Stop) {
-        val snapshot = editable
-        val removedIndex = snapshot.indexOfFirst { it.locId == stop.locId }
-        if (removedIndex < 0) return
-        editable = snapshot.filterNot { it.locId == stop.locId }
         scope.launch {
-            runCatching { favoritesRepository.removeFavorite(stop.locId) }
-                .onFailure { Timber.e(it, "Failed to remove favorite") }
-            val result = snackbarHost.showSnackbar(removedMessage, undoLabel)
-            if (result == SnackbarResult.ActionPerformed) {
-                runCatching { favoritesRepository.addFavorite(stop) }
-                editable = snapshot
-                persistOrder(snapshot)
+            removeMutex.withLock {
+                val index = editable.indexOfFirst { it.locId == stop.locId }
+                if (index < 0) return@withLock
+                editable = editable.filterNot { it.locId == stop.locId }
+                val removed = runCatching { favoritesRepository.removeFavorite(stop.locId) }
+                    .onFailure { Timber.e(it, "Failed to remove favorite") }
+                    .getOrDefault(false)
+                if (!removed) {
+                    // DB delete failed: roll back instead of offering undo over a lie.
+                    editable = editable.toMutableList()
+                        .also { it.add(index.coerceIn(0, it.size), stop) }
+                    return@withLock
+                }
+                val result = snackbarHost.showSnackbar(removedMessage, undoLabel)
+                if (result == SnackbarResult.ActionPerformed) {
+                    val added = runCatching { favoritesRepository.addFavorite(stop) }
+                        .onFailure { Timber.e(it, "Failed to restore favorite") }
+                        .getOrDefault(false)
+                    val current = editable
+                    val at = index.coerceIn(0, current.size)
+                    if (added) {
+                        editable = current.toMutableList()
+                            .also { it.add(at, stop) }
+                        persistOrder(editable)
+                    } else {
+                        // Row still exists (duplicate add ignored): just reconcile order.
+                        persistOrder(current)
+                    }
+                }
             }
-        }
-    }
-
-    fun handleRename(stop: Stop, label: String) {
-        val clean = FavoriteEdits.sanitizeLabel(label)
-        editable = editable.map { if (it.locId == stop.locId) it.copy(label = clean) else it }
-        scope.launch {
-            runCatching { favoritesRepository.updateLabel(stop.locId, clean) }
-                .onFailure { Timber.e(it, "Failed to rename favorite") }
         }
     }
 
@@ -126,8 +134,7 @@ fun FavoritesScreen(
                     emptyText = stringResource(R.string.no_favorite_stops),
                     onNavigateToArrivals = onNavigateToArrivals,
                     onMove = ::handleMove,
-                    onRemove = ::handleRemove,
-                    onRename = { renameTarget = it },
+                    onDeleteRequest = { deleteTarget = it },
                     emptyActions = {
                         FavoritesEmptyActions(
                             onBrowseRoutes = onBrowseRoutes,
@@ -139,22 +146,39 @@ fun FavoritesScreen(
         }
         SnackbarHost(
             hostState = snackbarHost,
-            modifier = Modifier.align(Alignment.BottomCenter)
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = navPillBottomPadding() + 8.dp)
         )
     }
 
-    renameTarget?.let { target ->
-        RenameFavoriteDialog(
-            initial = target.label,
-            onDismiss = { renameTarget = null },
-            onSave = {
-                handleRename(target, it)
-                renameTarget = null
+    deleteTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text(stringResource(R.string.remove_favorite_title)) },
+            text = { Text(target.desc) },
+            confirmButton = {
+                TextButton(onClick = {
+                    deleteTarget = null
+                    handleRemove(target)
+                }) {
+                    Text(stringResource(R.string.remove_favorite))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteTarget = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
         )
     }
 
-    if (showWelcome && !favorites.isLoading) {
+    if (FavoriteEdits.shouldShowWelcome(
+            alreadyShown = !showWelcome,
+            isEmpty = editable.isEmpty(),
+            isLoading = favorites.isLoading
+        )
+    ) {
         WelcomeDialog(
             onDismiss = { dismissWelcome() },
             onBrowseRoutes = {
@@ -211,39 +235,6 @@ private fun WelcomeDialog(
                 TextButton(onClick = onDismiss) {
                     Text(stringResource(R.string.got_it))
                 }
-            }
-        }
-    )
-}
-
-@Composable
-private fun RenameFavoriteDialog(
-    initial: String,
-    onDismiss: () -> Unit,
-    onSave: (String) -> Unit
-) {
-    var text by remember(initial) { mutableStateOf(initial) }
-    LaunchedEffect(initial) { text = initial }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.rename_favorite_title)) },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it.take(FavoriteEdits.MAX_LABEL_LENGTH + 20) },
-                placeholder = { Text(stringResource(R.string.rename_favorite_hint)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = { onSave(text) }) {
-                Text(stringResource(R.string.save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
             }
         }
     )
