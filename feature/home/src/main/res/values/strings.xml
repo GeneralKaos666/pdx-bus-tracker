@@ -11,4 +11,14 @@
     <string name="favorites_title">Favorites</string>
     <string name="recent_stops_title">Recent Stops</string>
     <string name="no_recent_stops">No recent stops.</string>
+    <string name="favorite_removed">Removed from favorites</string>
+    <string name="undo">Undo</string>
+    <string name="rename_favorite">Rename</string>
+    <string name="rename_favorite_title">Rename favorite</string>
+    <string name="rename_favorite_hint">Label (optional)</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="move_up">Move up</string>
+    <string name="move_down">Move down</string>
+    <string name="remove_favorite">Remove</string>
 </resources>

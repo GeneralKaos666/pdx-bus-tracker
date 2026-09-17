@@ -13,7 +13,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         get() {
             val stops = mutableListOf<Stop>()
             val db = readableDatabase
-            db.rawQuery("SELECT desc, dir_desc, transit_type, loc_id, longitude, latitude, route_num FROM favorites", null).use { cursor ->
+            db.rawQuery("SELECT desc, dir_desc, transit_type, loc_id, longitude, latitude, route_num, sort_order, label FROM favorites ORDER BY sort_order ASC, id ASC", null).use { cursor ->
                 while (cursor.moveToNext()) {
                     stops.add(
                         Stop(
@@ -23,7 +23,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
                             locId = cursor.getInt(cursor.getColumnIndexOrThrow("loc_id")),
                             longitude = cursor.getDouble(cursor.getColumnIndexOrThrow("longitude")),
                             latitude = cursor.getDouble(cursor.getColumnIndexOrThrow("latitude")),
-                            routeNum = cursor.getInt(cursor.getColumnIndexOrThrow("route_num"))
+                            routeNum = cursor.getInt(cursor.getColumnIndexOrThrow("route_num")),
+                            label = cursor.getString(cursor.getColumnIndexOrThrow("label")) ?: ""
                         )
                     )
                 }
@@ -55,7 +56,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         }
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("CREATE TABLE IF NOT EXISTS favorites(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS favorites(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER,sort_order INTEGER DEFAULT 0,label TEXT DEFAULT '')")
         db.execSQL("CREATE TABLE IF NOT EXISTS recent_stops(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER)")
     }
 
@@ -82,14 +83,24 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
             runCatching { db.execSQL("ALTER TABLE favorites ADD COLUMN route_num INTEGER DEFAULT 0") }
             runCatching { db.execSQL("ALTER TABLE recent_stops ADD COLUMN route_num INTEGER DEFAULT 0") }
         }
+        if (oldVersion < 8) {
+            runCatching { db.execSQL("ALTER TABLE favorites ADD COLUMN sort_order INTEGER DEFAULT 0") }
+            runCatching { db.execSQL("ALTER TABLE favorites ADD COLUMN label TEXT DEFAULT ''") }
+            runCatching { db.execSQL("UPDATE favorites SET sort_order = id WHERE sort_order = 0 OR sort_order IS NULL") }
+        }
     }
 
     fun addFavorite(stop: Stop): Boolean {
         val db = writableDatabase
+        val values = stopValues(stop)
+        db.rawQuery("SELECT COALESCE(MAX(sort_order), 0) FROM favorites", null).use { cursor ->
+            val next = if (cursor.moveToFirst()) cursor.getInt(0) + 1 else 1
+            values.put("sort_order", next)
+        }
         val rowId = db.insertWithOnConflict(
             "favorites",
             null,
-            stopValues(stop),
+            values,
             SQLiteDatabase.CONFLICT_IGNORE
         )
         val added = rowId != -1L
@@ -107,6 +118,33 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         val db = writableDatabase
         val removed = db.delete("favorites", "loc_id = ?", arrayOf(locId.toString())) > 0
         return removed
+    }
+
+    fun setFavoriteOrder(idsInOrder: List<Int>) {
+        val db = writableDatabase
+        db.transaction {
+            idsInOrder.forEachIndexed { index, locId ->
+                ContentValues().apply { put("sort_order", index + 1) }.let { values ->
+                    update("favorites", values, "loc_id = ?", arrayOf(locId.toString()))
+                }
+            }
+        }
+    }
+
+    fun updateFavoriteLabel(locId: Int, label: String): Boolean {
+        val db = writableDatabase
+        val values = ContentValues().apply { put("label", label) }
+        return db.update("favorites", values, "loc_id = ?", arrayOf(locId.toString())) > 0
+    }
+
+    fun removeRecentStop(locId: Int): Boolean {
+        val db = writableDatabase
+        return db.delete("recent_stops", "loc_id = ?", arrayOf(locId.toString())) > 0
+    }
+
+    fun clearRecentStops() {
+        val db = writableDatabase
+        db.delete("recent_stops", null, null)
     }
 
     fun addRecentStop(stop: Stop) {
@@ -132,10 +170,11 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         put("longitude", stop.longitude)
         put("latitude", stop.latitude)
         put("route_num", stop.routeNum)
+        put("label", stop.label)
     }
 
     companion object {
         private const val DB_NAME = "TriMet_Go.db"
-        private const val DB_VERSION = 7
+        private const val DB_VERSION = 8
     }
 }

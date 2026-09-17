@@ -8,7 +8,8 @@ data class Stop(
     val transitType: String = "",
     val routeNum: Int = 0,
     val locId: Int = 0,
-    val routes: List<Route> = emptyList()
+    val routes: List<Route> = emptyList(),
+    val label: String = ""
 )
 
 /**

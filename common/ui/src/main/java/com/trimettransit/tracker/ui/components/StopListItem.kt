@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.trimettransit.tracker.model.FavoriteEdits
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.R
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
@@ -108,7 +109,7 @@ fun StopListItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stop.desc,
+                    text = FavoriteEdits.displayName(stop.desc, stop.label),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,

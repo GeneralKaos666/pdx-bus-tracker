@@ -11,4 +11,14 @@
     <string name="favorites_title">Favoritos</string>
     <string name="recent_stops_title">Paradas recientes</string>
     <string name="no_recent_stops">No hay paradas recientes.</string>
+    <string name="favorite_removed">Eliminado de favoritos</string>
+    <string name="undo">Deshacer</string>
+    <string name="rename_favorite">Renombrar</string>
+    <string name="rename_favorite_title">Renombrar favorito</string>
+    <string name="rename_favorite_hint">Etiqueta (opcional)</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="move_up">Subir</string>
+    <string name="move_down">Bajar</string>
+    <string name="remove_favorite">Quitar</string>
 </resources>

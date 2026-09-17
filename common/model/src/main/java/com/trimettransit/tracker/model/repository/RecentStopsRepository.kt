@@ -9,4 +9,6 @@ import com.trimettransit.tracker.model.Stop
 interface RecentStopsRepository {
     suspend fun getRecentStops(): List<Stop>
     suspend fun addRecentStop(stop: Stop)
+    suspend fun removeRecent(locId: Int): Boolean
+    suspend fun clearRecents()
 }
