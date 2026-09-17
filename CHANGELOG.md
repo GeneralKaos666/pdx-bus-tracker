@@ -1,5 +1,11 @@
 # Changelog
 
+## What's New in v4.18.5
+
+- **Favorites, your order:** long-press and drag favorite stops into any order (or use the up/down buttons in compact mode), give any favorite a custom name, and swipe one away with a chance to undo.
+- **Recent stops you can tidy:** save a recent stop to favorites with one tap, remove single entries, or clear the whole history with a confirmation — favorites are never affected.
+- **A friendlier first launch:** new installs get a one-time welcome explaining favorites, nearby stops, and live bus tracking, and empty Favorites and Recents screens now offer direct shortcuts to browse routes or find nearby stops.
+
 ## What's New in v4.18.4
 
 - **Tracked buses glide on the stop map:** the bus you're following now eases smoothly to each new live position instead of snapping, while every other bus still updates instantly. Turning on your device's "Remove animations" setting keeps the instant updates.
