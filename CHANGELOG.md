@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Clearer color settings:** every color option in Settings now says what it changes — the accent source explains it recolors buttons, sliders, switches, and the selected tab, vibrancy describes its saturation boost, the bottom-bar pill and each transit badge say where they appear and what happens when unset, and card outlines and map styles name the surfaces they affect.
+
 ## What's New in v4.18.5
 
 - **Favorites, your order:** long-press and drag favorite stops into any order, and remove one with a confirmation plus a chance to undo.

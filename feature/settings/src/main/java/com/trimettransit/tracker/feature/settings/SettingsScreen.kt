@@ -484,28 +484,28 @@ fun SettingsScreen(
 
                                         SettingsColourOption(
                                             label = stringResource(R.string.transit_bus),
-                                            subtitle = stringResource(R.string.transit_type_subtitle),
+                                            subtitle = stringResource(R.string.transit_bus_subtitle),
                                             icon = Icons.Filled.Route,
                                             colour = parseColorSpec(transitBusRaw) ?: transitColor("B", scheme),
                                             onClick = { colourTarget = ColourTarget.TRANSIT_BUS }
                                         )
                                         SettingsColourOption(
                                             label = stringResource(R.string.transit_rail),
-                                            subtitle = stringResource(R.string.transit_type_subtitle),
+                                            subtitle = stringResource(R.string.transit_rail_subtitle),
                                             icon = Icons.Filled.Route,
                                             colour = parseColorSpec(transitRailRaw) ?: transitColor("M", scheme),
                                             onClick = { colourTarget = ColourTarget.TRANSIT_RAIL }
                                         )
                                         SettingsColourOption(
                                             label = stringResource(R.string.transit_streetcar),
-                                            subtitle = stringResource(R.string.transit_type_subtitle),
+                                            subtitle = stringResource(R.string.transit_streetcar_subtitle),
                                             icon = Icons.Filled.Route,
                                             colour = parseColorSpec(transitStreetcarRaw) ?: transitColor("S", scheme),
                                             onClick = { colourTarget = ColourTarget.TRANSIT_STREETCAR }
                                         )
                                         SettingsColourOption(
                                             label = stringResource(R.string.transit_wes),
-                                            subtitle = stringResource(R.string.transit_type_subtitle),
+                                            subtitle = stringResource(R.string.transit_wes_subtitle),
                                             icon = Icons.Filled.Route,
                                             colour = parseColorSpec(transitWesRaw) ?: transitColor("W", scheme),
                                             onClick = { colourTarget = ColourTarget.TRANSIT_WES }
