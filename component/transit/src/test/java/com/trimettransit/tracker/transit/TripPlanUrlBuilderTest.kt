@@ -67,4 +67,12 @@ class TripPlanUrlBuilderTest {
     fun `custom itinerary count is emitted`() {
         assertTrue(build(TripRequestOptions(itineraryCount = 5)).contains("/maxIntineraries/5"))
     }
+
+    @Test
+    fun `requestDateUsesLosAngelesZone`() {
+        // Epoch 0 is 1969-12-31 16:00 PST in America/Los_Angeles but 1970-01-01 00:00 UTC,
+        // so the requested date/clock must render in the Transit service's local zone.
+        assertEquals("12-31-1969", formatTripPlannerDate(0L))
+        assertEquals("4:00 PM", formatTripPlannerClock(0L))
+    }
 }

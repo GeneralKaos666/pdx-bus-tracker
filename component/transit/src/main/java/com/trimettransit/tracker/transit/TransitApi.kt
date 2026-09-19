@@ -18,8 +18,6 @@ import com.trimettransit.tracker.util.ConnectionUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
 
 object TransitApi {
     private val parser = JSONParser
@@ -181,10 +179,10 @@ object TransitApi {
         val url = buildString {
             append(baseUrl)
             append("/appID/").append(apiKey)
-            append("/ll/").append(ll)
+            append("/ll/").append(Uri.encode(ll))
             if (feet != null) append("/feet/").append(feet)
             if (meters != null) append("/meters/").append(meters)
-            if (bbox != null) append("/bbox/").append(bbox)
+            if (bbox != null) append("/bbox/").append(Uri.encode(bbox))
             if (maxStops != null) append("/maxStops/").append(maxStops)
             if (showRoutes) append("/showRoutes/true")
         }
@@ -223,9 +221,10 @@ object TransitApi {
             Timber.w("TriMet API key not configured")
             return@withContext TripPlanResult.Error(TripPlannerError.NETWORK)
         }
-        val requested = time.timeMillis?.let { DateTime(it) } ?: DateTime.now()
-        val date = DateTimeFormat.forPattern("M-d-yyyy").print(requested)
-        val clock = DateTimeFormat.forPattern("h:mm a").print(requested)
+        // The Trip Planner WS interprets date/time in the Transit service's local zone.
+        val requestedMillis = time.timeMillis ?: System.currentTimeMillis()
+        val date = formatTripPlannerDate(requestedMillis)
+        val clock = formatTripPlannerClock(requestedMillis)
         val baseUrl = context.getString(R.string.base_trip_planner_url)
         val url = buildTripPlannerRequestUrl(
             baseUrl = baseUrl,

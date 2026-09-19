@@ -8,6 +8,7 @@ import org.joda.time.DateTimeZone
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -16,6 +17,13 @@ import org.junit.Test
 class TripPlannerXmlParserTest {
 
     private var originalZone: DateTimeZone? = null
+
+    // Trip Planner wall-clocks are Portland local time; expectations are built in
+    // America/Los_Angeles via java.time (the Joda artifact here has no named zones
+    // without an app Context, so DateTimeZone.forID would throw even in tests).
+    private fun laMillis(month: Int, day: Int, hour: Int, minute: Int): Long =
+        java.time.LocalDateTime.of(2026, month, day, hour, minute)
+            .atZone(java.time.ZoneId.of("America/Los_Angeles")).toInstant().toEpochMilli()
 
     @Before
     fun pinToUtc() {
@@ -107,8 +115,8 @@ class TripPlannerXmlParserTest {
         assertEquals(1, plan.itineraries.size)
         val itinerary = plan.itineraries[0]
         assertEquals("00000188.d0b3d9e8", itinerary.id)
-        assertEquals(DateTime(2026, 4, 26, 10, 9), itinerary.departure)
-        assertEquals(DateTime(2026, 4, 26, 10, 43), itinerary.arrival)
+        assertEquals(laMillis(4, 26, 10, 9), itinerary.departure?.millis)
+        assertEquals(laMillis(4, 26, 10, 43), itinerary.arrival?.millis)
         assertEquals(34 * 60_000L, itinerary.durationMillis)
         assertEquals(9.2 * 1609.344, itinerary.distanceMeters, 0.001)
         assertEquals(11 * 60_000L, itinerary.walkTimeMillis)
@@ -122,8 +130,8 @@ class TripPlannerXmlParserTest {
         assertEquals(TripLegMode.WALK, walk.mode)
         assertFalse(walk.stayOnBoard)
         assertNull(walk.routeNumber)
-        assertEquals(DateTime(2026, 4, 26, 10, 9), walk.departure)
-        assertEquals(DateTime(2026, 4, 26, 10, 20), walk.arrival)
+        assertEquals(laMillis(4, 26, 10, 9), walk.departure?.millis)
+        assertEquals(laMillis(4, 26, 10, 20), walk.arrival?.millis)
 
         val bus = itinerary.legs[1]
         assertEquals(TripLegMode.BUS, bus.mode)
@@ -301,19 +309,19 @@ class TripPlannerXmlParserTest {
     @Test
     fun `parseMillis parses 12 hour and 24 hour clock times`() {
         val am = TripPlannerXmlParser.parseMillis("4/26/26", "10:09 AM")
-        assertEquals(DateTime(2026, 4, 26, 10, 9).millis, am)
+        assertEquals(laMillis(4, 26, 10, 9), am)
 
         val pm = TripPlannerXmlParser.parseMillis("4/26/26", "10:15 PM")
-        assertEquals(DateTime(2026, 4, 26, 22, 15).millis, pm)
+        assertEquals(laMillis(4, 26, 22, 15), pm)
 
         val twentyFour = TripPlannerXmlParser.parseMillis("4/26/26", "07:05")
-        assertEquals(DateTime(2026, 4, 26, 7, 5).millis, twentyFour)
+        assertEquals(laMillis(4, 26, 7, 5), twentyFour)
     }
 
     @Test
     fun `parseMillis handles dash-separated dates`() {
         val dash = TripPlannerXmlParser.parseMillis("4-26-26", "9:05 AM")
-        assertEquals(DateTime(2026, 4, 26, 9, 5).millis, dash)
+        assertEquals(laMillis(4, 26, 9, 5), dash)
     }
 
     @Test
@@ -322,5 +330,27 @@ class TripPlannerXmlParserTest {
         assertNull(TripPlannerXmlParser.parseMillis("4/26/26", "   "))
         assertNull(TripPlannerXmlParser.parseMillis("4/26/26", "garbage"))
         assertNull(TripPlannerXmlParser.parseMillis("4/26/26", "45:99"))
+    }
+
+    @Test
+    fun `parseMillis interprets wall clock in Los Angeles`() {
+        // 4/26/26 is PDT (UTC-7): the same wall clock is 7h later than a UTC reading.
+        assertEquals(
+            laMillis(4, 26, 10, 9),
+            TripPlannerXmlParser.parseMillis("4/26/26", "10:09 AM")
+        )
+        assertNotEquals(
+            DateTime(2026, 4, 26, 10, 9, DateTimeZone.UTC).millis,
+            TripPlannerXmlParser.parseMillis("4/26/26", "10:09 AM")
+        )
+    }
+
+    @Test
+    fun `parseTripPlanResponse rejects entity expansion payload`() {
+        val xxe = "<?xml version=\"1.0\"?>" +
+            "<!DOCTYPE r [<!ENTITY x \"pwned\">]>" +
+            "<response><from/><to/><itineraries/>&x;</response>"
+        val result = TripPlannerXmlParser.parseTripPlanResponse(xxe) as TripPlanResult.Error
+        assertEquals(TripPlannerError.SYSTEM_OUTAGE, result.error)
     }
 }
