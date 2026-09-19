@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
@@ -41,7 +40,6 @@ import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.appearance.rowContentPadding
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault

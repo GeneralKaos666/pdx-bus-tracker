@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -21,7 +20,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +47,6 @@ import com.trimettransit.tracker.ui.appearance.rowContentPadding
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitTypeLabel
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
@@ -60,6 +57,10 @@ import com.trimettransit.tracker.util.formatDateTime
 import kotlin.math.roundToInt
 import org.joda.time.DateTime
 
+/**
+ * Single arrival row. [refreshKey] is a minute-aligned tick that re-keys the countdown
+ * so the displayed minutes flip exactly on the minute.
+ */
 @Composable
 internal fun ArrivalItem(
     arrival: Arrival,
@@ -79,8 +80,13 @@ internal fun ArrivalItem(
     val color = transitColor(type, scheme, overrides)
     val displayTime = arrival.displayTimeMillis
 
-    val formattedTime = if (displayTime > 0L) formatDateTime(DateTime(displayTime), context) else ""
-    val minutesAway = if (displayTime > 0L) minutesUntil(displayTime) else 0L
+    // refreshKey is ArrivalsScreen countdownTick: reading it keys the countdown below.
+    val formattedTime = remember(displayTime, refreshKey, context) {
+        if (displayTime > 0L) formatDateTime(DateTime(displayTime), context) else ""
+    }
+    val minutesAway = remember(displayTime, refreshKey) {
+        if (displayTime > 0L) minutesUntil(displayTime) else 0L
+    }
 
     val interactionSource = remember { MutableInteractionSource() }
     Card(

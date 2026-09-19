@@ -127,7 +127,6 @@ import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
 import com.trimettransit.tracker.feature.stops.StopsScreen
 import com.trimettransit.tracker.feature.trips.TripPlannerScreen
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
-import com.trimettransit.tracker.ui.appearance.AppearanceStyle
 import com.trimettransit.tracker.ui.appearance.FontScale
 import com.trimettransit.tracker.ui.appearance.ThemePreference
 import com.trimettransit.tracker.ui.appearance.readAppearanceStyle

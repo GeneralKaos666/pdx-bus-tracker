@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,7 +44,6 @@ import com.trimettransit.tracker.model.TripPlan
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.util.clockTime
 import org.joda.time.DateTime

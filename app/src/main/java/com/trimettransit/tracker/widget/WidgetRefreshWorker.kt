@@ -30,12 +30,15 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
             // One batched request for all stops instead of N per-stop requests: the
             // arrivals endpoint accepts comma-joined locIDs and each arrival carries
             // its stop's locid, so rows split client-side below.
+            // The /arrivals/N cap applies to the whole batch (global total, not per stop),
+            // so request headroom of one extra row per stop to keep each row's
+            // ARRIVALS_PER_STOP arrivals when distribution across stops is uneven.
             val ids = favorites.map { it.locId }
             val result = retryFetch(attempts = MAX_ATTEMPTS, label = "Widget") {
                 transitRepository.getArrivals(
                     locIds = ids,
                     minutes = WINDOW_MINUTES,
-                    maxArrivals = ARRIVALS_PER_STOP * ids.size
+                    maxArrivals = (ARRIVALS_PER_STOP + 1) * ids.size
                 )
             }
             val arrivals = result?.arrivals.orEmpty()

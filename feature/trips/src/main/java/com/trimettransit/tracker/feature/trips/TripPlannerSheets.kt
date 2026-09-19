@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationOn
@@ -67,7 +66,6 @@ import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.searchStops
 import com.trimettransit.tracker.ui.components.StopSearchItem
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Dispatchers

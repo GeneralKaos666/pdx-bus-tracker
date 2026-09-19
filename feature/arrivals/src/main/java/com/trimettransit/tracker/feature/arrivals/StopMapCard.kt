@@ -3,7 +3,6 @@ package com.trimettransit.tracker.feature.arrivals
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +38,6 @@ import com.trimettransit.tracker.ui.appearance.MapStyles
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitOnColor
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.AppMotion

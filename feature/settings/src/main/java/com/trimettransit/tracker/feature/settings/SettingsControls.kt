@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
@@ -52,7 +51,6 @@ import com.trimettransit.tracker.ui.appearance.onColorFor
 import com.trimettransit.tracker.ui.components.SettingsIconCircle
 import com.trimettransit.tracker.ui.components.SettingsRowOption
 import com.trimettransit.tracker.ui.components.pressScale
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import java.util.Locale
 import kotlin.math.roundToInt

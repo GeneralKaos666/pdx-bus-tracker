@@ -52,11 +52,13 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
             val fired = DepartureAlertPrefs.getFired(app)
             // One batched request for all monitored stops instead of a sequential
             // per-stop fetch: arrivals carry their stop's locid for client-side split.
+            // The /arrivals/N cap is a global total, so include one extra row per stop
+            // of headroom to keep each stop's arrivals when distribution is uneven.
             val result = retryFetch(attempts = MAX_ATTEMPTS, label = "Departure") {
                 transitRepository.getArrivals(
                     locIds = stops.map { it.locId },
                     minutes = windowMinutes + SLACK_MINUTES,
-                    maxArrivals = MAX_ARRIVALS * stops.size
+                    maxArrivals = (MAX_ARRIVALS + 1) * stops.size
                 )
             }
             if (result == null) {

@@ -11,12 +11,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -33,11 +33,14 @@ import com.trimettransit.tracker.ui.components.transitBadgeLetter
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 
 internal const val TOP_ARRIVAL_ROWS = 5
 
+/**
+ * Compact countdown list for picture-in-picture. [tick] is a minute-aligned tick that
+ * forces countdowns to recompute exactly on the minute.
+ */
 @Composable
 internal fun PipCountdownContent(
     arrivals: List<Arrival>,
@@ -45,6 +48,8 @@ internal fun PipCountdownContent(
     modifier: Modifier = Modifier,
     tick: Int = 0
 ) {
+    // Read tick so minute-aligned updates from ArrivalsScreen recompute countdowns below.
+    remember(tick) { tick }
     val scheme = MaterialTheme.colorScheme
     Column(
         modifier = modifier

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
@@ -71,7 +70,6 @@ import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink

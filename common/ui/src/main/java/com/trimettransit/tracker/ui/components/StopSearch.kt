@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -27,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.appearance.rowContentPadding
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 
 const val STOP_SEARCH_MAX_RESULTS = 250
