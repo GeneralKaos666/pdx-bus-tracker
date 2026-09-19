@@ -8,7 +8,7 @@ import java.io.IOException
 import java.net.URI
 import java.util.concurrent.TimeUnit
 
-object JSONParser {
+internal object JSONParser {
 
     private val httpClient = OkHttpClient.Builder()
         .followRedirects(true)

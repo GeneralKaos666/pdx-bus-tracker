@@ -19,7 +19,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-object TransitApi {
+internal object TransitApi {
     private val parser = JSONParser
 
     internal fun scrubApiKey(msg: String, apiKey: String): String =

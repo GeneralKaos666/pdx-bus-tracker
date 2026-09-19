@@ -23,7 +23,7 @@ import javax.xml.parsers.DocumentBuilderFactory
  * Pure XML→model mapping for the Trip Planner WS response. Keeps [TransitApi] as a
  * thin network shell and makes the parse logic directly unit-testable.
  */
-object TripPlannerXmlParser {
+internal object TripPlannerXmlParser {
 
     private const val TRIP_TIME_12H = "M/d/yy h:mm a"
     private const val TRIP_TIME_24H = "M/d/yy HH:mm"

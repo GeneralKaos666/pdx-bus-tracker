@@ -40,7 +40,6 @@ import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
-import com.trimettransit.tracker.transit.ApiKeys
 import com.trimettransit.tracker.ui.components.InlineSkeleton
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.pressScale
@@ -117,7 +116,7 @@ private fun DirectionsSubCard(
     LaunchedEffect(route.routeId, retryKey) {
         isLoading = true
         isMissingApiKey = false
-        if (ApiKeys.getTrimetApiKey().isBlank()) {
+        if (!transitRepository.isConfigured()) {
             isMissingApiKey = true
             directions = null
         } else {
@@ -241,7 +240,7 @@ private fun StopsSubCard(
     LaunchedEffect(routeId, directionId, retryKey) {
         isLoading = true
         isMissingApiKey = false
-        if (ApiKeys.getTrimetApiKey().isBlank()) {
+        if (!transitRepository.isConfigured()) {
             isMissingApiKey = true
             stops = null
         } else {

@@ -35,7 +35,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.repository.TransitRepository
-import com.trimettransit.tracker.transit.ApiKeys
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
@@ -63,7 +62,7 @@ fun StopsRouteList(
     LaunchedEffect(retryKey) {
         isLoading = true
         isMissingApiKey = false
-        if (ApiKeys.getTrimetApiKey().isBlank()) {
+        if (!transitRepository.isConfigured()) {
             isMissingApiKey = true
             routes = null
         } else {

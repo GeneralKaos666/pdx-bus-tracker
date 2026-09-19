@@ -16,7 +16,7 @@ import org.json.JSONObject
  * network shell (online guard, API key, URL build, OkHttp fetch, error handling) and
  * makes the parsing logic directly unit-testable.
  */
-object TransitJsonMapper {
+internal object TransitJsonMapper {
 
     fun parseRoute(desc: String, routeId: Int, type: String): Route {
         return Route(

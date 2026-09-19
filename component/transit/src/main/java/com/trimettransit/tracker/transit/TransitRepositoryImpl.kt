@@ -15,11 +15,13 @@ import kotlinx.coroutines.withContext
 
 /**
  * Adapter exposing the singleton [TransitApi] behind the [TransitRepository]
- * boundary. Holds a [Context] (application-scoped) so callers don't pass it.
+ * boundary. Retains only the application [Context] so this process-wide shared
+ * instance can never leak an Activity/Service context.
  */
 class TransitRepositoryImpl(
-    private val context: Context
+    context: Context
 ) : TransitRepository {
+    private val context: Context = context.applicationContext
 
     private val searchCache = SearchStopCache()
 
