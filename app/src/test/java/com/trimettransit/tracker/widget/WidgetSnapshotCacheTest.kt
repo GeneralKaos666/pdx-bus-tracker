@@ -3,6 +3,8 @@ package com.trimettransit.tracker.widget
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Detour
 import org.joda.time.DateTime
+import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -103,6 +105,52 @@ class WidgetSnapshotCacheTest {
     @Test
     fun `dedupeDetours handles empty input`() {
         assertEquals(0, WidgetSnapshotCache.dedupeDetours(emptyList()).size)
+    }
+
+    @Test
+    fun `corrupt row does not void snapshot`() {
+        val rows = JSONArray()
+            .put(
+                JSONObject()
+                    .put("locId", 1)
+                    .put("name", "Stop A")
+                    .put("arrivals", JSONArray().put(JSONObject().put("sign", "4").put("at", 1000L)))
+            )
+            .put("corrupt")
+        val json = JSONObject()
+            .put("hasFavorites", true)
+            .put("updated", 123L)
+            .put("rows", rows)
+            .toString()
+        val snap = WidgetSnapshotCache.parseSnapshotLenient(json)
+        assertEquals(1, snap.rows.size)
+        assertEquals(1, snap.rows[0].stop.locId)
+    }
+
+    @Test
+    fun `empty arrival rows are kept`() {
+        val rows = JSONArray()
+            .put(JSONObject().put("locId", 5).put("name", "Stop E").put("arrivals", JSONArray()))
+        val json = JSONObject()
+            .put("hasFavorites", true)
+            .put("updated", 123L)
+            .put("rows", rows)
+            .toString()
+        val snap = WidgetSnapshotCache.parseSnapshotLenient(json)
+        assertEquals(1, snap.rows.size)
+        assertEquals(5, snap.rows[0].stop.locId)
+    }
+
+    @Test
+    fun `cleanArrivals keeps same-time arrivals with different signs`() {
+        val now = DateTime.now().millis
+        val cleaned = WidgetSnapshotCache.cleanArrivals(
+            listOf(
+                Arrival(shortSign = "4-Division", estimatedMillis = now),
+                Arrival(shortSign = "6-Martin Luther King Jr", estimatedMillis = now)
+            )
+        )
+        assertEquals(2, cleaned.size)
     }
 
     private fun arrival(atMillis: Long) = Arrival(

@@ -35,10 +35,9 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         get() {
             val stops = mutableListOf<Stop>()
             val db = readableDatabase
-            db.rawQuery("SELECT desc, dir_desc, transit_type, loc_id, longitude, latitude, route_num FROM recent_stops", null).use { cursor ->
+            db.rawQuery("SELECT desc, dir_desc, transit_type, loc_id, longitude, latitude, route_num FROM recent_stops ORDER BY id DESC", null).use { cursor ->
                 while (cursor.moveToNext()) {
                     stops.add(
-                        0,
                         Stop(
                             desc = cursor.getString(cursor.getColumnIndexOrThrow("desc")),
                             dirDesc = cursor.getString(cursor.getColumnIndexOrThrow("dir_desc")),

@@ -54,12 +54,27 @@ object WidgetSnapshotCache {
 
     fun snapshot(context: Context): Snapshot {
         val json = prefs(context).getString(KEY_JSON, null) ?: return Snapshot(emptyList(), false, 0L)
+        return parseSnapshotLenient(json)
+    }
+
+    /**
+     * Lenient, Context-free snapshot parse, kept pure so it is unit-testable without
+     * Android framework calls. A corrupt row is skipped instead of voiding the whole
+     * snapshot, and rows with no arrivals are kept so stops never vanish from the
+     * widget just because every bus just left.
+     */
+    fun parseSnapshotLenient(json: String): Snapshot {
         return runCatching {
             val root = JSONObject(json)
             val arr = root.optJSONArray("rows") ?: JSONArray()
-            val rows = (0 until arr.length()).map { i -> rowFromJson(arr.getJSONObject(i)) }
+            val rows = buildList {
+                for (i in 0 until arr.length()) {
+                    val o = arr.optJSONObject(i) ?: continue
+                    runCatching { rowFromJson(o) }.getOrNull()?.let { add(it) }
+                }
+            }
             Snapshot(
-                rows = rows.filter { it.arrivals.isNotEmpty() },
+                rows = rows,
                 hasFavorites = root.optBoolean("hasFavorites", false),
                 updatedAtMillis = root.optLong("updated", 0L)
             )
@@ -134,24 +149,32 @@ object WidgetSnapshotCache {
             routeNum = o.optInt("route", 0)
         )
         val arr = o.optJSONArray("arrivals") ?: JSONArray()
-        val arrivals = (0 until arr.length()).map { i ->
-            val a = arr.getJSONObject(i)
-            ArrivalOnScreen(
-                a.optString("sign", ""),
-                a.optLong("at", 0L),
-                a.optBoolean("dropOffOnly", false),
-                a.optString("status", "")
-            )
+        val arrivals = buildList {
+            for (i in 0 until arr.length()) {
+                val a = arr.optJSONObject(i) ?: continue
+                add(
+                    ArrivalOnScreen(
+                        a.optString("sign", ""),
+                        a.optLong("at", 0L),
+                        a.optBoolean("dropOffOnly", false),
+                        a.optString("status", "")
+                    )
+                )
+            }
         }
         val detours = o.optJSONArray("detours") ?: JSONArray()
-        val parsedDetours = (0 until detours.length()).map { i ->
-            val d = detours.getJSONObject(i)
-            val routes = d.optJSONArray("routes") ?: JSONArray()
-            WidgetDetour(
-                id = d.optInt("id", 0),
-                desc = d.optString("desc", ""),
-                routeIds = (0 until routes.length()).map { routes.getInt(it) }
-            )
+        val parsedDetours = buildList {
+            for (i in 0 until detours.length()) {
+                val d = detours.optJSONObject(i) ?: continue
+                val routes = d.optJSONArray("routes") ?: JSONArray()
+                add(
+                    WidgetDetour(
+                        id = d.optInt("id", 0),
+                        desc = d.optString("desc", ""),
+                        routeIds = (0 until routes.length()).map { routes.optInt(it) }
+                    )
+                )
+            }
         }
         return Row(stop, arrivals, parsedDetours)
     }
@@ -173,7 +196,8 @@ object WidgetSnapshotCache {
                     )
                 }
             }
-            .distinctBy { it.atMillis }
+            // Same-time arrivals on different signs are different buses — dedupe on both.
+            .distinctBy { it.atMillis to it.sign }
             .sortedBy { it.atMillis }
             .take(4)
 

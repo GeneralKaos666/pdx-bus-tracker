@@ -2,8 +2,16 @@ package com.trimettransit.tracker.transit
 
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class StopSearchStoreTest {
@@ -58,5 +66,43 @@ class StopSearchStoreTest {
     fun `order and duplicate stops are preserved`() {
         val stops = listOf(sampleStops[0], sampleStops[1], sampleStops[0])
         assertEquals(stops, deserializeStops(serializeStops(stops)))
+    }
+
+    private fun validJson(): String = serializeStops(sampleStops)
+
+    @Test
+    fun diskCacheBeyondTtlReturnsNull() {
+        val old = System.currentTimeMillis() - 25L * 60 * 60 * 1000
+        assertNull(deserializeWithTtl(validJson(), updatedAt = old, maxAgeMillis = 24L * 60 * 60 * 1000))
+    }
+
+    @Test
+    fun diskCacheWithinTtlReturnsStops() {
+        val fresh = System.currentTimeMillis() - 1L * 60 * 60 * 1000
+        assertEquals(sampleStops, deserializeWithTtl(validJson(), updatedAt = fresh, maxAgeMillis = 24L * 60 * 60 * 1000))
+    }
+
+    @OptIn(FlowPreview::class)
+    @Test
+    fun debounceCancelsStaleQuery() = runBlocking {
+        // Mirrors the Sheets/HomeSearchBar wiring:
+        // snapshotFlow { query }.debounce(200).collectLatest { searchStops(...) }
+        // Rapid keystrokes must cancel stale searches so only the last query runs.
+        val queries = MutableStateFlow("")
+        val finished = mutableListOf<String>()
+        val job = launch {
+            queries.debounce(200).collectLatest { q ->
+                if (q.isBlank()) return@collectLatest
+                delay(50)
+                finished.add(q)
+            }
+        }
+        queries.value = "a"
+        queries.value = "ab"
+        queries.value = "abc"
+        delay(600)
+        job.cancel()
+        assertTrue(finished.size <= 1)
+        if (finished.isNotEmpty()) assertEquals("abc", finished.last())
     }
 }

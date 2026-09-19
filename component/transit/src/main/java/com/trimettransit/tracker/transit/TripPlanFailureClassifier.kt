@@ -7,7 +7,7 @@ import java.io.IOException
  * Thrown by [JSONParser] when the served HTTP status is not successful (e.g., 4xx/5xx).
  * Carries the code so callers can classify the failure without parsing messages.
  */
-class HttpResponseCodeException(val code: Int) : IOException(
+internal class HttpResponseCodeException(val code: Int) : IOException(
     "Unsuccessful response code: $code"
 )
 

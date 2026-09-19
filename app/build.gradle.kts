@@ -272,5 +272,6 @@ dependencies {
 
     // Testing
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20260814")
     testImplementation("net.danlew:android.joda:2.14.3.1")
 }

@@ -14,9 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,7 +44,6 @@ import com.trimettransit.tracker.model.TripPlan
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.util.clockTime
 import org.joda.time.DateTime
@@ -74,8 +71,10 @@ internal fun ItineraryResultsSheet(
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(plan.itineraries.size, key = { it }) { index ->
-                    val itinerary = plan.itineraries[index]
+                itemsIndexed(
+                    plan.itineraries,
+                    key = { index, itinerary -> itinerary.id.ifBlank { "itinerary_$index" } }
+                ) { index, itinerary ->
                     val label = stringResource(
                         when (index % 3) {
                             0 -> R.string.itinerary_1
@@ -100,7 +99,11 @@ internal fun ItineraryResultsSheet(
                         .fillMaxWidth()
                         .heightIn(max = 360.dp)
                 ) {
-                    itemsIndexed(selected.legs, key = { index, _ -> index }, contentType = { _, _ -> "leg" }) { _, leg ->
+                    itemsIndexed(
+                        selected.legs,
+                        key = { index, leg -> "${index}_${leg.mode}_${leg.routeNumber}_${leg.from.latitude}_${leg.from.longitude}_${leg.to.latitude}_${leg.to.longitude}" },
+                        contentType = { _, _ -> "leg" }
+                    ) { _, leg ->
                         LegRow(leg = leg)
                     }
                 }

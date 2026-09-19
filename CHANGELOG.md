@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Steadier live boards:** an empty stop no longer shows another stop's buses, duplicate arrival rows stay collapsed to one entry, and countdowns keep flipping exactly on the minute including in picture-in-picture.
+- **Tidier background refresh:** widgets and departure alerts keep fetching all stops in one request with a little extra headroom so busy stops do not crowd out quiet ones.
 - **Clearer color settings:** every color option in Settings now says what it changes — the accent source explains it recolors buttons, sliders, switches, and the selected tab, vibrancy describes its saturation boost, the bottom-bar pill and each transit badge say where they appear and what happens when unset, and card outlines and map styles name the surfaces they affect.
 
 ## What's New in v4.18.5

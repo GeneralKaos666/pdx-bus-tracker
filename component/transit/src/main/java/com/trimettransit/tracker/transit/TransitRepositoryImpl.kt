@@ -10,18 +10,36 @@ import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.model.repository.TransitRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
  * Adapter exposing the singleton [TransitApi] behind the [TransitRepository]
- * boundary. Holds a [Context] (application-scoped) so callers don't pass it.
+ * boundary. Retains only the application [Context] so this process-wide shared
+ * instance can never leak an Activity/Service context.
  */
 class TransitRepositoryImpl(
-    private val context: Context
+    context: Context
 ) : TransitRepository {
+    private val context: Context = context.applicationContext
 
     private val searchCache = SearchStopCache()
+
+    /**
+     * Singleflight for the multi-MB stop dump: concurrent callers (Home search +
+     * trip planner share one repository instance) await the same in-flight fetch
+     * instead of each downloading/parsing it. Guarded by [searchMutex]; the fetch
+     * itself runs on [searchScope] so one caller cancelling can't abort the others.
+     */
+    private val searchScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val searchMutex = Mutex()
+    private var inflight: Deferred<List<Stop>?>? = null
 
     override fun isConfigured(): Boolean = ApiKeys.getTrimetApiKey().isNotBlank()
 
@@ -53,20 +71,31 @@ class TransitRepositoryImpl(
 
     override suspend fun getStopById(locId: Int): Stop? = TransitApi.fetchStopById(context, locId)
 
-    override suspend fun searchStops(): List<Stop>? = withContext(Dispatchers.IO) {
-        searchCache.get()?.let { return@withContext it }
-        val fresh = TransitApi.fetchSearchStops(context)
-        if (fresh != null && fresh.isNotEmpty()) {
-            StopSearchStore.write(context, fresh)
-            searchCache.put(fresh)
-            return@withContext fresh
+    override suspend fun searchStops(): List<Stop>? {
+        searchCache.get()?.let { return it }
+        val deferred = searchMutex.withLock {
+            // Double-check under the lock: the winner's put() may have landed
+            // while this caller was waiting for the mutex.
+            searchCache.get()?.let { return it }
+            inflight?.let { return@withLock it }
+            searchScope.async { TransitApi.fetchSearchStops(context) }.also { inflight = it }
         }
-        val fallback = StopSearchStore.read(context)
-        if (fallback != null) {
-            searchCache.putFallback(fallback)
-            return@withContext fallback
+        try {
+            val fresh = deferred.await()
+            if (fresh != null && fresh.isNotEmpty()) {
+                withContext(Dispatchers.IO) { StopSearchStore.write(context, fresh) }
+                searchCache.put(fresh)
+                return fresh
+            }
+            val fallback = withContext(Dispatchers.IO) { StopSearchStore.read(context) }
+            if (fallback != null) {
+                searchCache.putFallback(fallback)
+                return fallback
+            }
+            return null
+        } finally {
+            searchMutex.withLock { if (inflight === deferred) inflight = null }
         }
-        null
     }
 
     override suspend fun planTrip(

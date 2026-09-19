@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -80,8 +81,7 @@ private fun RecentStopsList(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(stops.size, key = { stops[it].locId }, contentType = { "stop" }) { index ->
-                val stop = stops[index]
+            items(stops, key = { it.locId }, contentType = { "stop" }) { stop ->
                 StopListItem(
                     stop = stop,
                     onClick = { onNavigateToArrivals(stop) },

@@ -89,6 +89,30 @@ internal fun deserializeStops(json: String): List<Stop>? {
     }
 }
 
+/** Disk-cache TTL for the stop-search dump: a day-old dump is worse than no dump. */
+internal const val STOP_CACHE_MAX_AGE_MILLIS = 24L * 60 * 60 * 1000
+
+/**
+ * Wraps the bare stop array with its write timestamp so [StopSearchStore.read] can
+ * enforce [STOP_CACHE_MAX_AGE_MILLIS]. String-concatenated (not re-parsed) to avoid
+ * doubling the multi-MB peak during writes.
+ */
+internal fun serializeWithTtl(stops: List<Stop>, updatedAt: Long = System.currentTimeMillis()): String =
+    "{\"updatedAt\":" + updatedAt + ",\"stops\":" + serializeStops(stops) + "}"
+
+/**
+ * TTL-guarded counterpart to [deserializeStops]: stale payloads read as null (no
+ * cache) so callers fall through to a fresh network fetch. Pure for unit-testing.
+ */
+internal fun deserializeWithTtl(
+    json: String,
+    updatedAt: Long,
+    maxAgeMillis: Long = STOP_CACHE_MAX_AGE_MILLIS
+): List<Stop>? {
+    if (System.currentTimeMillis() - updatedAt > maxAgeMillis) return null
+    return deserializeStops(json)
+}
+
 /** Persists and restores the stop-search dump in app-internal storage. */
 internal object StopSearchStore {
     private const val FILE_NAME = "all_stops_cache.json"
@@ -98,9 +122,9 @@ internal object StopSearchStore {
      * kill mid-write can never leave a truncated cache (read treats corrupt payloads
      * as "no cache", but avoiding them entirely keeps the fallback fast).
      */
-    fun write(context: Context, stops: List<Stop>) {
+    fun write(context: Context, stops: List<Stop>, updatedAt: Long = System.currentTimeMillis()) {
         if (stops.isEmpty()) return
-        val payload = serializeStops(stops).toByteArray(Charsets.UTF_8)
+        val payload = serializeWithTtl(stops, updatedAt).toByteArray(Charsets.UTF_8)
         val target = File(context.filesDir, FILE_NAME)
         val tmp = File(context.filesDir, "${FILE_NAME}.tmp")
         try {
@@ -113,8 +137,12 @@ internal object StopSearchStore {
         }
     }
 
-    /** Returns the cached dump, or null when there is none (or it is corrupt). */
-    fun read(context: Context): List<Stop>? {
+    /**
+     * Returns the cached dump, or null when there is none, it is corrupt, or it is
+     * older than [maxAgeMillis]. Understands both the current `{updatedAt, stops}`
+     * envelope and legacy bare-array dumps (TTL from the file mtime).
+     */
+    fun read(context: Context, maxAgeMillis: Long = STOP_CACHE_MAX_AGE_MILLIS): List<Stop>? {
         val raw = try {
             context.openFileInput(FILE_NAME).reader().use { it.readText() }
         } catch (e: FileNotFoundException) {
@@ -122,6 +150,31 @@ internal object StopSearchStore {
         } catch (e: Exception) {
             return null
         }
+        val firstContent = raw.indexOfFirst { !it.isWhitespace() }.let { if (it < 0) return null else raw[it] }
+        if (firstContent == '{') {
+            val envelope = try {
+                JSONObject(raw)
+            } catch (e: Exception) {
+                return null
+            }
+            if (!envelope.has("stops")) return null
+            val inner = try {
+                envelope.getJSONArray("stops").toString()
+            } catch (e: Exception) {
+                return null
+            }
+            val updatedAt = envelope.optLong("updatedAt", -1L)
+            // No timestamp (hand-written cache?) → fail open and serve it.
+            if (updatedAt < 0) return deserializeStops(inner)
+            return deserializeWithTtl(inner, updatedAt, maxAgeMillis)
+        }
+        // Legacy bare-array dump: TTL from the file mtime so ancient dumps expire.
+        val updatedAt = try {
+            File(context.filesDir, FILE_NAME).lastModified()
+        } catch (e: Exception) {
+            0L
+        }
+        if (updatedAt > 0) return deserializeWithTtl(raw, updatedAt, maxAgeMillis)
         return deserializeStops(raw)
     }
 }

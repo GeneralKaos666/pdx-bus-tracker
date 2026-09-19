@@ -2,6 +2,7 @@ package com.trimettransit.tracker.transit
 
 import android.content.Context
 import android.net.Uri
+import java.io.IOException
 import timber.log.Timber
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Direction
@@ -17,11 +18,31 @@ import com.trimettransit.tracker.util.ConnectionUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
 
-object TransitApi {
+internal object TransitApi {
     private val parser = JSONParser
+
+    internal fun scrubApiKey(msg: String, apiKey: String): String =
+        if (apiKey.isBlank()) msg else msg.replace("/appID/$apiKey", "/appID/<redacted>").replace(apiKey, "<redacted>")
+
+    // Rebuilds the throwable chain with every message scrubbed: Timber.e prints the
+    // full "Caused by" chain, so chaining the raw exception would leak the key via a
+    // cause message (e.g. an OkHttp IOException embedding the request URL).
+    internal fun scrubbedForLog(e: Exception, apiKey: String): IOException {
+        val top = IOException(scrubApiKey(e.message ?: e.toString(), apiKey))
+        top.stackTrace = e.stackTrace
+        val seen = mutableSetOf<Throwable>(e)
+        var orig: Throwable? = e.cause
+        var copy: Throwable = top
+        while (orig != null && seen.add(orig)) {
+            val next = IOException(scrubApiKey(orig.message ?: orig.toString(), apiKey))
+            next.stackTrace = orig.stackTrace
+            copy.initCause(next)
+            copy = next
+            orig = orig.cause
+        }
+        return top
+    }
 
     private suspend fun <T> guarded(
         context: Context,
@@ -39,21 +60,25 @@ object TransitApi {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Timber.e(e, "Failed to $label")
+            Timber.e(scrubbedForLog(e, apiKey), "Failed to $label")
             null
         }
     }
+
+    /** Route description excluded from listings (non-revenue aerial tram). */
+    const val EXCLUDED_ROUTE_DESC = "Portland Aerial Tram"
 
     suspend fun fetchRoutes(context: Context): List<Route>? = guarded(context, "fetch routes") { apiKey ->
         val baseUrl = context.getString(R.string.base_route_url)
         val url = "$baseUrl/appID/$apiKey"
         val json = parser.fetch(url)
         val routes = mutableListOf<Route>()
-        val arr = json.getJSONObject("resultSet").getJSONArray("route")
+        val resultSet = json.optJSONObject("resultSet") ?: return@guarded null
+        val arr = resultSet.optJSONArray("route") ?: return@guarded null
         for (i in 0 until arr.length()) {
             val obj = arr.optJSONObject(i) ?: continue
             val route = TransitJsonMapper.parseRoute(obj)
-            if (route.desc != "Portland Aerial Tram") {
+            if (route.desc != EXCLUDED_ROUTE_DESC) {
                 routes.add(route)
             }
         }
@@ -154,10 +179,10 @@ object TransitApi {
         val url = buildString {
             append(baseUrl)
             append("/appID/").append(apiKey)
-            append("/ll/").append(ll)
+            append("/ll/").append(Uri.encode(ll))
             if (feet != null) append("/feet/").append(feet)
             if (meters != null) append("/meters/").append(meters)
-            if (bbox != null) append("/bbox/").append(bbox)
+            if (bbox != null) append("/bbox/").append(Uri.encode(bbox))
             if (maxStops != null) append("/maxStops/").append(maxStops)
             if (showRoutes) append("/showRoutes/true")
         }
@@ -196,9 +221,10 @@ object TransitApi {
             Timber.w("TriMet API key not configured")
             return@withContext TripPlanResult.Error(TripPlannerError.NETWORK)
         }
-        val requested = time.timeMillis?.let { DateTime(it) } ?: DateTime.now()
-        val date = DateTimeFormat.forPattern("M-d-yyyy").print(requested)
-        val clock = DateTimeFormat.forPattern("h:mm a").print(requested)
+        // The Trip Planner WS interprets date/time in the Transit service's local zone.
+        val requestedMillis = time.timeMillis ?: System.currentTimeMillis()
+        val date = formatTripPlannerDate(requestedMillis)
+        val clock = formatTripPlannerClock(requestedMillis)
         val baseUrl = context.getString(R.string.base_trip_planner_url)
         val url = buildTripPlannerRequestUrl(
             baseUrl = baseUrl,
@@ -230,11 +256,11 @@ object TransitApi {
                 } catch (e2: CancellationException) {
                     throw e2
                 } catch (e2: Exception) {
-                    Timber.e(e2, "Failed to fetch trip plan (retry)")
+                    Timber.e(scrubbedForLog(e2, apiKey), "Failed to fetch trip plan (retry)")
                     return@withContext TripPlanResult.Error(TripPlanFailureClassifier.classify(e2))
                 }
             }
-            Timber.e(e, "Failed to fetch trip plan")
+            Timber.e(scrubbedForLog(e, apiKey), "Failed to fetch trip plan")
             TripPlanResult.Error(classified)
         }
     }

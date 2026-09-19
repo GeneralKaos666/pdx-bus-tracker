@@ -10,7 +10,8 @@ import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripPoint
 import kotlinx.coroutines.CancellationException
 import org.joda.time.DateTime
-import org.joda.time.format.DateTimeFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import org.w3c.dom.Element
 import org.xml.sax.InputSource
 import timber.log.Timber
@@ -22,7 +23,7 @@ import javax.xml.parsers.DocumentBuilderFactory
  * Pure XML→model mapping for the Trip Planner WS response. Keeps [TransitApi] as a
  * thin network shell and makes the parse logic directly unit-testable.
  */
-object TripPlannerXmlParser {
+internal object TripPlannerXmlParser {
 
     private const val TRIP_TIME_12H = "M/d/yy h:mm a"
     private const val TRIP_TIME_24H = "M/d/yy HH:mm"
@@ -37,7 +38,10 @@ object TripPlannerXmlParser {
         )
         for (pattern in patterns) {
             try {
-                return DateTime.parse("$date $t", DateTimeFormat.forPattern(pattern)).millis
+                // Wall-clocks are Portland local time; java.time carries the tzdb on
+                // every runtime here (see TRIP_PLANNER_ZONE).
+                return LocalDateTime.parse("$date $t", DateTimeFormatter.ofPattern(pattern))
+                    .atZone(TRIP_PLANNER_ZONE).toInstant().toEpochMilli()
             } catch (_: Exception) {
             }
         }
@@ -45,9 +49,18 @@ object TripPlannerXmlParser {
     }
 
     internal fun parseTripPlanResponse(xml: String): TripPlanResult? {
+        // Fail closed on inline DTDs: entity-expansion (billion-laughs/XXE) payloads are
+        // rejected before parsing, independent of whether this runtime's DOM honors the
+        // disallow-doctype feature below (ART rejects some Apache/SAX flags, and those
+        // stay best-effort so benign responses keep parsing on every device).
+        if (xml.contains("<!DOCTYPE", ignoreCase = true)) {
+            Timber.w("Trip planner XML rejected: inline DOCTYPE")
+            return TripPlanResult.Error(TripPlannerError.SYSTEM_OUTAGE)
+        }
         val response = try {
             val factory = DocumentBuilderFactory.newInstance()
             factory.isNamespaceAware = false
+            factory.isXIncludeAware = false
             factory.isExpandEntityReferences = false
             // Harden against XXE where the runtime supports it. Android's DOM
             // implementation rejects some of these flags with
@@ -57,6 +70,7 @@ object TripPlannerXmlParser {
             factory.tryFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
             factory.tryFeature("http://xml.org/sax/features/external-general-entities", false)
             factory.tryFeature("http://xml.org/sax/features/external-parameter-entities", false)
+            factory.tryFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
             factory.newDocumentBuilder()
                 .parse(InputSource(StringReader(xml)))
                 .documentElement

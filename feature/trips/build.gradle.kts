@@ -23,7 +23,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":component:transit"))
     implementation(project(":common:model"))
     implementation(project(":common:utils"))
     implementation(project(":common:ui"))

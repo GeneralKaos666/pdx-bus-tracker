@@ -94,7 +94,7 @@ private fun StopList(snapshot: Snapshot, config: WidgetConfig) {
     val now = System.currentTimeMillis()
     val rows = applyRowConfig(snapshot.rows, config)
     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
-        itemsIndexed(rows) { _, row ->
+        itemsIndexed(rows, { _, row -> row.stop.locId.toLong() }) { _, row ->
             StopRow(row, config, now)
         }
     }

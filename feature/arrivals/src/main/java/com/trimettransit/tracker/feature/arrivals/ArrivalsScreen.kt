@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
@@ -71,7 +70,6 @@ import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
@@ -294,6 +292,12 @@ fun ArrivalsScreen(
     val smoothFling = rememberSmoothFlingBehavior()
     val listState = rememberLazyListState()
 
+    // Hoisted above the LazyColumn so per-row recompositions (every minute tick)
+    // don't re-hit SharedPreferences for every visible arrival.
+    val showClock = remember { prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, true) }
+    val showRouteBadge = remember { prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_ROUTE_BADGES, true) }
+    val showVehicleInfo = remember { prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_VEHICLE_INFO, true) }
+
     DisposableEffect(Unit) {
         // Must use a stable lambda — loadArrivals is a local fun, always the same behavior
         onRegisterRefresh { loadArrivals() }
@@ -400,7 +404,7 @@ fun ArrivalsScreen(
                                 if (showAllArrivals) unfilteredArrivals else arrivals.take(TOP_ARRIVAL_ROWS)
                             items(
                                 visibleArrivals,
-                                key = { "${if (showAllArrivals) "all_" else "top_"}${arrivalKey(it)}" },
+                                key = { arrivalKey(it) },
                                 contentType = { "arrival" }) { arrival ->
                                 val lineDetours = detoursForLine(detours, arrival.routeId)
                                 val rowKey = arrivalKey(arrival)
@@ -410,9 +414,9 @@ fun ArrivalsScreen(
                                         context = context,
                                         refreshKey = countdownTick,
                                         lineDetours = lineDetours,
-                                        showClock = prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, true),
-                                        showRouteBadge = prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_ROUTE_BADGES, true),
-                                        showVehicleInfo = prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_VEHICLE_INFO, true),
+                                        showClock = showClock,
+                                        showRouteBadge = showRouteBadge,
+                                        showVehicleInfo = showVehicleInfo,
                                         onShowAlerts = { selectedDetours = lineDetours },
                                         onClick = {
                                             if (hasValidCoords) {

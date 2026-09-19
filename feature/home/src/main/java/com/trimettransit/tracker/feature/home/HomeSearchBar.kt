@@ -1,15 +1,12 @@
 package com.trimettransit.tracker.feature.home
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,12 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -45,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
@@ -56,12 +50,15 @@ import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.searchStops
 import com.trimettransit.tracker.ui.components.StopSearchItem
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
+import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Search field pinned to the top of the Favorites screen. Typing a query opens a
@@ -96,13 +93,21 @@ fun HomeSearchBar(
         }
     }
 
-    LaunchedEffect(query, allStops) {
-        // Drop the previous query's matches immediately so the dropdown never shows
-        // stale results under the new text while the search is being recomputed.
-        results = emptyList()
-        if (query.isNotBlank() && allStops != null) {
-            results = withContext(Dispatchers.Default) { searchStops(allStops!!, query) }
-        }
+    // Debounced search: rapid keystrokes share one filter pass over the multi-MB
+    // list instead of re-filtering per character. snapshotFlow tracks the query;
+    // allStops is the effect key (loaded once, then stable). collectLatest cancels
+    // a superseded filter so only the latest query publishes.
+    LaunchedEffect(allStops) {
+        snapshotFlow { query }
+            .debounce(200.milliseconds)
+            .collectLatest { q ->
+                val stops = allStops
+                results = if (q.isBlank() || stops == null) {
+                    emptyList()
+                } else {
+                    withContext(Dispatchers.Default) { searchStops(stops, q) }
+                }
+            }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {

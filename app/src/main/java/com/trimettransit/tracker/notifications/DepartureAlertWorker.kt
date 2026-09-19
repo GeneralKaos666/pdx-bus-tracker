@@ -19,6 +19,7 @@ import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.widget.WidgetLaunch
+import com.trimettransit.tracker.widget.selectMine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -51,19 +52,22 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
             val fired = DepartureAlertPrefs.getFired(app)
             // One batched request for all monitored stops instead of a sequential
             // per-stop fetch: arrivals carry their stop's locid for client-side split.
+            // The /arrivals/N cap is a global total, so include one extra row per stop
+            // of headroom to keep each stop's arrivals when distribution is uneven.
             val result = retryFetch(attempts = MAX_ATTEMPTS, label = "Departure") {
                 transitRepository.getArrivals(
                     locIds = stops.map { it.locId },
                     minutes = windowMinutes + SLACK_MINUTES,
-                    maxArrivals = MAX_ARRIVALS * stops.size
+                    maxArrivals = (MAX_ARRIVALS + 1) * stops.size
                 )
             }
             if (result == null) {
                 Timber.w("Departure check failed for %d stops", stops.size)
                 return@withContext Result.success()
             }
+            val requestedIds = stops.map { it.locId }.toSet()
             for (stop in stops) {
-                checkStop(app, result, stop, now, windowMinutes, fired)
+                checkStop(app, result, stop, now, windowMinutes, fired, requestedIds)
             }
             DepartureAlertPrefs.setFired(app, DepartureAlertRules.prune(fired))
             Result.success()
@@ -76,24 +80,28 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
         stop: Stop,
         now: Long,
         windowMinutes: Int,
-        fired: MutableSet<String>
+        fired: MutableSet<String>,
+        requestedIds: Set<Int>
     ) {
-        // Prefer locid-attributed arrivals; fall back to the full list when the
-        // backend omits locid so a missing field never silences every alert.
-        val mine = result.arrivals.filter { it.locId == stop.locId }
-            .ifEmpty { result.arrivals }
+        // Prefer locid-attributed arrivals; fall back to the full list only when
+        // the backend omits locid so a missing field never silences every alert,
+        // while a genuinely empty stop stays silent instead of inheriting buses.
+        val mine = selectMine(result.arrivals, stop.locId, requestedIds)
         val pending = DepartureAlertRules.filterNew(
             DepartureAlertRules.actionableArrivals(mine, now, windowMinutes),
             fired,
             stop.locId
         )
+        if (pending.isEmpty()) return
+        // One summary notification per stop: per-arrival notifies would all share
+        // the stop-locId ID and overwrite each other so only the last bus is seen.
+        postSummary(app, stop, pending)
         for (arrival in pending) {
-            post(app, stop, arrival)
-            fired.add(DepartureAlertRules.firedKey(stop.locId, arrival.tripID))
+            fired.add(DepartureAlertRules.firedKey(stop.locId, arrival))
         }
     }
 
-    private fun post(app: Context, stop: Stop, arrival: Arrival) {
+    private fun postSummary(app: Context, stop: Stop, pending: List<Arrival>) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(app, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
@@ -101,13 +109,17 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
             return
         }
         DepartureNotifications.ensureChannel(app)
-        val minutes = DepartureAlertRules.minutesUntil(arrival, System.currentTimeMillis()) ?: return
-        val title = arrival.fullSign.ifBlank { app.getString(R.string.departure_alert_default_title) }
-        val body = if (minutes <= 0L) {
-            app.getString(R.string.departure_alert_now, stop.desc)
-        } else {
-            app.getString(R.string.departure_alert_minutes, stop.desc, minutes)
+        val now = System.currentTimeMillis()
+        val lines = pending.mapNotNull { arrival ->
+            val minutes = DepartureAlertRules.minutesUntil(arrival, now) ?: return@mapNotNull null
+            val title = arrival.fullSign.ifBlank { app.getString(R.string.departure_alert_default_title) }
+            if (minutes <= 0L) {
+                app.getString(R.string.departure_alert_now, title)
+            } else {
+                app.getString(R.string.departure_alert_minutes, title, minutes)
+            }
         }
+        if (lines.isEmpty()) return
         val intent = Intent(app, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             .putExtra(WidgetLaunch.EXTRA_STOP_ID, stop.locId.toLong())
@@ -121,10 +133,13 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
             intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
+        val style = NotificationCompat.InboxStyle().setSummaryText(stop.desc)
+        lines.forEach { style.addLine(it) }
         val notification = NotificationCompat.Builder(app, DepartureNotifications.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(title)
-            .setContentText(body)
+            .setContentTitle(stop.desc)
+            .setContentText(lines.first())
+            .setStyle(style)
             .setContentIntent(contentIntent)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)

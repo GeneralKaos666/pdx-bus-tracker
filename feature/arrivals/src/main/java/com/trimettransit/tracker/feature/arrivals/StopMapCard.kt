@@ -3,7 +3,6 @@ package com.trimettransit.tracker.feature.arrivals
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +38,6 @@ import com.trimettransit.tracker.ui.appearance.MapStyles
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitOnColor
-import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.AppMotion
@@ -104,9 +102,15 @@ internal fun StopMapCard(
     // "Remove animations" toggle takes effect on the next recomposition.
     val glideScope = rememberCoroutineScope()
     val reduceMotion = AppMotion.reduceMotion || systemReduceMotion(context)
-    val mapPreset = PreferenceManager.getDefaultSharedPreferences(context)
-        .getString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) ?: MapStyles.DEFAULT
-    val mapStyleUrl = MapStyles.styleUrlFor(mapPreset, isDark)
+    // Remembered on (context, isDark) so bus-position refreshes don't re-hit
+    // SharedPreferences and recompute the style URL on every recomposition.
+    val mapPreset = remember(context, isDark) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) ?: MapStyles.DEFAULT
+    }
+    val mapStyleUrl = remember(mapPreset, isDark) {
+        MapStyles.styleUrlFor(mapPreset, isDark)
+    }
     // MapLibre halo/text colors are chosen for legibility against the basemap: light basemap
     // wants a light halo over dark glyphs, the dark basemap wants a dark halo over light glyphs.
     val countdownTextColor = scheme.onSurface.toArgb()

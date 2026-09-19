@@ -8,7 +8,7 @@ import java.io.IOException
 import java.net.URI
 import java.util.concurrent.TimeUnit
 
-object JSONParser {
+internal object JSONParser {
 
     private val httpClient = OkHttpClient.Builder()
         .followRedirects(true)
@@ -85,5 +85,5 @@ object JSONParser {
     }
 
     private fun sanitizedUrl(url: okhttp3.HttpUrl): String =
-        url.scheme + "://" + url.host + (if (url.encodedPath.isNotEmpty()) url.encodedPath else "/")
+        url.scheme + "://" + url.host + "/"
 }
