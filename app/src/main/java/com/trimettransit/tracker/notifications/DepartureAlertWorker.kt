@@ -19,6 +19,7 @@ import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.widget.WidgetLaunch
+import com.trimettransit.tracker.widget.selectMine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -62,8 +63,9 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
                 Timber.w("Departure check failed for %d stops", stops.size)
                 return@withContext Result.success()
             }
+            val requestedIds = stops.map { it.locId }.toSet()
             for (stop in stops) {
-                checkStop(app, result, stop, now, windowMinutes, fired)
+                checkStop(app, result, stop, now, windowMinutes, fired, requestedIds)
             }
             DepartureAlertPrefs.setFired(app, DepartureAlertRules.prune(fired))
             Result.success()
@@ -76,12 +78,13 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
         stop: Stop,
         now: Long,
         windowMinutes: Int,
-        fired: MutableSet<String>
+        fired: MutableSet<String>,
+        requestedIds: Set<Int>
     ) {
-        // Prefer locid-attributed arrivals; fall back to the full list when the
-        // backend omits locid so a missing field never silences every alert.
-        val mine = result.arrivals.filter { it.locId == stop.locId }
-            .ifEmpty { result.arrivals }
+        // Prefer locid-attributed arrivals; fall back to the full list only when
+        // the backend omits locid so a missing field never silences every alert,
+        // while a genuinely empty stop stays silent instead of inheriting buses.
+        val mine = selectMine(result.arrivals, stop.locId, requestedIds)
         val pending = DepartureAlertRules.filterNew(
             DepartureAlertRules.actionableArrivals(mine, now, windowMinutes),
             fired,

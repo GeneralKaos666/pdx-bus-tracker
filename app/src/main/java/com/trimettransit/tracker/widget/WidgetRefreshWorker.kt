@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.repos
@@ -40,7 +41,8 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
             }
             val arrivals = result?.arrivals.orEmpty()
             val detours = result?.detours.orEmpty()
-            val rows = favorites.map { stop -> buildRow(stop, arrivals, detours) }
+            val requestedIds = ids.toSet()
+            val rows = favorites.map { stop -> buildRow(stop, arrivals, detours, requestedIds) }
             WidgetSnapshotCache.update(app, favorites, rows)
             NextArrivalsWidget().updateAll(app)
             Result.success()
@@ -50,12 +52,14 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
     private fun buildRow(
         stop: Stop,
         arrivals: List<com.trimettransit.tracker.model.Arrival>,
-        detours: List<com.trimettransit.tracker.model.Detour>
+        detours: List<com.trimettransit.tracker.model.Detour>,
+        requestedIds: Set<Int>
     ): WidgetSnapshotCache.Row {
-        // Prefer locid-attributed arrivals; fall back to the full list when the
-        // backend omits locid (single-stop responses, legacy shapes) so the widget
-        // never renders an empty row it could have filled.
-        val mine = arrivals.filter { it.locId == stop.locId }.ifEmpty { arrivals }
+        // Prefer locid-attributed arrivals. Fall back to the full list only when
+        // the backend omits locid (legacy shapes) or matches none of the
+        // requested stops; a genuinely empty stop must stay empty and never
+        // inherit another stop's buses.
+        val mine = selectMine(arrivals, stop.locId, requestedIds)
         return WidgetSnapshotCache.Row(
             stop = stop,
             arrivals = WidgetSnapshotCache.cleanArrivals(mine),
@@ -74,7 +78,7 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
                 maxArrivals = ARRIVALS_PER_STOP
             )
         }
-        return buildRow(stop, result?.arrivals.orEmpty(), result?.detours.orEmpty())
+        return buildRow(stop, result?.arrivals.orEmpty(), result?.detours.orEmpty(), setOf(stop.locId))
     }
 
     companion object {
@@ -83,4 +87,18 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
         const val ARRIVALS_PER_STOP = 4
         const val MAX_ATTEMPTS = 3
     }
+}
+
+/**
+ * Returns the arrivals belonging to [stopLocId]. Falls back to the full list
+ * only when no arrival matches any id in [requestedIds] (backend omitted
+ * locid attribution) or every arrival carries the legacy locId of 0;
+ * otherwise a stop with no buses renders empty.
+ */
+internal fun selectMine(arrivals: List<Arrival>, stopLocId: Int, requestedIds: Set<Int>): List<Arrival> {
+    val mine = arrivals.filter { it.locId == stopLocId }
+    if (mine.isNotEmpty()) return mine
+    val anyAttributed = arrivals.any { it.locId in requestedIds }
+    val allZero = arrivals.all { it.locId == 0 }
+    return if (!anyAttributed || allZero) arrivals else emptyList()
 }

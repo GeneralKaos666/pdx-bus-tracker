@@ -1,8 +1,11 @@
 package com.trimettransit.tracker.widget
 
+import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.widget.WidgetSnapshotCache.Row
+import org.joda.time.DateTime
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WidgetRowConfigTest {
@@ -68,6 +71,22 @@ class WidgetRowConfigTest {
         val rows = listOf(rowAt(1, route = 4), rowAt(2, route = 12))
         val config = WidgetConfig()
         assertEquals(2, applyRowConfig(rows, config).size)
+    }
+
+    @Test fun emptyStopDoesNotInheritOtherStopArrivals() {
+        val a = Arrival(fullSign="", shortSign="4", estimated=null, scheduled=DateTime.now(),
+            routeId=4, status="", dropOffOnly=false, reason="", tripID="t1", blockID=1, vehicleID=1,
+            feet=0, dir=0, estimatedMillis=1000L, scheduledMillis=1000L, locId=2)
+        val mine = selectMine(listOf(a), stopLocId=1, requestedIds=setOf(1,2))
+        assertTrue(mine.isEmpty())
+    }
+
+    @Test fun legacyZeroLocIdFallsBackToFullList() {
+        val a = Arrival(fullSign="", shortSign="4", estimated=null, scheduled=DateTime.now(),
+            routeId=4, status="", dropOffOnly=false, reason="", tripID="t1", blockID=1, vehicleID=1,
+            feet=0, dir=0, estimatedMillis=1000L, scheduledMillis=1000L, locId=0)
+        val mine = selectMine(listOf(a), stopLocId=1, requestedIds=setOf(1,2))
+        assertEquals(1, mine.size)
     }
 
     private fun rowAt(locId: Int, route: Int = 1) = Row(
