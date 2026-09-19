@@ -104,9 +104,15 @@ internal fun StopMapCard(
     // "Remove animations" toggle takes effect on the next recomposition.
     val glideScope = rememberCoroutineScope()
     val reduceMotion = AppMotion.reduceMotion || systemReduceMotion(context)
-    val mapPreset = PreferenceManager.getDefaultSharedPreferences(context)
-        .getString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) ?: MapStyles.DEFAULT
-    val mapStyleUrl = MapStyles.styleUrlFor(mapPreset, isDark)
+    // Remembered on (context, isDark) so bus-position refreshes don't re-hit
+    // SharedPreferences and recompute the style URL on every recomposition.
+    val mapPreset = remember(context, isDark) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) ?: MapStyles.DEFAULT
+    }
+    val mapStyleUrl = remember(mapPreset, isDark) {
+        MapStyles.styleUrlFor(mapPreset, isDark)
+    }
     // MapLibre halo/text colors are chosen for legibility against the basemap: light basemap
     // wants a light halo over dark glyphs, the dark basemap wants a dark halo over light glyphs.
     val countdownTextColor = scheme.onSurface.toArgb()

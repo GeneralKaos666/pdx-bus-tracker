@@ -294,6 +294,12 @@ fun ArrivalsScreen(
     val smoothFling = rememberSmoothFlingBehavior()
     val listState = rememberLazyListState()
 
+    // Hoisted above the LazyColumn so per-row recompositions (every minute tick)
+    // don't re-hit SharedPreferences for every visible arrival.
+    val showClock = remember { prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, true) }
+    val showRouteBadge = remember { prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_ROUTE_BADGES, true) }
+    val showVehicleInfo = remember { prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_VEHICLE_INFO, true) }
+
     DisposableEffect(Unit) {
         // Must use a stable lambda — loadArrivals is a local fun, always the same behavior
         onRegisterRefresh { loadArrivals() }
@@ -410,9 +416,9 @@ fun ArrivalsScreen(
                                         context = context,
                                         refreshKey = countdownTick,
                                         lineDetours = lineDetours,
-                                        showClock = prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, true),
-                                        showRouteBadge = prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_ROUTE_BADGES, true),
-                                        showVehicleInfo = prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_VEHICLE_INFO, true),
+                                        showClock = showClock,
+                                        showRouteBadge = showRouteBadge,
+                                        showVehicleInfo = showVehicleInfo,
                                         onShowAlerts = { selectedDetours = lineDetours },
                                         onClick = {
                                             if (hasValidCoords) {

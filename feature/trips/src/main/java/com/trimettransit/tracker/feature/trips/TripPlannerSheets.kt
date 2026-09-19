@@ -69,9 +69,13 @@ import com.trimettransit.tracker.ui.components.searchStops
 import com.trimettransit.tracker.ui.components.StopSearchItem
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
+import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun EndpointPickerSheet(
@@ -204,11 +208,20 @@ internal fun StopSearchPanel(
         }
     }
 
-    LaunchedEffect(query, allStops) {
-        results = emptyList()
-        if (query.isNotBlank() && allStops != null) {
-            results = searchStops(allStops!!, query)
-        }
+    // Debounced search (see HomeSearchBar): rapid keystrokes share one filter pass
+    // over the multi-MB list; collectLatest cancels superseded filters. Filtering
+    // runs on Default so typing never janks the sheet.
+    LaunchedEffect(allStops) {
+        snapshotFlow { query }
+            .debounce(200.milliseconds)
+            .collectLatest { q ->
+                val stops = allStops
+                results = if (q.isBlank() || stops == null) {
+                    emptyList()
+                } else {
+                    withContext(Dispatchers.Default) { searchStops(stops, q) }
+                }
+            }
     }
 
     Column(modifier = modifier) {

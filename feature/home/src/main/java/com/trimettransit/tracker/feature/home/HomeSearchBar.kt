@@ -60,8 +60,12 @@ import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
+import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Search field pinned to the top of the Favorites screen. Typing a query opens a
@@ -96,13 +100,21 @@ fun HomeSearchBar(
         }
     }
 
-    LaunchedEffect(query, allStops) {
-        // Drop the previous query's matches immediately so the dropdown never shows
-        // stale results under the new text while the search is being recomputed.
-        results = emptyList()
-        if (query.isNotBlank() && allStops != null) {
-            results = withContext(Dispatchers.Default) { searchStops(allStops!!, query) }
-        }
+    // Debounced search: rapid keystrokes share one filter pass over the multi-MB
+    // list instead of re-filtering per character. snapshotFlow tracks the query;
+    // allStops is the effect key (loaded once, then stable). collectLatest cancels
+    // a superseded filter so only the latest query publishes.
+    LaunchedEffect(allStops) {
+        snapshotFlow { query }
+            .debounce(200.milliseconds)
+            .collectLatest { q ->
+                val stops = allStops
+                results = if (q.isBlank() || stops == null) {
+                    emptyList()
+                } else {
+                    withContext(Dispatchers.Default) { searchStops(stops, q) }
+                }
+            }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {

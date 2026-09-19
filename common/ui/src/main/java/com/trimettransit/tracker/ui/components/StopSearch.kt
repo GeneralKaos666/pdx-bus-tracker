@@ -29,7 +29,6 @@ import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.appearance.rowContentPadding
 import com.trimettransit.tracker.ui.theme.LocalCardStyle
 import com.trimettransit.tracker.ui.theme.appCardShape
-import java.util.Locale
 
 const val STOP_SEARCH_MAX_RESULTS = 250
 
@@ -39,14 +38,16 @@ const val STOP_SEARCH_MAX_RESULTS = 250
  * IDs too.
  */
 fun searchStops(allStops: List<Stop>, query: String): List<Stop> {
-    val trimmed = query.trim().lowercase(Locale.US)
+    // Trim once up front; per-row matching is case-insensitive without allocating
+    // lowercased copies of every stop name on each keystroke.
+    val trimmed = query.trim()
     if (trimmed.isEmpty()) return emptyList()
 
     val queryAsInt = trimmed.toIntOrNull()
 
     return allStops.filter { stop ->
-        val matchDesc = stop.desc.lowercase(Locale.US).contains(trimmed)
-        val matchDir = stop.dirDesc.lowercase(Locale.US).contains(trimmed)
+        val matchDesc = stop.desc.contains(trimmed, ignoreCase = true)
+        val matchDir = stop.dirDesc.contains(trimmed, ignoreCase = true)
         val matchId = queryAsInt != null && stop.locId.toString().contains(queryAsInt.toString())
         matchDesc || matchDir || matchId
     }.take(STOP_SEARCH_MAX_RESULTS)
