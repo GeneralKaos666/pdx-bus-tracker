@@ -125,14 +125,21 @@ object TransitJsonMapper {
             detours = detourList
         }
 
-        // Parse location elements for stop coordinates
+        // Parse location elements for stop coordinates; ignore malformed or
+        // out-of-range entries and keep the 0,0 default instead.
         var stopLat = 0.0
         var stopLng = 0.0
         val locationArr = resultSet.optJSONArray("location")
         if (locationArr != null && locationArr.length() > 0) {
-            val loc = locationArr.getJSONObject(0)
-            stopLat = loc.optDouble("lat", 0.0)
-            stopLng = loc.optDouble("lng", 0.0)
+            val loc = locationArr.optJSONObject(0)
+            if (loc != null) {
+                val lat = loc.optDouble("lat", 0.0)
+                val lng = loc.optDouble("lng", 0.0)
+                if (isValidCoordinate(lat, lng)) {
+                    stopLat = lat
+                    stopLng = lng
+                }
+            }
         }
 
         val deduped = dedupeArrivals(arrivalList)
@@ -152,7 +159,12 @@ object TransitJsonMapper {
         val stops = mutableListOf<Stop>()
         for (i in 0 until locationArr.length()) {
             val obj = locationArr.optJSONObject(i) ?: continue
-            val routeArr = obj.optJSONArray("route")
+            val locId = obj.optInt("locid", 0)
+            if (locId == 0) continue
+            val latitude = obj.optDouble("lat", 0.0)
+            val longitude = obj.optDouble("lng", 0.0)
+            if (!isValidCoordinate(latitude, longitude)) continue
+            val routeArr = obj.optJSONArray("route") ?: obj.optJSONArray("routes")
             val routes = if (routeArr != null) {
                 buildList {
                     for (j in 0 until routeArr.length()) {
@@ -167,10 +179,10 @@ object TransitJsonMapper {
                 Stop(
                     desc = obj.optString("desc", ""),
                     dirDesc = obj.optString("dir", ""),
-                    latitude = obj.optDouble("lat", 0.0),
-                    longitude = obj.optDouble("lng", 0.0),
+                    latitude = latitude,
+                    longitude = longitude,
                     transitType = computeTransitType(routes),
-                    locId = obj.optInt("locid", 0),
+                    locId = locId,
                     routes = routes
                 )
             )
@@ -182,7 +194,12 @@ object TransitJsonMapper {
         val locationArr = resultSet.optJSONArray("location")
         if (locationArr == null || locationArr.length() == 0) return null
         val obj = locationArr.optJSONObject(0) ?: return null
-        val routeArr = obj.optJSONArray("route")
+        val locId = obj.optInt("locid", 0)
+        if (locId == 0) return null
+        val latitude = obj.optDouble("lat", 0.0)
+        val longitude = obj.optDouble("lng", 0.0)
+        if (!isValidCoordinate(latitude, longitude)) return null
+        val routeArr = obj.optJSONArray("route") ?: obj.optJSONArray("routes")
         val routes = if (routeArr != null) {
             buildList {
                 for (j in 0 until routeArr.length()) {
@@ -196,10 +213,10 @@ object TransitJsonMapper {
         return Stop(
             desc = obj.optString("desc", ""),
             dirDesc = obj.optString("dir", ""),
-            latitude = obj.optDouble("lat", 0.0),
-            longitude = obj.optDouble("lng", 0.0),
+            latitude = latitude,
+            longitude = longitude,
             transitType = computeTransitType(routes),
-            locId = obj.optInt("locid", 0),
+            locId = locId,
             routes = routes
         )
     }

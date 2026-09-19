@@ -217,4 +217,45 @@ class ArrivalsJsonMapperTest {
         val result = TransitJsonMapper.parseArrivals(JSONObject(json))
         assertEquals(2, result.arrivals.size)
     }
+
+    @Test
+    fun `parseStopsByLocation accepts routes plural fallback`() {
+        val json = JSONObject("""{"location":[{"desc":"A","dir":"N","lat":45.52,"lng":-122.67,"locid":1,"routes":[{"route":4,"desc":"D","type":"B"}]}]}""")
+        val stops = TransitJsonMapper.parseStopsByLocation(json)
+        assertEquals(1, stops.size)
+        assertEquals(listOf(4), stops[0].routes.map { it.routeId })
+    }
+
+    @Test
+    fun `parseStopsByLocation skips zero locId`() {
+        val json = JSONObject("""{"location":[{"desc":"A","dir":"N","lat":45.52,"lng":-122.67,"locid":0,"route":[{"route":4,"desc":"D","type":"B"}]}]}""")
+        assertTrue(TransitJsonMapper.parseStopsByLocation(json).isEmpty())
+    }
+
+    @Test
+    fun `parseStopsByLocation skips zero-zero coordinates`() {
+        val json = JSONObject("""{"location":[{"desc":"A","dir":"N","lat":0,"lng":0,"locid":5,"route":[{"route":4,"desc":"D","type":"B"}]}]}""")
+        assertTrue(TransitJsonMapper.parseStopsByLocation(json).isEmpty())
+    }
+
+    @Test
+    fun `parseStopById accepts routes plural fallback`() {
+        val json = JSONObject("""{"location":[{"desc":"A","dir":"N","lat":45.52,"lng":-122.67,"locid":9978,"routes":[{"route":15,"desc":"X","type":"B"}]}]}""")
+        val stop = TransitJsonMapper.parseStopById(json)
+        assertEquals(9978, stop!!.locId)
+        assertEquals(listOf(15), stop.routes.map { it.routeId })
+    }
+
+    @Test
+    fun `parseStopById rejects zero locId`() {
+        val json = JSONObject("""{"location":[{"desc":"A","dir":"N","lat":45.52,"lng":-122.67,"locid":0,"route":[{"route":4,"desc":"D","type":"B"}]}]}""")
+        assertNull(TransitJsonMapper.parseStopById(json))
+    }
+
+    @Test
+    fun `parseArrivals rejects out-of-range stop coordinates`() {
+        val result = TransitJsonMapper.parseArrivals(JSONObject("""{"location":[{"lat":91.0,"lng":-122.67}]}"""))
+        assertEquals(0.0, result.stopLat, 0.0)
+        assertEquals(0.0, result.stopLng, 0.0)
+    }
 }

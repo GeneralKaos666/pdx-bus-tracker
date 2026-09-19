@@ -67,16 +67,20 @@ object TransitApi {
         }
     }
 
+    /** Route description excluded from listings (non-revenue aerial tram). */
+    const val EXCLUDED_ROUTE_DESC = "Portland Aerial Tram"
+
     suspend fun fetchRoutes(context: Context): List<Route>? = guarded(context, "fetch routes") { apiKey ->
         val baseUrl = context.getString(R.string.base_route_url)
         val url = "$baseUrl/appID/$apiKey"
         val json = parser.fetch(url)
         val routes = mutableListOf<Route>()
-        val arr = json.getJSONObject("resultSet").getJSONArray("route")
+        val resultSet = json.optJSONObject("resultSet") ?: return@guarded null
+        val arr = resultSet.optJSONArray("route") ?: return@guarded null
         for (i in 0 until arr.length()) {
             val obj = arr.optJSONObject(i) ?: continue
             val route = TransitJsonMapper.parseRoute(obj)
-            if (route.desc != "Portland Aerial Tram") {
+            if (route.desc != EXCLUDED_ROUTE_DESC) {
                 routes.add(route)
             }
         }
