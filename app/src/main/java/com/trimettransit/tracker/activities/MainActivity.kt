@@ -366,13 +366,13 @@ private fun MainAppContent(
     // Widget taps arrive with stop/route/coords as intent extras (see WidgetLaunch).
     // The intent is consumed (cleared) once handled so a recomposition never
     // re-navigates to the same stop.
-    val activity = LocalActivity.current as? MainActivity
-    val widgetLaunchIntentValue = activity?.widgetLaunchIntent?.value
+    val activity = LocalActivity.current as MainActivity
+    val widgetLaunchIntentValue = activity.widgetLaunchIntent.value
     LaunchedEffect(widgetLaunchIntentValue) {
         val intent = widgetLaunchIntentValue ?: return@LaunchedEffect
         val stopId = intent.getLongExtra(WidgetLaunch.EXTRA_STOP_ID, -1L)
         if (stopId <= 0L || stopId > Int.MAX_VALUE.toLong()) {
-            activity?.widgetLaunchIntent?.value = null
+            activity.widgetLaunchIntent.value = null
             return@LaunchedEffect
         }
         val stop = Stop(
@@ -384,7 +384,7 @@ private fun MainAppContent(
             routeNum = intent.getIntExtra(WidgetLaunch.EXTRA_ROUTE_ID, 0)
         )
         navigateToArrivals(stop, stop.routeNum)
-        activity?.widgetLaunchIntent?.value = null
+        activity.widgetLaunchIntent.value = null
     }
 
     fun onTopPageSelected(page: Int) {

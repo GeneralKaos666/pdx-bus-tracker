@@ -69,6 +69,7 @@ import com.trimettransit.tracker.ui.components.StopSearchItem
 import com.trimettransit.tracker.ui.theme.appCardShape
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.withContext
@@ -186,6 +187,7 @@ internal fun EndpointPickerSheet(
     }
 }
 
+@OptIn(FlowPreview::class)
 @Composable
 internal fun StopSearchPanel(
     transitRepository: TransitRepository,

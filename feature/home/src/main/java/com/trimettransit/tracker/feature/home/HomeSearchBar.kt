@@ -55,6 +55,7 @@ import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.withContext
@@ -66,6 +67,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * query (or tapping a result) collapses it. All stops are lazy-loaded on the
  * first non-blank query so opening Favorites never costs a network call.
  */
+@OptIn(FlowPreview::class)
 @Composable
 fun HomeSearchBar(
     transitRepository: TransitRepository,
