@@ -189,7 +189,10 @@ fun ArrivalsScreen(
                 val allArrivals = dedupeArrivals(result.arrivals)
                 unfilteredArrivals = allArrivals
                 val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-                onlySelectedRoute = prefs.getBoolean("pref_key_only_show_route_selected", true)
+                onlySelectedRoute = prefs.getBoolean(
+                    AppearancePrefs.ARRIVALS_ONLY_SELECTED_ROUTE,
+                    AppearancePrefs.DEFAULT_ONLY_SHOW_SELECTED_ROUTE
+                )
                 arrivals = filterArrivalsByRoute(
                     allArrivals,
                     if (onlySelectedRoute && routeId > 0) routeId else 0
@@ -525,4 +528,3 @@ fun ArrivalsScreen(
         )
     }
 }
-

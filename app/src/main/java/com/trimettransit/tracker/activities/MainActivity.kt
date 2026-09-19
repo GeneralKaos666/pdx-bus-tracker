@@ -162,13 +162,34 @@ class MainActivity : ComponentActivity() {
         setContent {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)
             var appearance by remember { mutableStateOf(readAppearanceStyle(prefs)) }
-            var cardCornerRadiusPref by remember { mutableIntStateOf(prefs.getInt("pref_key_card_corner_radius", 16)) }
-            var cardCornerStylePref by remember {
-                mutableStateOf(prefs.getString("pref_key_card_corner_style", "rounded") ?: "rounded")
+            var cardCornerRadiusPref by remember {
+                mutableIntStateOf(
+                    prefs.getInt(
+                        AppearancePrefs.CARDS_CORNER_RADIUS,
+                        AppearancePrefs.DEFAULT_CARD_CORNER_RADIUS
+                    )
+                )
             }
-            var cardOutlinesPref by remember { mutableStateOf(prefs.getBoolean("pref_key_card_outlines", true)) }
+            var cardCornerStylePref by remember {
+                mutableStateOf(
+                    prefs.getString(
+                        AppearancePrefs.CARDS_CORNER_STYLE,
+                        AppearancePrefs.DEFAULT_CARD_CORNER_STYLE
+                    ) ?: AppearancePrefs.DEFAULT_CARD_CORNER_STYLE
+                )
+            }
+            var cardOutlinesPref by remember {
+                mutableStateOf(
+                    prefs.getBoolean(AppearancePrefs.CARDS_OUTLINES, true)
+                )
+            }
             var cardOutlineColorPref by remember {
-                mutableStateOf(prefs.getString("pref_key_card_outline_color", "auto") ?: "auto")
+                mutableStateOf(
+                    prefs.getString(
+                        AppearancePrefs.CARDS_OUTLINE_COLOR,
+                        AppearancePrefs.DEFAULT_CARD_OUTLINE_COLOR
+                    ) ?: AppearancePrefs.DEFAULT_CARD_OUTLINE_COLOR
+                )
             }
             DisposableEffect(prefs) {
                 val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -179,11 +200,23 @@ class MainActivity : ComponentActivity() {
                         AppearancePrefs.TRANSIT_STREETCAR, AppearancePrefs.TRANSIT_WES,
                         AppearancePrefs.DENSITY, AppearancePrefs.FONT_SCALE, AppearancePrefs.MOTION,
                         AppearancePrefs.DYNAMIC_COLOR -> appearance = readAppearanceStyle(prefs)
-                        "pref_key_card_corner_radius" -> cardCornerRadiusPref = prefs.getInt("pref_key_card_corner_radius", 16)
-                        "pref_key_card_corner_style" -> cardCornerStylePref =
-                            prefs.getString("pref_key_card_corner_style", "rounded") ?: "rounded"
-                        "pref_key_card_outlines" -> cardOutlinesPref = prefs.getBoolean("pref_key_card_outlines", true)
-                        "pref_key_card_outline_color" -> cardOutlineColorPref = prefs.getString("pref_key_card_outline_color", "auto") ?: "auto"
+                        AppearancePrefs.CARDS_CORNER_RADIUS -> cardCornerRadiusPref =
+                            prefs.getInt(
+                                AppearancePrefs.CARDS_CORNER_RADIUS,
+                                AppearancePrefs.DEFAULT_CARD_CORNER_RADIUS
+                            )
+                        AppearancePrefs.CARDS_CORNER_STYLE -> cardCornerStylePref =
+                            prefs.getString(
+                                AppearancePrefs.CARDS_CORNER_STYLE,
+                                AppearancePrefs.DEFAULT_CARD_CORNER_STYLE
+                            ) ?: AppearancePrefs.DEFAULT_CARD_CORNER_STYLE
+                        AppearancePrefs.CARDS_OUTLINES -> cardOutlinesPref =
+                            prefs.getBoolean(AppearancePrefs.CARDS_OUTLINES, true)
+                        AppearancePrefs.CARDS_OUTLINE_COLOR -> cardOutlineColorPref =
+                            prefs.getString(
+                                AppearancePrefs.CARDS_OUTLINE_COLOR,
+                                AppearancePrefs.DEFAULT_CARD_OUTLINE_COLOR
+                            ) ?: AppearancePrefs.DEFAULT_CARD_OUTLINE_COLOR
                     }
                 }
                 prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -890,4 +923,3 @@ private fun MainAppContent(
 }
 
 }
-

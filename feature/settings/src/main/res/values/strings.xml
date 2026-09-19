@@ -2,6 +2,10 @@
 <resources>
     <string name="app_title">PDX Bus Tracker</string>
     <string name="settings_title">Settings</string>
+    <string name="settings_group_personalize">Personalize</string>
+    <string name="settings_group_transit">Transit experience</string>
+    <string name="settings_group_app">App features</string>
+    <string name="settings_group_app_info">About this app</string>
     <string name="back">Back</string>
     <string name="value_on">On</string>
     <string name="value_off">Off</string>

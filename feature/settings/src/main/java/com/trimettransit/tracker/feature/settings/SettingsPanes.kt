@@ -711,15 +711,7 @@ internal fun LicensesPane()
  */
 @Composable
 internal fun ColumnScope.SettingsMenu(
-    selectedTheme: String,
-    accentMode: String,
-    amoledDark: Boolean,
-    densityRaw: String,
-    fontScaleRaw: String,
-    cornerStyle: String,
-    cornerRadius: Float,
-    mapStyleRaw: String,
-    arrivalsRefreshSeconds: Int,
+    settings: SettingsPreferenceState,
     notificationsSection: (@Composable ColumnScope.() -> Unit)?,
     notificationsEnabled: Boolean?,
     widgetSection: (@Composable ColumnScope.() -> Unit)?,
@@ -729,49 +721,52 @@ internal fun ColumnScope.SettingsMenu(
     SectionHeader(title = stringResource(R.string.settings_title))
 
     SettingsCard {
+        SettingsGroupHeader(stringResource(R.string.settings_group_personalize))
         MenuRow(
             label = stringResource(R.string.section_appearance),
-            subtitle = themeSummary(selectedTheme),
+            subtitle = themeSummary(settings.theme),
             icon = Icons.Filled.BrightnessAuto,
             onClick = { onNavigate(SettingsSection.APPEARANCE) }
         )
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
         MenuRow(
             label = stringResource(R.string.section_colours),
-            subtitle = coloursSummary(accentMode, amoledDark),
+            subtitle = coloursSummary(settings.colorMode, settings.amoledDark),
             icon = Icons.Filled.Palette,
             onClick = { onNavigate(SettingsSection.COLOURS) }
         )
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
         MenuRow(
             label = stringResource(R.string.section_display),
-            subtitle = displaySummary(densityRaw, fontScaleRaw),
+            subtitle = displaySummary(settings.density, settings.fontScale),
             icon = Icons.Filled.ViewStream,
             onClick = { onNavigate(SettingsSection.DISPLAY) }
         )
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
         MenuRow(
             label = stringResource(R.string.section_cards),
-            subtitle = cardsSummary(cornerStyle, cornerRadius),
+            subtitle = cardsSummary(settings.cornerStyle, settings.cornerRadius),
             icon = Icons.Filled.BorderAll,
             onClick = { onNavigate(SettingsSection.CARDS) }
         )
-        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+        SettingsGroupHeader(stringResource(R.string.settings_group_transit))
         MenuRow(
             label = stringResource(R.string.section_maps),
-            subtitle = mapsSummary(mapStyleRaw),
+            subtitle = mapsSummary(settings.mapStyle),
             icon = Icons.Filled.Map,
             onClick = { onNavigate(SettingsSection.MAPS) }
         )
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
         MenuRow(
             label = stringResource(R.string.section_arrivals),
-            subtitle = arrivalsSummary(arrivalsRefreshSeconds),
+            subtitle = arrivalsSummary(settings.arrivalsRefreshSeconds),
             icon = Icons.Filled.Schedule,
             onClick = { onNavigate(SettingsSection.ARRIVALS) }
         )
+        if (notificationsSection != null || widgetSection != null) {
+            SettingsGroupHeader(stringResource(R.string.settings_group_app))
+        }
         if (notificationsSection != null) {
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             MenuRow(
                 label = stringResource(R.string.menu_notifications),
                 subtitle = notificationsEnabled?.let { on ->
@@ -782,7 +777,6 @@ internal fun ColumnScope.SettingsMenu(
             )
         }
         if (widgetSection != null) {
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             MenuRow(
                 label = stringResource(R.string.menu_widget),
                 subtitle = widgetRefreshIntervalMin
@@ -792,7 +786,7 @@ internal fun ColumnScope.SettingsMenu(
                 onClick = { onNavigate(SettingsSection.WIDGET) }
             )
         }
-        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+        SettingsGroupHeader(stringResource(R.string.settings_group_app_info))
         MenuRow(
             label = stringResource(R.string.section_about),
             subtitle = stringResource(R.string.about_subtitle),

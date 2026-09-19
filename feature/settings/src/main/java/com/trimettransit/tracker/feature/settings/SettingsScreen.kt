@@ -20,8 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,17 +28,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.edit
 import androidx.preference.PreferenceManager
-import com.trimettransit.tracker.ui.appearance.AppearancePrefs
-import com.trimettransit.tracker.ui.appearance.MapStyles
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
+
 
 @Composable
 fun SettingsScreen(
@@ -53,80 +48,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-    var selectedTheme by remember { mutableStateOf(prefs.getString(AppearancePrefs.THEME, "system") ?: "system") }
-    var accentMode by remember {
-        mutableStateOf(
-            prefs.getString(AppearancePrefs.COLOR_MODE, null) ?: if (
-                prefs.getBoolean(AppearancePrefs.DYNAMIC_COLOR, true)
-            ) "dynamic" else "seed"
-        )
-    }
-    var accentColorRaw by remember {
-        mutableStateOf(prefs.getString(AppearancePrefs.ACCENT_COLOR, "") ?: "")
-    }
-    var vibrancyRaw by remember {
-        mutableStateOf(prefs.getString(AppearancePrefs.VIBRANCY, "default") ?: "default")
-    }
-    var amoledDark by remember {
-        mutableStateOf(prefs.getBoolean(AppearancePrefs.AMOLED_DARK, false))
-    }
-    var pillAccentRaw by remember {
-        mutableStateOf(prefs.getString(AppearancePrefs.PILL_ACCENT, "") ?: "")
-    }
-    var transitBusRaw by remember {
-        mutableStateOf(prefs.getString(AppearancePrefs.TRANSIT_BUS, "") ?: "")
-    }
-    var transitRailRaw by remember {
-        mutableStateOf(prefs.getString(AppearancePrefs.TRANSIT_RAIL, "") ?: "")
-    }
-    var transitStreetcarRaw by remember {
-        mutableStateOf(prefs.getString(AppearancePrefs.TRANSIT_STREETCAR, "") ?: "")
-    }
-    var transitWesRaw by remember {
-        mutableStateOf(prefs.getString(AppearancePrefs.TRANSIT_WES, "") ?: "")
-    }
-    var densityRaw by remember {
-        mutableStateOf(prefs.getString(AppearancePrefs.DENSITY, "comfortable") ?: "comfortable")
-    }
-    var fontScaleRaw by remember {
-        mutableStateOf(prefs.getString(AppearancePrefs.FONT_SCALE, "default") ?: "default")
-    }
-    var arrivalsRefreshSeconds by remember {
-        mutableIntStateOf(prefs.getInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, 30))
-    }
-    var showArrivalClock by remember {
-        mutableStateOf(prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, true))
-    }
-    var showArrivalRouteBadges by remember {
-        mutableStateOf(prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_ROUTE_BADGES, true))
-    }
-    var showArrivalVehicleInfo by remember {
-        mutableStateOf(prefs.getBoolean(AppearancePrefs.ARRIVALS_SHOW_VEHICLE_INFO, true))
-    }
-    var motionRaw by remember {
-        mutableStateOf(prefs.getString(AppearancePrefs.MOTION, "expressive") ?: "expressive")
-    }
-    var mapStyleRaw by remember {
-        mutableStateOf(
-            prefs.getString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT)
-                ?: MapStyles.DEFAULT
-        )
-    }
-    var onlyShowSelectedRoute by remember {
-        mutableStateOf(prefs.getBoolean("pref_key_only_show_route_selected", true))
-    }
-    var cardOutlines by remember {
-        mutableStateOf(prefs.getBoolean("pref_key_card_outlines", true))
-    }
-    var cardOutlineColorRaw by remember {
-        mutableStateOf(prefs.getString("pref_key_card_outline_color", "auto") ?: "auto")
-    }
-    var cornerRadius by remember {
-        mutableFloatStateOf(prefs.getInt("pref_key_card_corner_radius", 16).toFloat())
-    }
-    var cornerStyle by remember {
-        mutableStateOf(prefs.getString("pref_key_card_corner_style", "rounded") ?: "rounded")
-    }
+    var settings by remember { mutableStateOf(SettingsPreferenceState.read(prefs)) }
     var colourTarget by remember { mutableStateOf<ColourTarget?>(null) }
     var currentSection by remember { mutableStateOf<SettingsSection?>(null) }
 
@@ -150,35 +72,33 @@ fun SettingsScreen(
         }
     }
 
+    fun updateSettings(transform: (SettingsPreferenceState) -> SettingsPreferenceState) {
+        settings = transform(settings)
+        settings.save(prefs)
+    }
+
     fun applyColour(target: ColourTarget, raw: String) {
         when (target) {
             ColourTarget.CARD_OUTLINE -> {
-                cardOutlineColorRaw = raw
-                prefs.edit { putString(AppearancePrefs.CARDS_OUTLINE_COLOR, raw) }
+                updateSettings { it.copy(cardOutlineColor = raw) }
             }
             ColourTarget.ACCENT -> {
-                accentColorRaw = raw
-                prefs.edit { putString(AppearancePrefs.ACCENT_COLOR, raw) }
+                updateSettings { it.copy(accentColor = raw) }
             }
             ColourTarget.PILL_ACCENT -> {
-                pillAccentRaw = raw
-                prefs.edit { putString(AppearancePrefs.PILL_ACCENT, raw) }
+                updateSettings { it.copy(pillAccent = raw) }
             }
             ColourTarget.TRANSIT_BUS -> {
-                transitBusRaw = raw
-                prefs.edit { putString(AppearancePrefs.TRANSIT_BUS, raw) }
+                updateSettings { it.copy(transitBus = raw) }
             }
             ColourTarget.TRANSIT_RAIL -> {
-                transitRailRaw = raw
-                prefs.edit { putString(AppearancePrefs.TRANSIT_RAIL, raw) }
+                updateSettings { it.copy(transitRail = raw) }
             }
             ColourTarget.TRANSIT_STREETCAR -> {
-                transitStreetcarRaw = raw
-                prefs.edit { putString(AppearancePrefs.TRANSIT_STREETCAR, raw) }
+                updateSettings { it.copy(transitStreetcar = raw) }
             }
             ColourTarget.TRANSIT_WES -> {
-                transitWesRaw = raw
-                prefs.edit { putString(AppearancePrefs.TRANSIT_WES, raw) }
+                updateSettings { it.copy(transitWes = raw) }
             }
         }
     }
@@ -220,15 +140,7 @@ fun SettingsScreen(
             ) {
                 if (section == null) {
                     SettingsMenu(
-                        selectedTheme = selectedTheme,
-                        accentMode = accentMode,
-                        amoledDark = amoledDark,
-                        densityRaw = densityRaw,
-                        fontScaleRaw = fontScaleRaw,
-                        cornerStyle = cornerStyle,
-                        cornerRadius = cornerRadius,
-                        mapStyleRaw = mapStyleRaw,
-                        arrivalsRefreshSeconds = arrivalsRefreshSeconds,
+                        settings = settings,
                         notificationsSection = notificationsSection,
                         notificationsEnabled = notificationsEnabled,
                         widgetSection = widgetSection,
@@ -243,113 +155,73 @@ fun SettingsScreen(
                     )
                     when (section) {
                         SettingsSection.APPEARANCE -> AppearancePane(
-                            selectedTheme = selectedTheme,
-                            onThemeChange = {
-                                selectedTheme = it
-                                prefs.edit { putString(AppearancePrefs.THEME, it) }
-                            }
+                            selectedTheme = settings.theme,
+                            onThemeChange = { updateSettings { state -> state.copy(theme = it) } }
                         )
 
                         SettingsSection.COLOURS -> ColoursPane(
-                            accentMode = accentMode,
-                            onAccentModeChange = {
-                                accentMode = it
-                                prefs.edit { putString(AppearancePrefs.COLOR_MODE, it) }
-                            },
-                            accentColorRaw = accentColorRaw,
-                            onAccentColorChange = {
-                                accentColorRaw = it
-                                prefs.edit { putString(AppearancePrefs.ACCENT_COLOR, it) }
-                            },
-                            vibrancyRaw = vibrancyRaw,
-                            onVibrancyChange = {
-                                vibrancyRaw = it
-                                prefs.edit { putString(AppearancePrefs.VIBRANCY, it) }
-                            },
-                            amoledDark = amoledDark,
-                            onAmoledDarkChange = {
-                                amoledDark = it
-                                prefs.edit { putBoolean(AppearancePrefs.AMOLED_DARK, it) }
-                            },
-                            pillAccentRaw = pillAccentRaw,
-                            transitBusRaw = transitBusRaw,
-                            transitRailRaw = transitRailRaw,
-                            transitStreetcarRaw = transitStreetcarRaw,
-                            transitWesRaw = transitWesRaw,
+                            accentMode = settings.colorMode,
+                            onAccentModeChange = { updateSettings { state -> state.copy(colorMode = it) } },
+                            accentColorRaw = settings.accentColor,
+                            onAccentColorChange = { updateSettings { state -> state.copy(accentColor = it) } },
+                            vibrancyRaw = settings.vibrancy,
+                            onVibrancyChange = { updateSettings { state -> state.copy(vibrancy = it) } },
+                            amoledDark = settings.amoledDark,
+                            onAmoledDarkChange = { updateSettings { state -> state.copy(amoledDark = it) } },
+                            pillAccentRaw = settings.pillAccent,
+                            transitBusRaw = settings.transitBus,
+                            transitRailRaw = settings.transitRail,
+                            transitStreetcarRaw = settings.transitStreetcar,
+                            transitWesRaw = settings.transitWes,
                             onPickColour = { colourTarget = it }
                         )
 
                         SettingsSection.DISPLAY -> DisplayPane(
-                            densityRaw = densityRaw,
-                            onDensityChange = {
-                                densityRaw = it
-                                prefs.edit { putString(AppearancePrefs.DENSITY, it) }
-                            },
-                            fontScaleRaw = fontScaleRaw,
-                            onFontScaleChange = {
-                                fontScaleRaw = it
-                                prefs.edit { putString(AppearancePrefs.FONT_SCALE, it) }
-                            },
-                            motionRaw = motionRaw,
-                            onMotionChange = {
-                                motionRaw = it
-                                prefs.edit { putString(AppearancePrefs.MOTION, it) }
-                            }
+                            densityRaw = settings.density,
+                            onDensityChange = { updateSettings { state -> state.copy(density = it) } },
+                            fontScaleRaw = settings.fontScale,
+                            onFontScaleChange = { updateSettings { state -> state.copy(fontScale = it) } },
+                            motionRaw = settings.motion,
+                            onMotionChange = { updateSettings { state -> state.copy(motion = it) } }
                         )
 
                         SettingsSection.CARDS -> CardsPane(
-                            cardOutlines = cardOutlines,
-                            onCardOutlinesChange = {
-                                cardOutlines = it
-                                prefs.edit { putBoolean("pref_key_card_outlines", it) }
-                            },
-                            cardOutlineColorRaw = cardOutlineColorRaw,
-                            cornerRadius = cornerRadius,
-                            onCornerRadiusChange = { cornerRadius = it },
-                            onCornerRadiusFinished = {
-                                prefs.edit { putInt("pref_key_card_corner_radius", cornerRadius.roundToInt()) }
-                            },
-                            cornerStyle = cornerStyle,
-                            onCornerStyleChange = {
-                                cornerStyle = it
-                                prefs.edit { putString("pref_key_card_corner_style", it) }
-                            },
+                            cardOutlines = settings.cardOutlines,
+                            onCardOutlinesChange = { updateSettings { state -> state.copy(cardOutlines = it) } },
+                            cardOutlineColorRaw = settings.cardOutlineColor,
+                            cornerRadius = settings.cornerRadius,
+                            onCornerRadiusChange = { settings = settings.copy(cornerRadius = it) },
+                            onCornerRadiusFinished = { settings.save(prefs) },
+                            cornerStyle = settings.cornerStyle,
+                            onCornerStyleChange = { updateSettings { state -> state.copy(cornerStyle = it) } },
                             onPickColour = { colourTarget = it }
                         )
 
                         SettingsSection.MAPS -> MapsPane(
-                            mapStyleRaw = mapStyleRaw,
-                            onMapStyleChange = {
-                                mapStyleRaw = it
-                                prefs.edit { putString(AppearancePrefs.MAP_STYLE, it) }
-                            }
+                            mapStyleRaw = settings.mapStyle,
+                            onMapStyleChange = { updateSettings { state -> state.copy(mapStyle = it) } }
                         )
 
                         SettingsSection.ARRIVALS -> ArrivalsPane(
-                            onlyShowSelectedRoute = onlyShowSelectedRoute,
+                            onlyShowSelectedRoute = settings.onlyShowSelectedRoute,
                             onOnlyShowSelectedRouteChange = {
-                                onlyShowSelectedRoute = it
-                                prefs.edit { putBoolean("pref_key_only_show_route_selected", it) }
+                                updateSettings { state -> state.copy(onlyShowSelectedRoute = it) }
                             },
-                            showArrivalClock = showArrivalClock,
+                            showArrivalClock = settings.showArrivalClock,
                             onShowArrivalClockChange = {
-                                showArrivalClock = it
-                                prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_CLOCK, it) }
+                                updateSettings { state -> state.copy(showArrivalClock = it) }
                             },
-                            showArrivalRouteBadges = showArrivalRouteBadges,
+                            showArrivalRouteBadges = settings.showArrivalRouteBadges,
                             onShowArrivalRouteBadgesChange = {
-                                showArrivalRouteBadges = it
-                                prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_ROUTE_BADGES, it) }
+                                updateSettings { state -> state.copy(showArrivalRouteBadges = it) }
                             },
-                            showArrivalVehicleInfo = showArrivalVehicleInfo,
+                            showArrivalVehicleInfo = settings.showArrivalVehicleInfo,
                             onShowArrivalVehicleInfoChange = {
-                                showArrivalVehicleInfo = it
-                                prefs.edit { putBoolean(AppearancePrefs.ARRIVALS_SHOW_VEHICLE_INFO, it) }
+                                updateSettings { state -> state.copy(showArrivalVehicleInfo = it) }
                             },
-                            arrivalsRefreshSeconds = arrivalsRefreshSeconds,
+                            arrivalsRefreshSeconds = settings.arrivalsRefreshSeconds,
                             onArrivalsRefreshChange = {
-                                arrivalsRefreshSeconds = it
-                                prefs.edit { putInt(AppearancePrefs.ARRIVALS_REFRESH_SECONDS, it) }
+                                updateSettings { state -> state.copy(arrivalsRefreshSeconds = it) }
                             }
                         )
 
@@ -371,13 +243,13 @@ fun SettingsScreen(
     colourTarget?.let { target ->
         ColourPickerHost(
             target = target,
-            cardOutlineColorRaw = cardOutlineColorRaw,
-            accentColorRaw = accentColorRaw,
-            pillAccentRaw = pillAccentRaw,
-            transitBusRaw = transitBusRaw,
-            transitRailRaw = transitRailRaw,
-            transitStreetcarRaw = transitStreetcarRaw,
-            transitWesRaw = transitWesRaw,
+            cardOutlineColorRaw = settings.cardOutlineColor,
+            accentColorRaw = settings.accentColor,
+            pillAccentRaw = settings.pillAccent,
+            transitBusRaw = settings.transitBus,
+            transitRailRaw = settings.transitRail,
+            transitStreetcarRaw = settings.transitStreetcar,
+            transitWesRaw = settings.transitWes,
             onDismiss = { colourTarget = null },
             onPick = { raw -> applyColour(target, raw) }
         )

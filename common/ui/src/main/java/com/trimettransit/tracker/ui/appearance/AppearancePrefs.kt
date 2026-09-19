@@ -39,6 +39,49 @@ object AppearancePrefs {
     const val ARRIVALS_SHOW_ROUTE_BADGES = "pref_key_arrivals_show_route_badges" // Boolean
     const val ARRIVALS_SHOW_VEHICLE_INFO = "pref_key_arrivals_show_vehicle_info" // Boolean
     const val MAP_STYLE = "pref_key_map_style" // String: "streets" | "bright" | "positron" | "dark"
+
+    const val SETTINGS_CARD_OUTLINES = CARDS_OUTLINES
+    const val SETTINGS_CARD_OUTLINE_COLOR = CARDS_OUTLINE_COLOR
+    const val SETTINGS_CARD_CORNER_STYLE = CARDS_CORNER_STYLE
+    const val SETTINGS_CARD_CORNER_RADIUS = CARDS_CORNER_RADIUS
+    const val SETTINGS_ONLY_SHOW_SELECTED_ROUTE = ARRIVALS_ONLY_SELECTED_ROUTE
+
+    object Values {
+        const val THEME_SYSTEM = "system"
+        const val THEME_LIGHT = "light"
+        const val THEME_DARK = "dark"
+        const val COLOR_MODE_DYNAMIC = "dynamic"
+        const val COLOR_MODE_SEED = "seed"
+        const val VIBRANCY_MUTED = "muted"
+        const val VIBRANCY_DEFAULT = "default"
+        const val VIBRANCY_VIBRANT = "vibrant"
+        const val DENSITY_COMFORTABLE = "comfortable"
+        const val DENSITY_COMPACT = "compact"
+        const val FONT_SMALLER = "smaller"
+        const val FONT_DEFAULT = "default"
+        const val FONT_LARGER = "larger"
+        const val MOTION_LOW = "low"
+        const val MOTION_DEFAULT = "default"
+        const val MOTION_EXPRESSIVE = "expressive"
+        const val CARD_OUTLINE_AUTO = "auto"
+        const val CARD_STYLE_ROUNDED = "rounded"
+        const val CARD_STYLE_CUT = "cut"
+    }
+
+    const val DEFAULT_THEME = Values.THEME_SYSTEM
+    const val DEFAULT_COLOR_MODE = Values.COLOR_MODE_DYNAMIC
+    const val DEFAULT_VIBRANCY = Values.VIBRANCY_DEFAULT
+    const val DEFAULT_DENSITY = Values.DENSITY_COMFORTABLE
+    const val DEFAULT_FONT_SCALE = Values.FONT_DEFAULT
+    const val DEFAULT_MOTION = Values.MOTION_EXPRESSIVE
+    const val DEFAULT_CARD_OUTLINE_COLOR = Values.CARD_OUTLINE_AUTO
+    const val DEFAULT_CARD_CORNER_STYLE = Values.CARD_STYLE_ROUNDED
+    const val DEFAULT_CARD_CORNER_RADIUS = 16
+    const val DEFAULT_ARRIVALS_REFRESH_SECONDS = 30
+    const val DEFAULT_ONLY_SHOW_SELECTED_ROUTE = true
+    const val DEFAULT_ARRIVALS_SHOW_CLOCK = true
+    const val DEFAULT_ARRIVALS_SHOW_ROUTE_BADGES = true
+    const val DEFAULT_ARRIVALS_SHOW_VEHICLE_INFO = true
 }
 
 /** Maps the persisted string prefs onto an [AppearanceStyle]. Pure, so it's unit-testable. */
