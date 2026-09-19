@@ -85,5 +85,5 @@ object JSONParser {
     }
 
     private fun sanitizedUrl(url: okhttp3.HttpUrl): String =
-        url.scheme + "://" + url.host + (if (url.encodedPath.isNotEmpty()) url.encodedPath else "/")
+        url.scheme + "://" + url.host + "/"
 }

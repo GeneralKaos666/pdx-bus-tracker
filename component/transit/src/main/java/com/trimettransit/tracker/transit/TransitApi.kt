@@ -2,6 +2,7 @@ package com.trimettransit.tracker.transit
 
 import android.content.Context
 import android.net.Uri
+import java.io.IOException
 import timber.log.Timber
 import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Direction
@@ -23,6 +24,9 @@ import org.joda.time.format.DateTimeFormat
 object TransitApi {
     private val parser = JSONParser
 
+    internal fun scrubApiKey(msg: String, apiKey: String): String =
+        if (apiKey.isBlank()) msg else msg.replace("/appID/$apiKey", "/appID/<redacted>").replace(apiKey, "<redacted>")
+
     private suspend fun <T> guarded(
         context: Context,
         label: String,
@@ -39,7 +43,7 @@ object TransitApi {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Timber.e(e, "Failed to $label")
+            Timber.e(IOException(scrubApiKey(e.message ?: "", apiKey), e), "Failed to $label")
             null
         }
     }
@@ -230,11 +234,11 @@ object TransitApi {
                 } catch (e2: CancellationException) {
                     throw e2
                 } catch (e2: Exception) {
-                    Timber.e(e2, "Failed to fetch trip plan (retry)")
+                    Timber.e(IOException(scrubApiKey(e2.message ?: "", apiKey), e2), "Failed to fetch trip plan (retry)")
                     return@withContext TripPlanResult.Error(TripPlanFailureClassifier.classify(e2))
                 }
             }
-            Timber.e(e, "Failed to fetch trip plan")
+            Timber.e(IOException(scrubApiKey(e.message ?: "", apiKey), e), "Failed to fetch trip plan")
             TripPlanResult.Error(classified)
         }
     }
