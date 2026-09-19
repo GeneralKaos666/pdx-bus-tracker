@@ -31,6 +31,7 @@ fun Context.repos(): Repos {
  * sharing, so UI + widget + alert workers reuse one connection pool instead of opening
  * a fresh helper (and fresh SQLite connections) per [repos] call. */
 private val dbLock = Any()
+@Volatile
 private var databaseHelper: DatabaseHelper? = null
 
 private fun sharedDatabaseHelper(context: Context): DatabaseHelper =
@@ -44,6 +45,7 @@ private fun sharedDatabaseHelper(context: Context): DatabaseHelper =
  * planner instead of being rebuilt per screen.
  */
 private val transitRepoLock = Any()
+@Volatile
 private var transitRepository: TransitRepository? = null
 
 private fun sharedTransitRepository(context: Context): TransitRepository =

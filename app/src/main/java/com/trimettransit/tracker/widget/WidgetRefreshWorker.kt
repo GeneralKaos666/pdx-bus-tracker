@@ -6,7 +6,6 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.repos
 import com.trimettransit.tracker.retryFetch
 import kotlinx.coroutines.withContext
@@ -65,20 +64,6 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
             arrivals = WidgetSnapshotCache.cleanArrivals(mine),
             detours = WidgetSnapshotCache.dedupeDetours(detours)
         )
-    }
-
-    private suspend fun fetchRow(
-        transitRepository: TransitRepository,
-        stop: Stop
-    ): WidgetSnapshotCache.Row {
-        val result = retryFetch(attempts = MAX_ATTEMPTS, label = "Widget") {
-            transitRepository.getArrivals(
-                locIds = listOf(stop.locId),
-                minutes = WINDOW_MINUTES,
-                maxArrivals = ARRIVALS_PER_STOP
-            )
-        }
-        return buildRow(stop, result?.arrivals.orEmpty(), result?.detours.orEmpty(), setOf(stop.locId))
     }
 
     companion object {

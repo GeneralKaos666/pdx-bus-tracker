@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -102,8 +103,7 @@ private fun FavoritesList(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(stops.size, key = { stops[it].locId }, contentType = { "stop" }) { index ->
-            val stop = stops[index]
+        itemsIndexed(stops, key = { _, stop -> stop.locId }, contentType = { _, _ -> "stop" }) { index, stop ->
             val moveUpLabel = stringResource(R.string.move_favorite_up)
             val moveDownLabel = stringResource(R.string.move_favorite_down)
             StopListItem(
