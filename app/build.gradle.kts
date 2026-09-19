@@ -26,7 +26,7 @@ composeCompiler {
 // Single source of truth for the release versionCode fallback. With Play credentials
 // configured, GPP's AUTO strategy overrides this with `default + max(0, liveMax - default + 1)`;
 // without credentials this exact value is what's baked into release builds.
-val releaseVersionCode = 7714
+val releaseVersionCode = 7715
 
 abstract class RenameApkTask : DefaultTask() {
     @get:Internal
@@ -99,7 +99,7 @@ android {
         minSdk = 31
         targetSdk = 37
         versionCode = releaseVersionCode
-        versionName = "4.18.5"
+        versionName = "4.18.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
