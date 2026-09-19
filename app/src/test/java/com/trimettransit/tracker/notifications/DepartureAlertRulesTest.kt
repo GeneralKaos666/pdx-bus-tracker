@@ -3,6 +3,7 @@ package com.trimettransit.tracker.notifications
 import com.trimettransit.tracker.model.Arrival
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -125,5 +126,32 @@ class DepartureAlertRulesTest {
     @Test
     fun `fired key round-trips stop and trip ids`() {
         assertEquals("7783:some-trip", DepartureAlertRules.firedKey(7783, "some-trip"))
+    }
+
+    @Test
+    fun `blank trip ids do not collide`() {
+        val a1 = Arrival(tripID = "", blockID = 1, scheduledMillis = 1000L)
+        val a2 = Arrival(tripID = "", blockID = 2, scheduledMillis = 2000L)
+        assertNotEquals(
+            DepartureAlertRules.firedKey(1, a1),
+            DepartureAlertRules.firedKey(1, a2)
+        )
+    }
+
+    @Test
+    fun `blank trip id falls back to block and schedule`() {
+        assertEquals("1:b7:1000", DepartureAlertRules.firedKey(1, "", 7, 1000L))
+    }
+
+    @Test
+    fun `filterNew keeps distinct blank-trip arrivals`() {
+        val first = Arrival(tripID = "", blockID = 1, scheduledMillis = 1000L)
+        val second = Arrival(tripID = "", blockID = 2, scheduledMillis = 2000L)
+        val fresh = DepartureAlertRules.filterNew(
+            listOf(first, second),
+            fired = setOf(DepartureAlertRules.firedKey(0, first)),
+            locId = 0
+        )
+        assertEquals(listOf(second), fresh)
     }
 }
