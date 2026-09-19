@@ -7,6 +7,7 @@ import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.computeTransitType
+import com.trimettransit.tracker.model.domain.dedupeArrivals
 import org.joda.time.DateTime
 import org.json.JSONObject
 
@@ -134,8 +135,9 @@ object TransitJsonMapper {
             stopLng = loc.optDouble("lng", 0.0)
         }
 
+        val deduped = dedupeArrivals(arrivalList)
         return ArrivalsResult(
-            arrivals = arrivalList,
+            arrivals = deduped,
             blockPositions = parsedBlockPositions,
             detours = detours,
             stopLat = stopLat,

@@ -187,4 +187,34 @@ class ArrivalsJsonMapperTest {
         assertEquals("2", result.arrivals[1].tripID)
         assertTrue(result.detours.isEmpty())
     }
+
+    @Test
+    fun `parseArrivals dedupes identical arrivals at the fetch boundary`() {
+        val json = """
+            {
+              "arrival": [
+                { "tripID": "1", "locid": 100, "route": 4, "scheduled": 1700000060000, "blockID": 3401, "vehicleID": 3518 },
+                { "tripID": "1", "locid": 100, "route": 4, "scheduled": 1700000060000, "blockID": 3401, "vehicleID": 3518 }
+              ]
+            }
+        """.trimIndent()
+
+        val result = TransitJsonMapper.parseArrivals(JSONObject(json))
+        assertEquals(1, result.arrivals.size)
+    }
+
+    @Test
+    fun `parseArrivals keeps the same trip at different stops`() {
+        val json = """
+            {
+              "arrival": [
+                { "tripID": "1", "locid": 100, "route": 4, "scheduled": 1700000060000, "blockID": 3401, "vehicleID": 3518 },
+                { "tripID": "1", "locid": 200, "route": 4, "scheduled": 1700000060000, "blockID": 3401, "vehicleID": 3518 }
+              ]
+            }
+        """.trimIndent()
+
+        val result = TransitJsonMapper.parseArrivals(JSONObject(json))
+        assertEquals(2, result.arrivals.size)
+    }
 }

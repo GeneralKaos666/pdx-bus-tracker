@@ -400,7 +400,7 @@ fun ArrivalsScreen(
                                 if (showAllArrivals) unfilteredArrivals else arrivals.take(TOP_ARRIVAL_ROWS)
                             items(
                                 visibleArrivals,
-                                key = { "${if (showAllArrivals) "all_" else "top_"}${arrivalKey(it)}" },
+                                key = { arrivalKey(it) },
                                 contentType = { "arrival" }) { arrival ->
                                 val lineDetours = detoursForLine(detours, arrival.routeId)
                                 val rowKey = arrivalKey(arrival)

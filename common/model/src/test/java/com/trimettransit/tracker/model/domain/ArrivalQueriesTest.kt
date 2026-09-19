@@ -47,6 +47,13 @@ class ArrivalQueriesTest {
         assertNotEquals(arrivalKey(base), arrivalKey(arrival(vehicleID = 12)))
     }
 
+    @Test
+    fun `arrivalKey differentiates stops`() {
+        val base = arrival().copy(locId = 1)
+        val other = base.copy(locId = 2)
+        assertNotEquals(arrivalKey(base), arrivalKey(other))
+    }
+
     // dedupeArrivals
 
     @Test

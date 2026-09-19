@@ -16,7 +16,7 @@ import org.joda.time.DateTime
 
 /** Stable identity of a logical arrival row. */
 fun arrivalKey(arrival: Arrival): String =
-    "${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}_${arrival.blockID}_${arrival.vehicleID}"
+    "${arrival.locId}_${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}_${arrival.blockID}_${arrival.vehicleID}"
 
 /** Collapse duplicate logical arrivals, preserving first-seen order. */
 fun dedupeArrivals(arrivals: List<Arrival>): List<Arrival> {
