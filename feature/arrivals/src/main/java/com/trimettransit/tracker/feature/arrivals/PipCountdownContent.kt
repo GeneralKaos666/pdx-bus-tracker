@@ -16,7 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -48,8 +47,6 @@ internal fun PipCountdownContent(
     modifier: Modifier = Modifier,
     tick: Int = 0
 ) {
-    // Read tick so minute-aligned updates from ArrivalsScreen recompute countdowns below.
-    remember(tick) { tick }
     val scheme = MaterialTheme.colorScheme
     Column(
         modifier = modifier

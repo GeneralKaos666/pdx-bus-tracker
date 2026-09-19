@@ -101,7 +101,7 @@ internal fun ItineraryResultsSheet(
                 ) {
                     itemsIndexed(
                         selected.legs,
-                        key = { _, leg -> "${leg.mode}_${leg.routeNumber}_${leg.from.latitude}_${leg.from.longitude}_${leg.to.latitude}_${leg.to.longitude}" },
+                        key = { index, leg -> "${index}_${leg.mode}_${leg.routeNumber}_${leg.from.latitude}_${leg.from.longitude}_${leg.to.latitude}_${leg.to.longitude}" },
                         contentType = { _, _ -> "leg" }
                     ) { _, leg ->
                         LegRow(leg = leg)

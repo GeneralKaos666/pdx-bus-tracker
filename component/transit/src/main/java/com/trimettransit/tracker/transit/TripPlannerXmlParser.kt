@@ -53,7 +53,7 @@ internal object TripPlannerXmlParser {
         // rejected before parsing, independent of whether this runtime's DOM honors the
         // disallow-doctype feature below (ART rejects some Apache/SAX flags, and those
         // stay best-effort so benign responses keep parsing on every device).
-        if (xml.contains("<!DOCTYPE")) {
+        if (xml.contains("<!DOCTYPE", ignoreCase = true)) {
             Timber.w("Trip planner XML rejected: inline DOCTYPE")
             return TripPlanResult.Error(TripPlannerError.SYSTEM_OUTAGE)
         }
