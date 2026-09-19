@@ -27,6 +27,25 @@ object TransitApi {
     internal fun scrubApiKey(msg: String, apiKey: String): String =
         if (apiKey.isBlank()) msg else msg.replace("/appID/$apiKey", "/appID/<redacted>").replace(apiKey, "<redacted>")
 
+    // Rebuilds the throwable chain with every message scrubbed: Timber.e prints the
+    // full "Caused by" chain, so chaining the raw exception would leak the key via a
+    // cause message (e.g. an OkHttp IOException embedding the request URL).
+    internal fun scrubbedForLog(e: Exception, apiKey: String): IOException {
+        val top = IOException(scrubApiKey(e.message ?: e.toString(), apiKey))
+        top.stackTrace = e.stackTrace
+        val seen = mutableSetOf<Throwable>(e)
+        var orig: Throwable? = e.cause
+        var copy: Throwable = top
+        while (orig != null && seen.add(orig)) {
+            val next = IOException(scrubApiKey(orig.message ?: orig.toString(), apiKey))
+            next.stackTrace = orig.stackTrace
+            copy.initCause(next)
+            copy = next
+            orig = orig.cause
+        }
+        return top
+    }
+
     private suspend fun <T> guarded(
         context: Context,
         label: String,
@@ -43,7 +62,7 @@ object TransitApi {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Timber.e(IOException(scrubApiKey(e.message ?: "", apiKey), e), "Failed to $label")
+            Timber.e(scrubbedForLog(e, apiKey), "Failed to $label")
             null
         }
     }
@@ -234,11 +253,11 @@ object TransitApi {
                 } catch (e2: CancellationException) {
                     throw e2
                 } catch (e2: Exception) {
-                    Timber.e(IOException(scrubApiKey(e2.message ?: "", apiKey), e2), "Failed to fetch trip plan (retry)")
+                    Timber.e(scrubbedForLog(e2, apiKey), "Failed to fetch trip plan (retry)")
                     return@withContext TripPlanResult.Error(TripPlanFailureClassifier.classify(e2))
                 }
             }
-            Timber.e(IOException(scrubApiKey(e.message ?: "", apiKey), e), "Failed to fetch trip plan")
+            Timber.e(scrubbedForLog(e, apiKey), "Failed to fetch trip plan")
             TripPlanResult.Error(classified)
         }
     }
