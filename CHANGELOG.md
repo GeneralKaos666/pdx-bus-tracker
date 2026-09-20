@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Whats's New in v4.18.7
 
 - **Better offline transit coverage:** the app can cache the standard GTFS network,
   route shapes, and protobuf vehicle positions in private storage, refresh the
