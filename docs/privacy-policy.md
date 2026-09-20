@@ -4,6 +4,9 @@
 
 PDX Bus Tracker is a free, open-source, unofficial transit tracker for the Portland,
 Oregon area. This policy describes what information the app handles and where it goes.
+Optional GTFS static and realtime data is downloaded from the configured transit
+feed and cached only in the app's private files directory. It is used for offline
+route, stop, shape, and vehicle fallback and is not uploaded by the app.
 The short version: **the app has no accounts, no ads, and no analytics — your data
 stays on your phone except for the specific transit lookups described below.**
 

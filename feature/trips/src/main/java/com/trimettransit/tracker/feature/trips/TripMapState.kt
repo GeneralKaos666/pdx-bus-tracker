@@ -3,13 +3,12 @@ package com.trimettransit.tracker.feature.trips
 import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripLeg
 import com.trimettransit.tracker.model.TripPoint
-import org.maplibre.android.maps.MapLibreMap
-import org.maplibre.android.maps.MapView
-import org.maplibre.android.style.sources.GeoJsonSource
-import org.maplibre.geojson.Feature
-import org.maplibre.geojson.FeatureCollection
-import org.maplibre.geojson.LineString
-import org.maplibre.geojson.Point
+import com.trimettransit.tracker.map.MapFeature
+import com.trimettransit.tracker.map.MapFeatureCollection
+import com.trimettransit.tracker.map.MapGeoJsonSource
+import com.trimettransit.tracker.map.MapLineString
+import com.trimettransit.tracker.map.MapController
+import com.trimettransit.tracker.map.MapPoint
 
 /**
  * Holds the trip-planning map's GeoJSON sources and pushes render data into them. The
@@ -18,16 +17,15 @@ import org.maplibre.geojson.Point
  * "#rrggbb" line color resolved from the current M3 scheme, set on style load.
  */
 internal class TripMapState {
-    var mapView: MapView? = null
-    var map: MapLibreMap? = null
+    var map: MapController? = null
     var letterColors: Map<String, String> = emptyMap()
-    var originSource: GeoJsonSource? = null
-    var destSource: GeoJsonSource? = null
-    var transitSource: GeoJsonSource? = null
-    var walkSource: GeoJsonSource? = null
-    var stopSource: GeoJsonSource? = null
-    var boardSource: GeoJsonSource? = null
-    var meSource: GeoJsonSource? = null
+    var originSource: MapGeoJsonSource? = null
+    var destSource: MapGeoJsonSource? = null
+    var transitSource: MapGeoJsonSource? = null
+    var walkSource: MapGeoJsonSource? = null
+    var stopSource: MapGeoJsonSource? = null
+    var boardSource: MapGeoJsonSource? = null
+    var meSource: MapGeoJsonSource? = null
     var lastFitTag: FitTag? = null
 
     /**
@@ -44,7 +42,7 @@ internal class TripMapState {
 
     fun applyMe(lat: Double, lng: Double) {
         meSource?.setGeoJson(
-            FeatureCollection.fromFeatures(listOf(pointFeature(lng, lat)))
+            MapFeatureCollection.fromFeatures(listOf(pointFeature(lng, lat)))
         )
     }
 
@@ -57,14 +55,14 @@ internal class TripMapState {
     fun push(origin: TripPoint?, dest: TripPoint?, itinerary: TripItinerary?) {
         originSource?.let { source ->
             source.setGeoJson(
-                FeatureCollection.fromFeatures(
+                MapFeatureCollection.fromFeatures(
                     listOfNotNull(origin?.let { pointFeature(it.longitude, it.latitude) })
                 )
             )
         }
         destSource?.let { source ->
             source.setGeoJson(
-                FeatureCollection.fromFeatures(
+                MapFeatureCollection.fromFeatures(
                     listOfNotNull(dest?.let { pointFeature(it.longitude, it.latitude) })
                 )
             )
@@ -72,7 +70,7 @@ internal class TripMapState {
         val legs = itinerary?.legs.orEmpty()
         transitSource?.let { source ->
             source.setGeoJson(
-                FeatureCollection.fromFeatures(
+                MapFeatureCollection.fromFeatures(
                     legs.mapIndexedNotNull { index, leg ->
                         if (!leg.isWalk) transitLineFeature(leg, legGeometries[index]) else null
                     }
@@ -81,7 +79,7 @@ internal class TripMapState {
         }
         walkSource?.let { source ->
             source.setGeoJson(
-                FeatureCollection.fromFeatures(
+                MapFeatureCollection.fromFeatures(
                     legs.filter { it.isWalk }.mapNotNull { walkLineFeature(it) }
                 )
             )
@@ -104,7 +102,7 @@ internal class TripMapState {
                 }
             }
             source.setGeoJson(
-                FeatureCollection.fromFeatures(
+                MapFeatureCollection.fromFeatures(
                     rawPoints
                         .filter { it.lat != 0.0 || it.lng != 0.0 }
                         .distinct()
@@ -114,7 +112,7 @@ internal class TripMapState {
         }
         boardSource?.let { source ->
             source.setGeoJson(
-                FeatureCollection.fromFeatures(
+                MapFeatureCollection.fromFeatures(
                     legs.filter { !it.isWalk }
                         .filter { it.from.latitude != 0.0 || it.from.longitude != 0.0 }
                         .mapNotNull { boardFeature(it) }
@@ -123,12 +121,12 @@ internal class TripMapState {
         }
     }
 
-    private fun transitLineFeature(leg: TripLeg, geometry: List<GeoPoint>?): Feature? {
-        val polygon = geometry?.map { Point.fromLngLat(it.longitude, it.latitude) }
+    private fun transitLineFeature(leg: TripLeg, geometry: List<GeoPoint>?): MapFeature? {
+        val polygon = geometry?.map { MapPoint.fromLngLat(it.longitude, it.latitude) }
         val feature = if (polygon != null && polygon.size >= 2) {
-            Feature.fromGeometry(LineString.fromLngLats(polygon))
+            MapFeature.fromGeometry(MapLineString.fromLngLats(polygon))
         } else if (leg.hasUsableEndpoints()) {
-            Feature.fromGeometry(lineSegment(leg))
+            MapFeature.fromGeometry(lineSegment(leg))
         } else {
             return null
         }
@@ -136,31 +134,31 @@ internal class TripMapState {
         return feature
     }
 
-    private fun walkLineFeature(leg: TripLeg): Feature? {
+    private fun walkLineFeature(leg: TripLeg): MapFeature? {
         if (!leg.hasUsableEndpoints()) return null
-        return Feature.fromGeometry(lineSegment(leg))
+        return MapFeature.fromGeometry(lineSegment(leg))
     }
 
     /** A map leg is only drawable when at least one endpoint has real coordinates. */
     private fun TripLeg.hasUsableEndpoints(): Boolean =
         (from.latitude != 0.0 || from.longitude != 0.0) || (to.latitude != 0.0 || to.longitude != 0.0)
 
-    private fun lineSegment(leg: TripLeg): LineString =
-        LineString.fromLngLats(
+    private fun lineSegment(leg: TripLeg): MapLineString =
+        MapLineString.fromLngLats(
             listOf(
-                Point.fromLngLat(leg.from.longitude, leg.from.latitude),
-                Point.fromLngLat(leg.to.longitude, leg.to.latitude)
+                MapPoint.fromLngLat(leg.from.longitude, leg.from.latitude),
+                MapPoint.fromLngLat(leg.to.longitude, leg.to.latitude)
             )
         )
 
-    private fun boardFeature(leg: TripLeg): Feature {
+    private fun boardFeature(leg: TripLeg): MapFeature {
         val feature = pointFeature(leg.from.longitude, leg.from.latitude)
         feature.addStringProperty("icon", "badge-${leg.mode.transitTypeLetter()}")
         return feature
     }
 
-    private fun pointFeature(lng: Double, lat: Double): Feature =
-        Feature.fromGeometry(Point.fromLngLat(lng, lat))
+    private fun pointFeature(lng: Double, lat: Double): MapFeature =
+        MapFeature.fromGeometry(MapPoint.fromLngLat(lng, lat))
 }
 
 /** A plain lat/lng pair used to carry route geometry to the map (model-agnostic of maplibre). */

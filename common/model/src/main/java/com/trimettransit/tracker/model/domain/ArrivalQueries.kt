@@ -2,6 +2,7 @@ package com.trimettransit.tracker.model.domain
 
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Detour
+import com.trimettransit.tracker.model.TransitAlert
 import org.joda.time.DateTime
 
 /**
@@ -16,7 +17,17 @@ import org.joda.time.DateTime
 
 /** Stable identity of a logical arrival row. */
 fun arrivalKey(arrival: Arrival): String =
-    "${arrival.locId}_${arrival.tripID}_${arrival.routeId}_${arrival.scheduledMillis}_${arrival.blockID}_${arrival.vehicleID}"
+    buildString {
+        append(arrival.locId)
+        append('_').append(arrival.tripID)
+        append('_').append(arrival.routeId)
+        append('_').append(arrival.scheduledMillis.takeIf { it > 0L } ?: arrival.estimatedMillis)
+        append('_').append(arrival.blockID)
+        append('_').append(arrival.vehicleID)
+        if (arrival.tripID.isBlank() && arrival.routeId == 0 && arrival.blockID == 0 && arrival.vehicleID == 0) {
+            append('_').append(arrival.shortSign)
+        }
+    }
 
 /** Collapse duplicate logical arrivals, preserving first-seen order. */
 fun dedupeArrivals(arrivals: List<Arrival>): List<Arrival> {
@@ -31,6 +42,14 @@ fun filterArrivalsByRoute(arrivals: List<Arrival>, routeId: Int): List<Arrival> 
 /** Alerts that apply to a specific [routeId]; detours with empty routes never match. */
 fun detoursForLine(detours: List<Detour>?, routeId: Int): List<Detour> =
     detours.orEmpty().filter { it.routes.contains(routeId) }
+
+/**
+ * TriMet Alerts V2 entries that apply to a specific [routeId]. Matches only route
+ * scope, never [TransitAlert.systemWide] entries — there is no global alerts UI, so an
+ * unscoped/system-wide alert must not silently surface on every line's per-line pill.
+ */
+fun alertsForLine(alerts: List<TransitAlert>?, routeId: Int): List<TransitAlert> =
+    alerts.orEmpty().filter { it.routeIds.contains(routeId) }
 
 /** TriMet arrival status tokens used by the API parse and the UI. */
 private const val STATUS_ESTIMATED = "estimated"

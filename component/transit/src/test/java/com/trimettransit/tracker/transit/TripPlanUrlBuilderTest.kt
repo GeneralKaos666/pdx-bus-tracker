@@ -1,6 +1,7 @@
 package com.trimettransit.tracker.transit
 
 import com.trimettransit.tracker.model.TripPlannerMode
+import com.trimettransit.tracker.model.TripPlannerMin
 import com.trimettransit.tracker.model.TripRequestOptions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -56,6 +57,16 @@ class TripPlanUrlBuilderTest {
     @Test
     fun `train mode emits mode T`() {
         assertTrue(build(TripRequestOptions(mode = TripPlannerMode.TRAIN)).contains("/mode/T"))
+    }
+
+    @Test
+    fun `transfer optimization emits min X`() {
+        assertTrue(build(TripRequestOptions(min = TripPlannerMin.TRANSFERS)).contains("/min/X"))
+    }
+
+    @Test
+    fun `walking optimization emits min W`() {
+        assertTrue(build(TripRequestOptions(min = TripPlannerMin.WALKING)).contains("/min/W"))
     }
 
     @Test

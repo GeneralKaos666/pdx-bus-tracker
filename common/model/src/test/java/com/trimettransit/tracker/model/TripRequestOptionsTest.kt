@@ -9,6 +9,7 @@ class TripRequestOptionsTest {
     fun `defaults match the current hardcoded request parameters`() {
         val options = TripRequestOptions()
         assertEquals(TripPlannerMode.ALL, options.mode)
+        assertEquals(TripPlannerMin.TIME, options.min)
         assertEquals(0.5f, options.maxWalkMiles)
         assertEquals(3, options.itineraryCount)
     }
@@ -18,6 +19,13 @@ class TripRequestOptionsTest {
         assertEquals("A", TripPlannerMode.ALL.wsCode)
         assertEquals("B", TripPlannerMode.BUS.wsCode)
         assertEquals("T", TripPlannerMode.TRAIN.wsCode)
+    }
+
+    @Test
+    fun `min exposes the Trip Planner wire code`() {
+        assertEquals("T", TripPlannerMin.TIME.wsCode)
+        assertEquals("X", TripPlannerMin.TRANSFERS.wsCode)
+        assertEquals("W", TripPlannerMin.WALKING.wsCode)
     }
 
     @Test(expected = IllegalArgumentException::class)

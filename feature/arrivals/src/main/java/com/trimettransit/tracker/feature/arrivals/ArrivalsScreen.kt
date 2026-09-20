@@ -55,9 +55,11 @@ import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.Detour
+import com.trimettransit.tracker.model.TransitAlert
 import com.trimettransit.tracker.model.domain.arrivalKey
 import com.trimettransit.tracker.model.domain.dedupeArrivals
 import com.trimettransit.tracker.model.domain.detoursForLine
+import com.trimettransit.tracker.model.domain.alertsForLine
 import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
@@ -111,6 +113,11 @@ fun ArrivalsScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
     var selectedDetours by remember { mutableStateOf<List<Detour>?>(null) }
+    var alerts by remember { mutableStateOf<List<TransitAlert>>(emptyList()) }
+    var selectedAlerts by remember { mutableStateOf<List<TransitAlert>?>(null) }
+    var selectedTripId by remember { mutableStateOf<String?>(null) }
+    var selectedTripStatus by remember { mutableStateOf<com.trimettransit.tracker.model.TripStatus?>(null) }
+    var isTripStatusLoading by remember { mutableStateOf(false) }
     var showAllArrivals by remember { mutableStateOf(false) }
     var trackingKey by remember { mutableStateOf<String?>(null) }
     var trackingRouteId by remember { mutableIntStateOf(-1) }
@@ -199,6 +206,18 @@ fun ArrivalsScreen(
                 )
                 detours = result.detours
                 blockPositions = result.blockPositions
+                // Scoped Alerts V2 fetch: routes seen in this stop's arrivals plus the
+                // stop itself, mirroring detoursForLine/alertsForLine's per-line intent —
+                // never an unscoped/system-wide fetch (TransitApi refuses those outright).
+                val alertRouteIds = allArrivals.map { it.routeId }.filter { it > 0 }.distinct()
+                alerts = if (alertRouteIds.isNotEmpty() || stopId > 0) {
+                    transitRepository.getAlerts(
+                        routes = alertRouteIds.ifEmpty { null },
+                        locIds = if (stopId > 0) listOf(stopId) else null
+                    ) ?: alerts
+                } else {
+                    emptyList()
+                }
                 // Resolve stop coordinates from arrivals response if not yet known
                 if (stopLat == 0.0 || stopLng == 0.0) {
                     if (result.stopLat != 0.0 && result.stopLng != 0.0) {
@@ -324,6 +343,7 @@ fun ArrivalsScreen(
         if (inPip) {
             trackingKey = null
             selectedDetours = null
+            selectedAlerts = null
             while (true) {
                 delay(PIP_REFRESH_MS)
                 loadArrivals()
@@ -410,6 +430,7 @@ fun ArrivalsScreen(
                                 key = { arrivalKey(it) },
                                 contentType = { "arrival" }) { arrival ->
                                 val lineDetours = detoursForLine(detours, arrival.routeId)
+                                val lineAlerts = alertsForLine(alerts, arrival.routeId)
                                 val rowKey = arrivalKey(arrival)
                                 Column {
                                     ArrivalItem(
@@ -417,10 +438,23 @@ fun ArrivalsScreen(
                                         context = context,
                                         refreshKey = countdownTick,
                                         lineDetours = lineDetours,
+                                        lineAlerts = lineAlerts,
                                         showClock = showClock,
                                         showRouteBadge = showRouteBadge,
                                         showVehicleInfo = showVehicleInfo,
-                                        onShowAlerts = { selectedDetours = lineDetours },
+                                        onShowAlerts = { d, a -> selectedDetours = d; selectedAlerts = a },
+                                        onShowTripStatus = {
+                                            selectedTripId = arrival.tripID
+                                            selectedTripStatus = null
+                                            isTripStatusLoading = true
+                                            coroutineScope.launch {
+                                                selectedTripStatus = transitRepository
+                                                    .getTripStatus(tripIds = listOf(arrival.tripID))
+                                                    ?.trips
+                                                    ?.firstOrNull { it.tripId == arrival.tripID }
+                                                isTripStatusLoading = false
+                                            }
+                                        },
                                         onClick = {
                                             if (hasValidCoords) {
                                                 if (trackingKey == rowKey) {
@@ -508,10 +542,25 @@ fun ArrivalsScreen(
     }
     }
 
-    selectedDetours?.let { detoursForDialog ->
+    if (selectedDetours != null || selectedAlerts != null) {
         AlertsDialog(
-            detours = detoursForDialog,
-            onDismiss = { selectedDetours = null }
+            detours = selectedDetours.orEmpty(),
+            alerts = selectedAlerts.orEmpty(),
+            onDismiss = {
+                selectedDetours = null
+                selectedAlerts = null
+            }
+        )
+    }
+
+    if (selectedTripId != null) {
+        TripStatusSheet(
+            trip = selectedTripStatus,
+            isLoading = isTripStatusLoading,
+            onDismiss = {
+                selectedTripId = null
+                selectedTripStatus = null
+            }
         )
     }
 

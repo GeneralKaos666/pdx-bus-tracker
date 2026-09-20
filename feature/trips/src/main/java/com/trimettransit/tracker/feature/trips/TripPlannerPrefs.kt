@@ -3,6 +3,7 @@ package com.trimettransit.tracker.feature.trips
 import android.content.Context
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import com.trimettransit.tracker.model.TripPlannerMin
 import com.trimettransit.tracker.model.TripPlannerMode
 import com.trimettransit.tracker.model.TripRequestOptions
 
@@ -13,6 +14,7 @@ import com.trimettransit.tracker.model.TripRequestOptions
  */
 internal object TripPlannerPrefs {
     private const val KEY_MODE = "trip_planner.mode"
+    private const val KEY_MIN = "trip_planner.min"
     private const val KEY_MAX_WALK = "trip_planner.max_walk"
     private const val KEY_ITINERARIES = "trip_planner.itineraries"
 
@@ -23,10 +25,16 @@ internal object TripPlannerPrefs {
             TripPlannerMode.TRAIN.wsCode -> TripPlannerMode.TRAIN
             else -> TripPlannerMode.ALL
         }
+        val min = when (prefs.getString(KEY_MIN, null)) {
+            TripPlannerMin.TRANSFERS.wsCode -> TripPlannerMin.TRANSFERS
+            TripPlannerMin.WALKING.wsCode -> TripPlannerMin.WALKING
+            else -> TripPlannerMin.TIME
+        }
         val maxWalk = prefs.getFloat(KEY_MAX_WALK, 0.5f).coerceIn(0.01f, 0.999f)
         val itineraryCount = prefs.getInt(KEY_ITINERARIES, 3).coerceIn(1, 6)
         return TripRequestOptions(
             mode = mode,
+            min = min,
             maxWalkMiles = maxWalk,
             itineraryCount = itineraryCount
         )
@@ -35,6 +43,7 @@ internal object TripPlannerPrefs {
     fun save(context: Context, options: TripRequestOptions) {
         PreferenceManager.getDefaultSharedPreferences(context).edit {
             putString(KEY_MODE, options.mode.wsCode)
+            putString(KEY_MIN, options.min.wsCode)
             putFloat(KEY_MAX_WALK, options.maxWalkMiles)
             putInt(KEY_ITINERARIES, options.itineraryCount)
         }

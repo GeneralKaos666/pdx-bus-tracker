@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Better offline transit coverage:** the app can cache the standard GTFS network,
+  route shapes, and protobuf vehicle positions in private storage, refresh the
+  cache on a controlled schedule, and continue reading the last valid feed offline.
+- **More reliable route and trip data:** an empty route response now shows an empty list instead of a load failure, malformed coordinates are ignored, and saved Trip Planner points survive recreation without unsafe state casts.
+- **Safer background lists:** widget departures and detours stay scoped to their stop and line, duplicate rows cannot collide in widget rendering, and legacy favorite ordering remains stable.
+- **Trip details at a glance:** arrival rows can show live trip progress, delays, passed or canceled stops, drop-off-only stops, and scheduled fallbacks when live estimates are unavailable.
+
 ## What's New in v4.18.6
 
 - **Steadier live boards:** an empty stop no longer shows another stop's buses, duplicate arrival rows stay collapsed to one entry, and countdowns keep flipping exactly on the minute including in picture-in-picture.

@@ -689,6 +689,7 @@ internal fun LicensesPane()
                 LicenseEntry(stringResource(R.string.license_timber), stringResource(R.string.license_apache_2))
                 LicenseEntry(stringResource(R.string.license_glance), stringResource(R.string.license_apache_2))
                 LicenseEntry(stringResource(R.string.license_workmanager), stringResource(R.string.license_apache_2))
+                LicenseEntry(stringResource(R.string.license_gtfs_bindings), stringResource(R.string.license_apache_2))
                 LicenseEntry(stringResource(R.string.license_materialkolor), stringResource(R.string.license_mit))
                 LicenseEntry(stringResource(R.string.license_bricolage), stringResource(R.string.license_ofl))
                 LicenseEntry(

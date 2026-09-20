@@ -60,6 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.TripPlannerMin
 import com.trimettransit.tracker.model.TripPlannerMode
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.repository.TransitRepository
@@ -356,6 +357,19 @@ internal fun TripOptionsSheet(
 
             Spacer(modifier = Modifier.height(20.dp))
             Text(
+                text = stringResource(R.string.trip_options_min),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MinChip(TripPlannerMin.TIME, R.string.trip_min_time, options, onOptionsChanged)
+                MinChip(TripPlannerMin.TRANSFERS, R.string.trip_min_transfers, options, onOptionsChanged)
+                MinChip(TripPlannerMin.WALKING, R.string.trip_min_walking, options, onOptionsChanged)
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
                 text = stringResource(R.string.trip_options_walk),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -442,6 +456,20 @@ private fun ModeChip(
     FilterChip(
         selected = options.mode == mode,
         onClick = { onOptionsChanged(options.copy(mode = mode)) },
+        label = { Text(stringResource(labelRes)) }
+    )
+}
+
+@Composable
+private fun MinChip(
+    min: TripPlannerMin,
+    labelRes: Int,
+    options: TripRequestOptions,
+    onOptionsChanged: (TripRequestOptions) -> Unit
+) {
+    FilterChip(
+        selected = options.min == min,
+        onClick = { onOptionsChanged(options.copy(min = min)) },
         label = { Text(stringResource(labelRes)) }
     )
 }

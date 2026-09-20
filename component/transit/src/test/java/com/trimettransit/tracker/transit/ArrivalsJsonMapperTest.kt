@@ -258,4 +258,25 @@ class ArrivalsJsonMapperTest {
         assertEquals(0.0, result.stopLat, 0.0)
         assertEquals(0.0, result.stopLng, 0.0)
     }
+
+    @Test
+    fun `detour falls back to plural routes when singular route is empty`() {
+        val result = TransitJsonMapper.parseArrivals(
+            JSONObject(
+                """
+                {
+                  "detour": [
+                    {
+                      "id": 7,
+                      "desc": "Closed stop",
+                      "route": [],
+                      "routes": [{"route": 12}]
+                    }
+                  ]
+                }
+                """
+            )
+        )
+        assertEquals(listOf(12), result.detours.single().routes)
+    }
 }

@@ -7,7 +7,13 @@ data class TripPoint(
     val latitude: Double,
     val longitude: Double,
     val description: String = ""
-)
+) {
+    val isValid: Boolean
+        get() = latitude.isFinite() && longitude.isFinite() &&
+            latitude in -90.0..90.0 &&
+            longitude in -180.0..180.0 &&
+            !(latitude == 0.0 && longitude == 0.0)
+}
 
 /** Transit mode of a single trip leg, mapped from the Trip Planner WS mode code. */
 enum class TripLegMode {

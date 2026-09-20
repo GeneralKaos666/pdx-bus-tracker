@@ -20,6 +20,11 @@
     <string name="finding_nearby_stops">Buscando paradas cercanas…</string>
     <string name="unknown_error">Error desconocido</string>
     <string name="no_stops_found_nearby">No se encontraron paradas cerca</string>
+    <plurals name="nearby_stop_next_arrival_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="many">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
     <string name="tap_refresh_to_find">Toca Actualizar para buscar paradas cercanas</string>
     <string name="tap_refresh_using_location">Toca Actualizar para buscar paradas cercanas usando tu ubicación actual</string>
     <string name="location_permission_required">Se necesita el permiso de ubicación para encontrar paradas cercanas</string>

@@ -137,6 +137,7 @@
     <string name="license_timber">Timber</string>
     <string name="license_glance">AndroidX Glance (home-screen widget)</string>
     <string name="license_workmanager">AndroidX WorkManager</string>
+    <string name="license_gtfs_bindings">GTFS Realtime bindings</string>
     <string name="license_materialkolor">material-kolor (Material Color Utilities port)</string>
     <string name="license_mit">MIT License</string>
     <string name="license_bricolage">Bricolage Grotesque (app typeface)</string>

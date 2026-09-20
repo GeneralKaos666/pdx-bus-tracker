@@ -8,21 +8,25 @@ import android.location.LocationManager
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
-import org.maplibre.android.geometry.LatLng
+import com.trimettransit.tracker.map.MapCoordinate
 
 internal const val LOCATION_FIX_TIMEOUT_MS = 10_000L
 
 /** City-center camera position shown until a plan or located position is available. */
-internal val FALLBACK_MAP_CENTER = LatLng(45.5189, -122.6795)
+internal val FALLBACK_MAP_CENTER = MapCoordinate(45.5189, -122.6795)
 
 /** Zoom level used for the fallback camera position. */
 internal const val DEFAULT_MAP_ZOOM = 12.0
+
+private fun Location.isValidCoordinate(): Boolean =
+    latitude.isFinite() && longitude.isFinite() &&
+        latitude in -90.0..90.0 && longitude in -180.0..180.0
 
 /** Last-known fix from any provider, with the device-time timestamp of the fix; null when
  *  the device has no stored fix yet. Comparing the timestamp against the current time lets
  *  the screen refresh a stale cached fix instead of trusting it forever. */
 @android.annotation.SuppressLint("MissingPermission")
-internal fun readLastKnownLocation(context: Context): Pair<LatLng, Long>? {
+internal fun readLastKnownLocation(context: Context): Pair<MapCoordinate, Long>? {
     val hasFineLocation = ContextCompat.checkSelfPermission(
         context, Manifest.permission.ACCESS_FINE_LOCATION
     ) == PackageManager.PERMISSION_GRANTED
@@ -36,7 +40,8 @@ internal fun readLastKnownLocation(context: Context): Pair<LatLng, Long>? {
         // Permission revoked between check and call — treat as no stored fix.
         null
     } ?: return null
-    return LatLng(location.latitude, location.longitude) to location.time
+    if (!location.isValidCoordinate()) return null
+    return MapCoordinate(location.latitude, location.longitude) to location.time
 }
 
 /**
@@ -45,7 +50,7 @@ internal fun readLastKnownLocation(context: Context): Pair<LatLng, Long>? {
  * no prior fix, so this is the path that actually produces location for the trip origin.
  */
 @android.annotation.SuppressLint("MissingPermission")
-internal suspend fun requestCurrentLocation(context: Context): LatLng? {
+internal suspend fun requestCurrentLocation(context: Context): MapCoordinate? {
     val hasFineLocation = ContextCompat.checkSelfPermission(
         context, Manifest.permission.ACCESS_FINE_LOCATION
     ) == PackageManager.PERMISSION_GRANTED
@@ -54,11 +59,15 @@ internal suspend fun requestCurrentLocation(context: Context): LatLng? {
         ?: return null
     val executor = ContextCompat.getMainExecutor(context)
     for (provider in listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)) {
-        val deferred = CompletableDeferred<LatLng?>()
+        val deferred = CompletableDeferred<MapCoordinate?>()
         val signal = android.os.CancellationSignal()
         try {
             locationManager.getCurrentLocation(provider, signal, executor) { location ->
-                deferred.complete(location?.let { LatLng(it.latitude, it.longitude) })
+                deferred.complete(
+                    location
+                        ?.takeIf(Location::isValidCoordinate)
+                        ?.let { MapCoordinate(it.latitude, it.longitude) }
+                )
             }
         } catch (e: SecurityException) {
             signal.cancel()

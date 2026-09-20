@@ -5,15 +5,18 @@ import com.trimettransit.tracker.data.local.DatabaseHelper
 import com.trimettransit.tracker.data.local.FavoritesRepositoryImpl
 import com.trimettransit.tracker.data.local.RecentStopsRepositoryImpl
 import com.trimettransit.tracker.model.repository.FavoritesRepository
+import com.trimettransit.tracker.model.repository.GtfsStaticStore
 import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.transit.TransitRepositoryImpl
+import com.trimettransit.tracker.transit.createGtfsStaticStore
 
 /** The app's data-access repositories, built from the application [Context]. */
 data class Repos(
     val favorites: FavoritesRepository,
     val recentStops: RecentStopsRepository,
-    val transit: TransitRepository
+    val transit: TransitRepository,
+    val gtfsStatic: GtfsStaticStore
 )
 
 /** Builds the standard app repositories over the shared singletons below. */
@@ -23,7 +26,8 @@ fun Context.repos(): Repos {
     return Repos(
         favorites = FavoritesRepositoryImpl(db),
         recentStops = RecentStopsRepositoryImpl(db),
-        transit = sharedTransitRepository(appContext)
+        transit = sharedTransitRepository(appContext),
+        gtfsStatic = sharedGtfsStaticStore(appContext)
     )
 }
 
@@ -51,4 +55,13 @@ private var transitRepository: TransitRepository? = null
 private fun sharedTransitRepository(context: Context): TransitRepository =
     transitRepository ?: synchronized(transitRepoLock) {
         transitRepository ?: TransitRepositoryImpl(context).also { transitRepository = it }
+    }
+
+private val gtfsStoreLock = Any()
+@Volatile
+private var gtfsStaticStore: GtfsStaticStore? = null
+
+private fun sharedGtfsStaticStore(context: Context): GtfsStaticStore =
+    gtfsStaticStore ?: synchronized(gtfsStoreLock) {
+        gtfsStaticStore ?: createGtfsStaticStore(context).also { gtfsStaticStore = it }
     }

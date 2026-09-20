@@ -235,6 +235,7 @@ dependencies {
     implementation(project(":common:ui"))
     implementation(project(":common:model"))
     implementation(project(":common:utils"))
+    implementation(project(":common:map"))
     implementation(project(":component:transit"))
     implementation(project(":component:localdata"))
 
@@ -258,9 +259,6 @@ dependencies {
 
     // Preference/Settings
     implementation("androidx.preference:preference:1.2.1")
-
-    // Maps (MapLibre GL Native, OpenGL backend — the plain `android-sdk` artifact is Vulkan-only since 13.0)
-    implementation("org.maplibre.gl:android-sdk-opengl:13.6.1")
 
     // Home-screen widget (Glance) + its background refresh (WorkManager)
     implementation("androidx.glance:glance-appwidget:1.2.0")

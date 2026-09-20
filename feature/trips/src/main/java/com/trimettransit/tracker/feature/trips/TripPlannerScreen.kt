@@ -52,7 +52,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,6 +75,7 @@ import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
+import com.trimettransit.tracker.map.MapCoordinate
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
@@ -92,24 +93,28 @@ import com.trimettransit.tracker.util.clockTime
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import org.maplibre.android.geometry.LatLng
 import org.joda.time.DateTime
 import java.util.Calendar
 import java.util.Locale
 private const val DEFAULT_ARRIVE_BY_ADVANCE_MS = 60L * 60_000L
 /** Saves a trip endpoint across configuration changes (rotation/process death). */
-private val tripPointSaver = listSaver<TripPoint?, Any>(
+private val tripPointSaver: Saver<TripPoint?, List<Any>> = Saver(
     save = {
         it?.let { point -> listOf(point.latitude, point.longitude, point.description) }
             ?: emptyList()
     },
     restore = { saved ->
-        if (saved.isEmpty()) null
-        else TripPoint(
-            latitude = saved[0] as Double,
-            longitude = saved[1] as Double,
-            description = saved[2] as String
-        )
+        val latitude = (saved.getOrNull(0) as? Number)?.toDouble()
+        val longitude = (saved.getOrNull(1) as? Number)?.toDouble()
+        if (latitude == null || longitude == null) {
+            null
+        } else {
+            TripPoint(
+                latitude = latitude,
+                longitude = longitude,
+                description = saved.getOrNull(2) as? String ?: ""
+            )
+        }
     }
 )
 /**
@@ -138,7 +143,7 @@ fun TripPlannerScreen(
     var showResults by remember { mutableStateOf(false) }
     var plannerExpanded by rememberSaveable { mutableStateOf(true) }
 
-    var myLocation by remember { mutableStateOf<LatLng?>(null) }
+    var myLocation by remember { mutableStateOf<MapCoordinate?>(null) }
     var locationPermissionGranted by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
@@ -211,14 +216,6 @@ fun TripPlannerScreen(
         isPlanning = false
     }
 
-    /** Applies a new set of planner options, persists them, and invalidates the current plan. */
-    fun updateOptions(newOptions: TripRequestOptions) {
-        if (newOptions == options) return
-        options = newOptions
-        TripPlannerPrefs.save(context, newOptions)
-        invalidatePlan()
-    }
-
     // Ask for location once, and only while this page is visible (the pager pre-composes
     // adjacent pages). The explainer dialog is shown before the system permission dialog.
     LaunchedEffect(pageVisible, locationPermissionGranted) {
@@ -261,7 +258,12 @@ fun TripPlannerScreen(
         }
     }
 
-    fun onMapTap(value: LatLng) {
+    fun onMapTap(value: MapCoordinate) {
+        if (!value.latitude.isFinite() || !value.longitude.isFinite() ||
+            value.latitude !in -90.0..90.0 || value.longitude !in -180.0..180.0
+        ) {
+            return
+        }
         when (picking) {
             PickSlot.ORIGIN -> {
                 pendingMyLocationOrigin = false
@@ -277,6 +279,7 @@ fun TripPlannerScreen(
     fun planIt(refresh: Boolean = false) {
         val from = origin ?: return
         val to = dest ?: return
+        if (!from.isValid || !to.isValid) return
         // "Find trips" with an already-matching plan just reopens the results sheet; the
         // resume path forces a fresh request to keep the map current.
         val current = planResult
@@ -317,6 +320,16 @@ fun TripPlannerScreen(
         }
     }
 
+    /** Persists planner options and refreshes an existing plan with the new request. */
+    fun updateOptions(newOptions: TripRequestOptions) {
+        if (newOptions == options) return
+        val shouldReplan = planResult != null && origin != null && dest != null
+        options = newOptions
+        TripPlannerPrefs.save(context, newOptions)
+        invalidatePlan()
+        if (shouldReplan) planIt(refresh = true)
+    }
+
     // Re-plan on app re-entry only if a plan already exists (keeps the map fresh without
     // surprising the user with a new request before they've picked anything).
     RememberOnResume {
@@ -345,6 +358,11 @@ fun TripPlannerScreen(
         stringResource(R.string.trip_mode_bus),
         stringResource(R.string.trip_mode_train)
     )
+    val minLabels = listOf(
+        stringResource(R.string.trip_min_time),
+        stringResource(R.string.trip_min_transfers),
+        stringResource(R.string.trip_min_walking)
+    )
     val walkSummary = stringResource(
         R.string.trip_summary_walk,
         String.format(Locale.US, "%.1f", options.maxWalkMiles)
@@ -356,6 +374,7 @@ fun TripPlannerScreen(
     )
     val optionsSummary = listOf(
         modeLabels[options.mode.ordinal],
+        minLabels[options.min.ordinal],
         walkSummary,
         countSummary
     ).joinToString(" · ")

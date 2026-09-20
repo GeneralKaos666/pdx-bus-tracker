@@ -70,6 +70,12 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **Copyright:** Copyright The Android Open Source Project
 - **Project:** https://developer.android.com/jetpack/libraries/work
 
+### GTFS Realtime bindings
+- **Artifact:** `com.google.transit:gtfs-realtime-bindings` 0.0.1
+- **License:** Apache License 2.0
+- **Copyright:** Copyright MobilityData
+- **Project:** https://github.com/MobilityData/gtfs-realtime-bindings
+
 ### material-kolor
 - **Artifact:** `com.materialkolor:material-kolor` 5.0.1
 - **License:** MIT License (library license); bundles a port of Material Color Utilities,

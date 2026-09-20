@@ -5,10 +5,15 @@ import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.StopsWithArrivals
+import com.trimettransit.tracker.model.TransitAlert
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
+import com.trimettransit.tracker.model.VehicleResult
+import com.trimettransit.tracker.model.BlockStatusResult
+import com.trimettransit.tracker.model.TripStatusResult
 import com.trimettransit.tracker.model.repository.TransitRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -51,6 +56,9 @@ class TransitRepositoryImpl(
     override suspend fun getStops(routeId: Int, directionId: Int): List<Stop>? =
         TransitApi.fetchStops(context, routeId, directionId)
 
+    override suspend fun getAlerts(routes: List<Int>?, locIds: List<Int>?): List<TransitAlert>? =
+        TransitApi.fetchAlerts(context, routes, locIds)
+
     override suspend fun getArrivals(
         locIds: List<Int>,
         showPosition: Boolean,
@@ -68,6 +76,23 @@ class TransitRepositoryImpl(
         showRoutes: Boolean
     ): List<Stop>? =
         TransitApi.fetchStopsByLocation(context, ll, feet, meters, bbox, maxStops, showRoutes)
+
+    override suspend fun getStopsWithArrivals(
+        ll: String,
+        feet: Int?,
+        meters: Int?,
+        bbox: String?,
+        maxStops: Int?,
+        showRoutes: Boolean,
+        maxStopArrivals: Int?,
+        showRouteDirs: Boolean,
+        minutes: Int?,
+        maxArrivals: Int?
+    ): StopsWithArrivals? =
+        TransitApi.fetchStopsWithArrivals(
+            context, ll, feet, meters, bbox, maxStops, showRoutes,
+            maxStopArrivals, showRouteDirs, minutes, maxArrivals
+        )
 
     override suspend fun getStopById(locId: Int): Stop? = TransitApi.fetchStopById(context, locId)
 
@@ -97,6 +122,34 @@ class TransitRepositoryImpl(
             searchMutex.withLock { if (inflight === deferred) inflight = null }
         }
     }
+
+    override suspend fun getVehicles(
+        routes: List<Int>?,
+        blocks: List<Int>?,
+        ids: List<Int>?,
+        bbox: String?,
+        since: Long?,
+        showNonRevenue: Boolean,
+        onRouteOnly: Boolean,
+        showStale: Boolean
+    ): VehicleResult? =
+        TransitApi.fetchVehicles(context, routes, blocks, ids, bbox, since, showNonRevenue, onRouteOnly, showStale)
+
+    override suspend fun getTripStatus(
+        tripIds: List<String>?,
+        blockIds: List<Int>?,
+        showRoutes: Boolean,
+        showStops: Boolean
+    ): TripStatusResult? =
+        TransitApi.fetchTripStatus(context, tripIds, blockIds, showRoutes, showStops)
+
+    override suspend fun getBlockStatus(
+        blockId: Int?,
+        blockIds: List<Int>?,
+        showRoutes: Boolean,
+        showStops: Boolean
+    ): BlockStatusResult? =
+        TransitApi.fetchBlockStatus(context, blockId, blockIds, showRoutes, showStops)
 
     override suspend fun planTrip(
         from: TripPoint,

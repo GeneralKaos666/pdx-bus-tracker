@@ -8,6 +8,7 @@ import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.repos
 import com.trimettransit.tracker.retryFetch
+import com.trimettransit.tracker.model.domain.detoursForLine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 
@@ -65,7 +66,7 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
         return WidgetSnapshotCache.Row(
             stop = stop,
             arrivals = WidgetSnapshotCache.cleanArrivals(mine),
-            detours = WidgetSnapshotCache.dedupeDetours(detours)
+            detours = WidgetSnapshotCache.dedupeDetours(detoursForLine(detours, stop.routeNum))
         )
     }
 

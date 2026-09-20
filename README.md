@@ -43,7 +43,7 @@ The app is 12 Gradle modules in five layers with strictly downward dependencies:
 | `app` | Launcher, single activity, navigation, floating pill bar, picture-in-picture |
 | `feature/*` | `home`, `stops`, `trips`, `arrivals`, `settings` (one screen area per module) |
 | `component/*` | `transit` (TriMet API client: OkHttp + JSON/XML parsing, including the Trip Planner web service), `localdata` (SQLite favorites/recent stops) |
-| `common/*` | `model` (domain models), `utils` (connectivity, date helpers), `ui` (theme, shared components), `map` (shared MapLibre map host) |
+| `common/*` | `model` (domain models), `utils` (connectivity, date helpers), `ui` (theme, shared components), `map` (sole MapLibre SDK host and shared phone-map facade) |
 
 There are no ViewModels, no DI framework, and no Room. Screens keep their own state and call the API functions directly.
 

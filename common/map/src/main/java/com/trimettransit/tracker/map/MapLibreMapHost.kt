@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
-import org.maplibre.android.maps.Style
 
 /**
  * Shared MapLibre `MapView` scaffolding for the phone screens (trip-planner map and
@@ -25,15 +24,17 @@ fun MapLibreMapHost(
     styleUrl: String,
     modifier: Modifier = Modifier,
     consumeSingleFingerTouches: Boolean = true,
-    onStyleReady: (map: MapLibreMap, style: Style, isReapply: Boolean) -> Unit,
-    onUpdate: (view: MapView, map: MapLibreMap?) -> Unit
+    onStyleReady: (map: MapController, style: MapStyle, isReapply: Boolean) -> Unit,
+    onUpdate: (viewport: MapViewport, map: MapController?) -> Unit
 ) {
     var mapRef by remember { mutableStateOf<MapLibreMap?>(null) }
     var viewRef by remember { mutableStateOf<MapView?>(null) }
     var appliedStyleUrl by remember { mutableStateOf<String?>(null) }
 
     fun applyStyle(map: MapLibreMap, isReapply: Boolean) {
-        map.setStyle(styleUrl) { style -> onStyleReady(map, style, isReapply) }
+        map.setStyle(styleUrl) { style ->
+            onStyleReady(MapController(map), MapStyle(style), isReapply)
+        }
     }
 
     AndroidView(
@@ -77,7 +78,7 @@ fun MapLibreMapHost(
                 appliedStyleUrl = styleUrl
                 applyStyle(map, isReapply = true)
             }
-            onUpdate(view, map)
+            onUpdate(MapViewport(view), map?.let(::MapController))
         },
         modifier = modifier
     )

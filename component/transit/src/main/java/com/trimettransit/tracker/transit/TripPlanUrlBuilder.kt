@@ -52,7 +52,7 @@ internal fun buildTripPlannerRequestUrl(
     append("/date/").append(date)
     append("/time/").append(clock)
     append("/arr/").append(if (arriveBy) "A" else "D")
-    append("/min/T")
+    append("/min/").append(options.min.wsCode)
     append("/mode/").append(options.mode.wsCode)
     append("/walk/").append(String.format(Locale.US, "%.1f", options.maxWalkMiles))
     // "maxIntineraries" (missing the second "i") is the parameter the live Trip Planner

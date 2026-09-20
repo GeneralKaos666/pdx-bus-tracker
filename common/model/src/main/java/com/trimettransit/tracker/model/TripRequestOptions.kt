@@ -11,12 +11,23 @@ enum class TripPlannerMode(val wsCode: String) {
 }
 
 /**
+ * Optimization criterion for a Trip Planner request, mapped from the tripplanner WS `min`
+ * parameter: shortest time (T), fewest transfers (X), or least walking (W).
+ */
+enum class TripPlannerMin(val wsCode: String) {
+    TIME("T"),
+    TRANSFERS("X"),
+    WALKING("W")
+}
+
+/**
  * Tunable options for a trip-plan request, serialized into the tripplanner WS URL path.
  * Defaults reproduce the parameters the app has always sent: all modes, 0.5 mile walking
  * distance, up to 3 itineraries.
  */
 data class TripRequestOptions(
     val mode: TripPlannerMode = TripPlannerMode.ALL,
+    val min: TripPlannerMin = TripPlannerMin.TIME,
     /** Maximum walking distance in miles (the WS accepts 0.01..0.999). */
     val maxWalkMiles: Float = 0.5f,
     /** How many itineraries to request (the WS accepts 1..6). */

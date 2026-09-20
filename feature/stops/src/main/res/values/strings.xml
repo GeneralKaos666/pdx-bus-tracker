@@ -20,6 +20,10 @@
     <string name="finding_nearby_stops">Finding nearby stops…</string>
     <string name="unknown_error">Unknown error</string>
     <string name="no_stops_found_nearby">No stops found nearby</string>
+    <plurals name="nearby_stop_next_arrival_minutes">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
     <string name="tap_refresh_to_find">Tap Refresh to find nearby stops</string>
     <string name="tap_refresh_using_location">Tap Refresh to find nearby stops using your current location</string>
     <string name="location_permission_required">Location permission is required to find nearby stops</string>

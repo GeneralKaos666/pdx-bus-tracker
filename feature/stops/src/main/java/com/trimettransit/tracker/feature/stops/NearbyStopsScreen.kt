@@ -40,12 +40,16 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.domain.displayTimeMillis
 import com.trimettransit.tracker.model.repository.TransitRepository
+import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.ui.components.EmptyState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.trimettransit.tracker.ui.components.ContentEntrance
@@ -80,6 +84,9 @@ fun NearbyStopsScreen(
         )
     }
     var stops by remember { mutableStateOf<List<Stop>?>(null) }
+    // Next-arrival preview per stop, populated only when the combined fast-path fetch
+    // (getStopsWithArrivals) succeeds; empty on the plain getStopsByLocation fallback.
+    var arrivalsByStop by remember { mutableStateOf<Map<Int, List<Arrival>>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var hasLoaded by remember { mutableStateOf(false) }
@@ -103,6 +110,7 @@ fun NearbyStopsScreen(
                 transitRepository = transitRepository,
                 isCurrent = { runner.isCurrent(job) },
                 setStops = { stops = it },
+                setArrivalsByStop = { arrivalsByStop = it },
                 setLoading = { isLoading = it },
                 setError = { errorMessage = it },
                 setHasLoaded = { hasLoaded = true }
@@ -258,7 +266,8 @@ fun NearbyStopsScreen(
                                 StopListItem(
                                     stop = stop,
                                     onClick = { onNavigateToArrivals(stop, -1) },
-                                    modifier = Modifier.animateItem()
+                                    modifier = Modifier.animateItem(),
+                                    trailingContent = nextArrivalPreview(arrivalsByStop[stop.locId])
                                 )
                             }
                         }
@@ -274,12 +283,17 @@ fun NearbyStopsScreen(
     }
 }
 
+/** Nearby-stops fast-path tuning: modest window since this is only a list preview. */
+private const val NEARBY_ARRIVALS_MINUTES = 30
+private const val NEARBY_MAX_ARRIVALS_PER_STOP = 1
+
 @android.annotation.SuppressLint("MissingPermission")
 private suspend fun loadNearbyStops(
     context: Context,
     transitRepository: TransitRepository,
     isCurrent: () -> Boolean,
     setStops: (List<Stop>?) -> Unit,
+    setArrivalsByStop: (Map<Int, List<Arrival>>) -> Unit,
     setLoading: (Boolean) -> Unit,
     setError: (String?) -> Unit,
     setHasLoaded: () -> Unit
@@ -314,13 +328,36 @@ private suspend fun loadNearbyStops(
             return
         }
 
+        val ll = "${location.latitude},${location.longitude}"
+
+        // Fast path: stops + their next arrival(s) in one request. Route directions
+        // are already embedded on each stop's routes, so no extra per-route directions
+        // fetch is needed either way.
+        val combined = transitRepository.getStopsWithArrivals(
+            ll = ll,
+            feet = 500,
+            showRoutes = true,
+            showRouteDirs = true,
+            maxStopArrivals = 25,
+            minutes = NEARBY_ARRIVALS_MINUTES,
+            maxArrivals = NEARBY_MAX_ARRIVALS_PER_STOP
+        )
+        if (combined != null) {
+            setStops(combined.stops)
+            setArrivalsByStop(combined.arrivalsByStop)
+            return
+        }
+
+        // Fallback: the combined endpoint failed/unavailable — get stops alone, with
+        // no arrival preview rather than failing the whole screen.
         val stops = transitRepository.getStopsByLocation(
-            ll = "${location.latitude},${location.longitude}",
+            ll = ll,
             feet = 500,
             showRoutes = true
         )
         if (stops != null) {
             setStops(stops)
+            setArrivalsByStop(emptyMap())
         } else {
             setError(context.getString(R.string.unable_to_find_nearby_stops))
         }
@@ -333,6 +370,24 @@ private suspend fun loadNearbyStops(
         // Only the current job may clear the loading state; a superseded job must not
         // clobber the newer load's spinner.
         if (isCurrent()) setLoading(false)
+    }
+}
+
+/**
+ * Trailing "next arrival in N min" preview for a nearby-stops row, built from the
+ * fast-path's embedded arrivals. Returns null (no trailing content) when there is
+ * nothing to show, matching [StopListItem]'s optional `trailingContent` contract.
+ */
+private fun nextArrivalPreview(arrivals: List<Arrival>?): (@Composable () -> Unit)? {
+    val soonest = arrivals?.minByOrNull { it.displayTimeMillis } ?: return null
+    if (soonest.displayTimeMillis <= 0L) return null
+    return {
+        val minutes = minutesUntil(soonest.displayTimeMillis).coerceAtLeast(0L).toInt()
+        Text(
+            text = pluralStringResource(R.plurals.nearby_stop_next_arrival_minutes, minutes, minutes),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
     }
 }
 

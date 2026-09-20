@@ -13,7 +13,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         get() {
             val stops = mutableListOf<Stop>()
             val db = readableDatabase
-            db.rawQuery("SELECT desc, dir_desc, transit_type, loc_id, longitude, latitude, route_num FROM favorites ORDER BY sort_order ASC, id ASC", null).use { cursor ->
+            db.rawQuery("SELECT desc, dir_desc, transit_type, loc_id, longitude, latitude, route_num FROM favorites ORDER BY CASE WHEN sort_order > 0 THEN sort_order ELSE id END ASC, id ASC", null).use { cursor ->
                 while (cursor.moveToNext()) {
                     stops.add(
                         Stop(

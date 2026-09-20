@@ -36,6 +36,5 @@ dependencies {
     implementation("androidx.core:core:1.19.0")
     implementation("androidx.core:core-ktx:1.19.0")
     implementation("androidx.preference:preference:1.2.1")
-    implementation("org.maplibre.gl:android-sdk-opengl:13.6.1")
     implementation("net.danlew:android.joda:2.14.3.1")
 }

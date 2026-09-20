@@ -45,6 +45,10 @@
     <string name="trip_options_title">Opciones de viaje</string>
     <string name="trip_options_open">Opciones</string>
     <string name="trip_options_mode">Modo de viaje</string>
+    <string name="trip_options_min">Optimizar para</string>
+    <string name="trip_min_time">Más rápido</string>
+    <string name="trip_min_transfers">Menos transbordos</string>
+    <string name="trip_min_walking">Menos caminata</string>
     <string name="trip_options_walk">Distancia máxima caminando</string>
     <string name="trip_options_count">Número de opciones</string>
     <string name="decrease_option_count">Menos opciones de viaje</string>

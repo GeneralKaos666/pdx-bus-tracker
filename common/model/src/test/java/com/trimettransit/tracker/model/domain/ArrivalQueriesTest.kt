@@ -2,6 +2,7 @@ package com.trimettransit.tracker.model.domain
 
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Detour
+import com.trimettransit.tracker.model.TransitAlert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -123,6 +124,38 @@ class ArrivalQueriesTest {
     @Test
     fun `detoursForLine is null-safe for the whole list`() {
         assertTrue(detoursForLine(null, 12).isEmpty())
+    }
+
+    // alertsForLine
+
+    @Test
+    fun `alertsForLine keeps alerts whose routeIds contain the line`() {
+        val match = TransitAlert(id = 1, desc = "Alert", routeIds = listOf(12, 9))
+        assertEquals(listOf(match), alertsForLine(listOf(match), 12))
+    }
+
+    @Test
+    fun `alertsForLine filters lines not affected`() {
+        val other = TransitAlert(id = 2, desc = "Other", routeIds = listOf(19))
+        assertTrue(alertsForLine(listOf(other), 12).isEmpty())
+    }
+
+    @Test
+    fun `alertsForLine hides elements with empty routeIds even when system-wide`() {
+        val systemWide = TransitAlert(id = 3, desc = "System-wide", systemWide = true, routeIds = emptyList())
+        val match = TransitAlert(id = 1, desc = "Match", routeIds = listOf(12))
+        assertEquals(listOf(match), alertsForLine(listOf(systemWide, match), 12))
+    }
+
+    @Test
+    fun `alertsForLine is null-safe for the whole list`() {
+        assertTrue(alertsForLine(null, 12).isEmpty())
+    }
+
+    @Test
+    fun `TransitAlert displayTitle falls back to desc when header is blank`() {
+        assertEquals("Desc only", TransitAlert(header = "", desc = "Desc only").displayTitle)
+        assertEquals("Header", TransitAlert(header = "Header", desc = "Desc").displayTitle)
     }
 
     // status + display time

@@ -17,7 +17,17 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.preference.PreferenceManager
+import com.trimettransit.tracker.map.MapCameraUpdates
+import com.trimettransit.tracker.map.MapCoordinate
+import com.trimettransit.tracker.map.MapExpression
+import com.trimettransit.tracker.map.MapGeoJsonSource
+import com.trimettransit.tracker.map.MapLineLayer
 import com.trimettransit.tracker.map.MapLibreMapHost
+import com.trimettransit.tracker.map.MapPropertyConstants
+import com.trimettransit.tracker.map.MapProperties
+import com.trimettransit.tracker.map.MapStyle
+import com.trimettransit.tracker.map.MapSymbolLayer
+import com.trimettransit.tracker.map.MapViewport
 import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
@@ -28,21 +38,6 @@ import com.trimettransit.tracker.ui.components.transitBadgeLetters
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitOnColor
-import org.maplibre.android.camera.CameraUpdateFactory
-import org.maplibre.android.geometry.LatLng
-import org.maplibre.android.geometry.LatLngBounds
-import org.maplibre.android.maps.MapView
-import org.maplibre.android.maps.Style
-import org.maplibre.android.style.expressions.Expression
-import org.maplibre.android.style.layers.LineLayer
-import org.maplibre.android.style.layers.Property
-import org.maplibre.android.style.layers.PropertyFactory
-import org.maplibre.android.style.layers.PropertyFactory.iconAllowOverlap
-import org.maplibre.android.style.layers.PropertyFactory.iconAnchor
-import org.maplibre.android.style.layers.PropertyFactory.iconIgnorePlacement
-import org.maplibre.android.style.layers.PropertyFactory.iconImage
-import org.maplibre.android.style.layers.SymbolLayer
-import org.maplibre.android.style.sources.GeoJsonSource
 import java.util.Locale
 private const val PLAN_CAMERA_ZOOM = 14.0
 private const val MAX_CAMERA_FIT_ATTEMPTS = 3
@@ -57,9 +52,9 @@ internal fun TripMap(
     origin: TripPoint?,
     dest: TripPoint?,
     itinerary: TripItinerary?,
-    myLocation: LatLng?,
+    myLocation: MapCoordinate?,
     picking: PickSlot,
-    onMapTap: (LatLng) -> Unit,
+    onMapTap: (MapCoordinate) -> Unit,
     modifier: Modifier = Modifier,
     isDark: Boolean = false,
     legGeometries: Map<Int, List<GeoPoint>> = emptyMap()
@@ -118,7 +113,7 @@ internal fun TripMap(
         }
     }
 
-    fun applyTripStyle(style: Style) {
+    fun applyTripStyle(style: MapStyle) {
         val letters = transitBadgeLetters()
         letters.forEach { letter ->
             style.addImage(
@@ -146,8 +141,8 @@ internal fun TripMap(
         style.addImage("stop-dot", stopDotBitmap(scheme.secondary.toArgb(), scheme.onSecondary.toArgb(), density))
         style.addImage("me-dot", meDotBitmap(scheme.primary.toArgb(), density))
 
-        fun addSource(name: String): GeoJsonSource {
-            val source = GeoJsonSource(name)
+        fun addSource(name: String): MapGeoJsonSource {
+            val source = MapGeoJsonSource(name)
             style.addSource(source)
             return source
         }
@@ -155,68 +150,68 @@ internal fun TripMap(
         // Transit stick lines: color driven per-feature from the badge-letter color.
         mapState.transitSource = addSource("transit-source")
         style.addLayer(
-            LineLayer("transit-layer", "transit-source").withProperties(
-                PropertyFactory.lineColor(Expression.get("color")),
-                PropertyFactory.lineWidth(4f),
-                PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
-                PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND)
+            MapLineLayer("transit-layer", "transit-source").withProperties(
+                MapProperties.lineColor(MapExpression.get("color")),
+                MapProperties.lineWidth(4f),
+                MapProperties.lineCap(MapPropertyConstants.LINE_CAP_ROUND),
+                MapProperties.lineJoin(MapPropertyConstants.LINE_JOIN_ROUND)
             )
         )
         // Walk segments: dashed outline-colored line.
         mapState.walkSource = addSource("walk-source")
         style.addLayer(
-            LineLayer("walk-layer", "walk-source").withProperties(
-                PropertyFactory.lineColor(scheme.outline.toArgb()),
-                PropertyFactory.lineWidth(3f),
-                PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
-                PropertyFactory.lineJoin(Property.LINE_JOIN_ROUND),
-                PropertyFactory.lineDasharray(arrayOf(2f, 2f))
+            MapLineLayer("walk-layer", "walk-source").withProperties(
+                MapProperties.lineColor(scheme.outline.toArgb()),
+                MapProperties.lineWidth(3f),
+                MapProperties.lineCap(MapPropertyConstants.LINE_CAP_ROUND),
+                MapProperties.lineJoin(MapPropertyConstants.LINE_JOIN_ROUND),
+                MapProperties.lineDasharray(arrayOf(2f, 2f))
             )
         )
         // Boarding/alighting dots and route badges.
         mapState.stopSource = addSource("stop-source")
         style.addLayer(
-            SymbolLayer("stop-layer", "stop-source").withProperties(
-                iconImage("stop-dot"),
-                iconAnchor(Property.ICON_ANCHOR_CENTER),
-                iconAllowOverlap(true),
-                iconIgnorePlacement(true)
+            MapSymbolLayer("stop-layer", "stop-source").withProperties(
+                MapProperties.iconImage("stop-dot"),
+                MapProperties.iconAnchor(MapPropertyConstants.ICON_ANCHOR_CENTER),
+                MapProperties.iconAllowOverlap(true),
+                MapProperties.iconIgnorePlacement(true)
             )
         )
         mapState.boardSource = addSource("board-source")
         style.addLayer(
-            SymbolLayer("board-layer", "board-source").withProperties(
-                iconImage(Expression.get("icon")),
-                iconAnchor(Property.ICON_ANCHOR_CENTER),
-                iconAllowOverlap(true),
-                iconIgnorePlacement(true)
+            MapSymbolLayer("board-layer", "board-source").withProperties(
+                MapProperties.iconImage(MapExpression.get("icon")),
+                MapProperties.iconAnchor(MapPropertyConstants.ICON_ANCHOR_CENTER),
+                MapProperties.iconAllowOverlap(true),
+                MapProperties.iconIgnorePlacement(true)
             )
         )
         mapState.originSource = addSource("origin-source")
         style.addLayer(
-            SymbolLayer("origin-layer", "origin-source").withProperties(
-                iconImage("origin-dot"),
-                iconAnchor(Property.ICON_ANCHOR_CENTER),
-                iconAllowOverlap(true),
-                iconIgnorePlacement(true)
+            MapSymbolLayer("origin-layer", "origin-source").withProperties(
+                MapProperties.iconImage("origin-dot"),
+                MapProperties.iconAnchor(MapPropertyConstants.ICON_ANCHOR_CENTER),
+                MapProperties.iconAllowOverlap(true),
+                MapProperties.iconIgnorePlacement(true)
             )
         )
         mapState.destSource = addSource("dest-source")
         style.addLayer(
-            SymbolLayer("dest-layer", "dest-source").withProperties(
-                iconImage("dest-dot"),
-                iconAnchor(Property.ICON_ANCHOR_CENTER),
-                iconAllowOverlap(true),
-                iconIgnorePlacement(true)
+            MapSymbolLayer("dest-layer", "dest-source").withProperties(
+                MapProperties.iconImage("dest-dot"),
+                MapProperties.iconAnchor(MapPropertyConstants.ICON_ANCHOR_CENTER),
+                MapProperties.iconAllowOverlap(true),
+                MapProperties.iconIgnorePlacement(true)
             )
         )
         mapState.meSource = addSource("me-source")
         style.addLayer(
-            SymbolLayer("me-layer", "me-source").withProperties(
-                iconImage("me-dot"),
-                iconAnchor(Property.ICON_ANCHOR_CENTER),
-                iconAllowOverlap(true),
-                iconIgnorePlacement(true)
+            MapSymbolLayer("me-layer", "me-source").withProperties(
+                MapProperties.iconImage("me-dot"),
+                MapProperties.iconAnchor(MapPropertyConstants.ICON_ANCHOR_CENTER),
+                MapProperties.iconAllowOverlap(true),
+                MapProperties.iconIgnorePlacement(true)
             )
         )
     }
@@ -242,23 +237,25 @@ internal fun TripMap(
                     }
                 }
                 map.moveCamera(
-                    CameraUpdateFactory.newLatLngZoom(FALLBACK_MAP_CENTER, DEFAULT_MAP_ZOOM)
+                    MapCameraUpdates.coordinateZoom(FALLBACK_MAP_CENTER, DEFAULT_MAP_ZOOM)
                 )
             }
         },
         onUpdate = { view, map ->
-            mapState.mapView = view
             mapState.legGeometries = currentLegGeometries
             mapState.push(origin, dest, itinerary)
             myLocation?.let { mapState.applyMe(it.latitude, it.longitude) }
-            fitPlanCameraIfReady(view, mapState, origin, dest, itinerary, fitSize)
+            if (map != null) {
+                fitPlanCameraIfReady(view, map, mapState, origin, dest, itinerary, fitSize)
+            }
         }
     )
 }
 
 /** Fits the camera to the current plan once the viewport size has settled. */
 internal fun fitPlanCameraIfReady(
-    view: MapView,
+    view: MapViewport,
+    map: com.trimettransit.tracker.map.MapController,
     state: TripMapState,
     origin: TripPoint?,
     dest: TripPoint?,
@@ -266,16 +263,15 @@ internal fun fitPlanCameraIfReady(
     fitSize: IntArray,
     attempts: Int = 0
 ) {
-    val map = state.map ?: return
     val points = buildList {
-        origin?.let { add(LatLng(it.latitude, it.longitude)) }
-        dest?.let { add(LatLng(it.latitude, it.longitude)) }
+        origin?.let { add(MapCoordinate(it.latitude, it.longitude)) }
+        dest?.let { add(MapCoordinate(it.latitude, it.longitude)) }
         itinerary?.legs?.forEach { leg ->
             if (leg.from.latitude != 0.0 || leg.from.longitude != 0.0) {
-                add(LatLng(leg.from.latitude, leg.from.longitude))
+                add(MapCoordinate(leg.from.latitude, leg.from.longitude))
             }
             if (leg.to.latitude != 0.0 || leg.to.longitude != 0.0) {
-                add(LatLng(leg.to.latitude, leg.to.longitude))
+                add(MapCoordinate(leg.to.latitude, leg.to.longitude))
             }
         }
     }
@@ -289,7 +285,7 @@ internal fun fitPlanCameraIfReady(
         if (attempts >= MAX_CAMERA_FIT_ATTEMPTS) return
         view.postDelayed({
             if (view.isAttachedToWindow) {
-                fitPlanCameraIfReady(view, state, origin, dest, itinerary, fitSize, attempts + 1)
+                fitPlanCameraIfReady(view, map, state, origin, dest, itinerary, fitSize, attempts + 1)
             }
         }, 150)
         return
@@ -304,20 +300,16 @@ internal fun fitPlanCameraIfReady(
 
     if (points.size == 1) {
         map.easeCamera(
-            CameraUpdateFactory.newLatLngZoom(points.first(), PLAN_CAMERA_ZOOM), 400
+            MapCameraUpdates.coordinateZoom(points.first(), PLAN_CAMERA_ZOOM), 400
         )
         return
     }
-    val bounds = LatLngBounds.from(
-        points.maxOf { it.latitude }, points.maxOf { it.longitude },
-        points.minOf { it.latitude }, points.minOf { it.longitude }
-    )
-    val cam = map.getCameraForLatLngBounds(bounds, intArrayOf(96, 180, 96, 96))
+    val cam = map.getCameraForBounds(points, intArrayOf(96, 180, 96, 96))
     if (cam == null) {
         map.easeCamera(
-            CameraUpdateFactory.newLatLngZoom(points.first(), PLAN_CAMERA_ZOOM), 400
+            MapCameraUpdates.coordinateZoom(points.first(), PLAN_CAMERA_ZOOM), 400
         )
     } else {
-        map.easeCamera(CameraUpdateFactory.newCameraPosition(cam), 400)
+        map.easeCamera(cam, 400)
     }
 }

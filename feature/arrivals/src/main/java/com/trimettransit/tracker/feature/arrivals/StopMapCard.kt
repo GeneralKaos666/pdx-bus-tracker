@@ -22,6 +22,33 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.map.MapLibreMapHost
+import com.trimettransit.tracker.map.MapCameraUpdates as CameraUpdateFactory
+import com.trimettransit.tracker.map.MapController as MapLibreMap
+import com.trimettransit.tracker.map.MapCoordinate as LatLng
+import com.trimettransit.tracker.map.MapExpression as Expression
+import com.trimettransit.tracker.map.MapFeature as Feature
+import com.trimettransit.tracker.map.MapFeatureCollection as FeatureCollection
+import com.trimettransit.tracker.map.MapGeoJsonSource as GeoJsonSource
+import com.trimettransit.tracker.map.MapPoint as Point
+import com.trimettransit.tracker.map.MapPropertyConstants as Property
+import com.trimettransit.tracker.map.MapProperties.iconAllowOverlap
+import com.trimettransit.tracker.map.MapProperties.iconAnchor
+import com.trimettransit.tracker.map.MapProperties.iconIgnorePlacement
+import com.trimettransit.tracker.map.MapProperties.iconImage
+import com.trimettransit.tracker.map.MapProperties.iconRotate
+import com.trimettransit.tracker.map.MapProperties.iconRotationAlignment
+import com.trimettransit.tracker.map.MapProperties.textAllowOverlap
+import com.trimettransit.tracker.map.MapProperties.textAnchor
+import com.trimettransit.tracker.map.MapProperties.textColor
+import com.trimettransit.tracker.map.MapProperties.textField
+import com.trimettransit.tracker.map.MapProperties.textFont
+import com.trimettransit.tracker.map.MapProperties.textHaloColor
+import com.trimettransit.tracker.map.MapProperties.textHaloWidth
+import com.trimettransit.tracker.map.MapProperties.textIgnorePlacement
+import com.trimettransit.tracker.map.MapProperties.textOffset
+import com.trimettransit.tracker.map.MapProperties.textSize
+import com.trimettransit.tracker.map.MapStyle as Style
+import com.trimettransit.tracker.map.MapSymbolLayer as SymbolLayer
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.BlockPosition
 import com.trimettransit.tracker.model.domain.displayTimeMillis
@@ -41,33 +68,6 @@ import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.AppMotion
-import org.maplibre.android.camera.CameraUpdateFactory
-import org.maplibre.android.geometry.LatLng
-import org.maplibre.android.maps.MapLibreMap
-import org.maplibre.android.maps.Style
-import org.maplibre.android.style.expressions.Expression
-import org.maplibre.android.style.layers.Property
-import org.maplibre.android.style.layers.PropertyFactory.iconAllowOverlap
-import org.maplibre.android.style.layers.PropertyFactory.iconAnchor
-import org.maplibre.android.style.layers.PropertyFactory.iconIgnorePlacement
-import org.maplibre.android.style.layers.PropertyFactory.iconImage
-import org.maplibre.android.style.layers.PropertyFactory.iconRotate
-import org.maplibre.android.style.layers.PropertyFactory.iconRotationAlignment
-import org.maplibre.android.style.layers.PropertyFactory.textAllowOverlap
-import org.maplibre.android.style.layers.PropertyFactory.textAnchor
-import org.maplibre.android.style.layers.PropertyFactory.textColor
-import org.maplibre.android.style.layers.PropertyFactory.textField
-import org.maplibre.android.style.layers.PropertyFactory.textFont
-import org.maplibre.android.style.layers.PropertyFactory.textHaloColor
-import org.maplibre.android.style.layers.PropertyFactory.textHaloWidth
-import org.maplibre.android.style.layers.PropertyFactory.textIgnorePlacement
-import org.maplibre.android.style.layers.PropertyFactory.textOffset
-import org.maplibre.android.style.layers.PropertyFactory.textSize
-import org.maplibre.android.style.layers.SymbolLayer
-import org.maplibre.android.style.sources.GeoJsonSource
-import org.maplibre.geojson.Feature
-import org.maplibre.geojson.FeatureCollection
-import org.maplibre.geojson.Point
 
 @Composable
 internal fun StopMapCard(
@@ -414,7 +414,7 @@ private fun keepBusCentered(
 ) {
     val marginPx = (24 * density).toInt()
     val topMarginPx = (72 * density).toInt()
-    val p = map.projection.toScreenLocation(target)
+    val p = map.screenLocation(target)
     val outside = p.x < marginPx || p.x > viewWidth - marginPx ||
             p.y < topMarginPx || p.y > viewHeight - marginPx
     if (outside) {

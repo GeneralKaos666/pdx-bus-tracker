@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,6 +29,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -35,6 +38,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Detour
+import com.trimettransit.tracker.model.TransitAlert
 import com.trimettransit.tracker.model.domain.arrivalKey
 import com.trimettransit.tracker.model.domain.displayTimeMillis
 import com.trimettransit.tracker.model.domain.isCanceled
@@ -68,10 +72,12 @@ internal fun ArrivalItem(
     modifier: Modifier = Modifier,
     refreshKey: Int = 0,
     lineDetours: List<Detour> = emptyList(),
+    lineAlerts: List<TransitAlert> = emptyList(),
     showClock: Boolean = true,
     showRouteBadge: Boolean = true,
     showVehicleInfo: Boolean = true,
-    onShowAlerts: (List<Detour>) -> Unit = {},
+    onShowAlerts: (List<Detour>, List<TransitAlert>) -> Unit = { _, _ -> },
+    onShowTripStatus: () -> Unit = {},
     onClick: () -> Unit = {}
 ) {
     val type = transitBadgeLetter(arrival.routeId)
@@ -146,7 +152,7 @@ internal fun ArrivalItem(
             }
 
             AnimatedVisibility(
-                visible = lineDetours.isNotEmpty(),
+                visible = lineDetours.isNotEmpty() || lineAlerts.isNotEmpty(),
                 enter = fadeIn(m3EffectsDefault()) + scaleIn(initialScale = 0.9f, animationSpec = m3SpatialDefault()),
                 exit = fadeOut(m3EffectsFast()) + scaleOut(targetScale = 0.9f, animationSpec = m3SpatialFast())
             ) {
@@ -162,7 +168,7 @@ internal fun ArrivalItem(
                             .clickable(
                                 interactionSource = alertInteractionSource,
                                 indication = LocalIndication.current
-                            ) { onShowAlerts(lineDetours) }
+                            ) { onShowAlerts(lineDetours, lineAlerts) }
                     ) {
                         Box(
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 15.dp),
@@ -180,6 +186,16 @@ internal fun ArrivalItem(
             }
 
             Spacer(modifier = Modifier.width(8.dp))
+
+            if (arrival.tripID.isNotBlank()) {
+                IconButton(onClick = onShowTripStatus) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = stringResource(R.string.show_trip_status),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
             Surface(
                 shape = appCardShape(),

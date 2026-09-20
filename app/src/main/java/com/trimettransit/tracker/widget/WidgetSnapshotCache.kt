@@ -5,6 +5,7 @@ import androidx.core.content.edit
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.domain.dedupeArrivals
 import com.trimettransit.tracker.util.minutesUntil
 import org.json.JSONArray
 import org.json.JSONObject
@@ -184,7 +185,7 @@ object WidgetSnapshotCache {
 
     /** Sorts and caps an API result to the two soonest non-past arrivals. */
     fun cleanArrivals(result: List<Arrival>): List<ArrivalOnScreen> =
-        result
+        dedupeArrivals(result)
             .mapNotNull { a ->
                 val at = a.estimatedMillis.takeIf { it > 0L } ?: a.scheduledMillis.takeIf { it > 0L }
                 at?.let {

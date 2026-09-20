@@ -105,7 +105,7 @@ internal object TripPlannerXmlParser {
     private fun parsePoint(obj: Element?): TripPoint {
         if (obj == null) return TripPoint(0.0, 0.0)
         val pos = obj.directChild("pos")
-        return TripPoint(
+        val point = TripPoint(
             latitude = pos?.textOf("lat")?.toDoubleOrNull() ?: 0.0,
             longitude = pos?.textOf("lon")?.toDoubleOrNull() ?: 0.0,
             // TriMet echoes back the URL-encoded fromPlace/toPlace label we sent as the
@@ -113,6 +113,7 @@ internal object TripPlannerXmlParser {
             // The fallback keeps the JVM-defined contract (never null) for stub mocks.
             description = Uri.decode(obj.textOf("description")).orEmpty()
         )
+        return if (point.isValid) point else TripPoint(0.0, 0.0, point.description)
     }
 
     private fun parseItinerary(obj: Element): TripItinerary? {

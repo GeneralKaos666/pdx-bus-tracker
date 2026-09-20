@@ -137,6 +137,7 @@
     <string name="license_timber">Timber</string>
     <string name="license_glance">AndroidX Glance (widget de pantalla de inicio)</string>
     <string name="license_workmanager">AndroidX WorkManager</string>
+    <string name="license_gtfs_bindings">Enlaces GTFS Realtime</string>
     <string name="license_materialkolor">material-kolor (puerto de Material Color Utilities)</string>
     <string name="license_mit">Licencia MIT</string>
     <string name="license_bricolage">Bricolage Grotesque (tipografía de la app)</string>
