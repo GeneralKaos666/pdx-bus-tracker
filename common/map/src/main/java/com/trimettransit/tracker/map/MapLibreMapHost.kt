@@ -2,7 +2,6 @@ package com.trimettransit.tracker.map
 
 import android.view.MotionEvent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,7 +27,6 @@ fun MapLibreMapHost(
     onUpdate: (viewport: MapViewport, map: MapController?) -> Unit
 ) {
     var mapRef by remember { mutableStateOf<MapLibreMap?>(null) }
-    var viewRef by remember { mutableStateOf<MapView?>(null) }
     var appliedStyleUrl by remember { mutableStateOf<String?>(null) }
 
     fun applyStyle(map: MapLibreMap, isReapply: Boolean) {
@@ -63,9 +61,12 @@ fun MapLibreMapHost(
                     false
                 }
                 // MapLibre requires onStart() before it activates its file source
-                // (network). post() guarantees the view is attached first.
-                post { onStart() }
-                viewRef = this
+                // (network). post() guarantees the view is attached first. Guarded by
+                // isAttachedToWindow: rapid navigation can dispose (and detach) this view
+                // before the posted callback runs, and calling onStart() on an already
+                // torn-down MapView races the render thread against native teardown,
+                // producing a native SIGSEGV in libhwui's position-update callback.
+                post { if (isAttachedToWindow) onStart() }
             }
         },
         update = { view ->
@@ -80,16 +81,17 @@ fun MapLibreMapHost(
             }
             onUpdate(MapViewport(view), map?.let(::MapController))
         },
+        onRelease = { view ->
+            // Compose guarantees onRelease runs exactly once, correctly sequenced with
+            // this View's detachment — unlike a same-composable DisposableEffect, which
+            // can be disposed on a different pass than the AndroidView node itself during
+            // rapid navigation, letting the render thread deliver a queued position-update
+            // callback into a MapView that Java-side teardown hasn't caught up with yet.
+            view.onStop()
+            view.onPause()
+            view.onDestroy()
+            mapRef = null
+        },
         modifier = modifier
     )
-
-    DisposableEffect(Unit) {
-        onDispose {
-            viewRef?.onStop()
-            viewRef?.onPause()
-            viewRef?.onDestroy()
-            viewRef = null
-            mapRef = null
-        }
-    }
 }
