@@ -1,5 +1,3 @@
-# Changelog
-
 ## Whats's New in v4.18.7
 
 - **Better offline transit coverage:** the app can cache the standard GTFS network,
