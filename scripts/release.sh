@@ -49,13 +49,13 @@ if [[ -n "$REMOTE_HEAD" && "$LOCAL_HEAD" != "$REMOTE_HEAD" ]]; then
 fi
 
 CHANGELOG="CHANGELOG.md"
-if ! grep -q "^What's New in v${VERSION}$" "$CHANGELOG"; then
+if ! grep -q "^## What's New in v${VERSION}$" "$CHANGELOG"; then
 	echo "Error: no 'What's New in v${VERSION}' section found in $CHANGELOG." >&2
 	exit 1
 fi
 
 NOTES="$(awk -v ver="$VERSION" '
-    $0 ~ ("^What.s New in v" ver "$") { capture = 1; next }
+    $0 ~ ("^## What.s New in v" ver "$") { capture = 1; next }
     capture && /^ / { exit }
     capture { print }
 ' "$CHANGELOG")"
