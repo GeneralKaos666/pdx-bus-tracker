@@ -70,6 +70,12 @@ if [[ ! -f "$APK" ]]; then
 	echo "Build it first:  ./gradlew assembleRelease" >&2
 	exit 1
 fi
+# fastlane's `clean :app:bundleRelease` wipes the build directory, which would
+# delete the APK before the GitHub release step. Stage a copy outside build/.
+STAGED_APK_DIR="${TMPDIR:-$HOME}/pdxbus-release-${VERSION}"
+mkdir -p "$STAGED_APK_DIR"
+STAGED_APK="$STAGED_APK_DIR/PdxBusTracker-release-${VERSION}.apk"
+cp -f "$APK" "$STAGED_APK"
 
 TAG="v${VERSION}"
 if gh release view "$TAG" >/dev/null 2>&1; then
