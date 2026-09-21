@@ -138,7 +138,7 @@ internal object TransitJsonMapper {
         val blocks = objectArray(resultSet, "blockStatus").map { obj ->
             BlockStatus(
                 blockId = obj.optInt("blockID", 0),
-                currentTripId = obj.optString("currentTripID", null),
+                currentTripId = obj.optString("currentTripID").takeIf { it.isNotEmpty() },
                 latitude = obj.optionalDouble("lat"),
                 longitude = obj.optionalDouble("lng"),
                 bearing = obj.optionalDouble("bearing")?.toFloat(),

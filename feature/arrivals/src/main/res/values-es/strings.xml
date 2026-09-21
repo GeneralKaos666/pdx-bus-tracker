@@ -41,5 +41,9 @@
     <string name="trip_status_canceled">Cancelado</string>
     <string name="trip_status_dropoff_only">Solo bajada</string>
     <string name="trip_status_passed">Pasada</string>
-    <string name="trip_status_delay">%1$d s</string>
+    <plurals name="trip_status_delay">
+        <item quantity="one">%1$d s</item>
+        <item quantity="many">%1$d s</item>
+        <item quantity="other">%1$d s</item>
+    </plurals>
 </resources>

@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -127,7 +128,7 @@ private fun TripStatusContent(trip: TripStatus) {
                             Text(
                                 text = listOfNotNull(
                                     status.takeIf { it.isNotBlank() },
-                                    delay?.let { stringResource(R.string.trip_status_delay, it) }
+                                    delay?.let { pluralStringResource(R.plurals.trip_status_delay, it, it) }
                                 ).joinToString(" · "),
                                 color = if (stop.isCanceled) {
                                     MaterialTheme.colorScheme.error
