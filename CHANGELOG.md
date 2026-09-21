@@ -1,4 +1,4 @@
-## Unreleased
+## What's New in v4.18.8
 
 - **No more ghost navigation:** opening the app from a departure alert or widget tap no longer jumps back to that stop after Android recreates the app in the background.
 - **No duplicate screens:** rapid double taps on a stop or on Find Nearby open a single screen instead of stacking two.
