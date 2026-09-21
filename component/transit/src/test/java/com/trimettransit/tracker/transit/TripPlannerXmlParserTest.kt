@@ -353,4 +353,14 @@ class TripPlannerXmlParserTest {
         val result = TripPlannerXmlParser.parseTripPlanResponse(xxe) as TripPlanResult.Error
         assertEquals(TripPlannerError.SYSTEM_OUTAGE, result.error)
     }
+
+    @Test
+    fun `parseTripPlanResponse does not crash on Android parser factory`() {
+        // Android's bundled DocumentBuilderFactory throws UnsupportedOperationException
+        // from setXIncludeAware(). The parser setup must not set that property directly,
+        // otherwise every 200 OK response is misreported as SYSTEM_OUTAGE.
+        val plain = "<response><from/><to/><itineraries/></response>"
+        val result = TripPlannerXmlParser.parseTripPlanResponse(plain)
+        assertTrue(result is TripPlanResult.Success)
+    }
 }

@@ -16,6 +16,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.graphics.toColorInt
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -80,6 +81,8 @@ import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.SaveableStateHolder
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
@@ -102,7 +105,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
+import androidx.navigation.navDeepLink
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -119,6 +124,9 @@ import kotlinx.coroutines.launch
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.repository.FavoritesRepository
+import com.trimettransit.tracker.model.repository.RecentStopsRepository
+import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.feature.arrivals.ArrivalsScreen
 import com.trimettransit.tracker.feature.home.FavoritesScreen
 import com.trimettransit.tracker.feature.home.RecentStopsScreen
@@ -151,7 +159,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        widgetLaunchIntent.value = intent
+        // Seed the widget/notification launch intent only on a truly cold start: after
+        // process-death recreation (savedInstanceState != null) NavController restores the
+        // back stack itself, so re-seeding would push a duplicate Arrivals. Deep-link
+        // intents (ACTION_VIEW with data) are excluded — NavController handles those at
+        // graph creation, and the consumer LaunchedEffect must not also parse them as
+        // widget extras. onNewIntent (warm start) stays ungated.
+        if (savedInstanceState == null && intent?.data == null) {
+            widgetLaunchIntent.value = intent
+        }
         WidgetScheduler.schedulePeriodic(this)
         WidgetScheduler.refreshNow(this)
         // Play's "deprecated Android 15 edge-to-edge APIs" warning comes from
@@ -296,7 +312,9 @@ private fun MainAppContent(
     // bottom pill bar is replaced by a left-edge rail. Narrow/mid layouts keep the phone UX.
     val windowInfo = LocalWindowInfo.current
     val expandedPane = with(LocalDensity.current) { windowInfo.containerSize.width >= 840.dp.roundToPx() }
-    var detailStop by remember { mutableStateOf<ArrivalsDestination?>(null) }
+    var detailStop by rememberSaveable(stateSaver = arrivalsDestinationSaver) {
+        mutableStateOf<ArrivalsDestination?>(null)
+    }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val refreshRotation = remember { Animatable(0f) }
     val destination = currentBackStackEntry?.destination
@@ -392,7 +410,7 @@ private fun MainAppContent(
         } else {
             navController.navigate(
                 ArrivalsDestination(stop.locId, stop.desc, routeId, stop.latitude, stop.longitude)
-            )
+            ) { launchSingleTop = true }
         }
     }
 
@@ -403,6 +421,14 @@ private fun MainAppContent(
     val widgetLaunchIntentValue = activity.widgetLaunchIntent.value
     LaunchedEffect(widgetLaunchIntentValue) {
         val intent = widgetLaunchIntentValue ?: return@LaunchedEffect
+        // Warm-start deep link (activity is singleTop). Cold starts are handled by
+        // NavController itself at graph creation — onCreate's data guard keeps them
+        // out of this widget-extras pipeline.
+        if (intent.data != null) {
+            navController.handleDeepLink(intent)
+            activity.widgetLaunchIntent.value = null
+            return@LaunchedEffect
+        }
         val stopId = intent.getLongExtra(WidgetLaunch.EXTRA_STOP_ID, -1L)
         if (stopId <= 0L || stopId > Int.MAX_VALUE.toLong()) {
             activity.widgetLaunchIntent.value = null
@@ -653,11 +679,10 @@ private fun MainAppContent(
                             val favSource = remember { MutableInteractionSource() }
                             IconButton(
                                 onClick = {
-                                    val entry = currentBackStackEntry
                                     toggleFavoriteFlow(
-                                        entry?.arguments?.getInt("stopId") ?: 0,
-                                        entry?.arguments?.getString("stopName") ?: "",
-                                        entry?.arguments?.getInt("routeId") ?: -1
+                                        arrivalsDest?.stopId ?: 0,
+                                        arrivalsDest?.stopName.orEmpty(),
+                                        arrivalsDest?.routeId ?: -1
                                     )
                                 },
                                 interactionSource = favSource,
@@ -728,164 +753,37 @@ private fun MainAppContent(
                 )
             }
         ) { padding ->
-            NavHost(
+            AppNavHost(
                 navController = navController,
-                startDestination = HomeDestination,
-                modifier = Modifier
-                    .padding(padding)
-                    .consumeWindowInsets(padding),
-                enterTransition = { navEnter },
-                exitTransition = { navExit },
-                popEnterTransition = { navPopEnter },
-                popExitTransition = { navPopExit }
-            ) {
-                composable<HomeDestination> {
-                    val topLevelPage: @Composable (Int) -> Unit = { page ->
-                        saveableStateHolder.SaveableStateProvider(page) {
-                            when (page) {
-                                0 -> FavoritesScreen(
-                                    favoritesRepository = favoritesRepository,
-                                    transitRepository = transitRepository,
-                                    onNavigateToArrivals = { stop: Stop ->
-                                        navigateToArrivals(stop, stop.routeNum)
-                                    },
-                                    onBrowseRoutes = { navigateToTopPage(2) },
-                                    onFindNearby = { navController.navigate(NearbyStopsDestination) }
-                                )
-                                1 -> RecentStopsScreen(
-                                    recentStopsRepository = recentStopsRepository,
-                                    favoritesRepository = favoritesRepository,
-                                    onNavigateToArrivals = { stop: Stop ->
-                                        navigateToArrivals(stop, stop.routeNum)
-                                    },
-                                    onFindNearby = { navController.navigate(NearbyStopsDestination) }
-                                )
-                                2 -> StopsScreen(
-                                    transitRepository = transitRepository,
-                                    selectedRoute = selectedStopsRoute,
-                                    selectedDirection = selectedStopsDirection,
-                                    onRouteToggle = { route ->
-                                        selectedStopsRoute = if (selectedStopsRoute?.routeId == route.routeId) null else route
-                                        selectedStopsDirection = null
-                                    },
-                                    onDirectionToggle = { direction ->
-                                        selectedStopsDirection = if (selectedStopsDirection?.dir == direction.dir) null else direction
-                                    },
-                                    onNavigateToArrivals = { stop: Stop, routeId: Int ->
-                                        navigateToArrivals(stop, routeId)
-                                    }
-                                )
-                                3 -> TripPlannerScreen(
-                                    transitRepository = transitRepository,
-                                    pageVisible = topPagerState.currentPage == page,
-                                    isDark = isDark
-                                )
-                            }
-                        }
-                    }
-                    if (expandedPane) {
-                        // Master-detail split: browsing list on the left, chosen stop's arrivals on the right.
-                        Row(modifier = Modifier.fillMaxSize()) {
-                            HorizontalPager(
-                                state = topPagerState,
-                                modifier = Modifier
-                                    .weight(1.15f)
-                                    .fillMaxHeight(),
-                                beyondViewportPageCount = 1
-                            ) { page ->
-                                topLevelPage(page)
-                            }
-                            VerticalDivider(modifier = Modifier.fillMaxHeight())
-                            val dest = detailStop
-                            if (dest == null) {
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(
-                                            Icons.Filled.Schedule,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(48.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Text(
-                                            text = stringResource(R.string.expanded_arrivals_placeholder),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            } else {
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight()
-                                        .padding(start = 8.dp, end = 16.dp)
-                                ) {
-                                    arrivalsDetailPane(dest)
-                                }
-                            }
-                        }
-                    } else {
-                        HorizontalPager(
-                            state = topPagerState,
-                            modifier = Modifier.fillMaxSize(),
-                            beyondViewportPageCount = 1
-                        ) { page ->
-                            topLevelPage(page)
-                        }
-                    }
-                }
-                composable<SettingsDestination> {
-                    val settingsPrefs = remember {
-                        PreferenceManager.getDefaultSharedPreferences(context)
-                    }
-                    SettingsScreen(
-                        widgetSection = { WidgetSettingsSection() },
-                        notificationsSection = { DepartureAlertsSection() },
-                        notificationsEnabled = DepartureAlertPrefs.isEnabled(context),
-                        widgetRefreshIntervalMin = settingsPrefs.getInt(
-                            WidgetScheduler.KEY_REFRESH_INTERVAL_MIN,
-                            30
-                        ),
-                        onRegisterScrollToTop = { onScrollToTop = it }
-                    )
-                }
-                composable<NearbyStopsDestination> {
-                    NearbyStopsScreen(
-                        transitRepository = transitRepository,
-                        onNavigateToArrivals = { stop: Stop, routeId: Int ->
-                            navigateToArrivals(stop, routeId)
-                        },
-                        onRegisterScrollToTop = { onScrollToTop = it }
-                    )
-                }
-                composable<ArrivalsDestination>(enterTransition = { navEnterArrivals }) { backStackEntry ->
-                    val dest: ArrivalsDestination = backStackEntry.toRoute()
-                    LaunchedEffect(dest.stopId) { resetArrivalsStateFor(dest.stopId) }
-                    ArrivalsScreen(
-                        transitRepository = transitRepository,
-                        favoritesRepository = favoritesRepository,
-                        stopId = dest.stopId,
-                        stopName = dest.stopName,
-                        routeId = dest.routeId,
-                        latitude = dest.lat,
-                        longitude = dest.lng,
-                        isDark = isDark,
-                        onArrivalsStateChange = { name, fav, lat, lng ->
-                            applyArrivalsState(dest.stopId, name, fav, lat, lng)
-                        },
-                        onRegisterRefresh = {
-                            if (arrivalsStateStopId == dest.stopId) arrivalsOnRefresh = it
-                        },
-                        onRegisterScrollToTop = { onScrollToTop = it }
-                    )
-                }
-            }
+                contentPadding = padding,
+                saveableStateHolder = saveableStateHolder,
+                topPagerState = topPagerState,
+                favoritesRepository = favoritesRepository,
+                recentStopsRepository = recentStopsRepository,
+                transitRepository = transitRepository,
+                selectedStopsRoute = selectedStopsRoute,
+                selectedStopsDirection = selectedStopsDirection,
+                onRouteToggle = { route ->
+                    selectedStopsRoute = if (selectedStopsRoute?.routeId == route.routeId) null else route
+                    selectedStopsDirection = null
+                },
+                onDirectionToggle = { direction ->
+                    selectedStopsDirection = if (selectedStopsDirection?.dir == direction.dir) null else direction
+                },
+                onNavigateToArrivals = { stop, routeId -> navigateToArrivals(stop, routeId) },
+                onNavigateToTopPage = { page -> navigateToTopPage(page) },
+                expandedPane = expandedPane,
+                detailStop = detailStop,
+                arrivalsDetailPane = arrivalsDetailPane,
+                isDark = isDark,
+                arrivalsStateStopId = arrivalsStateStopId,
+                onResetArrivalsState = { stopId -> resetArrivalsStateFor(stopId) },
+                onArrivalsState = { stopId, name, fav, lat, lng ->
+                    applyArrivalsState(stopId, name, fav, lat, lng)
+                },
+                onRegisterArrivalsRefresh = { arrivalsOnRefresh = it },
+                onRegisterScrollToTop = { onScrollToTop = it }
+            )
         }
         }
     AnimatedVisibility(
@@ -922,4 +820,195 @@ private fun MainAppContent(
     }
 }
 
+}
+
+/**
+ * The app's NavHost, extracted from [MainAppContent] so the single activity composition stays
+ * readable; all state is hoisted and passed in. The Arrivals destination also answers
+ * pdxbus://arrivals/{stopId} deep links ([ARRIVALS_DEEP_LINK_BASE]). Deep-link arrivals views
+ * deliberately do NOT record a recent stop (unlike widget/notification taps, which route
+ * through navigateToArrivals) — automation shouldn't spam the recents list.
+ */
+@Composable
+private fun AppNavHost(
+    navController: NavHostController,
+    contentPadding: PaddingValues,
+    saveableStateHolder: SaveableStateHolder,
+    topPagerState: PagerState,
+    favoritesRepository: FavoritesRepository,
+    recentStopsRepository: RecentStopsRepository,
+    transitRepository: TransitRepository,
+    selectedStopsRoute: Route?,
+    selectedStopsDirection: Direction?,
+    onRouteToggle: (Route) -> Unit,
+    onDirectionToggle: (Direction) -> Unit,
+    onNavigateToArrivals: (Stop, Int) -> Unit,
+    onNavigateToTopPage: (Int) -> Unit,
+    expandedPane: Boolean,
+    detailStop: ArrivalsDestination?,
+    arrivalsDetailPane: @Composable (ArrivalsDestination) -> Unit,
+    isDark: Boolean,
+    arrivalsStateStopId: Int,
+    onResetArrivalsState: (Int) -> Unit,
+    onArrivalsState: (stopId: Int, name: String, fav: Boolean, lat: Double, lng: Double) -> Unit,
+    onRegisterArrivalsRefresh: ((() -> Unit)?) -> Unit,
+    onRegisterScrollToTop: ((() -> Unit)?) -> Unit
+) {
+    val context = LocalContext.current
+    NavHost(
+        navController = navController,
+        startDestination = HomeDestination,
+        modifier = Modifier
+            .padding(contentPadding)
+            .consumeWindowInsets(contentPadding),
+        enterTransition = { navEnter },
+        exitTransition = { navExit },
+        popEnterTransition = { navPopEnter },
+        popExitTransition = { navPopExit }
+    ) {
+        composable<HomeDestination> {
+            val topLevelPage: @Composable (Int) -> Unit = { page ->
+                saveableStateHolder.SaveableStateProvider(page) {
+                    when (page) {
+                        0 -> FavoritesScreen(
+                            favoritesRepository = favoritesRepository,
+                            transitRepository = transitRepository,
+                            onNavigateToArrivals = { stop: Stop ->
+                                onNavigateToArrivals(stop, stop.routeNum)
+                            },
+                            onBrowseRoutes = { onNavigateToTopPage(2) },
+                            onFindNearby = { navController.navigate(NearbyStopsDestination) { launchSingleTop = true } }
+                        )
+                        1 -> RecentStopsScreen(
+                            recentStopsRepository = recentStopsRepository,
+                            favoritesRepository = favoritesRepository,
+                            onNavigateToArrivals = { stop: Stop ->
+                                onNavigateToArrivals(stop, stop.routeNum)
+                            },
+                            onFindNearby = { navController.navigate(NearbyStopsDestination) { launchSingleTop = true } }
+                        )
+                        2 -> StopsScreen(
+                            transitRepository = transitRepository,
+                            selectedRoute = selectedStopsRoute,
+                            selectedDirection = selectedStopsDirection,
+                            onRouteToggle = onRouteToggle,
+                            onDirectionToggle = onDirectionToggle,
+                            onNavigateToArrivals = { stop: Stop, routeId: Int ->
+                                onNavigateToArrivals(stop, routeId)
+                            }
+                        )
+                        3 -> TripPlannerScreen(
+                            transitRepository = transitRepository,
+                            pageVisible = topPagerState.currentPage == page,
+                            isDark = isDark
+                        )
+                    }
+                }
+            }
+            if (expandedPane) {
+                // Master-detail split: browsing list on the left, chosen stop's arrivals on the right.
+                Row(modifier = Modifier.fillMaxSize()) {
+                    HorizontalPager(
+                        state = topPagerState,
+                        modifier = Modifier
+                            .weight(1.15f)
+                            .fillMaxHeight(),
+                        beyondViewportPageCount = 1
+                    ) { page ->
+                        topLevelPage(page)
+                    }
+                    VerticalDivider(modifier = Modifier.fillMaxHeight())
+                    val dest = detailStop
+                    if (dest == null) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    Icons.Filled.Schedule,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = stringResource(R.string.expanded_arrivals_placeholder),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .padding(start = 8.dp, end = 16.dp)
+                        ) {
+                            arrivalsDetailPane(dest)
+                        }
+                    }
+                }
+            } else {
+                HorizontalPager(
+                    state = topPagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    beyondViewportPageCount = 1
+                ) { page ->
+                    topLevelPage(page)
+                }
+            }
+        }
+        composable<SettingsDestination> {
+            val settingsPrefs = remember {
+                PreferenceManager.getDefaultSharedPreferences(context)
+            }
+            SettingsScreen(
+                widgetSection = { WidgetSettingsSection() },
+                notificationsSection = { DepartureAlertsSection() },
+                notificationsEnabled = DepartureAlertPrefs.isEnabled(context),
+                widgetRefreshIntervalMin = settingsPrefs.getInt(
+                    WidgetScheduler.KEY_REFRESH_INTERVAL_MIN,
+                    30
+                ),
+                onRegisterScrollToTop = onRegisterScrollToTop
+            )
+        }
+        composable<NearbyStopsDestination> {
+            NearbyStopsScreen(
+                transitRepository = transitRepository,
+                onNavigateToArrivals = { stop: Stop, routeId: Int ->
+                    onNavigateToArrivals(stop, routeId)
+                },
+                onRegisterScrollToTop = onRegisterScrollToTop
+            )
+        }
+        composable<ArrivalsDestination>(
+            deepLinks = listOf(navDeepLink<ArrivalsDestination>(basePath = ARRIVALS_DEEP_LINK_BASE)),
+            enterTransition = { navEnterArrivals }
+        ) { backStackEntry ->
+            val dest: ArrivalsDestination = backStackEntry.toRoute()
+            LaunchedEffect(dest.stopId) { onResetArrivalsState(dest.stopId) }
+            ArrivalsScreen(
+                transitRepository = transitRepository,
+                favoritesRepository = favoritesRepository,
+                stopId = dest.stopId,
+                stopName = dest.stopName,
+                routeId = dest.routeId,
+                latitude = dest.lat,
+                longitude = dest.lng,
+                isDark = isDark,
+                onArrivalsStateChange = { name, fav, lat, lng ->
+                    onArrivalsState(dest.stopId, name, fav, lat, lng)
+                },
+                onRegisterRefresh = {
+                    if (arrivalsStateStopId == dest.stopId) onRegisterArrivalsRefresh(it)
+                },
+                onRegisterScrollToTop = onRegisterScrollToTop
+            )
+        }
+    }
 }

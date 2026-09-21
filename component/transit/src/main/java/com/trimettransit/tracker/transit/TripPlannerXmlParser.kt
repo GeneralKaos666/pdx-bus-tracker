@@ -60,7 +60,10 @@ internal object TripPlannerXmlParser {
         val response = try {
             val factory = DocumentBuilderFactory.newInstance()
             factory.isNamespaceAware = false
-            factory.isXIncludeAware = false
+            // Don't call setXIncludeAware() directly: Android's bundled parser throws
+            // UnsupportedOperationException when asked about XInclude. The tryFeature
+            // loop below already disables external-DTD/entity expansion, which is the
+            // security goal; XInclude awareness is unnecessary for TriMet responses.
             factory.isExpandEntityReferences = false
             // Harden against XXE where the runtime supports it. Android's DOM
             // implementation rejects some of these flags with
@@ -77,7 +80,7 @@ internal object TripPlannerXmlParser {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Timber.e(e, "Failed to parse trip planner XML")
+            Timber.e(e, "Failed to parse trip planner XML; class=${e.javaClass.name}; msg=${e.message}")
             return TripPlanResult.Error(TripPlannerError.SYSTEM_OUTAGE)
         }
         if (response.tagName != "response") return null

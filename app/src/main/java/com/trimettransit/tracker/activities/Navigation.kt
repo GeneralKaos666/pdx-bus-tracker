@@ -14,6 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.trimettransit.tracker.R
@@ -112,6 +113,32 @@ data class ArrivalsDestination(
     val lat: Double = 0.0,
     val lng: Double = 0.0
 )
+
+/**
+ * Bundle saver for the expanded-pane detail selection (primitives only). Typed on the
+ * nullable destination because this BOM's rememberSaveable(stateSaver=…) wants
+ * Saver<T, Any> with T = the state's full (nullable) type. null saves as null.
+ */
+internal val arrivalsDestinationSaver: Saver<ArrivalsDestination?, Any> = Saver(
+    save = { dest ->
+        dest?.let { listOf(it.stopId, it.stopName, it.routeId, it.lat, it.lng) }
+    },
+    restore = { value ->
+        @Suppress("UNCHECKED_CAST")
+        (value as? List<Any>)?.let { list ->
+            ArrivalsDestination(
+                stopId = list[0] as Int,
+                stopName = list[1] as String,
+                routeId = list[2] as Int,
+                lat = list[3] as Double,
+                lng = list[4] as Double
+            )
+        }
+    }
+)
+
+/** Base path for the pdxbus:// deep link into Arrivals (query params optional via route defaults). */
+internal const val ARRIVALS_DEEP_LINK_BASE = "pdxbus://arrivals"
 
 /** Back arrow used by every non-top-level top app bar. */
 @Composable

@@ -1,4 +1,12 @@
-## Whats's New in v4.18.7
+## Unreleased
+
+- **No more ghost navigation:** opening the app from a departure alert or widget tap no longer jumps back to that stop after Android recreates the app in the background.
+- **No duplicate screens:** rapid double taps on a stop or on Find Nearby open a single screen instead of stacking two.
+- **Deep links:** other apps and automation tools can open a stop's live arrivals directly with a `pdxbus://arrivals/<stopId>` link.
+- **Tablets keep their place:** on wide screens, the arrivals detail pane restores its selected stop after the app is recreated.
+- **Trip Planner works again:** finding trips between two stops no longer shows a bogus "temporarily unavailable" message caused by the XML parser asking Android's DOM factory for an unsupported feature.
+
+## What's New in v4.18.7
 
 - **Better offline transit coverage:** the app can cache the standard GTFS network,
   route shapes, and protobuf vehicle positions in private storage, refresh the

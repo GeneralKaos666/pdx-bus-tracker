@@ -33,6 +33,13 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- pdxbus://arrivals/{stopId} deep links into the Arrivals destination. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="pdxbus" android:host="arrivals"/>
+            </intent-filter>
         </activity>
         <receiver
             android:name="com.trimettransit.tracker.widget.NextArrivalsWidgetReceiver"
