@@ -85,7 +85,7 @@ fi
 
 echo "Version:  $VERSION"
 echo "Tag:      $TAG"
-echo "APK:      $APK"
+echo "APK:      $STAGED_APK"
 echo "To Play:  $TO_PLAY"
 echo "--- release notes ---"
 echo "$NOTES"
@@ -95,7 +95,7 @@ if [[ "$DRY_RUN" == true ]]; then
 	if [[ "$TO_PLAY" == true ]]; then
 		echo "[dry-run] Would run: bundle exec fastlane android deploy_phone"
 	fi
-	echo "[dry-run] Would run: gh release create \"$TAG\" \"$APK\" --title \"$TAG\" --notes-file <extracted notes>"
+	echo "[dry-run] Would run: gh release create \"$TAG\" \"$STAGED_APK\" --title \"$TAG\" --notes-file <extracted notes>"
 	exit 0
 fi
 
@@ -123,7 +123,7 @@ NOTES_FILE="$(mktemp "${TMPDIR:-$HOME}/release-notes-XXXXXX")"
 trap 'rm -f "$NOTES_FILE"' EXIT
 printf '%s\n' "$NOTES" >"$NOTES_FILE"
 
-gh release create "$TAG" "$APK" --title "$TAG" --notes-file "$NOTES_FILE"
+gh release create "$TAG" "$STAGED_APK" --title "$TAG" --notes-file "$NOTES_FILE"
 
 URL="$(gh release view "$TAG" --json url -q .url)"
 echo "Published: $URL"
