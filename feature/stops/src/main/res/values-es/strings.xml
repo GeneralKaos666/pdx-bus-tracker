@@ -6,6 +6,7 @@
     <string name="no_directions_available">No hay direcciones disponibles.</string>
     <string name="unable_to_load_stops">No se pudieron cargar las paradas.\nComprueba tu conexión.</string>
     <string name="unable_to_load_routes">No se pudieron cargar las rutas.\nComprueba tu conexión.</string>
+    <string name="offline_no_data">Sin conexión.\nLos datos del transporte necesitan una conexión.</string>
     <string name="no_routes_available">No hay rutas disponibles.</string>
     <string name="no_stops_available">No hay paradas disponibles.</string>
     <string name="collapse">Contraer</string>

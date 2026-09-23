@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,28 +45,40 @@ import com.trimettransit.tracker.ui.components.transitTypeLabel
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.util.ConnectionUtils
 
 @Composable
 fun StopsRouteList(
     transitRepository: TransitRepository,
     selectedRoute: Route?,
+    pageVisible: Boolean,
     onRouteToggle: (Route) -> Unit,
     routeTrailingContent: @Composable (Route) -> Unit
 ) {
     var routes by remember { mutableStateOf<List<Route>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
+    var isOffline by remember { mutableStateOf(false) }
     // Bumped by the retry button to re-run the fetch (LaunchedEffect key).
     var retryKey by remember { mutableIntStateOf(0) }
+    val context = LocalContext.current
 
-    LaunchedEffect(retryKey) {
+    // Loads on first composition, on an explicit retry, and when this tab becomes visible *with
+    // nothing loaded* — which is how a user who reconnected recovers, since there is no Try Again
+    // button while offline. A healthy list is never refetched.
+    LaunchedEffect(retryKey, pageVisible, routes == null) {
+        if (!pageVisible) return@LaunchedEffect
+        if (routes != null) return@LaunchedEffect
         isLoading = true
         isMissingApiKey = false
         if (!transitRepository.isConfigured()) {
             isMissingApiKey = true
+            isOffline = false
             routes = null
         } else {
-            routes = transitRepository.getRoutes()
+            val fetched = transitRepository.getRoutes()
+            isOffline = fetched == null && !ConnectionUtils.isOnline(context)
+            routes = fetched
         }
         isLoading = false
     }
@@ -87,14 +100,18 @@ fun StopsRouteList(
     StopListContent(
         isLoading = isLoading,
         items = safeRoutes,
-        errorMessage = if (isMissingApiKey) stringResource(R.string.api_key_not_configured)
-                       else stringResource(R.string.unable_to_load_routes),
+        errorMessage = when {
+            isMissingApiKey -> stringResource(R.string.api_key_not_configured)
+            isOffline -> stringResource(R.string.offline_no_data)
+            else -> stringResource(R.string.unable_to_load_routes)
+        },
         emptyMessage = stringResource(R.string.no_routes_available),
         stateLabel = "routesState",
         gridMode = gridMode,
         key = { it.routeId },
         contentType = { "route" },
-        onRetry = { retryKey++ },
+        // Neither an offline device nor a missing API key can be fixed by tapping again.
+        onRetry = if (isOffline || isMissingApiKey) null else ({ retryKey++ }),
         listState = listState,
         itemContent = { route ->
             RouteListItem(

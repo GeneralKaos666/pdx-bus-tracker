@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,6 +54,7 @@ import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.util.ConnectionUtils
 import kotlinx.coroutines.launch
 
 /**
@@ -93,6 +95,7 @@ fun StopsScreen(
         StopsRouteList(
             transitRepository = transitRepository,
             selectedRoute = selectedRoute,
+            pageVisible = pageVisible,
             onRouteToggle = onRouteToggle,
             routeTrailingContent = { route ->
                 AnimatedVisibility(
@@ -141,16 +144,21 @@ private fun DirectionsSubCard(
     var directions by remember { mutableStateOf<List<Direction>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
+    var isOffline by remember { mutableStateOf(false) }
     var retryKey by remember { mutableIntStateOf(0) }
+    val context = LocalContext.current
 
     LaunchedEffect(route.routeId, retryKey) {
         isLoading = true
         isMissingApiKey = false
         if (!transitRepository.isConfigured()) {
             isMissingApiKey = true
+            isOffline = false
             directions = null
         } else {
-            directions = transitRepository.getDirections(route.routeId)
+            val fetched = transitRepository.getDirections(route.routeId)
+            isOffline = fetched == null && !ConnectionUtils.isOnline(context)
+            directions = fetched
         }
         isLoading = false
     }
@@ -184,10 +192,14 @@ private fun DirectionsSubCard(
                 when (state) {
                     0 -> InlineSkeleton(rows = 2)
                     1 -> InlineMessage(stringResource(R.string.api_key_not_configured))
-                    2 -> InlineRetry(
-                        message = stringResource(R.string.unable_to_load_directions),
-                        onRetry = { retryKey++ }
-                    )
+                    2 -> if (isOffline) {
+                        InlineMessage(stringResource(R.string.offline_no_data))
+                    } else {
+                        InlineRetry(
+                            message = stringResource(R.string.unable_to_load_directions),
+                            onRetry = { retryKey++ }
+                        )
+                    }
                     3 -> InlineMessage(stringResource(R.string.no_directions_available))
                     else -> Column {
                         safeDirections.orEmpty().forEach { direction ->
@@ -267,16 +279,21 @@ private fun StopsSubCard(
     var stops by remember { mutableStateOf<List<Stop>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isMissingApiKey by remember { mutableStateOf(false) }
+    var isOffline by remember { mutableStateOf(false) }
     var retryKey by remember { mutableIntStateOf(0) }
+    val context = LocalContext.current
 
     LaunchedEffect(routeId, directionId, retryKey) {
         isLoading = true
         isMissingApiKey = false
         if (!transitRepository.isConfigured()) {
             isMissingApiKey = true
+            isOffline = false
             stops = null
         } else {
-            stops = transitRepository.getStops(routeId, directionId)
+            val fetched = transitRepository.getStops(routeId, directionId)
+            isOffline = fetched == null && !ConnectionUtils.isOnline(context)
+            stops = fetched
         }
         isLoading = false
     }
@@ -297,10 +314,14 @@ private fun StopsSubCard(
             when (state) {
                 0 -> InlineSkeleton(rows = 2)
                 1 -> InlineMessage(stringResource(R.string.api_key_not_configured))
-                2 -> InlineRetry(
-                    message = stringResource(R.string.unable_to_load_stops),
-                    onRetry = { retryKey++ }
-                )
+                2 -> if (isOffline) {
+                    InlineMessage(stringResource(R.string.offline_no_data))
+                } else {
+                    InlineRetry(
+                        message = stringResource(R.string.unable_to_load_stops),
+                        onRetry = { retryKey++ }
+                    )
+                }
                 3 -> InlineMessage(stringResource(R.string.no_stops_available))
                 else -> Column {
                     safeStops.orEmpty().forEach { stop ->
