@@ -2,6 +2,8 @@
 <resources>
     <string name="common_try_again">Reintentar</string>
     <string name="common_stop_number">Parada nº %1$d</string>
+    <string name="common_save_to_favorites">Guardar en favoritos</string>
+    <string name="common_remove_from_favorites">Quitar de favoritos</string>
 
     <!-- Transit type labels (accessibility + inline labels shared across modules) -->
     <string name="transit_type_bus">Autobús</string>

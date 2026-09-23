@@ -2,6 +2,8 @@
 <resources>
     <string name="common_try_again">Try Again</string>
     <string name="common_stop_number">Stop #%1$d</string>
+    <string name="common_save_to_favorites">Save to favorites</string>
+    <string name="common_remove_from_favorites">Remove from favorites</string>
 
     <!-- Transit type labels (accessibility + inline labels shared across modules) -->
     <string name="transit_type_bus">Bus</string>
