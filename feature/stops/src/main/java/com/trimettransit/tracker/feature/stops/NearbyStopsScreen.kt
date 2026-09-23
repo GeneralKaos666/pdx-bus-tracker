@@ -2,9 +2,13 @@ package com.trimettransit.tracker.feature.stops
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
+import android.net.Uri
+import android.provider.Settings
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -44,10 +48,13 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.domain.LocationPermissionState
 import com.trimettransit.tracker.model.domain.displayTimeMillis
+import com.trimettransit.tracker.model.domain.locationPermissionState
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.ui.components.EmptyState
@@ -77,12 +84,24 @@ fun NearbyStopsScreen(
     val coroutineScope = rememberCoroutineScope()
     val locationPermissionRequired = stringResource(R.string.location_permission_required)
 
-    var locationPermissionGranted by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
-                    PackageManager.PERMISSION_GRANTED
+    val activity = LocalActivity.current
+    var hasRequestedPermission by remember { mutableStateOf(false) }
+
+    fun readPermissionState(): LocationPermissionState = locationPermissionState(
+        fineGranted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED,
+        coarseGranted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED,
+        hasRequested = hasRequestedPermission,
+        shouldShowRationale = activity != null && ActivityCompat.shouldShowRequestPermissionRationale(
+            activity, Manifest.permission.ACCESS_FINE_LOCATION
         )
-    }
+    )
+
+    var permissionState by remember { mutableStateOf(readPermissionState()) }
+    val locationPermissionGranted = permissionState == LocationPermissionState.GRANTED
     var stops by remember { mutableStateOf<List<Stop>?>(null) }
     // Next-arrival preview per stop, populated only when the combined fast-path fetch
     // (getStopsWithArrivals) succeeds; empty on the plain getStopsByLocation fallback.
@@ -121,7 +140,8 @@ fun NearbyStopsScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
-        locationPermissionGranted = granted
+        hasRequestedPermission = true
+        permissionState = readPermissionState()
         if (granted) {
             launchLoadNearbyStops()
         } else {
@@ -160,12 +180,13 @@ fun NearbyStopsScreen(
         }
     }
 
-    // Explicit user action (Refresh/Try Again buttons): always allowed to prompt.
+    // Explicit user action (Refresh/Try Again buttons). Permanently denied means the system
+    // prompt will not appear again, so send the user to App Settings instead of a no-op.
     fun promptForPermissionAndLoad() {
-        if (locationPermissionGranted) {
-            launchLoadNearbyStops()
-        } else {
-            showLocationExplainer = true
+        when (permissionState) {
+            LocationPermissionState.GRANTED -> launchLoadNearbyStops()
+            LocationPermissionState.PERMANENTLY_DENIED -> openAppSettings(context)
+            LocationPermissionState.PROMPTABLE -> showLocationExplainer = true
         }
     }
 
@@ -176,8 +197,10 @@ fun NearbyStopsScreen(
         }
     }
 
-    // Re-fetch on app re-entry; keep the last-known list on screen while refreshing
+    // Re-fetch on app re-entry; keep the last-known list on screen while refreshing.
+    // Re-read the permission first: the user may have changed it in system Settings while away.
     RememberOnResume {
+        permissionState = readPermissionState()
         if (hasLoaded) {
             loadIfPermissionGranted()
         }
@@ -241,9 +264,15 @@ fun NearbyStopsScreen(
                     LoadingState(message = stringResource(R.string.finding_nearby_stops))
                 }
                 1 -> {
+                    val permanentlyDenied = permissionState == LocationPermissionState.PERMANENTLY_DENIED
                     ErrorState(
                         message = errorMessage ?: stringResource(R.string.unknown_error),
-                        onRetry = { promptForPermissionAndLoad() }
+                        onRetry = { promptForPermissionAndLoad() },
+                        retryLabel = if (permanentlyDenied) {
+                            stringResource(R.string.open_app_settings)
+                        } else {
+                            null
+                        }
                     )
                 }
                 2 -> {
@@ -314,7 +343,10 @@ private suspend fun loadNearbyStops(
         val hasFineLocation = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
-        if (!hasFineLocation) {
+        val hasCoarseLocation = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!hasFineLocation && !hasCoarseLocation) {
             setError(context.getString(R.string.location_permission_required_short))
             return
         }
@@ -424,4 +456,13 @@ private suspend fun requestFreshLocation(locationManager: LocationManager): Loca
     } finally {
         executor.shutdown()
     }
+}
+
+/** Opens this app's system Settings page, where a permanently-denied permission can be re-granted. */
+private fun openAppSettings(context: Context) {
+    val intent = Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.fromParts("package", context.packageName, null)
+    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { context.startActivity(intent) }
 }

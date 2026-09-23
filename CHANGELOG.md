@@ -1,3 +1,7 @@
+## Unreleased
+
+- **Nearby stops recover from a denied location:** if location permission is permanently denied, the app now offers to open its settings instead of showing a retry that does nothing. An approximate location is also accepted, so "Nearby stops" works without precise GPS.
+
 ## What's New in v4.18.8
 
 - **No more ghost navigation:** opening the app from a departure alert or widget tap no longer jumps back to that stop after Android recreates the app in the background.
