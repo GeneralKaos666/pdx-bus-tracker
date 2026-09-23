@@ -45,7 +45,6 @@ import com.trimettransit.tracker.ui.components.transitTypeLabel
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
-import com.trimettransit.tracker.util.ConnectionUtils
 
 @Composable
 fun StopsRouteList(
@@ -77,11 +76,14 @@ fun StopsRouteList(
             routes = null
         } else {
             val fetched = transitRepository.getRoutes()
-            isOffline = fetched == null && !ConnectionUtils.isOnline(context)
+            isOffline = isOfflineFailure(fetched, context)
             routes = fetched
         }
         isLoading = false
     }
+
+    // There is no retry button while offline, so recover as soon as the connection comes back.
+    OnNetworkRegained { if (routes == null) retryKey++ }
 
     val gridMode = rememberDenseGridEnabled()
     val safeRoutes = routes

@@ -9,7 +9,7 @@
 - **A steadier bottom bar:** the tabs no longer shift sideways when you switch between them, and every button in the bar is easier to hit. The bar is icon-only now, so each tab's name appears at the top of its own screen.
 - **Clearer tab names:** the first tab is now "Home" (it is where you search as well as your favorites), "Recent" is "Recents", and "Routes" is "Lines" — which is what that screen actually lists.
 - **Save stops from anywhere you find them:** search results, recent stops, and the lines browser now show a heart on each stop that you can tap to save or unsave it. It fills in when a stop is saved, so you can always see at a glance what is in your favorites. The same heart now replaces the trash icon in your favorites list and the star in Recent stops. Removing a favorite from your list still asks you to confirm first — but it no longer offers an Undo afterwards.
-- **A lines browser that keeps up with you:** tapping a route now brings it into view so its directions are not hidden below the fold, a chip tells you which route and direction you are looking at (with one tap back to the full list), and being offline says so plainly instead of blaming the connection and offering a button that cannot work.
+- **A lines browser that keeps up with you:** tapping a route now brings it into view so its directions are not hidden below the fold, a chip tells you which route and direction you are looking at (with one tap back to the full list), and being offline says so plainly instead of blaming the connection and offering a button that cannot work — the list reloads itself the moment you are back online.
 
 ## What's New in v4.18.8
 

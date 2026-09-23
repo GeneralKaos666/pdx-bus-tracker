@@ -54,7 +54,6 @@ import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
-import com.trimettransit.tracker.util.ConnectionUtils
 import kotlinx.coroutines.launch
 
 /**
@@ -157,11 +156,14 @@ private fun DirectionsSubCard(
             directions = null
         } else {
             val fetched = transitRepository.getDirections(route.routeId)
-            isOffline = fetched == null && !ConnectionUtils.isOnline(context)
+            isOffline = isOfflineFailure(fetched, context)
             directions = fetched
         }
         isLoading = false
     }
+
+    // No retry button is offered while offline, so recover when the connection returns.
+    OnNetworkRegained { if (directions == null) retryKey++ }
 
     Card(
         modifier = Modifier
@@ -292,11 +294,14 @@ private fun StopsSubCard(
             stops = null
         } else {
             val fetched = transitRepository.getStops(routeId, directionId)
-            isOffline = fetched == null && !ConnectionUtils.isOnline(context)
+            isOffline = isOfflineFailure(fetched, context)
             stops = fetched
         }
         isLoading = false
     }
+
+    // No retry button is offered while offline, so recover when the connection returns.
+    OnNetworkRegained { if (stops == null) retryKey++ }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         val safeStops = stops
