@@ -57,7 +57,8 @@ fun StopSearchItem(
     stop: Stop,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    gridMode: Boolean = false
+    gridMode: Boolean = false,
+    trailingContent: @Composable (() -> Unit)? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Row(
@@ -105,6 +106,13 @@ fun StopSearchItem(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+
+        if (trailingContent != null) {
+            Spacer(modifier = Modifier.width(4.dp))
+            Box(contentAlignment = Alignment.Center) {
+                trailingContent()
+            }
         }
     }
 }

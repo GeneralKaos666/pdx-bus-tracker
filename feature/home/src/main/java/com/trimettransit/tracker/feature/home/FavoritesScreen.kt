@@ -37,6 +37,7 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
+import com.trimettransit.tracker.ui.components.rememberFavoriteIds
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -53,6 +54,7 @@ fun FavoritesScreen(
     onFindNearby: () -> Unit
 ) {
     val favorites = rememberStopListLoader(read = { favoritesRepository.getFavorites() })
+    val favoriteIds = rememberFavoriteIds(favoritesRepository)
     var editable by remember(favorites.stops) { mutableStateOf(favorites.stops) }
     var deleteTarget by remember { mutableStateOf<Stop?>(null) }
     val snackbarHost = remember { SnackbarHostState() }
@@ -131,6 +133,13 @@ fun FavoritesScreen(
             )
             HomeSearchBar(
                 transitRepository = transitRepository,
+                favoriteIds = favoriteIds.ids,
+                onToggleFavorite = { stop ->
+                    scope.launch {
+                        favoriteIds.toggle(stop)
+                        favorites.reload()
+                    }
+                },
                 onStopSelected = onNavigateToArrivals,
                 header = { FavoritesHeader() }
             ) {

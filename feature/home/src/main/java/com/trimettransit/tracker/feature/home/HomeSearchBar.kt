@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.ErrorState
+import com.trimettransit.tracker.ui.components.FavoriteToggleButton
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
@@ -73,6 +74,8 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun HomeSearchBar(
     transitRepository: TransitRepository,
+    favoriteIds: Set<Int>,
+    onToggleFavorite: (Stop) -> Unit,
     onStopSelected: (Stop) -> Unit,
     header: @Composable (() -> Unit)? = null,
     content: @Composable () -> Unit
@@ -185,6 +188,8 @@ fun HomeSearchBar(
                         onStopSelected(stop)
                     },
                     onRetry = { attempt++ },
+                    favoriteIds = favoriteIds,
+                    onToggleFavorite = onToggleFavorite,
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .fillMaxWidth()
@@ -219,6 +224,8 @@ private fun SearchResultsDropdown(
     results: List<Stop>,
     onStopClick: (Stop) -> Unit,
     onRetry: () -> Unit,
+    favoriteIds: Set<Int>,
+    onToggleFavorite: (Stop) -> Unit,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -263,7 +270,13 @@ private fun SearchResultsDropdown(
                                 stop = stop,
                                 onClick = { onStopClick(stop) },
                                 modifier = Modifier.animateItem(),
-                                gridMode = dense
+                                gridMode = dense,
+                                trailingContent = {
+                                    FavoriteToggleButton(
+                                        isFavorite = favoriteIds.contains(stop.locId),
+                                        onClick = { onToggleFavorite(stop) }
+                                    )
+                                }
                             )
                         }
                     }
