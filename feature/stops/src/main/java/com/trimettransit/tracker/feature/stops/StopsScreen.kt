@@ -5,6 +5,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -60,39 +61,47 @@ fun StopsScreen(
     onDirectionToggle: (Direction) -> Unit,
     onNavigateToArrivals: (Stop, routeId: Int) -> Unit
 ) {
-    StopsRouteList(
-        transitRepository = transitRepository,
-        selectedRoute = selectedRoute,
-        onRouteToggle = onRouteToggle,
-        routeTrailingContent = { route ->
-            AnimatedVisibility(
-                visible = selectedRoute?.routeId == route.routeId,
-                enter = m3ContentExpand(),
-                exit = m3ContentShrink()
-            ) {
-                DirectionsSubCard(
-                    route = route,
-                    transitRepository = transitRepository,
-                    selectedDirection = selectedDirection,
-                    onDirectionToggle = onDirectionToggle,
-                    directionTrailingContent = { direction ->
-                        AnimatedVisibility(
-                            visible = selectedDirection?.dir == direction.dir,
-                            enter = m3ContentExpand(),
-                            exit = m3ContentShrink()
-                        ) {
-                            StopsSubCard(
-                                routeId = route.routeId,
-                                directionId = direction.dir,
-                                transitRepository = transitRepository,
-                                onStopSelected = { stop -> onNavigateToArrivals(stop, route.routeId) }
-                            )
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(
+            text = stringResource(R.string.lines_title),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)
+        )
+        StopsRouteList(
+            transitRepository = transitRepository,
+            selectedRoute = selectedRoute,
+            onRouteToggle = onRouteToggle,
+            routeTrailingContent = { route ->
+                AnimatedVisibility(
+                    visible = selectedRoute?.routeId == route.routeId,
+                    enter = m3ContentExpand(),
+                    exit = m3ContentShrink()
+                ) {
+                    DirectionsSubCard(
+                        route = route,
+                        transitRepository = transitRepository,
+                        selectedDirection = selectedDirection,
+                        onDirectionToggle = onDirectionToggle,
+                        directionTrailingContent = { direction ->
+                            AnimatedVisibility(
+                                visible = selectedDirection?.dir == direction.dir,
+                                enter = m3ContentExpand(),
+                                exit = m3ContentShrink()
+                            ) {
+                                StopsSubCard(
+                                    routeId = route.routeId,
+                                    directionId = direction.dir,
+                                    transitRepository = transitRepository,
+                                    onStopSelected = { stop -> onNavigateToArrivals(stop, route.routeId) }
+                                )
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
-        }
-    )
+        )
+    }
 }
 
 @Composable

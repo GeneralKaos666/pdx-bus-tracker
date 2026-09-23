@@ -54,9 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -82,27 +80,14 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /**
- * Pill layout constants — the single source of truth for the bar's width budget.
- * [requiredBarWidth] derives the label-hide threshold from them, so the threshold can never
- * drift out of sync with the layout and the bar can never clip.
+ * Pill layout constants — the single source of truth for the bar's geometry. The bar is
+ * icon-only, so there is no label to hide and no width threshold to get wrong: four fixed
+ * [PillItemSize] slots plus the pill's own padding fit every phone width.
  */
 private val PillItemSize = 48.dp
-private val PillLabelSlotWidth = 60.dp
 private val PillInnerPadding = 8.dp
 private val PillActionSpacing = 12.dp
 private val PillOuterPadding = 16.dp
-private val PillLabelMaxFontScale = 1.25f
-
-/**
- * Width the bar needs to show labels: outer padding, the gap and Settings action, the optional
- * back action, then the pill itself (its own padding + one fixed slot per tab + the label slot).
- */
-private fun requiredBarWidth(itemCount: Int, withBack: Boolean): Dp {
-    val actions = PillActionSpacing + PillItemSize +
-        (if (withBack) PillActionSpacing + PillItemSize else 0.dp)
-    val pill = PillInnerPadding * 2 + PillItemSize * itemCount + PillLabelSlotWidth
-    return PillOuterPadding * 2 + actions + pill
-}
 
 internal data class BottomNavItem(
     val pageIndex: Int,
@@ -132,30 +117,22 @@ internal fun MainBottomBar(
     contextIcon: ImageVector? = null,
     showSettingsAction: Boolean = true
 ) {
-    val windowInfo = LocalWindowInfo.current
-    val density = LocalDensity.current
-    val fontScale = density.fontScale
     val itemHeight = PillItemSize
-    // Derived from the layout constants, not hardcoded: showing labels needs exactly this much
-    // width, so anything narrower would clip the bar or push the Settings action off-screen.
-    val shouldHideLabel = fontScale > PillLabelMaxFontScale ||
-        windowInfo.containerSize.width < with(density) {
-            requiredBarWidth(
-                itemCount = bottomNavItems.size,
-                withBack = showBack
-            ).roundToPx()
-        }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            .padding(
+                start = PillOuterPadding,
+                end = PillOuterPadding,
+                bottom = PillOuterPadding
+            ),
         contentAlignment = Alignment.Center
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(PillActionSpacing)
         ) {
             if (showBack) {
                 PillActionButton(
@@ -196,7 +173,6 @@ internal fun MainBottomBar(
                             topPage = topPage,
                             items = bottomNavItems,
                             itemHeight = itemHeight,
-                            shouldHideLabel = shouldHideLabel,
                             onNavigate = onNavigate,
                             pagePosition = pagePosition
                         )
@@ -261,7 +237,6 @@ private fun MainTabRow(
     topPage: Int,
     items: List<BottomNavItem>,
     itemHeight: Dp,
-    shouldHideLabel: Boolean,
     onNavigate: (Int) -> Unit,
     pagePosition: Float
 ) {
@@ -292,7 +267,7 @@ private fun MainTabRow(
 
     Box(
         modifier = Modifier
-            .padding(8.dp)
+            .padding(PillInnerPadding)
             .onGloballyPositioned { coords ->
                 boxLeft = coords.positionInWindow().x.roundToInt()
             }
@@ -367,34 +342,6 @@ private fun MainTabRow(
                         },
                         modifier = Modifier.size(item.iconSize)
                     )
-                }
-            }
-
-            // The selected tab's name lives in its own fixed-width slot rather than inside the
-            // selected item, so revealing it cannot move any icon. It ellipsises rather than
-            // widening the pill or overlapping the icons when a translation is long.
-            if (!shouldHideLabel) {
-                Box(
-                    modifier = Modifier.width(PillLabelSlotWidth),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    AnimatedContent(
-                        targetState = items.getOrNull(topPage)?.labelRes,
-                        transitionSpec = {
-                            fadeIn(m3EffectsDefault()) togetherWith fadeOut(m3EffectsFast())
-                        },
-                        label = "tab_label"
-                    ) { res ->
-                        if (res != null) {
-                            Text(
-                                text = stringResource(res),
-                                style = MaterialTheme.typography.labelMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                color = pillContent
-                            )
-                        }
-                    }
                 }
             }
         }

@@ -15,6 +15,7 @@
     <string name="continue_">Continuar</string>
     <string name="not_now">Ahora no</string>
     <string name="nearby_stops_list_title">Paradas cercanas</string>
+    <string name="lines_title">Líneas</string>
     <string name="loading">Cargando…</string>
     <string name="refresh">Actualizar</string>
     <string name="finding_nearby_stops">Buscando paradas cercanas…</string>
