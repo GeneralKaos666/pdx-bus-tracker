@@ -16,6 +16,7 @@ kls_database.db
 *.keystore
 .opencode/
 docs/superpowers/
+.superpowers/
 
 .omo
 session-ses_fbde.md
