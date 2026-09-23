@@ -75,9 +75,9 @@
     <string name="notifications_permission_denied">Las notificaciones están desactivadas. Concede el permiso de notificaciones en los ajustes del sistema para usar las alertas de salida.</string>
 
     <!-- Bottom navigation -->
-    <string name="nav_favorites">Favoritos</string>
-    <string name="nav_recent">Recientes</string>
-    <string name="nav_routes">Rutas</string>
+    <string name="nav_home">Inicio</string>
+    <string name="nav_recents">Recientes</string>
+    <string name="nav_lines">Líneas</string>
     <string name="nav_trips">Viajes</string>
     <string name="nav_arrivals">Llegadas</string>
 

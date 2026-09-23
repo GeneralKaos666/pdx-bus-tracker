@@ -112,9 +112,9 @@ internal data class BottomNavItem(
 )
 
 internal val bottomNavItems = listOf(
-    BottomNavItem(0, R.string.nav_favorites, Icons.Filled.Favorite),
-    BottomNavItem(1, R.string.nav_recent, Icons.Filled.History),
-    BottomNavItem(2, R.string.nav_routes, Icons.Filled.Map),
+    BottomNavItem(0, R.string.nav_home, Icons.Filled.Favorite),
+    BottomNavItem(1, R.string.nav_recents, Icons.Filled.History),
+    BottomNavItem(2, R.string.nav_lines, Icons.Filled.Map),
     BottomNavItem(3, R.string.nav_trips, Icons.Filled.Directions)
 )
 

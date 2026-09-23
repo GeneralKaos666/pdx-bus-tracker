@@ -7,6 +7,7 @@
 - **Your trip stays put:** planning a trip and then switching tabs no longer throws the results away — the plan is fetched again and the options sheet comes back, including after Android recreates the app in the background.
 - **Search that recovers:** if the stop list fails to load while you are searching, the panel now offers a "Try Again" button instead of leaving you to clear the box and retype the query.
 - **A steadier bottom bar:** the tabs no longer shift sideways when you switch between them, the selected tab's name stays put, and every button in the bar is easier to hit.
+- **Clearer tab names:** the first tab is now "Home" (it is where you search as well as your favorites), "Recent" is "Recents", and "Routes" is "Lines" — which is what that screen actually lists.
 
 ## What's New in v4.18.8
 
