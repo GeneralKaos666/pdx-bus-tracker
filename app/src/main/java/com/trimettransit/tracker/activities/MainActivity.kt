@@ -335,6 +335,8 @@ private fun MainAppContent(
     // Sub-screens brand the collapsed pill with their own icon and name.
     var contextLabelRes: Int? = null
     var contextIcon: ImageVector? = null
+    // Registered by Settings while a pane is open, so the bar's back arrow closes the pane first.
+    var settingsBackAction by remember { mutableStateOf<(() -> Boolean)?>(null) }
     when {
         isArrivals -> {
             contextLabelRes = R.string.nav_arrivals
@@ -782,7 +784,8 @@ private fun MainAppContent(
                     applyArrivalsState(stopId, name, fav, lat, lng)
                 },
                 onRegisterArrivalsRefresh = { arrivalsOnRefresh = it },
-                onRegisterScrollToTop = { onScrollToTop = it }
+                onRegisterScrollToTop = { onScrollToTop = it },
+                onRegisterSettingsBackAction = { settingsBackAction = it }
             )
         }
         }
@@ -812,7 +815,9 @@ private fun MainAppContent(
             },
             showBack = !isTopLevel,
             showSettingsAction = !isSettings,
-            onBackClick = { navController.popBackStack() },
+            onBackClick = {
+                if (settingsBackAction?.invoke() != true) navController.popBackStack()
+            },
             onContextClick = { onScrollToTop?.invoke() },
             contextLabelRes = contextLabelRes,
             contextIcon = contextIcon
@@ -852,7 +857,8 @@ private fun AppNavHost(
     onResetArrivalsState: (Int) -> Unit,
     onArrivalsState: (stopId: Int, name: String, fav: Boolean, lat: Double, lng: Double) -> Unit,
     onRegisterArrivalsRefresh: ((() -> Unit)?) -> Unit,
-    onRegisterScrollToTop: ((() -> Unit)?) -> Unit
+    onRegisterScrollToTop: ((() -> Unit)?) -> Unit,
+    onRegisterSettingsBackAction: ((() -> Boolean)?) -> Unit
 ) {
     val context = LocalContext.current
     NavHost(
@@ -974,7 +980,8 @@ private fun AppNavHost(
                     WidgetScheduler.KEY_REFRESH_INTERVAL_MIN,
                     30
                 ),
-                onRegisterScrollToTop = onRegisterScrollToTop
+                onRegisterScrollToTop = onRegisterScrollToTop,
+                onRegisterBackAction = onRegisterSettingsBackAction
             )
         }
         composable<NearbyStopsDestination> {

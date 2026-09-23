@@ -43,7 +43,8 @@ fun SettingsScreen(
     notificationsSection: (@Composable ColumnScope.() -> Unit)? = null,
     notificationsEnabled: Boolean? = null,
     widgetRefreshIntervalMin: Int? = null,
-    onRegisterScrollToTop: ((() -> Unit)?) -> Unit
+    onRegisterScrollToTop: ((() -> Unit)?) -> Unit,
+    onRegisterBackAction: ((() -> Boolean)?) -> Unit
 ) {
     val context = LocalContext.current
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
@@ -70,6 +71,20 @@ fun SettingsScreen(
             scrollState.scrollTo(0)
             currentSection = section
         }
+    }
+
+    // Lets the collapsed bottom bar's back arrow close an open pane before it pops the whole
+    // Settings destination, so it agrees with the system back button below.
+    DisposableEffect(Unit) {
+        onRegisterBackAction {
+            if (currentSection != null) {
+                switchPane(null)
+                true
+            } else {
+                false
+            }
+        }
+        onDispose { onRegisterBackAction(null) }
     }
 
     fun updateSettings(transform: (SettingsPreferenceState) -> SettingsPreferenceState) {
