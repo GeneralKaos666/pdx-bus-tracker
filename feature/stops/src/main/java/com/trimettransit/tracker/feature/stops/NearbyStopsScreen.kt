@@ -490,9 +490,13 @@ private fun openAppSettings(context: Context) {
  */
 @Composable
 private fun nearbyProximityLabel(stop: Stop, userLocation: Location?): String? {
-    if (userLocation == null || stop.distanceFeet <= 0.0) return null
+    if (userLocation == null) return null
 
+    // Rounded before the guard: a stop three feet away must not be announced as "0 ft", and an
+    // unknown distance (0.0 from the API) rounds to 0 here too, so both fall out for free.
     val feet = (stop.distanceFeet / 10.0).roundToInt() * 10
+    if (feet <= 0) return null
+
     val bearing = bearingDegrees(
         userLocation.latitude,
         userLocation.longitude,

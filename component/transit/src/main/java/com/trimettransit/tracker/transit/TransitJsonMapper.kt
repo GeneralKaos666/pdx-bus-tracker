@@ -329,7 +329,11 @@ internal object TransitJsonMapper {
                     dirDesc = obj.optString("dir", ""),
                     latitude = latitude,
                     longitude = longitude,
-                    distanceFeet = obj.optDouble("distance", 0.0),
+                    // The response calls this "feetDistance". The Stop Location V2 docs list no
+                    // distance field at all, so this was confirmed against the live endpoint --
+                    // and it is NOT "distance", which is the Trip Status field and never appears
+                    // here. Reading "distance" silently yields 0.0 for every stop.
+                    distanceFeet = obj.optDouble("feetDistance", 0.0),
                     transitType = computeTransitType(routes),
                     locId = locId,
                     routes = routes

@@ -43,7 +43,7 @@ fun SettingsScreen(
     notificationsSection: (@Composable ColumnScope.() -> Unit)? = null,
     notificationsEnabled: Boolean? = null,
     widgetRefreshIntervalMin: Int? = null,
-    apiKeyConfigured: Boolean = true,
+    apiKeyConfigured: Boolean,
     onRegisterScrollToTop: ((() -> Unit)?) -> Unit,
     onRegisterBackAction: ((() -> Boolean)?) -> Unit
 ) {

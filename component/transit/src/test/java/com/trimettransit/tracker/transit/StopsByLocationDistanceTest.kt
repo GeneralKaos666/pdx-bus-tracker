@@ -6,15 +6,22 @@ import org.junit.Test
 
 class StopsByLocationDistanceTest {
 
-    private fun stopJson(locId: Int, desc: String, distance: Double) = """
+    /**
+     * A location element shaped like the live Stop Location V2 response. That endpoint reports
+     * `feetDistance`/`metersDistance` and has no field called `distance` at all -- reading
+     * `distance` made every stop look like 0 ft, so the fixture must use the real key name.
+     */
+    private fun stopJson(locId: Int, desc: String, distanceFeet: Double) = """
         { "locid": $locId, "desc": "$desc", "dir": "N", "lat": 45.52, "lng": -122.67,
-          "distance": $distance,
+          "passengerCode": "E",
+          "feetDistance": $distanceFeet, "metersDistance": ${distanceFeet / 3.28084},
           "route": [ { "route": 4, "desc": "D", "type": "B" } ] }
     """.trimIndent()
 
-    /** The same stop as the API sends it when it is not answering a location query: no "distance". */
+    /** Live-shaped, but as a response that is not answering a location query: no distance fields. */
     private fun stopJsonWithoutDistance(locId: Int, desc: String) = """
         { "locid": $locId, "desc": "$desc", "dir": "N", "lat": 45.52, "lng": -122.67,
+          "passengerCode": "E",
           "route": [ { "route": 4, "desc": "D", "type": "B" } ] }
     """.trimIndent()
 
@@ -24,11 +31,18 @@ class StopsByLocationDistanceTest {
         )
 
     @Test
-    fun `distance is read from the response`() {
-        val stops = parse(stopJson(1, "A", 328.5))
+    fun `distance is read from the feet field the endpoint actually sends`() {
+        val stops = parse(stopJson(1, "A", 299.0))
 
         assertEquals(1, stops.size)
-        assertEquals(328.5, stops[0].distanceFeet, 0.001)
+        assertEquals(299.0, stops[0].distanceFeet, 0.001)
+    }
+
+    @Test
+    fun `the distance is the one in feet, not the metres reported beside it`() {
+        val stops = parse(stopJson(1, "A", 328.0))
+
+        assertEquals(328.0, stops[0].distanceFeet, 0.001)
     }
 
     @Test
