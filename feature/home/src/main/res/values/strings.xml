@@ -12,8 +12,6 @@
     <string name="home_title">Home</string>
     <string name="recent_stops_title">Recent Stops</string>
     <string name="no_recent_stops">No recent stops.</string>
-    <string name="favorite_removed">Removed from favorites</string>
-    <string name="undo">Undo</string>
     <string name="remove_favorite_title">Remove from favorites?</string>
     <string name="cancel">Cancel</string>
     <string name="remove_favorite">Remove</string>

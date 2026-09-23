@@ -12,9 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -37,7 +34,6 @@ import com.trimettransit.tracker.model.FavoriteEdits
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
-import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.rememberFavoriteIds
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -65,11 +61,8 @@ fun FavoritesScreen(
     }
     var editable by remember(favorites.stops) { mutableStateOf(favorites.stops) }
     var deleteTarget by remember { mutableStateOf<Stop?>(null) }
-    val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val removeMutex = remember { Mutex() }
-    val removedMessage = stringResource(R.string.favorite_removed)
-    val undoLabel = stringResource(R.string.undo)
     val context = LocalContext.current
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
     var welcomeDismissed by remember { mutableStateOf(prefs.getBoolean(PREF_WELCOME_SHOWN, false)) }
@@ -104,26 +97,9 @@ fun FavoritesScreen(
                     .onFailure { Timber.e(it, "Failed to remove favorite") }
                     .getOrDefault(false)
                 if (!removed) {
-                    // DB delete failed: roll back instead of offering undo over a lie.
+                    // DB delete failed: restore the row rather than diverge from the DB.
                     editable = editable.toMutableList()
                         .also { it.add(index.coerceIn(0, it.size), stop) }
-                    return@withLock
-                }
-                val result = snackbarHost.showSnackbar(removedMessage, undoLabel)
-                if (result == SnackbarResult.ActionPerformed) {
-                    val added = runCatching { favoritesRepository.addFavorite(stop) }
-                        .onFailure { Timber.e(it, "Failed to restore favorite") }
-                        .getOrDefault(false)
-                    val current = editable
-                    val at = index.coerceIn(0, current.size)
-                    if (added) {
-                        editable = current.toMutableList()
-                            .also { it.add(at, stop) }
-                        persistOrder(editable)
-                    } else {
-                        // Row still exists (duplicate add ignored): just reconcile order.
-                        persistOrder(current)
-                    }
                 }
             }
         }
@@ -169,12 +145,6 @@ fun FavoritesScreen(
                 )
             }
         }
-        SnackbarHost(
-            hostState = snackbarHost,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = navPillBottomPadding() + 8.dp)
-        )
     }
 
     deleteTarget?.let { target ->

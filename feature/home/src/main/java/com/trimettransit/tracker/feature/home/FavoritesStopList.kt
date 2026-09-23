@@ -9,10 +9,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,6 +30,7 @@ import androidx.compose.ui.zIndex
 import com.trimettransit.tracker.feature.home.R
 import com.trimettransit.tracker.model.FavoriteEdits
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.ui.components.FavoriteToggleButton
 import com.trimettransit.tracker.ui.components.ListStateShell
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
@@ -144,12 +141,13 @@ private fun FavoritesList(
                     .staggeredFadeIn(index, enabled = !entranceDone),
                 gridMode = dense,
                 trailingContent = {
-                    IconButton(onClick = { onDeleteRequest(stop) }) {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = stringResource(R.string.remove_favorite)
-                        )
-                    }
+                    // This list only ever holds favourites, so the shared toggle always renders filled
+                    // and always removes — keeping its icon and label identical to the hearts on
+                    // search results, Recents and Lines.
+                    FavoriteToggleButton(
+                        isFavorite = true,
+                        onClick = { onDeleteRequest(stop) }
+                    )
                 }
             )
         }
