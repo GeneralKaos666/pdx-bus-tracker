@@ -32,6 +32,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
+import com.trimettransit.tracker.ui.components.ErrorState
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
@@ -80,12 +82,14 @@ fun HomeSearchBar(
     var allStops by remember { mutableStateOf<List<Stop>?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var hasError by remember { mutableStateOf(false) }
+    // Bumped by the error panel's retry action so the fetch effect re-runs.
+    var attempt by remember { mutableIntStateOf(0) }
     var results by remember { mutableStateOf<List<Stop>>(emptyList()) }
 
     // Lazy-load the full stop list once, on the first non-blank query. Keyed on
     // (allStops == null, query.isNotBlank()) so typing never re-launches the
     // network call while the list is still loading.
-    LaunchedEffect(allStops == null, query.isNotBlank()) {
+    LaunchedEffect(allStops == null, query.isNotBlank(), attempt) {
         if (allStops == null && query.isNotBlank()) {
             isLoading = true
             hasError = false
@@ -180,6 +184,7 @@ fun HomeSearchBar(
                         focusManager.clearFocus()
                         onStopSelected(stop)
                     },
+                    onRetry = { attempt++ },
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .fillMaxWidth()
@@ -213,6 +218,7 @@ private fun SearchResultsDropdown(
     allStops: List<Stop>?,
     results: List<Stop>,
     onStopClick: (Stop) -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -230,8 +236,9 @@ private fun SearchResultsDropdown(
         ) {
             when {
                 isLoading && allStops == null -> SearchPanelLoading()
-                hasError && allStops == null -> SearchPanelMessage(
-                    stringResource(R.string.no_connection)
+                hasError && allStops == null -> ErrorState(
+                    message = stringResource(R.string.no_connection),
+                    onRetry = onRetry
                 )
                 results.isEmpty() -> SearchPanelMessage(stringResource(R.string.no_stops_found))
                 else -> {

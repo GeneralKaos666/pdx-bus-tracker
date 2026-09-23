@@ -5,6 +5,7 @@
 - **One back button in Settings:** the back arrow in the bottom bar now closes an open Settings page first, matching the system back gesture instead of jumping straight out of Settings.
 - **Honest errors you can retry:** the Favorites and Recent lists no longer blame your connection for a problem that is local to the app, and every list error now offers a working "Try Again" — including the live arrivals board.
 - **Your trip stays put:** planning a trip and then switching tabs no longer throws the results away — the plan is fetched again and the options sheet comes back, including after Android recreates the app in the background.
+- **Search that recovers:** if the stop list fails to load while you are searching, the panel now offers a "Try Again" button instead of leaving you to clear the box and retype the query.
 
 ## What's New in v4.18.8
 
