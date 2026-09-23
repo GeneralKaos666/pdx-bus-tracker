@@ -2,7 +2,6 @@ package com.trimettransit.tracker.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -54,8 +53,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
@@ -81,6 +80,29 @@ import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
+
+/**
+ * Pill layout constants — the single source of truth for the bar's width budget.
+ * [requiredBarWidth] derives the label-hide threshold from them, so the threshold can never
+ * drift out of sync with the layout and the bar can never clip.
+ */
+private val PillItemSize = 48.dp
+private val PillLabelSlotWidth = 60.dp
+private val PillInnerPadding = 8.dp
+private val PillActionSpacing = 12.dp
+private val PillOuterPadding = 16.dp
+private val PillLabelMaxFontScale = 1.25f
+
+/**
+ * Width the bar needs to show labels: outer padding, the gap and Settings action, the optional
+ * back action, then the pill itself (its own padding + one fixed slot per tab + the label slot).
+ */
+private fun requiredBarWidth(itemCount: Int, withBack: Boolean): Dp {
+    val actions = PillActionSpacing + PillItemSize +
+        (if (withBack) PillActionSpacing + PillItemSize else 0.dp)
+    val pill = PillInnerPadding * 2 + PillItemSize * itemCount + PillLabelSlotWidth
+    return PillOuterPadding * 2 + actions + pill
+}
 
 internal data class BottomNavItem(
     val pageIndex: Int,
@@ -113,9 +135,16 @@ internal fun MainBottomBar(
     val windowInfo = LocalWindowInfo.current
     val density = LocalDensity.current
     val fontScale = density.fontScale
-    val itemHeight = 40.dp
-    val shouldHideLabel = fontScale > 1.25f ||
-            windowInfo.containerSize.width < with(density) { 360.dp.roundToPx() }
+    val itemHeight = PillItemSize
+    // Derived from the layout constants, not hardcoded: showing labels needs exactly this much
+    // width, so anything narrower would clip the bar or push the Settings action off-screen.
+    val shouldHideLabel = fontScale > PillLabelMaxFontScale ||
+        windowInfo.containerSize.width < with(density) {
+            requiredBarWidth(
+                itemCount = bottomNavItems.size,
+                withBack = showBack
+            ).roundToPx()
+        }
 
     Box(
         modifier = Modifier
@@ -296,13 +325,6 @@ private fun MainTabRow(
                 val isSelected = topPage == item.pageIndex
                 val icon = item.icon
                 val labelRes = item.labelRes
-                val showLabel = isSelected && !shouldHideLabel
-
-                val labelAlpha by animateFloatAsState(
-                    targetValue = if (showLabel) 1f else 0f,
-                    animationSpec = m3EffectsDefault(),
-                    label = "label_alpha_$index"
-                )
 
                 val itemSource = remember { MutableInteractionSource() }
                 IconButton(
@@ -311,7 +333,9 @@ private fun MainTabRow(
                     },
                     interactionSource = itemSource,
                     modifier = Modifier
-                        .width(if (showLabel) 128.dp else 48.dp)
+                        // Fixed width for every tab, selected or not: this is what stops the row
+                        // reflowing — and the icons re-aiming — when the selection changes.
+                        .width(PillItemSize)
                         .height(itemHeight)
                         .onGloballyPositioned { coords ->
                             val pos = coords.positionInWindow()
@@ -333,28 +357,41 @@ private fun MainTabRow(
                         }
                     )
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = stringResource(labelRes),
-                            tint = if (isSelected) {
-                                pillContent
-                            } else {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            },
-                            modifier = Modifier.size(item.iconSize)
-                        )
-                        if (showLabel) {
-                            Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = stringResource(labelRes),
+                        tint = if (isSelected) {
+                            pillContent
+                        } else {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        },
+                        modifier = Modifier.size(item.iconSize)
+                    )
+                }
+            }
+
+            // The selected tab's name lives in its own fixed-width slot rather than inside the
+            // selected item, so revealing it cannot move any icon. It ellipsises rather than
+            // widening the pill or overlapping the icons when a translation is long.
+            if (!shouldHideLabel) {
+                Box(
+                    modifier = Modifier.width(PillLabelSlotWidth),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    AnimatedContent(
+                        targetState = items.getOrNull(topPage)?.labelRes,
+                        transitionSpec = {
+                            fadeIn(m3EffectsDefault()) togetherWith fadeOut(m3EffectsFast())
+                        },
+                        label = "tab_label"
+                    ) { res ->
+                        if (res != null) {
                             Text(
-                                text = stringResource(labelRes),
-                                style = MaterialTheme.typography.labelLarge,
+                                text = stringResource(res),
+                                style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
-                                color = pillContent,
-                                modifier = Modifier.graphicsLayer { alpha = labelAlpha }
+                                overflow = TextOverflow.Ellipsis,
+                                color = pillContent
                             )
                         }
                     }
