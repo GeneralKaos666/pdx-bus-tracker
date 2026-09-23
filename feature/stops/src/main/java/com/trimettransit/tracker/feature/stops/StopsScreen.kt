@@ -61,13 +61,14 @@ import kotlinx.coroutines.launch
 fun StopsScreen(
     transitRepository: TransitRepository,
     favoritesRepository: FavoritesRepository,
+    pageVisible: Boolean,
     selectedRoute: Route?,
     selectedDirection: Direction?,
     onRouteToggle: (Route) -> Unit,
     onDirectionToggle: (Direction) -> Unit,
     onNavigateToArrivals: (Stop, routeId: Int) -> Unit
 ) {
-    val favoriteIds = rememberFavoriteIds(favoritesRepository)
+    val favoriteIds = rememberFavoriteIds(favoritesRepository, pageVisible)
     val scope = rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxSize()) {

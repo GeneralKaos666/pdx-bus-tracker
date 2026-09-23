@@ -38,11 +38,12 @@ import timber.log.Timber
 fun RecentStopsScreen(
     recentStopsRepository: RecentStopsRepository,
     favoritesRepository: FavoritesRepository,
+    pageVisible: Boolean,
     onNavigateToArrivals: (Stop) -> Unit,
     onFindNearby: () -> Unit
 ) {
     val recent = rememberStopListLoader(read = { recentStopsRepository.getRecentStops() })
-    val favoriteIds = rememberFavoriteIds(favoritesRepository)
+    val favoriteIds = rememberFavoriteIds(favoritesRepository, pageVisible)
     var editable by remember(recent.stops) { mutableStateOf(recent.stops) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var dismissTarget by remember { mutableStateOf<Stop?>(null) }

@@ -18,6 +18,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,12 +50,19 @@ private const val PREF_WELCOME_SHOWN = "pref_key_favorites_welcome_shown"
 fun FavoritesScreen(
     favoritesRepository: FavoritesRepository,
     transitRepository: TransitRepository,
+    pageVisible: Boolean,
     onNavigateToArrivals: (Stop) -> Unit,
     onBrowseRoutes: () -> Unit,
     onFindNearby: () -> Unit
 ) {
     val favorites = rememberStopListLoader(read = { favoritesRepository.getFavorites() })
-    val favoriteIds = rememberFavoriteIds(favoritesRepository)
+    val favoriteIds = rememberFavoriteIds(favoritesRepository, pageVisible)
+
+    // The pager keeps adjacent pages composed, so returning to this tab fires no resume event.
+    // Reload when it becomes visible so a stop saved elsewhere is actually in the list.
+    LaunchedEffect(pageVisible) {
+        if (pageVisible) favorites.reload()
+    }
     var editable by remember(favorites.stops) { mutableStateOf(favorites.stops) }
     var deleteTarget by remember { mutableStateOf<Stop?>(null) }
     val snackbarHost = remember { SnackbarHostState() }

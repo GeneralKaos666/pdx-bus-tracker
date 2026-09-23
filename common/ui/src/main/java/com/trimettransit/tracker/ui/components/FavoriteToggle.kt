@@ -19,6 +19,8 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.ui.R
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -64,27 +66,41 @@ class FavoriteIds(
  * means the heart does not move — the failure is not swallowed into a lie.
  */
 @Composable
-fun rememberFavoriteIds(favoritesRepository: FavoritesRepository): FavoriteIds {
+fun rememberFavoriteIds(
+    favoritesRepository: FavoritesRepository,
+    /**
+     * True while this screen's pager page is the current one. The pager keeps adjacent pages
+     * composed, so a retained page fires no lifecycle event when you swipe to it — without this
+     * it would never re-read and would show stale hearts after a toggle on another tab.
+     */
+    pageVisible: Boolean = true
+): FavoriteIds {
     var ids by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var reloadKey by remember { mutableIntStateOf(0) }
+    val mutex = remember { Mutex() }
 
-    LaunchedEffect(reloadKey) {
+    LaunchedEffect(reloadKey, pageVisible) {
+        if (!pageVisible) return@LaunchedEffect
         ids = withContext(Dispatchers.IO) {
             runCatching { favoritesRepository.favoriteIds() }.getOrDefault(ids)
         }
     }
-    RememberOnResume { reloadKey++ }
+    RememberOnResume { if (pageVisible) reloadKey++ }
 
     return remember(ids, favoritesRepository) {
         FavoriteIds(
             ids = ids,
             toggle = { stop ->
-                withContext(Dispatchers.IO) {
-                    runCatching {
-                        if (favoritesRepository.isFavorite(stop.locId)) {
-                            favoritesRepository.removeFavorite(stop.locId)
-                        } else {
-                            favoritesRepository.addFavorite(stop)
+                // Serialised: two fast taps must not both read the pre-write state, or they would
+                // net one change instead of returning the stop to where it started.
+                mutex.withLock {
+                    withContext(Dispatchers.IO) {
+                        runCatching {
+                            if (favoritesRepository.isFavorite(stop.locId)) {
+                                favoritesRepository.removeFavorite(stop.locId)
+                            } else {
+                                favoritesRepository.addFavorite(stop)
+                            }
                         }
                     }
                 }

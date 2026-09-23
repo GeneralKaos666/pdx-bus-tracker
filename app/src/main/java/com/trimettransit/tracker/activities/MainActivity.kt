@@ -879,6 +879,7 @@ private fun AppNavHost(
                         0 -> FavoritesScreen(
                             favoritesRepository = favoritesRepository,
                             transitRepository = transitRepository,
+                            pageVisible = topPagerState.currentPage == page,
                             onNavigateToArrivals = { stop: Stop ->
                                 onNavigateToArrivals(stop, stop.routeNum)
                             },
@@ -888,6 +889,7 @@ private fun AppNavHost(
                         1 -> RecentStopsScreen(
                             recentStopsRepository = recentStopsRepository,
                             favoritesRepository = favoritesRepository,
+                            pageVisible = topPagerState.currentPage == page,
                             onNavigateToArrivals = { stop: Stop ->
                                 onNavigateToArrivals(stop, stop.routeNum)
                             },
@@ -896,6 +898,7 @@ private fun AppNavHost(
                         2 -> StopsScreen(
                             transitRepository = transitRepository,
                             favoritesRepository = favoritesRepository,
+                            pageVisible = topPagerState.currentPage == page,
                             selectedRoute = selectedStopsRoute,
                             selectedDirection = selectedStopsDirection,
                             onRouteToggle = onRouteToggle,
