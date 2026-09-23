@@ -16,6 +16,7 @@
     <string name="not_now">Not now</string>
     <string name="nearby_stops_list_title">Nearby Stops</string>
     <string name="lines_title">Lines</string>
+    <string name="lines_back_to_all">Back to all lines</string>
     <string name="loading">Loading…</string>
     <string name="refresh">Refresh</string>
     <string name="finding_nearby_stops">Finding nearby stops…</string>

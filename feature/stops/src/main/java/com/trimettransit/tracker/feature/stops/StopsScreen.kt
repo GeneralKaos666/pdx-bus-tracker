@@ -12,12 +12,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -78,6 +81,15 @@ fun StopsScreen(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)
         )
+        // Persistent "where am I": the pill's own label is hidden on narrow phones, and the
+        // accordion can be scrolled far from the route it belongs to.
+        selectedRoute?.let { route ->
+            LineContextChip(
+                route = route,
+                direction = selectedDirection,
+                onCollapse = { onRouteToggle(route) }
+            )
+        }
         StopsRouteList(
             transitRepository = transitRepository,
             selectedRoute = selectedRoute,
@@ -344,6 +356,49 @@ private fun InlineRetry(message: String, onRetry: () -> Unit) {
                 .pressScale(retrySource)
         ) {
             Text(stringResource(R.string.try_again))
+        }
+    }
+}
+
+/**
+ * Shows which route (and direction) the drill-down is currently on, with a control that collapses
+ * back to the full line list. One line, ellipsised: the chip must never push the list off-screen.
+ */
+@Composable
+private fun LineContextChip(
+    route: Route,
+    direction: Direction?,
+    onCollapse: () -> Unit
+) {
+    Surface(
+        shape = appCardShape(),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = buildString {
+                    append(route.routeId)
+                    if (route.desc.isNotBlank()) append(" · ").append(route.desc)
+                    direction?.desc?.takeIf { it.isNotBlank() }?.let { append(" · ").append(it) }
+                },
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
+            )
+            IconButton(onClick = onCollapse) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(R.string.lines_back_to_all),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
     }
 }
