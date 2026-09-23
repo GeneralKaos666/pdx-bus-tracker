@@ -38,7 +38,12 @@ fun StopListItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     gridMode: Boolean = false,
-    trailingContent: @Composable (() -> Unit)? = null
+    trailingContent: @Composable (() -> Unit)? = null,
+    /**
+     * Optional "350 ft · NE"-style detail for lists that know where the user is. Rendered on the
+     * row's existing stop-number line, so rows that pass nothing look exactly as they did before.
+     */
+    proximityLabel: String? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Card(
@@ -125,10 +130,13 @@ fun StopListItem(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+                val stopNumber = stringResource(R.string.common_stop_number, stop.locId)
                 Text(
-                    text = stringResource(R.string.common_stop_number, stop.locId),
+                    text = proximityLabel?.let { "$it · $stopNumber" } ?: stopNumber,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
+                    color = MaterialTheme.colorScheme.outline,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
             if (trailingContent != null) {

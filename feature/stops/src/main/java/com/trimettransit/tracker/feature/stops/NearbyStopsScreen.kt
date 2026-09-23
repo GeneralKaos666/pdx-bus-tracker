@@ -11,6 +11,7 @@ import android.provider.Settings
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,7 +54,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.domain.CompassDirection
 import com.trimettransit.tracker.model.domain.LocationPermissionState
+import com.trimettransit.tracker.model.domain.bearingDegrees
+import com.trimettransit.tracker.model.domain.compassDirection
 import com.trimettransit.tracker.model.domain.displayTimeMillis
 import com.trimettransit.tracker.model.domain.locationPermissionState
 import com.trimettransit.tracker.model.repository.TransitRepository
@@ -70,6 +74,8 @@ import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.util.SingleJobRunner
+
+import kotlin.math.roundToInt
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -110,6 +116,8 @@ fun NearbyStopsScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var hasLoaded by remember { mutableStateOf(false) }
+    // Where the user was when the list was loaded, so each row can say which way the stop lies.
+    var userLocation by remember { mutableStateOf<Location?>(null) }
     // In-flight load, deduped so resume/re-entry can't stack overlapping fetches.
     val runner = remember { SingleJobRunner(coroutineScope) }
 
@@ -131,6 +139,7 @@ fun NearbyStopsScreen(
                 isCurrent = { runner.isCurrent(job) },
                 setStops = { stops = it },
                 setArrivalsByStop = { arrivalsByStop = it },
+                setUserLocation = { userLocation = it },
                 setLoading = { isLoading = it },
                 setError = { errorMessage = it },
                 setHasLoaded = { hasLoaded = true }
@@ -297,7 +306,8 @@ fun NearbyStopsScreen(
                                     stop = stop,
                                     onClick = { onNavigateToArrivals(stop, -1) },
                                     modifier = Modifier.animateItem(),
-                                    trailingContent = nextArrivalPreview(arrivalsByStop[stop.locId])
+                                    trailingContent = nextArrivalPreview(arrivalsByStop[stop.locId]),
+                                    proximityLabel = nearbyProximityLabel(stop, userLocation)
                                 )
                             }
                         }
@@ -324,6 +334,7 @@ private suspend fun loadNearbyStops(
     isCurrent: () -> Boolean,
     setStops: (List<Stop>?) -> Unit,
     setArrivalsByStop: (Map<Int, List<Arrival>>) -> Unit,
+    setUserLocation: (Location) -> Unit,
     setLoading: (Boolean) -> Unit,
     setError: (String?) -> Unit,
     setHasLoaded: () -> Unit
@@ -361,6 +372,7 @@ private suspend fun loadNearbyStops(
             return
         }
 
+        setUserLocation(location)
         val ll = "${location.latitude},${location.longitude}"
 
         // Fast path: stops + their next arrival(s) in one request. Route directions
@@ -466,4 +478,40 @@ private fun openAppSettings(context: Context) {
         Uri.fromParts("package", context.packageName, null)
     ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     runCatching { context.startActivity(intent) }
+}
+
+/**
+ * "350 ft · NE" for a stop we have both a distance and a location for, and null otherwise — a
+ * stop with no distance from the API must show nothing rather than a confident "0 ft", and a
+ * bearing is meaningless without somewhere to measure it from.
+ *
+ * The distance is rounded to the nearest 10 ft because the fix it came from is not precise to
+ * the foot, and false precision in a walking distance reads as a bug.
+ */
+@Composable
+private fun nearbyProximityLabel(stop: Stop, userLocation: Location?): String? {
+    if (userLocation == null || stop.distanceFeet <= 0.0) return null
+
+    val feet = (stop.distanceFeet / 10.0).roundToInt() * 10
+    val bearing = bearingDegrees(
+        userLocation.latitude,
+        userLocation.longitude,
+        stop.latitude,
+        stop.longitude
+    )
+    return stringResource(R.string.nearby_distance_feet, feet) +
+        " · " +
+        stringResource(compassDirection(bearing).labelResource())
+}
+
+@StringRes
+private fun CompassDirection.labelResource(): Int = when (this) {
+    CompassDirection.N -> R.string.compass_n
+    CompassDirection.NE -> R.string.compass_ne
+    CompassDirection.E -> R.string.compass_e
+    CompassDirection.SE -> R.string.compass_se
+    CompassDirection.S -> R.string.compass_s
+    CompassDirection.SW -> R.string.compass_sw
+    CompassDirection.W -> R.string.compass_w
+    CompassDirection.NW -> R.string.compass_nw
 }

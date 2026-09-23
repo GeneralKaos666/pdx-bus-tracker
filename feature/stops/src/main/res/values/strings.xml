@@ -35,4 +35,13 @@
     <string name="unable_to_get_location">Unable to get current location.\nPlease try again.</string>
     <string name="unable_to_find_nearby_stops">Unable to find nearby stops.\nPlease try again.</string>
     <string name="open_app_settings">Open app settings</string>
+    <string name="nearby_distance_feet">%1$d ft</string>
+    <string name="compass_n">N</string>
+    <string name="compass_ne">NE</string>
+    <string name="compass_e">E</string>
+    <string name="compass_se">SE</string>
+    <string name="compass_s">S</string>
+    <string name="compass_sw">SW</string>
+    <string name="compass_w">W</string>
+    <string name="compass_nw">NW</string>
 </resources>
