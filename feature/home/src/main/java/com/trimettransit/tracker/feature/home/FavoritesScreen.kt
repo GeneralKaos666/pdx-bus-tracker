@@ -121,6 +121,14 @@ fun FavoritesScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
+            // Names the tab, matching the Recents and Lines headers. The "Favorites" divider below
+            // the search field stays: it labels the list, this labels the screen.
+            Text(
+                text = stringResource(R.string.home_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
+            )
             HomeSearchBar(
                 transitRepository = transitRepository,
                 onStopSelected = onNavigateToArrivals,
