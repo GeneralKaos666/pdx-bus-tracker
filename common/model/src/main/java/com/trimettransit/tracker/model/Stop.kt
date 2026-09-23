@@ -5,6 +5,12 @@ data class Stop(
     val dirDesc: String = "",
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
+    /**
+     * Distance in feet from the coordinates the stop was queried with, as reported by the
+     * location endpoints. `0.0` means unknown (the stop did not come from a location query),
+     * which is also why it is an ordering key that sorts last.
+     */
+    val distanceFeet: Double = 0.0,
     val transitType: String = "",
     val routeNum: Int = 0,
     val locId: Int = 0,

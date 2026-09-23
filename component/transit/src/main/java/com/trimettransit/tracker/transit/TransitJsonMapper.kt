@@ -329,13 +329,16 @@ internal object TransitJsonMapper {
                     dirDesc = obj.optString("dir", ""),
                     latitude = latitude,
                     longitude = longitude,
+                    distanceFeet = obj.optDouble("distance", 0.0),
                     transitType = computeTransitType(routes),
                     locId = locId,
                     routes = routes
                 )
             )
         }
-        return stops
+        // Nearest first, with anything that reported no distance last. The sort is stable, so
+        // stops that tie (including all the unknowns) keep the order the API sent them in.
+        return stops.sortedBy { if (it.distanceFeet > 0.0) it.distanceFeet else Double.MAX_VALUE }
     }
 
     /**
