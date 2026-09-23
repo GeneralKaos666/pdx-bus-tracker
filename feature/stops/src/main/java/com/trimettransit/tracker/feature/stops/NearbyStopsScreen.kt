@@ -486,7 +486,8 @@ private fun openAppSettings(context: Context) {
  * bearing is meaningless without somewhere to measure it from.
  *
  * The distance is rounded to the nearest 10 ft because the fix it came from is not precise to
- * the foot, and false precision in a walking distance reads as a bug.
+ * the foot, and false precision in a distance reads as a bug. A stop closer than 5 ft therefore
+ * rounds away to nothing at all, which is deliberate — see the guard below.
  */
 @Composable
 private fun nearbyProximityLabel(stop: Stop, userLocation: Location?): String? {
