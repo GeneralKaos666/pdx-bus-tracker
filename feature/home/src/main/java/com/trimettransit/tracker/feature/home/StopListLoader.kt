@@ -17,7 +17,9 @@ import timber.log.Timber
 class StopListState(
     val stops: List<Stop>,
     val isLoading: Boolean,
-    val isError: Boolean
+    val isError: Boolean,
+    /** Re-runs the read; wired to the error state's retry action. */
+    val reload: () -> Unit
 )
 
 /**
@@ -66,5 +68,5 @@ internal fun rememberStopListLoader(
         load()
     }
 
-    return StopListState(stops, isLoading, isError)
+    return StopListState(stops, isLoading, isError, ::load)
 }

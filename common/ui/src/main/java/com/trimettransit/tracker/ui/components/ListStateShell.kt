@@ -29,6 +29,7 @@ fun ListStateShell(
     modifier: Modifier = Modifier,
     loadingContent: @Composable () -> Unit = { ListLoadingSkeleton() },
     emptyActions: @Composable (() -> Unit)? = null,
+    onRetry: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     Crossfade(
@@ -44,7 +45,7 @@ fun ListStateShell(
     ) { state ->
         when (state) {
             0 -> loadingContent()
-            1 -> ErrorState(message = errorMessage)
+            1 -> ErrorState(message = errorMessage, onRetry = onRetry)
             2 -> if (emptyActions == null) {
                 EmptyState(message = emptyMessage)
             } else {

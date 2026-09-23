@@ -408,7 +408,8 @@ fun ArrivalsScreen(
                 stringResource(R.string.no_upcoming_for_route)
             else stringResource(R.string.empty_no_arrivals),
             errorMessage = stringResource(R.string.arrivals_load_error),
-            label = "arrivalsState"
+            label = "arrivalsState",
+            onRetry = { loadArrivals() }
         ) {
             ContentEntrance(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(

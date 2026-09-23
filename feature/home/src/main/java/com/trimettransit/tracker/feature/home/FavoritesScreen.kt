@@ -139,7 +139,8 @@ fun FavoritesScreen(
                             onBrowseRoutes = onBrowseRoutes,
                             onFindNearby = onFindNearby
                         )
-                    }
+                    },
+                    onRetry = favorites.reload
                 )
             }
         }

@@ -36,7 +36,8 @@ fun RecentStopsStopList(
     onNavigateToArrivals: (Stop) -> Unit,
     onPromote: (Stop) -> Unit,
     onDismiss: (Stop) -> Unit,
-    emptyActions: @Composable (() -> Unit)? = null
+    emptyActions: @Composable (() -> Unit)? = null,
+    onRetry: (() -> Unit)? = null
 ) {
     ListStateShell(
         isLoading = isLoading,
@@ -45,7 +46,8 @@ fun RecentStopsStopList(
         emptyMessage = emptyText,
         errorMessage = stringResource(R.string.unable_to_load),
         label = "recentStopsStopList",
-        emptyActions = emptyActions
+        emptyActions = emptyActions,
+        onRetry = onRetry
     ) {
         RecentStopsList(
             stops = stops,

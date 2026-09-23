@@ -134,7 +134,8 @@ fun RecentStopsScreen(
                         TextButton(onClick = onFindNearby) {
                             Text(stringResource(R.string.find_nearby))
                         }
-                    }
+                    },
+                    onRetry = recent.reload
                 )
             }
         }

@@ -52,7 +52,8 @@ fun FavoritesStopList(
     onNavigateToArrivals: (Stop) -> Unit,
     onMove: (from: Int, to: Int) -> Unit,
     onDeleteRequest: (Stop) -> Unit,
-    emptyActions: @Composable (() -> Unit)? = null
+    emptyActions: @Composable (() -> Unit)? = null,
+    onRetry: (() -> Unit)? = null
 ) {
     ListStateShell(
         isLoading = isLoading,
@@ -61,7 +62,8 @@ fun FavoritesStopList(
         emptyMessage = emptyText,
         errorMessage = stringResource(R.string.unable_to_load),
         label = "favoritesStopList",
-        emptyActions = emptyActions
+        emptyActions = emptyActions,
+        onRetry = onRetry
     ) {
         FavoritesList(
             stops = stops,
