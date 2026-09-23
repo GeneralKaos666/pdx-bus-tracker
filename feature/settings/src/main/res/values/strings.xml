@@ -20,6 +20,10 @@
     <string name="privacy_policy">Privacy Policy</string>
     <string name="open_source_licenses">Open source licenses</string>
     <string name="libraries_terms">Libraries used by this app and their terms</string>
+    <string name="api_key_status_label">TriMet API key</string>
+    <string name="api_key_status_configured">Configured</string>
+    <string name="api_key_status_not_configured">Not configured</string>
+    <string name="api_key_status_missing_detail">Live transit data is unavailable.</string>
     <string name="section_appearance">Appearance</string>
     <string name="section_appearance_intro">Choose whether the whole app follows your system theme or stays light or dark.</string>
     <string name="section_cards">Cards</string>

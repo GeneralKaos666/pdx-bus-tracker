@@ -984,6 +984,7 @@ private fun AppNavHost(
                     WidgetScheduler.KEY_REFRESH_INTERVAL_MIN,
                     30
                 ),
+                apiKeyConfigured = transitRepository.isConfigured(),
                 onRegisterScrollToTop = onRegisterScrollToTop,
                 onRegisterBackAction = onRegisterSettingsBackAction
             )

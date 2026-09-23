@@ -20,6 +20,10 @@
     <string name="privacy_policy">Política de privacidad</string>
     <string name="open_source_licenses">Licencias de código abierto</string>
     <string name="libraries_terms">Librerías usadas por esta app y sus términos</string>
+    <string name="api_key_status_label">Clave de API de TriMet</string>
+    <string name="api_key_status_configured">Configurada</string>
+    <string name="api_key_status_not_configured">No configurada</string>
+    <string name="api_key_status_missing_detail">Los datos del transporte en vivo no están disponibles.</string>
     <string name="section_appearance">Apariencia</string>
     <string name="section_appearance_intro">Elige si toda la app sigue el tema del sistema o se mantiene clara u oscura.</string>
     <string name="section_cards">Tarjetas</string>

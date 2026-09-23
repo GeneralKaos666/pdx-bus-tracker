@@ -43,6 +43,7 @@ fun SettingsScreen(
     notificationsSection: (@Composable ColumnScope.() -> Unit)? = null,
     notificationsEnabled: Boolean? = null,
     widgetRefreshIntervalMin: Int? = null,
+    apiKeyConfigured: Boolean = true,
     onRegisterScrollToTop: ((() -> Unit)?) -> Unit,
     onRegisterBackAction: ((() -> Boolean)?) -> Unit
 ) {
@@ -244,7 +245,7 @@ fun SettingsScreen(
 
                         SettingsSection.WIDGET -> widgetSection?.invoke(this)
 
-                        SettingsSection.ABOUT -> AboutPane()
+                        SettingsSection.ABOUT -> AboutPane(apiKeyConfigured = apiKeyConfigured)
 
                         SettingsSection.LICENSES -> LicensesPane()
                     }

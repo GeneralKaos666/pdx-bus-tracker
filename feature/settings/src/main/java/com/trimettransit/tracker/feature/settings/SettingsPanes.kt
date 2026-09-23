@@ -568,7 +568,7 @@ internal fun ArrivalsPane(
 
 /** About pane: app version, disclaimers, attribution, and the privacy-policy row. */
 @Composable
-internal fun AboutPane()
+internal fun AboutPane(apiKeyConfigured: Boolean)
 {
     val context = LocalContext.current
     SettingsCard {
@@ -618,6 +618,8 @@ internal fun AboutPane()
                 )
             }
         }
+        ApiKeyStatusRow(apiKeyConfigured = apiKeyConfigured)
+
         Text(
             text = stringResource(R.string.unofficial_disclaimer),
             style = MaterialTheme.typography.bodySmall,
@@ -848,4 +850,43 @@ internal fun ColourPickerHost(
         onAuto = { onPick(""); onDismiss() },
         onConfirm = { argb -> onPick(argb); onDismiss() }
     )
+}
+
+/**
+ * Read-only status for the TriMet API key, so the "API key not configured" error points at
+ * something the user can actually go and look at. Deliberately not interactive: the key is a
+ * build-time value in this app, not something that can be set from here.
+ */
+@Composable
+private fun ApiKeyStatusRow(apiKeyConfigured: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.api_key_status_label),
+                style = MaterialTheme.typography.bodyLarge
+            )
+            if (!apiKeyConfigured) {
+                Text(
+                    text = stringResource(R.string.api_key_status_missing_detail),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = stringResource(
+                if (apiKeyConfigured) R.string.api_key_status_configured
+                else R.string.api_key_status_not_configured
+            ),
+            style = MaterialTheme.typography.labelLarge,
+            color = if (apiKeyConfigured) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.error
+        )
+    }
 }
