@@ -3,6 +3,7 @@ package com.trimettransit.tracker.feature.stops
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
+import android.net.NetworkCapabilities
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.rememberUpdatedState
@@ -14,7 +15,7 @@ import com.trimettransit.tracker.util.ConnectionUtils
  * server-side failure. Callers use it to say which of the two happened, since only one of them is
  * worth offering a retry for.
  */
-internal fun isOfflineFailure(result: Any?, context: Context): Boolean =
+internal fun <T> isOfflineFailure(result: T?, context: Context): Boolean =
     result == null && !ConnectionUtils.isOnline(context)
 
 /**
@@ -36,15 +37,25 @@ internal fun OnNetworkRegained(onRegained: () -> Unit) {
             ?: return@DisposableEffect onDispose { }
         var wasOnline = ConnectionUtils.isOnline(context)
         val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
+            override fun onAvailable(network: Network) = record()
+
+            // The platform reports a network as available before it has finished validating it, and
+            // "online" here requires a validated network. So the transition this exists for arrives
+            // as a capability change, not as onAvailable.
+            override fun onCapabilitiesChanged(
+                network: Network,
+                networkCapabilities: NetworkCapabilities
+            ) = record()
+
+            override fun onLost(network: Network) {
+                wasOnline = ConnectionUtils.isOnline(context)
+            }
+
+            private fun record() {
                 val online = ConnectionUtils.isOnline(context)
                 val regained = online && !wasOnline
                 wasOnline = online
                 if (regained) current.value()
-            }
-
-            override fun onLost(network: Network) {
-                wasOnline = ConnectionUtils.isOnline(context)
             }
         }
         manager.registerDefaultNetworkCallback(callback)
