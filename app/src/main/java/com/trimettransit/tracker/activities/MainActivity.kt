@@ -895,6 +895,7 @@ private fun AppNavHost(
                         )
                         2 -> StopsScreen(
                             transitRepository = transitRepository,
+                            favoritesRepository = favoritesRepository,
                             selectedRoute = selectedStopsRoute,
                             selectedDirection = selectedStopsDirection,
                             onRouteToggle = onRouteToggle,

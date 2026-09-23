@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,16 +37,20 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
+import com.trimettransit.tracker.ui.components.FavoriteToggleButton
 import com.trimettransit.tracker.ui.components.InlineSkeleton
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.components.rememberFavoriteIds
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import kotlinx.coroutines.launch
 
 /**
  * Routes list with an accordion drill-down, mirroring the arrivals map card:
@@ -55,12 +60,16 @@ import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 @Composable
 fun StopsScreen(
     transitRepository: TransitRepository,
+    favoritesRepository: FavoritesRepository,
     selectedRoute: Route?,
     selectedDirection: Direction?,
     onRouteToggle: (Route) -> Unit,
     onDirectionToggle: (Direction) -> Unit,
     onNavigateToArrivals: (Stop, routeId: Int) -> Unit
 ) {
+    val favoriteIds = rememberFavoriteIds(favoritesRepository)
+    val scope = rememberCoroutineScope()
+
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
             text = stringResource(R.string.lines_title),
@@ -93,6 +102,10 @@ fun StopsScreen(
                                     routeId = route.routeId,
                                     directionId = direction.dir,
                                     transitRepository = transitRepository,
+                                    favoriteIds = favoriteIds.ids,
+                                    onToggleFavorite = { stop ->
+                                        scope.launch { favoriteIds.toggle(stop) }
+                                    },
                                     onStopSelected = { stop -> onNavigateToArrivals(stop, route.routeId) }
                                 )
                             }
@@ -234,6 +247,8 @@ private fun StopsSubCard(
     routeId: Int,
     directionId: Int,
     transitRepository: TransitRepository,
+    favoriteIds: Set<Int>,
+    onToggleFavorite: (Stop) -> Unit,
     onStopSelected: (Stop) -> Unit
 ) {
     var stops by remember { mutableStateOf<List<Stop>?>(null) }
@@ -278,7 +293,13 @@ private fun StopsSubCard(
                     safeStops.orEmpty().forEach { stop ->
                         StopListItem(
                             stop = stop,
-                            onClick = { onStopSelected(stop) }
+                            onClick = { onStopSelected(stop) },
+                            trailingContent = {
+                                FavoriteToggleButton(
+                                    isFavorite = favoriteIds.contains(stop.locId),
+                                    onClick = { onToggleFavorite(stop) }
+                                )
+                            }
                         )
                     }
                 }

@@ -8,6 +8,7 @@
 - **Search that recovers:** if the stop list fails to load while you are searching, the panel now offers a "Try Again" button instead of leaving you to clear the box and retype the query.
 - **A steadier bottom bar:** the tabs no longer shift sideways when you switch between them, and every button in the bar is easier to hit. The bar is icon-only now, so each tab's name appears at the top of its own screen.
 - **Clearer tab names:** the first tab is now "Home" (it is where you search as well as your favorites), "Recent" is "Recents", and "Routes" is "Lines" — which is what that screen actually lists.
+- **Save stops from anywhere you find them:** search results, recent stops, and the lines browser now show a heart on each stop that you can tap to save or unsave it. It fills in when a stop is saved, so you can always see at a glance what is in your favorites — and the old star in Recent stops is gone.
 
 ## What's New in v4.18.8
 
