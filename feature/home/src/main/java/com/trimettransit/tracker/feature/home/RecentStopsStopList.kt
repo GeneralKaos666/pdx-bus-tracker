@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -21,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.feature.home.R
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.ui.components.ContentEntrance
+import com.trimettransit.tracker.ui.components.FavoriteToggleButton
 import com.trimettransit.tracker.ui.components.ListStateShell
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
@@ -34,7 +34,8 @@ fun RecentStopsStopList(
     isError: Boolean,
     emptyText: String,
     onNavigateToArrivals: (Stop) -> Unit,
-    onPromote: (Stop) -> Unit,
+    favoriteIds: Set<Int>,
+    onToggleFavorite: (Stop) -> Unit,
     onDismiss: (Stop) -> Unit,
     emptyActions: @Composable (() -> Unit)? = null,
     onRetry: (() -> Unit)? = null
@@ -52,7 +53,8 @@ fun RecentStopsStopList(
         RecentStopsList(
             stops = stops,
             onNavigateToArrivals = onNavigateToArrivals,
-            onPromote = onPromote,
+            favoriteIds = favoriteIds,
+            onToggleFavorite = onToggleFavorite,
             onDismiss = onDismiss
         )
     }
@@ -62,7 +64,8 @@ fun RecentStopsStopList(
 private fun RecentStopsList(
     stops: List<Stop>,
     onNavigateToArrivals: (Stop) -> Unit,
-    onPromote: (Stop) -> Unit,
+    favoriteIds: Set<Int>,
+    onToggleFavorite: (Stop) -> Unit,
     onDismiss: (Stop) -> Unit
 ) {
     ContentEntrance(modifier = Modifier.fillMaxSize()) {
@@ -91,12 +94,10 @@ private fun RecentStopsList(
                     gridMode = dense,
                     trailingContent = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { onPromote(stop) }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Star,
-                                    contentDescription = stringResource(R.string.add_to_favorites)
-                                )
-                            }
+                            FavoriteToggleButton(
+                                isFavorite = favoriteIds.contains(stop.locId),
+                                onClick = { onToggleFavorite(stop) }
+                            )
                             IconButton(onClick = { onDismiss(stop) }) {
                                 Icon(
                                     imageVector = Icons.Filled.Delete,

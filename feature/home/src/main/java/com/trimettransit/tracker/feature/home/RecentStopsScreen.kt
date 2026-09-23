@@ -30,6 +30,7 @@ import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
+import com.trimettransit.tracker.ui.components.rememberFavoriteIds
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -41,26 +42,12 @@ fun RecentStopsScreen(
     onFindNearby: () -> Unit
 ) {
     val recent = rememberStopListLoader(read = { recentStopsRepository.getRecentStops() })
+    val favoriteIds = rememberFavoriteIds(favoritesRepository)
     var editable by remember(recent.stops) { mutableStateOf(recent.stops) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var dismissTarget by remember { mutableStateOf<Stop?>(null) }
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val addedMessage = stringResource(R.string.added_to_favorites)
-    val alreadyFavoriteMessage = stringResource(R.string.already_in_favorites)
-
-    fun handlePromote(stop: Stop) {
-        scope.launch {
-            val result = runCatching { favoritesRepository.addFavorite(stop) }
-                .onFailure { Timber.e(it, "Failed to promote recent to favorite") }
-            result.onSuccess { added ->
-                // addFavorite returns false (no exception) only when the stop is
-                // already a favorite: the insert is CONFLICT_IGNORE.
-                snackbarHost.showSnackbar(if (added) addedMessage else alreadyFavoriteMessage)
-            }
-        }
-    }
-
     fun handleDismiss(stop: Stop) {
         val index = editable.indexOfFirst { it.locId == stop.locId }
         if (index < 0) return
@@ -128,7 +115,10 @@ fun RecentStopsScreen(
                     isError = recent.isError,
                     emptyText = stringResource(R.string.no_recent_stops),
                     onNavigateToArrivals = onNavigateToArrivals,
-                    onPromote = ::handlePromote,
+                    favoriteIds = favoriteIds.ids,
+                    onToggleFavorite = { stop ->
+                        scope.launch { favoriteIds.toggle(stop) }
+                    },
                     onDismiss = { dismissTarget = it },
                     emptyActions = {
                         TextButton(onClick = onFindNearby) {
