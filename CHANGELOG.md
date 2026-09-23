@@ -4,6 +4,7 @@
 - **Honest trip options:** the option chips in Trip Planner are now named for what they are — "Fastest", "Fewest transfers", and "Least walking" — instead of by their position in the list, so the same name can no longer appear on two different options.
 - **One back button in Settings:** the back arrow in the bottom bar now closes an open Settings page first, matching the system back gesture instead of jumping straight out of Settings.
 - **Honest errors you can retry:** the Favorites and Recent lists no longer blame your connection for a problem that is local to the app, and every list error now offers a working "Try Again" — including the live arrivals board.
+- **Your trip stays put:** planning a trip and then switching tabs no longer throws the results away — the plan is fetched again and the options sheet comes back, including after Android recreates the app in the background.
 
 ## What's New in v4.18.8
 

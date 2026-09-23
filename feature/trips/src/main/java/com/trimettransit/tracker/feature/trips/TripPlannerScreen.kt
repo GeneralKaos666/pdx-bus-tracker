@@ -140,8 +140,12 @@ fun TripPlannerScreen(
     var dest by rememberSaveable(stateSaver = tripPointSaver) { mutableStateOf<TripPoint?>(null) }
     var picking by remember { mutableStateOf(PickSlot.NONE) }
     var pickerSlot by remember { mutableStateOf<PickSlot?>(null) }
-    var showResults by remember { mutableStateOf(false) }
+    var showResults by rememberSaveable { mutableStateOf(false) }
     var plannerExpanded by rememberSaveable { mutableStateOf(true) }
+    // Endpoints of the last *requested* plan, as a saveable key. The result itself is not
+    // saveable (DateTime-heavy), so restore re-requests it when this matches the current
+    // endpoints and no result is present.
+    var plannedEndpointKey by rememberSaveable { mutableStateOf<String?>(null) }
 
     var myLocation by remember { mutableStateOf<MapCoordinate?>(null) }
     var locationPermissionGranted by remember {
@@ -162,7 +166,7 @@ fun TripPlannerScreen(
     var showOptionsSheet by remember { mutableStateOf(false) }
 
     var planResult by remember { mutableStateOf<TripPlanResult?>(null) }
-    var selectedIndex by remember { mutableIntStateOf(0) }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
     var isPlanning by remember { mutableStateOf(false) }
     val planRunner = remember { SingleJobRunner(coroutineScope) }
     var locationJob by remember { mutableStateOf<Job?>(null) }
@@ -291,6 +295,7 @@ fun TripPlannerScreen(
             }
         }
         invalidatePlan()
+        plannedEndpointKey = endpointKey(from, to)
         isPlanning = true
         planRunner.launchWithJob { job ->
             try {
@@ -334,6 +339,25 @@ fun TripPlannerScreen(
     // surprising the user with a new request before they've picked anything).
     RememberOnResume {
         if (planResult != null && origin != null && dest != null) {
+            planIt(refresh = true)
+        }
+    }
+
+    val originNow = origin
+    val destNow = dest
+    val currentEndpointKey =
+        if (originNow != null && destNow != null) endpointKey(originNow, destNow) else null
+
+    // The pager disposes pages more than one away, so switching tabs and returning restores the
+    // endpoints but not the result. If the same endpoints were planned and no result is present,
+    // fetch it again so the results sheet and the drawn route come back with it. The !isPlanning
+    // guard is load-bearing: without it this effect would cancel the request it just launched,
+    // because planResult is still null while that request is in flight.
+    LaunchedEffect(pageVisible, plannedEndpointKey) {
+        if (pageVisible && !isPlanning && planResult == null &&
+            plannedEndpointKey != null && plannedEndpointKey == currentEndpointKey &&
+            origin != null && dest != null
+        ) {
             planIt(refresh = true)
         }
     }
@@ -810,3 +834,7 @@ fun TripPlannerScreen(
         }
     }
 }
+
+/** Stable identity for a from→to pair, used to decide whether a restored plan is still relevant. */
+private fun endpointKey(from: TripPoint, to: TripPoint): String =
+    "${from.latitude},${from.longitude}->${to.latitude},${to.longitude}"
