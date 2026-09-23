@@ -1,6 +1,7 @@
 ## Unreleased
 
 - **Nearby stops recover from a denied location:** if location permission is permanently denied, the app now offers to open its settings instead of showing a retry that does nothing. An approximate location is also accepted, so "Nearby stops" works without precise GPS.
+- **Honest trip options:** the option chips in Trip Planner are now named for what they are — "Fastest", "Fewest transfers", and "Least walking" — instead of by their position in the list, so the same name can no longer appear on two different options.
 
 ## What's New in v4.18.8
 

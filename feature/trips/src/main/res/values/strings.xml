@@ -71,8 +71,9 @@
     </plurals>
     <string name="stay_on_board">Stay on board</string>
     <string name="itinerary_1">Fastest</string>
-    <string name="itinerary_2">Alternative</string>
-    <string name="itinerary_3">Last resort</string>
+    <string name="itinerary_2">Fewest transfers</string>
+    <string name="itinerary_3">Least walking</string>
+    <string name="itinerary_option">Option %1$d</string>
     <string name="trip_planner_error_no_stops">No TriMet stops near that point</string>
     <string name="trip_planner_error_no_service">No service at that point</string>
     <string name="trip_planner_error_not_possible">No trip possible between those points</string>

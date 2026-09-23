@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -41,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripLeg
 import com.trimettransit.tracker.model.TripPlan
+import com.trimettransit.tracker.model.domain.ItineraryRank
+import com.trimettransit.tracker.model.domain.itineraryRanks
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
@@ -66,6 +69,7 @@ internal fun ItineraryResultsSheet(
         sheetState = sheetState
     ) {
         Column(modifier = Modifier.padding(bottom = 24.dp)) {
+            val ranks = remember(plan.itineraries) { itineraryRanks(plan.itineraries) }
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
@@ -75,13 +79,13 @@ internal fun ItineraryResultsSheet(
                     plan.itineraries,
                     key = { index, itinerary -> itinerary.id.ifBlank { "itinerary_$index" } }
                 ) { index, itinerary ->
-                    val label = stringResource(
-                        when (index % 3) {
-                            0 -> R.string.itinerary_1
-                            1 -> R.string.itinerary_2
-                            else -> R.string.itinerary_3
-                        }
-                    )
+                    val rank = ranks.getOrElse(index) { ItineraryRank.OTHER }
+                    val label = when (rank) {
+                        ItineraryRank.FASTEST -> stringResource(R.string.itinerary_1)
+                        ItineraryRank.FEWEST_TRANSFERS -> stringResource(R.string.itinerary_2)
+                        ItineraryRank.LEAST_WALKING -> stringResource(R.string.itinerary_3)
+                        ItineraryRank.OTHER -> stringResource(R.string.itinerary_option, index + 1)
+                    }
                     FilterChip(
                         selected = selectedIndex == index,
                         onClick = { onSelect(index) },

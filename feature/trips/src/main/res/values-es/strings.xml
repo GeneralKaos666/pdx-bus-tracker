@@ -73,8 +73,9 @@
     </plurals>
     <string name="stay_on_board">Seguir a bordo</string>
     <string name="itinerary_1">Más rápido</string>
-    <string name="itinerary_2">Alternativo</string>
-    <string name="itinerary_3">Último recurso</string>
+    <string name="itinerary_2">Menos transbordos</string>
+    <string name="itinerary_3">Menos a pie</string>
+    <string name="itinerary_option">Opción %1$d</string>
     <string name="trip_planner_error_no_stops">No hay paradas de TriMet cerca de ese punto</string>
     <string name="trip_planner_error_no_service">No hay servicio en ese punto</string>
     <string name="trip_planner_error_not_possible">No hay viaje posible entre esos puntos</string>
