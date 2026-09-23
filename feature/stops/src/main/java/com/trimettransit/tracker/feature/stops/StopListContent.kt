@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -39,7 +40,9 @@ internal fun <T> StopListContent(
     contentType: (T) -> Any?,
     itemContent: @Composable LazyGridItemScope.(T) -> Unit,
     itemTrailingContent: @Composable (T) -> Unit = {},
-    onRetry: (() -> Unit)? = null
+    onRetry: (() -> Unit)? = null,
+    /** Hoisted so callers that need to scroll a specific item can; defaults to a private state. */
+    listState: LazyGridState = rememberLazyGridState()
 ) {
     val safeItems = items
     Crossfade(
@@ -63,7 +66,6 @@ internal fun <T> StopListContent(
             2 -> EmptyState(message = emptyMessage)
             else -> {
                 ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                    val listState = rememberLazyGridState()
                     val smoothFling = rememberSmoothFlingBehavior()
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(if (gridMode) 2 else 1),

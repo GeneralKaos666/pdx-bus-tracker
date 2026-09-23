@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Card
@@ -71,6 +72,18 @@ fun StopsRouteList(
 
     val gridMode = rememberDenseGridEnabled()
     val safeRoutes = routes
+    val listState = rememberLazyGridState()
+
+    // Bring a newly expanded route into view. Without this, tapping a route near the bottom of a
+    // long list opens its directions below the fold with nothing on screen to show they appeared.
+    // One grid item per route, so the route's list index is its item index.
+    val expandedIndex = selectedRoute?.let { selected ->
+        safeRoutes?.indexOfFirst { it.routeId == selected.routeId }?.takeIf { it >= 0 }
+    }
+    LaunchedEffect(expandedIndex) {
+        if (expandedIndex != null) listState.animateScrollToItem(expandedIndex)
+    }
+
     StopListContent(
         isLoading = isLoading,
         items = safeRoutes,
@@ -82,6 +95,7 @@ fun StopsRouteList(
         key = { it.routeId },
         contentType = { "route" },
         onRetry = { retryKey++ },
+        listState = listState,
         itemContent = { route ->
             RouteListItem(
                 route = route,
