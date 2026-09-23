@@ -24,6 +24,7 @@ android {
 
 dependencies {
     implementation(project(":common:model"))
+    implementation("com.jakewharton.timber:timber:5.0.1")
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3:1.5.0-alpha28")

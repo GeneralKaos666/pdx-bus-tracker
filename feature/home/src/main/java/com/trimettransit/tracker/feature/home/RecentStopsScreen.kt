@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,7 +27,6 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.ui.components.ContentEntrance
-import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.rememberFavoriteIds
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -47,7 +44,6 @@ fun RecentStopsScreen(
     var editable by remember(recent.stops) { mutableStateOf(recent.stops) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var dismissTarget by remember { mutableStateOf<Stop?>(null) }
-    val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     fun handleDismiss(stop: Stop) {
         val index = editable.indexOfFirst { it.locId == stop.locId }
@@ -130,12 +126,6 @@ fun RecentStopsScreen(
                 )
             }
         }
-        SnackbarHost(
-            hostState = snackbarHost,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = navPillBottomPadding() + 8.dp)
-        )
     }
 
     dismissTarget?.let { target ->

@@ -18,10 +18,12 @@ import androidx.compose.ui.res.stringResource
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.ui.R
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 /**
  * A heart that shows favourite *state* rather than offering an action: filled when the stop is
@@ -53,7 +55,10 @@ fun FavoriteToggleButton(
 /** Favourited stop ids plus a toggle, shared by every screen that renders [FavoriteToggleButton]. */
 class FavoriteIds(
     val ids: Set<Int>,
-    /** Flips [stop]'s favourite state and reloads [ids]. Suspends, so callers can order work after it. */
+    /**
+     * Flips [stop]'s favourite state. Suspends until the write completes; [ids] refreshes
+     * asynchronously afterwards, so callers must not treat [ids] as fresh on return.
+     */
     val toggle: suspend (Stop) -> Unit
 )
 
@@ -77,15 +82,29 @@ fun rememberFavoriteIds(
 ): FavoriteIds {
     var ids by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var reloadKey by remember { mutableIntStateOf(0) }
+    var hasLoaded by remember { mutableStateOf(false) }
     val mutex = remember { Mutex() }
 
     LaunchedEffect(reloadKey, pageVisible) {
         if (!pageVisible) return@LaunchedEffect
         ids = withContext(Dispatchers.IO) {
-            runCatching { favoritesRepository.favoriteIds() }.getOrDefault(ids)
+            try {
+                favoritesRepository.favoriteIds()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to load favorite ids")
+                ids
+            }
         }
     }
-    RememberOnResume { if (pageVisible) reloadKey++ }
+    RememberOnResume {
+        // Skip the resume that lands during first composition: the effect above already loaded,
+        // and bumping the key here would read the table twice on every entry.
+        if (pageVisible) {
+            if (hasLoaded) reloadKey++ else hasLoaded = true
+        }
+    }
 
     return remember(ids, favoritesRepository) {
         FavoriteIds(
@@ -95,12 +114,16 @@ fun rememberFavoriteIds(
                 // net one change instead of returning the stop to where it started.
                 mutex.withLock {
                     withContext(Dispatchers.IO) {
-                        runCatching {
+                        try {
                             if (favoritesRepository.isFavorite(stop.locId)) {
                                 favoritesRepository.removeFavorite(stop.locId)
                             } else {
                                 favoritesRepository.addFavorite(stop)
                             }
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Timber.w(e, "Failed to toggle favorite")
                         }
                     }
                 }

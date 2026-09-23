@@ -30,7 +30,7 @@ class FavoritesRepositoryImpl(
     }
 
     override suspend fun favoriteIds(): Set<Int> = withContext(Dispatchers.IO) {
-        dbHelper.favorites.mapTo(mutableSetOf()) { it.locId }
+        dbHelper.favoriteIds
     }
 
     override suspend fun setOrder(idsInOrder: List<Int>) = withContext(Dispatchers.IO) {

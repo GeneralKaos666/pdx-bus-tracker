@@ -31,6 +31,22 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
             return stops
         }
 
+    /**
+     * Favourited stop ids only. [favorites] selects every column and builds a [Stop] per row; a
+     * favourite toggle needs nothing but the id, so this avoids materialising the rest.
+     */
+    val favoriteIds: Set<Int>
+        get() {
+            val ids = mutableSetOf<Int>()
+            val db = readableDatabase
+            db.rawQuery("SELECT loc_id FROM favorites", null).use { cursor ->
+                while (cursor.moveToNext()) {
+                    ids.add(cursor.getInt(cursor.getColumnIndexOrThrow("loc_id")))
+                }
+            }
+            return ids
+        }
+
     val recentStops: List<Stop>
         get() {
             val stops = mutableListOf<Stop>()
