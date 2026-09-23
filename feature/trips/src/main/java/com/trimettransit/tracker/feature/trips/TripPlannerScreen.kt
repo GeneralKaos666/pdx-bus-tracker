@@ -76,6 +76,7 @@ import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.map.MapCoordinate
+import com.trimettransit.tracker.model.domain.itinerarySelectionAfterPlan
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
@@ -280,7 +281,7 @@ fun TripPlannerScreen(
         invalidatePlan()
     }
 
-    fun planIt(refresh: Boolean = false) {
+    fun planIt(refresh: Boolean = false, resetSelection: Boolean = true) {
         val from = origin ?: return
         val to = dest ?: return
         if (!from.isValid || !to.isValid) return
@@ -308,7 +309,11 @@ fun TripPlannerScreen(
                 val result = transitRepository.planTrip(from, to, time, options)
                 val successPlan = (result as? TripPlanResult.Success)?.plan
                 if (successPlan?.itineraries?.isNotEmpty() == true) {
-                    selectedIndex = 0
+                    selectedIndex = itinerarySelectionAfterPlan(
+                        currentIndex = selectedIndex,
+                        itineraryCount = successPlan.itineraries.size,
+                        reset = resetSelection
+                    )
                 }
                 planResult = result
                 showResults = result is TripPlanResult.Success &&
@@ -339,7 +344,7 @@ fun TripPlannerScreen(
     // surprising the user with a new request before they've picked anything).
     RememberOnResume {
         if (planResult != null && origin != null && dest != null) {
-            planIt(refresh = true)
+            planIt(refresh = true, resetSelection = false)
         }
     }
 
@@ -358,7 +363,7 @@ fun TripPlannerScreen(
             plannedEndpointKey != null && plannedEndpointKey == currentEndpointKey &&
             origin != null && dest != null
         ) {
-            planIt(refresh = true)
+            planIt(refresh = true, resetSelection = false)
         }
     }
 

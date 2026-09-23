@@ -98,4 +98,50 @@ class TripPlanRankingTest {
         assertEquals(ItineraryRank.FASTEST, ranks[1])
         assertEquals(ItineraryRank.FEWEST_TRANSFERS, ranks[2])
     }
+
+    // --- selection after a plan request (final-review fix) ---
+
+    @Test
+    fun `a fresh request starts at the best option`() {
+        assertEquals(
+            0,
+            itinerarySelectionAfterPlan(currentIndex = 3, itineraryCount = 6, reset = true)
+        )
+    }
+
+    @Test
+    fun `a restore keeps the user's chosen option`() {
+        assertEquals(
+            3,
+            itinerarySelectionAfterPlan(currentIndex = 3, itineraryCount = 6, reset = false)
+        )
+    }
+
+    @Test
+    fun `a restore clamps when the new option list is shorter`() {
+        assertEquals(
+            1,
+            itinerarySelectionAfterPlan(currentIndex = 5, itineraryCount = 2, reset = false)
+        )
+    }
+
+    @Test
+    fun `a restore clamps a negative index to the first option`() {
+        assertEquals(
+            0,
+            itinerarySelectionAfterPlan(currentIndex = -1, itineraryCount = 3, reset = false)
+        )
+    }
+
+    @Test
+    fun `an empty option list selects index zero`() {
+        assertEquals(
+            0,
+            itinerarySelectionAfterPlan(currentIndex = 4, itineraryCount = 0, reset = false)
+        )
+        assertEquals(
+            0,
+            itinerarySelectionAfterPlan(currentIndex = 4, itineraryCount = 0, reset = true)
+        )
+    }
 }

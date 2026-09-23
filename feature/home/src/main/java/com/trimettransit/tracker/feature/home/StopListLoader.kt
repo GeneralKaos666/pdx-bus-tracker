@@ -43,6 +43,10 @@ internal fun rememberStopListLoader(
     val runner = remember { SingleJobRunner(coroutineScope) }
 
     fun load() {
+        // Show the loading state and clear any previous error immediately, so a retry tap gives
+        // visible feedback instead of leaving a stale error panel frozen until the read returns.
+        isLoading = true
+        isError = false
         // SingleJobRunner cancels any in-flight read so a slower older one can't
         // overwrite newer data.
         runner.launchWithJob { job ->

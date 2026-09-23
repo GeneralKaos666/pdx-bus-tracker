@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.Crossfade
 import androidx.compose.ui.Alignment
@@ -85,7 +86,7 @@ fun NearbyStopsScreen(
     val locationPermissionRequired = stringResource(R.string.location_permission_required)
 
     val activity = LocalActivity.current
-    var hasRequestedPermission by remember { mutableStateOf(false) }
+    var hasRequestedPermission by rememberSaveable { mutableStateOf(false) }
 
     fun readPermissionState(): LocationPermissionState = locationPermissionState(
         fineGranted = ContextCompat.checkSelfPermission(

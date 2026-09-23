@@ -49,3 +49,21 @@ fun itineraryRanks(itineraries: List<TripItinerary>): List<ItineraryRank> {
 
     return ranks
 }
+
+/**
+ * The itinerary index to select once a plan request returns.
+ *
+ * A brand-new request (the user pressed "Find trips") starts at the best option, so [reset] is
+ * true. A restore or re-entry request re-fetches the *same* endpoints, so the previous choice is
+ * still meaningful and must survive — [reset] false keeps [currentIndex], clamped in case the
+ * returned option list is shorter than the one the index came from.
+ */
+fun itinerarySelectionAfterPlan(
+    currentIndex: Int,
+    itineraryCount: Int,
+    reset: Boolean
+): Int = when {
+    itineraryCount <= 0 -> 0
+    reset -> 0
+    else -> currentIndex.coerceIn(0, itineraryCount - 1)
+}
