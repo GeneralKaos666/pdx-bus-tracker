@@ -35,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -228,7 +230,8 @@ private fun DirectionItem(
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    // Same contract as the route row: announce the section's state, keep the chevron decorative.
+    // Same contract as the route row: announce the role and the section's state, keep the chevron
+    // decorative. Card's clickable does not supply a button role on its own.
     val expandedLabel = stringResource(R.string.expanded)
     val collapsedLabel = stringResource(R.string.collapsed)
     Card(
@@ -238,6 +241,7 @@ private fun DirectionItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .semantics {
+                role = Role.Button
                 stateDescription = if (isExpanded) expandedLabel else collapsedLabel
             }
             .pressScale(interactionSource),

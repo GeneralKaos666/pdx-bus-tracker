@@ -22,7 +22,7 @@
     <string name="remove_recent_title">¿Quitar de recientes?</string>
     <string name="clear_recents">Borrar todo</string>
     <string name="clear_recents_title">¿Borrar las paradas recientes?</string>
-    <string name="clear_recents_message">Esto elimina todas las paradas de tu paradas recientes. Tus favoritos no se verán afectados.</string>
+    <string name="clear_recents_message">Esto elimina todas las paradas de tu lista de recientes. Tus favoritos no se verán afectados.</string>
     <string name="browse_routes">Explorar líneas</string>
     <string name="find_nearby">Buscar paradas cercanas</string>
     <string name="welcome_title">No pierdas tu viaje</string>

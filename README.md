@@ -10,21 +10,21 @@ PDX Bus Tracker is an unofficial, community-built app. It is not affiliated with
 
 - **Live arrivals.** See when the next bus, train, or MAX leaves any stop. Pull to refresh, and the list refreshes itself when you come back to the app.
 - **Trip Planner.** Pick a start and an end point by tapping the map, searching stops, or using your current location. Choose depart-now or arrive-by, and compare itinerary options drawn over the map.
-- **Route & stop browser.** Drill from routes to directions to stops in an animated accordion.
+- **Line & stop browser.** Drill from lines to directions to stops in an animated accordion.
 - **Nearby stops.** Find stops around where you are, and search stops by name right from the Home screen (the local stop list stays usable offline).
 - **Favorites & recent stops.** Bookmark stops and step back to them in a tap. Everything is stored on your device in SQLite, and saved stops always land on the Favorites tab.
-- **Detours on arrival cards.** TriMet detour notices for a stop's routes appear as small badges right on the arrival rows.
-- **Floating pill navigation.** A compact pill bar keeps Favorites, Recent, Routes, Trips, and Settings within reach.
+- **Detours on arrival cards.** TriMet detour notices for a stop's lines appear as small badges right on the arrival rows.
+- **Floating pill navigation.** A compact pill bar keeps Home, Recents, Lines, Trips, and Settings within reach.
 - **Picture-in-picture.** Keep an arrival countdown in a floating mini-window while you use other apps.
 - **Dynamic theming.** Material 3 follows your system theme, with light and dark overrides in Settings.
-- **Route-pinned mode.** Optionally show only the arrivals for the route you opened a stop from.
+- **Line-pinned mode.** Optionally show only the arrivals for the line you opened a stop from.
 
 ## Screenshots
 
 | | | | |
 |---|---|---|---|
-| <img src="docs/screenshots/play-phone-01-arrivals-hero.png" width="190" alt="Real-time arrivals"> | <img src="docs/screenshots/play-phone-02-trip-planner.png" width="190" alt="Trip Planner"> | <img src="docs/screenshots/play-phone-03-search-stops.png" width="190" alt="Search stops"> | <img src="docs/screenshots/play-phone-04-route-browser.png" width="190" alt="Route & stop browser"> |
-| Real-time arrivals | Trip Planner | Search stops | Route & stop browser |
+| <img src="docs/screenshots/play-phone-01-arrivals-hero.png" width="190" alt="Real-time arrivals"> | <img src="docs/screenshots/play-phone-02-trip-planner.png" width="190" alt="Trip Planner"> | <img src="docs/screenshots/play-phone-03-search-stops.png" width="190" alt="Search stops"> | <img src="docs/screenshots/play-phone-04-route-browser.png" width="190" alt="Line & stop browser"> |
+| Real-time arrivals | Trip Planner | Search stops | Line & stop browser |
 | <img src="docs/screenshots/play-phone-05-favorites.png" width="190" alt="Favorites in light and dark"> | <img src="docs/screenshots/play-phone-06-recent-stops.png" width="190" alt="Recent stops"> | <img src="docs/screenshots/play-phone-07-trip-results.png" width="190" alt="Trip results"> | |
 | Favorites (light & dark) | Recent stops | Trip results | |
 
@@ -97,7 +97,7 @@ For a local smoke test without real credentials, build with `-PreleaseSigningFal
 
 ## Privacy
 
-PDX Bus Tracker collects no accounts, no analytics, and no advertising data. Location stays on your device, except that browsing nearby stops or planning a trip from where you are sends your coordinates to TriMet's public API to find stops and routes near you. Full details: [Privacy Policy](docs/privacy-policy.md).
+PDX Bus Tracker collects no accounts, no analytics, and no advertising data. Location stays on your device, except that browsing nearby stops or planning a trip from where you are sends your coordinates to TriMet's public API to find stops and lines near you. Full details: [Privacy Policy](docs/privacy-policy.md).
 
 ## License
 

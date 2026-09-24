@@ -20,7 +20,7 @@ one of the maps. The app never tracks your location in the background.
 current location, your GPS coordinates are sent as part of a query to **TriMet's public
 Developer API** (`developer.trimet.org`) — as `ll=latitude,longitude` for nearby-stops
 lookups, or as the origin coordinates of a trip-planning request — so TriMet's servers
-can return the stops or routes within reach. This is required for the feature to
+can return the stops or lines within reach. This is required for the feature to
 work.
 
 **What we do with it:** nothing else. Coordinates are used in memory, are never stored
@@ -35,7 +35,7 @@ stops, favorites, and arrivals by name.
   your device and is removed if you uninstall the app or clear its data.
 - **Settings** (theme, display preferences) are stored in local app preferences.
 - **Home-screen widget:** the optional "Next arrivals" widget stores a short arrival
-  snapshot (stop, route, and countdown time) in local preferences to display the next
+  snapshot (stop, line, and countdown time) in local preferences to display the next
   departures for your favorited stops. This snapshot stays on your device; it is
   refreshed periodically in the background (see Section 3) and is removed if you
   uninstall the app or clear its data.

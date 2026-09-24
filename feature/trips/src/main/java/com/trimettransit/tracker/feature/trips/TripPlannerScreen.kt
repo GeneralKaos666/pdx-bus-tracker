@@ -300,12 +300,16 @@ fun TripPlannerScreen(
         isPlanning = true
         planRunner.launchWithJob { job ->
             try {
-                val time = TripRequestTime(
-                    arriveBy = arriveBy,
-                    timeMillis = if (arriveBy) {
-                        arriveByTimeMillis ?: (System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS)
-                    } else null
-                )
+                // A time that has passed while the user was deciding -- or that survived process
+                // death in a stale saved state -- cannot be planned for, so it falls back to the
+                // same default the picker starts from rather than being sent to the API as-is.
+                val now = System.currentTimeMillis()
+                val requestedTime = if (arriveBy) {
+                    arriveByTimeMillis?.takeIf {
+                        !TripRequestTime(arriveBy = true, timeMillis = it).isInThePast(now)
+                    } ?: (now + DEFAULT_ARRIVE_BY_ADVANCE_MS)
+                } else null
+                val time = TripRequestTime(arriveBy = arriveBy, timeMillis = requestedTime)
                 val result = transitRepository.planTrip(from, to, time, options)
                 val successPlan = (result as? TripPlanResult.Success)?.plan
                 if (successPlan?.itineraries?.isNotEmpty() == true) {
