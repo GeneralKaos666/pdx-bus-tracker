@@ -134,7 +134,9 @@ fun StopListItem(
                 Text(
                     text = proximityLabel?.let { "$it · $stopNumber" } ?: stopNumber,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
+                    // Was `outline`, which is a ~3:1 token and fails at this size. The stop
+                    // number is the key you search by, so it has to be legible.
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
