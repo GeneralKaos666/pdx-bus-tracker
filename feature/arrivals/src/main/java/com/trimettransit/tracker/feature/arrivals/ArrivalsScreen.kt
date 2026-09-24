@@ -422,7 +422,10 @@ fun ArrivalsScreen(
                                 top = 8.dp,
                                 bottom = navPillBottomPadding() + 8.dp
                             ),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            // Centres a short list instead of leaving a void under it. `spacedBy`
+                            // with an alignment only uses the alignment when the content is
+                            // smaller than the viewport, so a full list lays out as before.
+                            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
                         ) {
                             val visibleArrivals =
                                 if (showAllArrivals) unfilteredArrivals else arrivals.take(TOP_ARRIVAL_ROWS)
