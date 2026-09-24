@@ -541,10 +541,12 @@ fun ArrivalsScreen(
                                 }
                             }
 
-                            // Real content rather than contentPadding: the arrangement that
-                            // centres a short list is handed the full viewport height and ignores
-                            // contentPadding entirely, so only a trailing item can keep the last
-                            // row clear of the floating nav pill.
+                            // Real content rather than contentPadding. While it is centring a short
+                            // list, the arrangement is handed the raw viewport height and does not
+                            // account for contentPadding at all, so only a trailing item can keep
+                            // the last row clear of the floating nav pill. (contentPadding is
+                            // still honoured in the normal scrolled layout.) Deliberately no
+                            // animateItem(): this clearance must not slide when the data changes.
                             item(key = "navPillClearance", contentType = "clearance") {
                                 Spacer(modifier = Modifier.height(navPillBottomPadding() + 8.dp))
                             }
