@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.ui.components
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -27,8 +28,8 @@ import timber.log.Timber
 
 /**
  * A heart that shows favourite *state* rather than offering an action: filled when the stop is
- * saved, outlined when it is not, and tapping flips it. Used by the lists a user browses stops in;
- * the Favorites tab keeps its own Delete-with-confirm for removals.
+ * saved, outlined when it is not, and tapping flips it. Used by every list a user browses stops in,
+ * plus the arrivals header; the Favorites tab keeps its own Delete-with-confirm for removals.
  */
 @Composable
 fun FavoriteToggleButton(
@@ -36,7 +37,14 @@ fun FavoriteToggleButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    IconButton(onClick = onClick, modifier = modifier) {
+    // The press feedback the rest of the app's icon buttons have. In the arrivals bar this heart
+    // sits next to press-scaled controls, so without it it was the only one that did not react.
+    val interactionSource = remember { MutableInteractionSource() }
+    IconButton(
+        onClick = onClick,
+        interactionSource = interactionSource,
+        modifier = modifier.pressScale(interactionSource)
+    ) {
         Icon(
             imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
             contentDescription = stringResource(

@@ -142,7 +142,10 @@ fun FavoritesScreen(
                 onStopSelected = onNavigateToArrivals,
                 header = {
                     FavoritesHeader()
-                    if (showReorderHint) {
+                    // Only worth teaching once there is something to reorder: with fewer than
+                    // two favorites the gesture cannot do anything, and a one-time hint spent on
+                    // an empty list is a hint wasted.
+                    if (showReorderHint && editable.size >= 2) {
                         ReorderHint(onDismiss = { dismissReorderHint() })
                     }
                 }

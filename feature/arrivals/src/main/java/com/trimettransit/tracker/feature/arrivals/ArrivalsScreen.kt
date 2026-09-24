@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -419,8 +421,7 @@ fun ArrivalsScreen(
                     contentPadding = PaddingValues(
                         start = 12.dp,
                                 end = 12.dp,
-                                top = 8.dp,
-                                bottom = navPillBottomPadding() + 8.dp
+                                top = 8.dp
                             ),
                             // Centres a short list instead of leaving a void under it. `spacedBy`
                             // with an alignment only uses the alignment when the content is
@@ -538,6 +539,14 @@ fun ArrivalsScreen(
                                         }
                                     }
                                 }
+                            }
+
+                            // Real content rather than contentPadding: the arrangement that
+                            // centres a short list is handed the full viewport height and ignores
+                            // contentPadding entirely, so only a trailing item can keep the last
+                            // row clear of the floating nav pill.
+                            item(key = "navPillClearance", contentType = "clearance") {
+                                Spacer(modifier = Modifier.height(navPillBottomPadding() + 8.dp))
                             }
 
                         }
