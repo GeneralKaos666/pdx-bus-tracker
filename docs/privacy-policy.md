@@ -25,7 +25,7 @@ work.
 
 **What we do with it:** nothing else. Coordinates are used in memory, are never stored
 by the app, and are never shared with advertisers, analytics providers, or any other
-third party. Location permission is optional: without it you can still browse routes,
+third party. Location permission is optional: without it you can still browse lines,
 stops, favorites, and arrivals by name.
 
 ## 2. Information stored on your device
