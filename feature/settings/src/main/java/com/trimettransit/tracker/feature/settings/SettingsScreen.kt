@@ -206,7 +206,12 @@ fun SettingsScreen(
                             onCardOutlinesChange = { updateSettings { state -> state.copy(cardOutlines = it) } },
                             cardOutlineColorRaw = settings.cardOutlineColor,
                             cornerRadius = settings.cornerRadius,
-                            onCornerRadiusChange = { settings = settings.copy(cornerRadius = it) },
+                            // Save on each change, not only on release, so the running theme
+                            // actually redraws while the slider moves -- the same path every
+                            // other appearance control uses.
+                            onCornerRadiusChange = { radius ->
+                                updateSettings { state -> state.copy(cornerRadius = radius) }
+                            },
                             onCornerRadiusFinished = { settings.save(prefs) },
                             cornerStyle = settings.cornerStyle,
                             onCornerStyleChange = { updateSettings { state -> state.copy(cornerStyle = it) } },
