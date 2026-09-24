@@ -23,6 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -133,14 +135,19 @@ fun StopListItem(
                     )
                 }
                 val stopNumber = stringResource(R.string.common_stop_number, stop.locId)
+                val detail = proximityLabel?.let { "$it · $stopNumber" } ?: stopNumber
                 Text(
-                    text = proximityLabel?.let { "$it · $stopNumber" } ?: stopNumber,
+                    text = detail,
                     style = MaterialTheme.typography.labelSmall,
                     // Was `outline`, which is a ~3:1 token and fails at this size. The stop
                     // number is the key you search by, so it has to be legible.
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    // The middle dot is a visual separator; some voices read it aloud as "dot".
+                    modifier = Modifier.semantics {
+                        contentDescription = detail.replace(" · ", ", ")
+                    }
                 )
             }
             if (trailingContent != null) {
