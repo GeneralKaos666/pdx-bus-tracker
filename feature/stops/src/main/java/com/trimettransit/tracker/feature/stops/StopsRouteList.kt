@@ -143,7 +143,7 @@ private fun RouteListItem(
     val interactionSource = remember { MutableInteractionSource() }
     // This row toggles a section, so it reports both its role and the section's state. Card's
     // clickable does NOT supply a button role, so it is set here explicitly. The chevron below is
-    // decorative for the same reason: otherwise TalkBack says the state twice.
+    // decorative for the same reason: otherwise TalkBack announces it a second time.
     val expandedLabel = stringResource(R.string.expanded)
     val collapsedLabel = stringResource(R.string.collapsed)
     Card(

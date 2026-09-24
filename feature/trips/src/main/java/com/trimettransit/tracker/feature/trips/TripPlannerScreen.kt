@@ -309,6 +309,10 @@ fun TripPlannerScreen(
                         !TripRequestTime(arriveBy = true, timeMillis = it).isInThePast(now)
                     } ?: (now + DEFAULT_ARRIVE_BY_ADVANCE_MS)
                 } else null
+                if (arriveBy && requestedTime != arriveByTimeMillis) {
+                    // Keep the label honest: it shows the time the request actually used.
+                    arriveByTimeMillis = requestedTime
+                }
                 val time = TripRequestTime(arriveBy = arriveBy, timeMillis = requestedTime)
                 val result = transitRepository.planTrip(from, to, time, options)
                 val successPlan = (result as? TripPlanResult.Success)?.plan

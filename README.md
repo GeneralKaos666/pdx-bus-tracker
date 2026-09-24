@@ -25,8 +25,8 @@ PDX Bus Tracker is an unofficial, community-built app. It is not affiliated with
 |---|---|---|---|
 | <img src="docs/screenshots/play-phone-01-arrivals-hero.png" width="190" alt="Real-time arrivals"> | <img src="docs/screenshots/play-phone-02-trip-planner.png" width="190" alt="Trip Planner"> | <img src="docs/screenshots/play-phone-03-search-stops.png" width="190" alt="Search stops"> | <img src="docs/screenshots/play-phone-04-route-browser.png" width="190" alt="Line & stop browser"> |
 | Real-time arrivals | Trip Planner | Search stops | Line & stop browser |
-| <img src="docs/screenshots/play-phone-05-favorites.png" width="190" alt="Favorites in light and dark"> | <img src="docs/screenshots/play-phone-06-recent-stops.png" width="190" alt="Recent stops"> | <img src="docs/screenshots/play-phone-07-trip-results.png" width="190" alt="Trip results"> | |
-| Favorites (light & dark) | Recent stops | Trip results | |
+| <img src="docs/screenshots/play-phone-05-favorites.png" width="190" alt="Favorites in light and dark"> | <img src="docs/screenshots/play-phone-06-recent-stops.png" width="190" alt="Recents"> | <img src="docs/screenshots/play-phone-07-trip-results.png" width="190" alt="Trip results"> | |
+| Favorites (light & dark) | Recents | Trip results | |
 
 ## Requirements
 
