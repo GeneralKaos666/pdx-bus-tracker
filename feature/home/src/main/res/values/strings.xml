@@ -8,6 +8,8 @@
     <string name="unable_to_load">Couldn\'t load your stops.</string>
     <string name="no_favorite_stops">No favorite stops yet.\nTap the heart on arrivals to add one.</string>
     <string name="no_stops_found">No stops found.</string>
+    <string name="favorites_reorder_hint">Long-press and drag to reorder</string>
+    <string name="favorites_reorder_hint_dismiss">Got it</string>
     <string name="favorites_title">Favorites</string>
     <string name="home_title">Home</string>
     <string name="recent_stops_title">Recent Stops</string>

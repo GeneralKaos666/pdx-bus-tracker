@@ -6,11 +6,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +46,7 @@ import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
 
 private const val PREF_WELCOME_SHOWN = "pref_key_favorites_welcome_shown"
+private const val PREF_REORDER_HINT_DISMISSED = "pref_key_favorites_reorder_hint_dismissed"
 
 @Composable
 fun FavoritesScreen(
@@ -69,6 +75,15 @@ fun FavoritesScreen(
     fun dismissWelcome() {
         welcomeDismissed = true
         prefs.edit { putBoolean(PREF_WELCOME_SHOWN, true) }
+    }
+    // The drag gesture is a long-press with no visual affordance, so it gets taught once and then
+    // never mentioned again. Local to this screen: no other screen reorders anything.
+    var showReorderHint by remember {
+        mutableStateOf(!prefs.getBoolean(PREF_REORDER_HINT_DISMISSED, false))
+    }
+    fun dismissReorderHint() {
+        showReorderHint = false
+        prefs.edit { putBoolean(PREF_REORDER_HINT_DISMISSED, true) }
     }
 
     fun persistOrder(stops: List<Stop>) {
@@ -125,7 +140,12 @@ fun FavoritesScreen(
                     }
                 },
                 onStopSelected = onNavigateToArrivals,
-                header = { FavoritesHeader() }
+                header = {
+                    FavoritesHeader()
+                    if (showReorderHint) {
+                        ReorderHint(onDismiss = { dismissReorderHint() })
+                    }
+                }
             ) {
                 FavoritesStopList(
                     stops = editable,
@@ -133,7 +153,11 @@ fun FavoritesScreen(
                     isError = favorites.isError,
                     emptyText = stringResource(R.string.no_favorite_stops),
                     onNavigateToArrivals = onNavigateToArrivals,
-                    onMove = ::handleMove,
+                    onMove = { from, to ->
+                        handleMove(from, to)
+                        // Learned by doing: retire the hint the moment it is no longer needed.
+                        if (showReorderHint) dismissReorderHint()
+                    },
                     onDeleteRequest = { deleteTarget = it },
                     emptyActions = {
                         FavoritesEmptyActions(
@@ -254,5 +278,32 @@ private fun FavoritesHeader() {
                 .padding(start = 12.dp),
             color = MaterialTheme.colorScheme.outlineVariant
         )
+    }
+}
+
+/** One-time teaching for the long-press drag that reorders favorites. */
+@Composable
+private fun ReorderHint(onDismiss: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Filled.DragHandle,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = stringResource(R.string.favorites_reorder_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        TextButton(onClick = onDismiss) {
+            Text(stringResource(R.string.favorites_reorder_hint_dismiss))
+        }
     }
 }

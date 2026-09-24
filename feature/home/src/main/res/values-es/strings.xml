@@ -8,6 +8,8 @@
     <string name="unable_to_load">No se pudieron cargar tus paradas.</string>
     <string name="no_favorite_stops">Aún no hay paradas favoritas.\nToca el corazón en las llegadas para añadir una.</string>
     <string name="no_stops_found">No se encontraron paradas.</string>
+    <string name="favorites_reorder_hint">Mantén pulsado y arrastra para reordenar</string>
+    <string name="favorites_reorder_hint_dismiss">Entendido</string>
     <string name="favorites_title">Favoritos</string>
     <string name="home_title">Inicio</string>
     <string name="recent_stops_title">Paradas recientes</string>
