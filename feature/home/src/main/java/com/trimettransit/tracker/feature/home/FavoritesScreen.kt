@@ -290,7 +290,9 @@ private fun ReorderHint(onDismiss: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+            // Spaced from the header's rule above as well as from the list below: this row's
+            // touch targets are 48dp tall, so without a top inset it crowded the divider.
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
