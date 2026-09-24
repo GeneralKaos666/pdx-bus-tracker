@@ -82,13 +82,15 @@ fun RecentStopsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                // The list supplies its own horizontal inset; adding one here too pushed
+                // Recent rows 16dp further in than Favorites rows.
+                .padding(top = 16.dp)
         ) {
             ContentEntrance {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
