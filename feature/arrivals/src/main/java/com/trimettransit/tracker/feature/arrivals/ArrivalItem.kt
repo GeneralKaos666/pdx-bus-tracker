@@ -197,9 +197,23 @@ internal fun ArrivalItem(
                 }
             }
 
+            // A scheduled time is not a tracked one, so its pill drops to the low-emphasis
+            // pairing instead of the solid pill live arrivals use. Cancelled and drop-off-only
+            // keep the solid pill: those are definitive states, not weaker ones.
+            val isScheduled = !arrival.isEstimated && !arrival.isCanceled && !arrival.dropOffOnly
+            val pillContainerColor = if (isScheduled) {
+                MaterialTheme.colorScheme.surfaceVariant
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+            val pillContentColor = if (isScheduled) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
             Surface(
                 shape = appCardShape(),
-                color = MaterialTheme.colorScheme.onSurface
+                color = pillContainerColor
             ) {
                 if (arrival.isCanceled) {
                     Column(
@@ -247,7 +261,7 @@ internal fun ArrivalItem(
                         CountdownLabel(
                             minutesAway = minutesAway,
                             isEstimated = arrival.isEstimated,
-                            color = MaterialTheme.colorScheme.surface,
+                            color = pillContentColor,
                             style = MaterialTheme.typography.titleMedium,
                             flipDelayMs = (arrivalKey(arrival).hashCode() and 0x7fffffff) % 5 * 40L
                         )
@@ -256,13 +270,13 @@ internal fun ArrivalItem(
                             if (delayText != null) {
                                 Text(
                                     text = delayText,
-                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                    color = pillContentColor.copy(alpha = 0.7f),
                                     style = MaterialTheme.typography.labelSmall
                                 )
                             } else if (!arrival.isEstimated) {
                                 Text(
                                     text = stringResource(R.string.scheduled),
-                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                    color = pillContentColor.copy(alpha = 0.7f),
                                     style = MaterialTheme.typography.labelSmall
                                 )
                             }
