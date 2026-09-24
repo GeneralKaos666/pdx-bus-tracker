@@ -31,6 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -137,12 +139,20 @@ private fun RouteListItem(
     gridMode: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    // The row is a button (Card gives it that role) that toggles a section, so it reports the
+    // section's state. The chevron below is decorative for the same reason: otherwise TalkBack
+    // says it twice.
+    val expandedLabel = stringResource(R.string.expanded)
+    val collapsedLabel = stringResource(R.string.collapsed)
     Card(
         onClick = onClick,
         interactionSource = interactionSource,
         modifier = modifier
             .fillMaxWidth()
             .then(if (gridMode) Modifier else Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            .semantics {
+                stateDescription = if (isExpanded) expandedLabel else collapsedLabel
+            }
             .pressScale(interactionSource),
         shape = appCardShape(),
         colors = CardDefaults.cardColors(
@@ -201,7 +211,7 @@ private fun RouteListItem(
             )
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .padding(start = 8.dp)

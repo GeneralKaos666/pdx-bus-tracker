@@ -71,7 +71,11 @@ fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
 
 /** Row icon chip shared by Settings and the widget screens; highlight colors animate in. */
 @Composable
-fun SettingsIconCircle(icon: ImageVector, highlighted: Boolean) {
+fun SettingsIconCircle(
+    icon: ImageVector,
+    highlighted: Boolean,
+    contentDescription: String? = null
+) {
     val containerColor by animateColorAsState(
         targetValue = if (highlighted) MaterialTheme.colorScheme.primaryContainer
                       else MaterialTheme.colorScheme.surfaceContainerHighest,
@@ -92,7 +96,7 @@ fun SettingsIconCircle(icon: ImageVector, highlighted: Boolean) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = contentDescription,
                 tint = contentColor,
                 modifier = Modifier.size(24.dp)
             )

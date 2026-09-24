@@ -35,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -226,12 +228,18 @@ private fun DirectionItem(
     onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    // Same contract as the route row: announce the section's state, keep the chevron decorative.
+    val expandedLabel = stringResource(R.string.expanded)
+    val collapsedLabel = stringResource(R.string.collapsed)
     Card(
         onClick = onClick,
         interactionSource = interactionSource,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
+            .semantics {
+                stateDescription = if (isExpanded) expandedLabel else collapsedLabel
+            }
             .pressScale(interactionSource),
         shape = appCardShape(),
         colors = CardDefaults.cardColors(
@@ -261,7 +269,7 @@ private fun DirectionItem(
             Spacer(modifier = Modifier.width(8.dp))
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = if (isExpanded) stringResource(R.string.collapse) else stringResource(R.string.expand),
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.rotate(chevronRotation)
             )

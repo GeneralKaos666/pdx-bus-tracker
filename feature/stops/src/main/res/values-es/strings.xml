@@ -9,14 +9,14 @@
     <string name="offline_no_data">Sin conexión.\nLos datos del transporte necesitan una conexión.</string>
     <string name="no_routes_available">No hay líneas disponibles.</string>
     <string name="no_stops_available">No hay paradas disponibles.</string>
-    <string name="collapse">Contraer</string>
-    <string name="expand">Expandir</string>
     <string name="use_your_location_question">¿Permitir usar tu ubicación?</string>
     <string name="location_explainer">PDX Bus Tracker usa tu ubicación solo cuando se lo pides para encontrar paradas de TriMet cerca de ti. Tu ubicación nunca se guarda en esta app ni se usa para nada más.</string>
     <string name="continue_">Continuar</string>
     <string name="not_now">Ahora no</string>
     <string name="lines_title">Líneas</string>
     <string name="lines_back_to_all">Volver a todas las líneas</string>
+    <string name="expanded">Expandido</string>
+    <string name="collapsed">Contraído</string>
     <string name="loading">Cargando…</string>
     <string name="refresh">Actualizar</string>
     <string name="finding_nearby_stops">Buscando paradas cercanas…</string>

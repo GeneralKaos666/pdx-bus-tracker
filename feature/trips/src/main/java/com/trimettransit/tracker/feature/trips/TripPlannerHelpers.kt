@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -93,7 +94,17 @@ internal fun EndpointRow(
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth()
+                    // The visible text is the place name once a point is set, so the field's role
+                    // has to be spoken rather than seen. Set on this Text only: putting it on the
+                    // row would swallow the clear button.
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics {
+                            contentDescription = currentPoint?.description
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let { "$label, $it" }
+                                ?: label
+                        }
                 )
             }
             AnimatedVisibility(

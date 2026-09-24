@@ -21,6 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.ui.appearance.MapStyles
@@ -62,6 +65,9 @@ internal fun SubmenuHeader(title: String, subtitle: String? = null, onBack: () -
             modifier = Modifier
                 .fillMaxWidth()
                 .pressScale(interactionSource)
+                // Without a role this read as plain text, so a screen reader user could not tell
+                // the header was also the way back.
+                .semantics { role = Role.Button }
                 .clickable(
                     interactionSource = interactionSource,
                     indication = LocalIndication.current,
@@ -70,7 +76,11 @@ internal fun SubmenuHeader(title: String, subtitle: String? = null, onBack: () -
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SettingsIconCircle(icon = Icons.AutoMirrored.Filled.ArrowBack, highlighted = false)
+            SettingsIconCircle(
+                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                highlighted = false,
+                contentDescription = stringResource(R.string.back)
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = title,
