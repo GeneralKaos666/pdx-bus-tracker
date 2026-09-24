@@ -11,10 +11,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -426,12 +424,14 @@ fun ArrivalsScreen(
                     contentPadding = PaddingValues(
                         start = 12.dp,
                                 end = 12.dp,
-                                top = 8.dp
+                                top = 8.dp,
+                                bottom = navPillBottomPadding() + 8.dp
                             ),
-                            // Centres a short list instead of leaving a void under it. `spacedBy`
-                            // with an alignment only uses the alignment when the content is
-                            // smaller than the viewport, so a full list lays out as before.
-                            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
+                            // Top-aligned. An earlier attempt centred a short list to avoid the
+                            // gap underneath it, but that put a large gap ABOVE the first row
+                            // instead, which reads as broken padding on the screen most users
+                            // open first. A list shorter than the viewport simply ends early.
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             val visibleArrivals =
                                 if (showAllArrivals) unfilteredArrivals else arrivals.take(TOP_ARRIVAL_ROWS)
@@ -544,16 +544,6 @@ fun ArrivalsScreen(
                                         }
                                     }
                                 }
-                            }
-
-                            // Real content rather than contentPadding. While it is centring a short
-                            // list, the arrangement is handed the raw viewport height and does not
-                            // account for contentPadding at all, so only a trailing item can keep
-                            // the last row clear of the floating nav pill. (contentPadding is
-                            // still honoured in the normal scrolled layout.) Deliberately no
-                            // animateItem(): this clearance must not slide when the data changes.
-                            item(key = "navPillClearance", contentType = "clearance") {
-                                Spacer(modifier = Modifier.height(navPillBottomPadding() + 8.dp))
                             }
 
                         }
