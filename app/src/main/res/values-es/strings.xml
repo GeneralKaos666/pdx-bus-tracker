@@ -87,13 +87,6 @@
     <string name="nearby_stops_title">Paradas cercanas</string>
     <string name="stop">Parada</string>
     <string name="mini_window">Ventana pequeña</string>
-    <string name="add_favorite">Añadir a favoritos</string>
-    <string name="remove_favorite">Quitar de favoritos</string>
-    <string name="favorite_added_text">Favorito añadido.</string>
-    <string name="favorite_deleted_text">Favorito eliminado.</string>
-    <string name="favorite_does_not_exist_text">El favorito no existe.</string>
-    <string name="favorite_exists_text">El favorito ya existe.</string>
-    <string name="failed_to_update_favorite">No se pudo actualizar el favorito</string>
     <string name="favorite_location_unavailable">No se pudieron cargar los detalles de la parada — comprueba tu conexión</string>
     <string name="refresh">Actualizar</string>
     <string name="close_detail">Cerrar detalles de llegada</string>

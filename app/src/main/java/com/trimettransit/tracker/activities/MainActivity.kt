@@ -44,8 +44,6 @@ import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.PictureInPictureAlt
 import androidx.compose.material3.Snackbar
@@ -76,6 +74,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.trimettransit.tracker.ui.MainBottomBar
 import com.trimettransit.tracker.ui.MainNavigationRail
 import com.trimettransit.tracker.ui.bottomNavItems
+import com.trimettransit.tracker.ui.components.FavoriteToggleButton
 import com.trimettransit.tracker.ui.components.findActivity
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberIsInPipMode
@@ -492,11 +491,18 @@ private fun MainAppContent(
                 lat = resolved.latitude
                 lng = resolved.longitude
             }
-            val result = toggleFavorite(favoritesRepository, context, locId, stopName, arrivalsIsFavorite, routeId, lat, lng)
-            if (result.first) {
+            val result = toggleFavorite(
+                favoritesRepository = favoritesRepository,
+                locId = locId,
+                stopName = stopName,
+                currentlyFavorite = arrivalsIsFavorite,
+                routeId = routeId,
+                lat = lat,
+                lng = lng
+            )
+            if (result) {
                 arrivalsIsFavorite = !arrivalsIsFavorite
             }
-            outerSnackbarHostState.showSnackbar(result.second)
         }
     }
 
@@ -523,25 +529,11 @@ private fun MainAppContent(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                val paneFavSource = remember(dest.stopId) { MutableInteractionSource() }
-                IconButton(
-                    onClick = { toggleFavoriteFlow(dest.stopId, dest.stopName, dest.routeId) },
-                    interactionSource = paneFavSource,
-                    modifier = Modifier.pressScale(paneFavSource)
-                ) {
-                    AnimatedContent(
-                        targetState = arrivalsIsFavorite,
-                        transitionSpec = { fadeIn(m3EffectsDefault()) togetherWith fadeOut(m3EffectsFast()) },
-                        label = "paneFavoriteIcon"
-                    ) { isFav ->
-                        Icon(
-                            imageVector = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                            contentDescription = if (isFav) stringResource(R.string.remove_favorite) else stringResource(R.string.add_favorite),
-                            tint = if (isFav) MaterialTheme.colorScheme.error
-                                    else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                // The same heart the four lists use: same icon, same primary tint, no snackbar.
+                FavoriteToggleButton(
+                    isFavorite = arrivalsIsFavorite,
+                    onClick = { toggleFavoriteFlow(dest.stopId, dest.stopName, dest.routeId) }
+                )
                 val paneRefreshSource = remember(dest.stopId) { MutableInteractionSource() }
                 IconButton(
                     onClick = {
@@ -678,31 +670,18 @@ private fun MainAppContent(
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
-                            val favSource = remember { MutableInteractionSource() }
-                            IconButton(
+                            // The same heart the four lists use: same icon, same primary tint,
+                            // no snackbar.
+                            FavoriteToggleButton(
+                                isFavorite = arrivalsIsFavorite,
                                 onClick = {
                                     toggleFavoriteFlow(
                                         arrivalsDest?.stopId ?: 0,
                                         arrivalsDest?.stopName.orEmpty(),
                                         arrivalsDest?.routeId ?: -1
                                     )
-                                },
-                                interactionSource = favSource,
-                                modifier = Modifier.pressScale(favSource)
-                            ) {
-                                AnimatedContent(
-                                    targetState = arrivalsIsFavorite,
-                                    transitionSpec = { fadeIn(m3EffectsDefault()) togetherWith fadeOut(m3EffectsFast()) },
-                                    label = "favoriteIcon"
-                                ) { isFav ->
-                                    Icon(
-                                        imageVector = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                        contentDescription = if (isFav) stringResource(R.string.remove_favorite) else stringResource(R.string.add_favorite),
-                                        tint = if (isFav) MaterialTheme.colorScheme.error
-                                                else MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
                                 }
-                            }
+                            )
                             val refreshSource = remember { MutableInteractionSource() }
                             IconButton(
                                 onClick = {

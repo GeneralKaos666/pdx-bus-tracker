@@ -68,13 +68,6 @@
     <string name="nearby_stops_title">Nearby Stops</string>
     <string name="stop">Stop</string>
     <string name="mini_window">Mini window</string>
-    <string name="add_favorite">Add favorite</string>
-    <string name="remove_favorite">Remove favorite</string>
-    <string name="favorite_added_text">Favorite added.</string>
-    <string name="favorite_deleted_text">Favorite deleted.</string>
-    <string name="favorite_does_not_exist_text">Favorite does not exist.</string>
-    <string name="favorite_exists_text">Favorite already exists.</string>
-    <string name="failed_to_update_favorite">Failed to update favorite</string>
     <string name="favorite_location_unavailable">Couldn’t load stop details — check your connection</string>
     <string name="refresh">Refresh</string>
     <string name="close_detail">Close arrival details</string>
