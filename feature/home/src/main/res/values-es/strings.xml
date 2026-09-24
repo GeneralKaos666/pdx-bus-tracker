@@ -3,7 +3,6 @@
     <string name="search_stops_hint">Buscar paradas por nombre o ID</string>
     <string name="search">Buscar</string>
     <string name="clear_search">Borrar búsqueda</string>
-    <string name="loading_stops">Cargando paradas…</string>
     <string name="no_connection">Sin conexión.\nComprueba tu conexión a internet.</string>
     <string name="unable_to_load">No se pudieron cargar tus paradas.</string>
     <string name="no_favorite_stops">Aún no hay paradas favoritas.\nToca el corazón en las llegadas para añadir una.</string>

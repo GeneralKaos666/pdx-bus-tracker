@@ -3,7 +3,6 @@
     <string name="search_stops_hint">Search stops by name or ID</string>
     <string name="search">Search</string>
     <string name="clear_search">Clear search</string>
-    <string name="loading_stops">Loading stops…</string>
     <string name="no_connection">No connection.\nPlease check your internet.</string>
     <string name="unable_to_load">Couldn\'t load your stops.</string>
     <string name="no_favorite_stops">No favorite stops yet.\nTap the heart on arrivals to add one.</string>

@@ -7,11 +7,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -21,7 +19,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +40,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.trimettransit.tracker.ui.components.ListLoadingSkeleton
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.ErrorState
@@ -242,7 +240,9 @@ private fun SearchResultsDropdown(
             modifier = Modifier.fillMaxHeight(0.65f)
         ) {
             when {
-                isLoading && allStops == null -> SearchPanelLoading()
+                // The rest of the app shows shimmer placeholders while a list loads; a lone
+                // spinner here was the odd one out.
+                isLoading && allStops == null -> ListLoadingSkeleton(rows = 4)
                 hasError && allStops == null -> ErrorState(
                     message = stringResource(R.string.no_connection),
                     onRetry = onRetry
@@ -282,21 +282,6 @@ private fun SearchResultsDropdown(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun SearchPanelLoading() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(modifier = Modifier.size(32.dp))
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = stringResource(R.string.loading_stops),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
