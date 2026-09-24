@@ -15,7 +15,6 @@
     <string name="location_explainer">PDX Bus Tracker usa tu ubicación solo cuando se lo pides para encontrar paradas de TriMet cerca de ti. Tu ubicación nunca se guarda en esta app ni se usa para nada más.</string>
     <string name="continue_">Continuar</string>
     <string name="not_now">Ahora no</string>
-    <string name="nearby_stops_list_title">Paradas cercanas</string>
     <string name="lines_title">Líneas</string>
     <string name="lines_back_to_all">Volver a todas las líneas</string>
     <string name="loading">Cargando…</string>

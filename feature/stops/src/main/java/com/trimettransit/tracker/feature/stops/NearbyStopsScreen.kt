@@ -221,12 +221,8 @@ fun NearbyStopsScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(
-            text = stringResource(R.string.nearby_stops_list_title),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
+        // The TopAppBar already names this screen; a second identical heading directly under it
+        // was pure duplication.
         // Refresh button
         val refreshSource = remember { MutableInteractionSource() }
         FilledTonalButton(
