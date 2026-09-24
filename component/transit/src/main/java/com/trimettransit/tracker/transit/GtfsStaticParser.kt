@@ -3,7 +3,6 @@ package com.trimettransit.tracker.transit
 import com.trimettransit.tracker.model.GtfsRoute
 import com.trimettransit.tracker.model.GtfsStaticSnapshot
 import com.trimettransit.tracker.model.GtfsStop
-import com.trimettransit.tracker.model.GtfsShapePoint
 import java.io.InputStream
 import java.util.zip.ZipInputStream
 
@@ -40,14 +39,7 @@ internal object GtfsStaticParser {
                     longitude = lon
                 )
             },
-            shapes = tables["shapes.txt"].orEmpty().mapNotNull { row ->
-                val id = row["shape_id"].orEmpty()
-                val lat = row["shape_pt_lat"]?.toDoubleOrNull()
-                val lon = row["shape_pt_lon"]?.toDoubleOrNull()
-                val sequence = row["shape_pt_sequence"]?.toIntOrNull()
-                if (id.isBlank() || lat == null || lon == null || sequence == null) null else
-                    GtfsShapePoint(id, lat, lon, sequence)
-            }.sortedWith(compareBy<GtfsShapePoint> { it.shapeId }.thenBy { it.sequence }),
+            shapes = emptyList(),
             fetchedAtMillis = fetchedAtMillis
         )
     }
@@ -88,5 +80,5 @@ internal object GtfsStaticParser {
         return result
     }
 
-    private val TABLES = setOf("routes.txt", "stops.txt", "shapes.txt")
+    private val TABLES = setOf("routes.txt", "stops.txt")
 }
