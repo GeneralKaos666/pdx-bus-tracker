@@ -56,7 +56,7 @@ fi
 
 NOTES="$(awk -v ver="$VERSION" '
     $0 ~ ("^## What.s New in v" ver "$") { capture = 1; next }
-    capture && /^ / { exit }
+    capture && /^## / { exit }
     capture { print }
 ' "$CHANGELOG")"
 if [[ -z "$NOTES" ]]; then
