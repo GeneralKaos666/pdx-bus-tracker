@@ -13,6 +13,7 @@
     <string name="expand_planner">Expand trip controls</string>
     <string name="collapse_planner">Collapse trip controls</string>
     <string name="arrive_by_time_title">Arrive by time</string>
+    <string name="arrive_by_in_past">Choose a time in the future</string>
     <string name="done">Done</string>
     <string name="origin_field_hint">Origin</string>
     <string name="destination_field_hint">Destination</string>

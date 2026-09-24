@@ -3,6 +3,7 @@ package com.trimettransit.tracker.feature.trips
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -77,6 +78,7 @@ import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.map.MapCoordinate
 import com.trimettransit.tracker.model.domain.itinerarySelectionAfterPlan
+import com.trimettransit.tracker.model.domain.isInThePast
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
@@ -758,25 +760,48 @@ fun TripPlannerScreen(
         val timeState = rememberTimePickerState(
             initialHour = cal.get(Calendar.HOUR_OF_DAY),
             initialMinute = cal.get(Calendar.MINUTE),
-            is24Hour = false
+            // Follow the phone's own 12/24-hour setting instead of forcing 12-hour.
+            is24Hour = DateFormat.is24HourFormat(context)
         )
+        val chosenTime = remember(timeState.hour, timeState.minute) {
+            Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, timeState.hour)
+                set(Calendar.MINUTE, timeState.minute)
+            }.timeInMillis
+        }
+        val chosenIsStale = TripRequestTime(arriveBy = true, timeMillis = chosenTime)
+            .isInThePast(System.currentTimeMillis())
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
             title = { Text(stringResource(R.string.arrive_by_time_title)) },
             text = {
-                TimePicker(
-                    state = timeState,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    TimePicker(
+                        state = timeState,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (chosenIsStale) {
+                        Text(
+                            text = stringResource(R.string.arrive_by_in_past),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    showTimePicker = false
-                    cal.set(Calendar.HOUR_OF_DAY, timeState.hour)
-                    cal.set(Calendar.MINUTE, timeState.minute)
-                    arriveByTimeMillis = cal.timeInMillis
-                    invalidatePlan()
-                }) { Text(stringResource(R.string.done)) }
+                TextButton(
+                    // A time that has already passed cannot be planned for, so it cannot be
+                    // confirmed either.
+                    enabled = !chosenIsStale,
+                    onClick = {
+                        showTimePicker = false
+                        cal.set(Calendar.HOUR_OF_DAY, timeState.hour)
+                        cal.set(Calendar.MINUTE, timeState.minute)
+                        arriveByTimeMillis = cal.timeInMillis
+                        invalidatePlan()
+                    }
+                ) { Text(stringResource(R.string.done)) }
             },
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) {
