@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +58,8 @@ internal fun EndpointRow(
     point: TripPoint?,
     accentColor: Color,
     onClick: () -> Unit,
-    onClear: () -> Unit
+    onClear: () -> Unit,
+    onPickOnMap: () -> Unit
 ) {
     val source = remember { MutableInteractionSource() }
     Surface(
@@ -105,6 +107,15 @@ internal fun EndpointRow(
                                 ?.let { "$label, $it" }
                                 ?: label
                         }
+                )
+            }
+            // Available whether or not a point is set, unlike the clear button below.
+            IconButton(onClick = onPickOnMap, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    Icons.Default.LocationOn,
+                    contentDescription = stringResource(R.string.pick_on_map),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
                 )
             }
             AnimatedVisibility(

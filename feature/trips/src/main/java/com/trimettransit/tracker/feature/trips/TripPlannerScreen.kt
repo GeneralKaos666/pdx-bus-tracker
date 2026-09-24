@@ -223,14 +223,9 @@ fun TripPlannerScreen(
         isPlanning = false
     }
 
-    // Ask for location once, and only while this page is visible (the pager pre-composes
-    // adjacent pages). The explainer dialog is shown before the system permission dialog.
-    LaunchedEffect(pageVisible, locationPermissionGranted) {
-        if (pageVisible && !locationPermissionGranted && !hasAskedPermission) {
-            hasAskedPermission = true
-            showLocationExplainer = true
-        }
-    }
+    // Location is asked for only from an explicit action ("Use my location" in the picker
+    // sheet), never merely because this page became visible. The granted-path fetch below is a
+    // read, not a prompt, and stays.
 
     LaunchedEffect(locationPermissionGranted) {
         if (locationPermissionGranted) {
@@ -261,6 +256,9 @@ fun TripPlannerScreen(
             }
         } else {
             pendingMyLocationOrigin = true
+            // Now the only thing that records the permission as asked-for, which is what shows
+            // the "Location permission is off" chip once the request is refused.
+            hasAskedPermission = true
             showLocationExplainer = true
         }
     }
@@ -533,7 +531,8 @@ fun TripPlannerScreen(
                                     pickerSlot = PickSlot.ORIGIN
                                     picking = PickSlot.NONE
                                 },
-                                onClear = { pendingMyLocationOrigin = false; origin = null; invalidatePlan() }
+                                onClear = { pendingMyLocationOrigin = false; origin = null; invalidatePlan() },
+                                onPickOnMap = { picking = PickSlot.ORIGIN; pickerSlot = null }
                             )
                             Row(
                                 modifier = Modifier
@@ -572,7 +571,8 @@ fun TripPlannerScreen(
                                     pickerSlot = PickSlot.DEST
                                     picking = PickSlot.NONE
                                 },
-                                onClear = { dest = null; invalidatePlan() }
+                                onClear = { dest = null; invalidatePlan() },
+                                onPickOnMap = { picking = PickSlot.DEST; pickerSlot = null }
                             )
 
                             Row(
