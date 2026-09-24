@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -77,15 +78,16 @@ fun StopListItem(
                 colorScheme,
                 LocalAppearanceStyle.current.transitTypeColors
             )
-            // Transit type indicator
+            // A minimum, not a fixed size: at 200% font scale a three-digit route number no
+            // longer fits in 40dp and was being clipped.
             Surface(
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.sizeIn(minWidth = 40.dp, minHeight = 40.dp),
                 shape = appCardShape(),
                 color = transitTypeColor
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
                 ) {
                     when {
                         stop.routeNum > 0 -> Text(
@@ -117,7 +119,7 @@ fun StopListItem(
                     text = stop.desc,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 if (stop.dirDesc.isNotBlank()) {

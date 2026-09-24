@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
@@ -164,11 +165,14 @@ private fun RouteListItem(
                 LocalAppearanceStyle.current.transitTypeColors
             )
             Surface(
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier.sizeIn(minWidth = 44.dp, minHeight = 44.dp),
                 shape = appCardShape(),
                 color = typeColor
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                ) {
                     Text(
                         text = route.routeId.toString(),
                         color = MaterialTheme.colorScheme.surface,
@@ -183,7 +187,7 @@ private fun RouteListItem(
                     text = route.desc,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
