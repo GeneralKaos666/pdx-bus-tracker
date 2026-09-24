@@ -83,8 +83,16 @@ if gh release view "$TAG" >/dev/null 2>&1; then
 	exit 1
 fi
 
+# Prefer the local annotated tag's subject as the release title (signed tags carry a
+# human title); fall back to the plain tag name when no annotated tag exists yet.
+TITLE="$(git for-each-ref --format='%(contents:subject)' "refs/tags/${TAG}" 2>/dev/null || true)"
+if [[ -z "$TITLE" ]]; then
+	TITLE="$TAG"
+fi
+
 echo "Version:  $VERSION"
 echo "Tag:      $TAG"
+echo "Title:    $TITLE"
 echo "APK:      $STAGED_APK"
 echo "To Play:  $TO_PLAY"
 echo "--- release notes ---"
@@ -95,7 +103,7 @@ if [[ "$DRY_RUN" == true ]]; then
 	if [[ "$TO_PLAY" == true ]]; then
 		echo "[dry-run] Would run: bundle exec fastlane android deploy_phone"
 	fi
-	echo "[dry-run] Would run: gh release create \"$TAG\" \"$STAGED_APK\" --title \"$TAG\" --notes-file <extracted notes>"
+	echo "[dry-run] Would run: gh release create \"$TAG\" \"$STAGED_APK\" --title \"$TITLE\" --notes-file <extracted notes>"
 	exit 0
 fi
 
@@ -123,7 +131,7 @@ NOTES_FILE="$(mktemp "${TMPDIR:-$HOME}/release-notes-XXXXXX")"
 trap 'rm -f "$NOTES_FILE"' EXIT
 printf '%s\n' "$NOTES" >"$NOTES_FILE"
 
-gh release create "$TAG" "$STAGED_APK" --title "$TAG" --notes-file "$NOTES_FILE"
+gh release create "$TAG" "$STAGED_APK" --title "$TITLE" --notes-file "$NOTES_FILE"
 
 URL="$(gh release view "$TAG" --json url -q .url)"
 echo "Published: $URL"
