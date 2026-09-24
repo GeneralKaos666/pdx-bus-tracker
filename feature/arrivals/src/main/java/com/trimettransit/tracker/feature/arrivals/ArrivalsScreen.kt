@@ -88,6 +88,11 @@ import kotlinx.coroutines.withContext
 
 private const val POSITION_REFRESH_MS = 15_000L
 private const val PIP_REFRESH_MS = 20_000L
+// The service returns arrivals up to and including the first one past this window, and does not
+// estimate anything more than an hour out. So a stop with a service gap can legitimately show a
+// scheduled arrival well over the window -- a "199 min scheduled" row is expected behaviour, not a
+// bug, and it only appears when there are fewer than TOP_ARRIVAL_ROWS real arrivals to fill the
+// list. Nothing here should be "fixed" to clamp it.
 private const val ARRIVALS_FETCH_MINUTES = 30
 private const val ARRIVALS_FETCH_MAX = 15
 private const val PREF_TAP_TO_TRACK_HINT_SHOWN = "pref_key_tap_to_track_hint_shown"
