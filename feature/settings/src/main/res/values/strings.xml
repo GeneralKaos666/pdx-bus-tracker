@@ -62,7 +62,6 @@
     <string name="transit_rail">MAX &amp; rail color</string>
     <string name="transit_streetcar">Streetcar color</string>
     <string name="transit_wes">WES color</string>
-    <string name="transit_type_subtitle">Route badge color (follows the scheme when unset)</string>
     <string name="transit_bus_subtitle">Bus badges in arrival rows, stop lists, trip legs, and map pins. Unset follows the accent</string>
     <string name="transit_rail_subtitle">MAX and rail badges in arrival rows, stop lists, trip legs, and map pins. Unset follows the accent</string>
     <string name="transit_streetcar_subtitle">Streetcar badges in arrival rows, stop lists, trip legs, and map pins. Unset follows the accent</string>
@@ -117,11 +116,11 @@
     <string name="cancel">Cancel</string>
     <string name="section_arrivals">Arrivals</string>
     <string name="section_arrivals_intro">Controls what an arrivals screen shows and how often it refreshes.</string>
-    <string name="only_show_selected_route">Only show selected route\'s arrivals</string>
-    <string name="only_show_selected_route_subtitle">Filters the arrivals list when opened from a route</string>
+    <string name="only_show_selected_route">Only show selected line\'s arrivals</string>
+    <string name="only_show_selected_route_subtitle">Filters the arrivals list when opened from a line</string>
     <string name="arrival_show_clock">Show scheduled time</string>
     <string name="arrival_show_clock_subtitle">Display the clock time under each arrival</string>
-    <string name="arrival_show_route_badges">Show route badges</string>
+    <string name="arrival_show_route_badges">Show line badges</string>
     <string name="arrival_show_route_badges_subtitle">Colored transit-type icon at the left of each row</string>
     <string name="arrival_show_vehicle_info">Show delay details</string>
     <string name="arrival_show_vehicle_info_subtitle">On-time, early, or late status under the countdown</string>

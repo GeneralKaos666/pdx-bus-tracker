@@ -37,7 +37,7 @@
     <string name="theme_dark">Oscuro</string>
     <string name="theme_dark_subtitle">Usar siempre el tema oscuro</string>
     <string name="section_colours">Colores</string>
-    <string name="section_colours_intro">Define el color de acento, los colores de las insignias de ruta y la intensidad del color.</string>
+    <string name="section_colours_intro">Define el color de acento, los colores de las insignias de línea y la intensidad del color.</string>
     <string name="colour_accent">Color de acento</string>
     <string name="colour_accent_subtitle">Personalización del acento, intensidad, refuerzo oscuro y colores por modo</string>
     <string name="accent_colour">Elegir color de acento</string>
@@ -62,7 +62,6 @@
     <string name="transit_rail">Color de MAX y trenes</string>
     <string name="transit_streetcar">Color de tranvías</string>
     <string name="transit_wes">Color de WES</string>
-    <string name="transit_type_subtitle">Color de la insignia de ruta (sigue el esquema si no se define)</string>
     <string name="transit_bus_subtitle">Insignias de autobús en llegadas, listas de paradas, etapas del viaje y pins del mapa. Sin definir sigue el acento</string>
     <string name="transit_rail_subtitle">Insignias de MAX y trenes en llegadas, listas de paradas, etapas del viaje y pins del mapa. Sin definir sigue el acento</string>
     <string name="transit_streetcar_subtitle">Insignias de tranvía en llegadas, listas de paradas, etapas del viaje y pins del mapa. Sin definir sigue el acento</string>
@@ -117,11 +116,11 @@
     <string name="cancel">Cancelar</string>
     <string name="section_arrivals">Llegadas</string>
     <string name="section_arrivals_intro">Controla qué muestra la pantalla de llegadas y cada cuánto se actualiza.</string>
-    <string name="only_show_selected_route">Mostrar solo las llegadas de la ruta seleccionada</string>
-    <string name="only_show_selected_route_subtitle">Filtra la lista de llegadas cuando se abre desde una ruta</string>
+    <string name="only_show_selected_route">Mostrar solo las llegadas de la línea seleccionada</string>
+    <string name="only_show_selected_route_subtitle">Filtra la lista de llegadas cuando se abre desde una línea</string>
     <string name="arrival_show_clock">Mostrar hora programada</string>
     <string name="arrival_show_clock_subtitle">Muestra la hora de reloj debajo de cada llegada</string>
-    <string name="arrival_show_route_badges">Mostrar insignias de ruta</string>
+    <string name="arrival_show_route_badges">Mostrar insignias de línea</string>
     <string name="arrival_show_route_badges_subtitle">Icono de tipo de tránsito de color a la izquierda de cada fila</string>
     <string name="arrival_show_vehicle_info">Mostrar detalles de retraso</string>
     <string name="arrival_show_vehicle_info_subtitle">Estado a tiempo, adelantado o retrasado debajo de la cuenta regresiva</string>

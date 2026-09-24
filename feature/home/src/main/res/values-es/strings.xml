@@ -5,13 +5,13 @@
     <string name="clear_search">Borrar búsqueda</string>
     <string name="no_connection">Sin conexión.\nComprueba tu conexión a internet.</string>
     <string name="unable_to_load">No se pudieron cargar tus paradas.</string>
-    <string name="no_favorite_stops">Aún no hay paradas favoritas.\nToca el corazón en las llegadas para añadir una.</string>
+    <string name="no_favorite_stops">Aún no hay paradas favoritas.\nToca el corazón en las llegadas para guardar una.</string>
     <string name="no_stops_found">No se encontraron paradas.</string>
     <string name="favorites_reorder_hint">Mantén pulsado y arrastra para reordenar</string>
     <string name="favorites_reorder_hint_dismiss">Entendido</string>
     <string name="favorites_title">Favoritos</string>
     <string name="home_title">Inicio</string>
-    <string name="recent_stops_title">Paradas recientes</string>
+    <string name="recent_stops_title">Recientes</string>
     <string name="no_recent_stops">No hay paradas recientes.</string>
     <string name="remove_favorite_title">¿Quitar de favoritos?</string>
     <string name="cancel">Cancelar</string>
@@ -22,10 +22,10 @@
     <string name="remove_recent_title">¿Quitar de recientes?</string>
     <string name="clear_recents">Borrar todo</string>
     <string name="clear_recents_title">¿Borrar las paradas recientes?</string>
-    <string name="clear_recents_message">Esto elimina todas las paradas de tu historial reciente. Tus favoritos no se verán afectados.</string>
-    <string name="browse_routes">Explorar rutas</string>
+    <string name="clear_recents_message">Esto elimina todas las paradas de tu paradas recientes. Tus favoritos no se verán afectados.</string>
+    <string name="browse_routes">Explorar líneas</string>
     <string name="find_nearby">Buscar paradas cercanas</string>
     <string name="welcome_title">No pierdas tu viaje</string>
-    <string name="welcome_message">Guarda como favoritas las paradas que usas cada día, busca paradas cerca de ti o explora las rutas para empezar. Toca cualquier llegada para ver su autobús en vivo en el mapa.</string>
+    <string name="welcome_message">Guarda como favoritas las paradas que usas cada día, busca paradas cerca de ti o explora las líneas para empezar. Toca cualquier llegada para ver su autobús en vivo en el mapa.</string>
     <string name="got_it">Entendido</string>
 </resources>

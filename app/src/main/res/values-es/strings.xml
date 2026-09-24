@@ -29,7 +29,7 @@
     <string name="widget_config_compact">Compacto</string>
     <string name="widget_config_detailed">Detallado</string>
     <string name="widget_config_display">Pantalla</string>
-    <string name="widget_config_show_route_badge">Insignia de ruta</string>
+    <string name="widget_config_show_route_badge">Insignia de línea</string>
     <string name="widget_config_show_detour_alerts">Alertas de desvío</string>
     <string name="widget_config_show_arrival_status">Estado de llegada</string>
     <string name="widget_config_limit">Límite</string>
@@ -38,7 +38,7 @@
         <item quantity="many">Mostrar %1$d paradas</item>
         <item quantity="other">Mostrar %1$d paradas</item>
     </plurals>
-    <string name="widget_config_route_filter">Solo estas rutas (separadas por comas)</string>
+    <string name="widget_config_route_filter">Solo estas líneas (separadas por comas)</string>
     <string name="widget_config_route_filter_hint">p. ej. 4, 9, 12</string>
     <string name="widget_config_title_field">Título</string>
     <string name="widget_config_hide_title">Ocultar título</string>

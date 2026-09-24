@@ -5,13 +5,13 @@
     <string name="clear_search">Clear search</string>
     <string name="no_connection">No connection.\nPlease check your internet.</string>
     <string name="unable_to_load">Couldn\'t load your stops.</string>
-    <string name="no_favorite_stops">No favorite stops yet.\nTap the heart on arrivals to add one.</string>
+    <string name="no_favorite_stops">No favorite stops yet.\nTap the heart on arrivals to save one.</string>
     <string name="no_stops_found">No stops found.</string>
     <string name="favorites_reorder_hint">Long-press and drag to reorder</string>
     <string name="favorites_reorder_hint_dismiss">Got it</string>
     <string name="favorites_title">Favorites</string>
     <string name="home_title">Home</string>
-    <string name="recent_stops_title">Recent Stops</string>
+    <string name="recent_stops_title">Recents</string>
     <string name="no_recent_stops">No recent stops.</string>
     <string name="remove_favorite_title">Remove from favorites?</string>
     <string name="cancel">Cancel</string>
@@ -22,10 +22,10 @@
     <string name="remove_recent_title">Remove from recents?</string>
     <string name="clear_recents">Clear all</string>
     <string name="clear_recents_title">Clear recent stops?</string>
-    <string name="clear_recents_message">This removes all stops from your recent history. Favorites are not affected.</string>
-    <string name="browse_routes">Browse routes</string>
+    <string name="clear_recents_message">This removes all stops from your recent stops. Favorites are not affected.</string>
+    <string name="browse_routes">Browse lines</string>
     <string name="find_nearby">Find nearby stops</string>
     <string name="welcome_title">Never miss your ride</string>
-    <string name="welcome_message">Save the stops you use every day as favorites, find stops near you, or browse routes to get started. Tap any arrival to watch its bus move live on the map.</string>
+    <string name="welcome_message">Save the stops you use every day as favorites, find stops near you, or browse lines to get started. Tap any arrival to watch its bus move live on the map.</string>
     <string name="got_it">Got it</string>
 </resources>
