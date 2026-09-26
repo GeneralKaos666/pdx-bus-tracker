@@ -6,6 +6,8 @@ import org.joda.time.DateTime
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class WidgetSnapshotCacheTest {
@@ -151,6 +153,59 @@ class WidgetSnapshotCacheTest {
             )
         )
         assertEquals(2, cleaned.size)
+    }
+
+    @Test
+    fun `saved snapshot records when it was written`() {
+        val before = System.currentTimeMillis()
+        val json = JSONObject()
+            .put("hasFavorites", true)
+            .put("updated", System.currentTimeMillis())
+            .put("rows", JSONArray())
+            .toString()
+        val loaded = WidgetSnapshotCache.parseSnapshotLenient(json)
+        assertNotNull(loaded)
+        assertTrue(loaded.updatedAtMillis >= before)
+        assertTrue(loaded.updatedAtMillis <= System.currentTimeMillis())
+    }
+
+    @Test
+    fun `empty cache loads null, never epoch`() {
+        val snap = WidgetSnapshotCache.parseSnapshotLenient("{}")
+        assertEquals(0L, snap.updatedAtMillis)
+        assertNull(
+            snap.ageText(System.currentTimeMillis(), "Updated %d min ago", "Updated just now")
+        )
+    }
+
+    @Test
+    fun `age text is minutes between update and now`() {
+        val now = System.currentTimeMillis()
+        val json = JSONObject()
+            .put("hasFavorites", true)
+            .put("updated", now - 5 * 60_000L)
+            .put("rows", JSONArray())
+            .toString()
+        val snap = WidgetSnapshotCache.parseSnapshotLenient(json)
+        assertEquals(
+            "Updated 5 min ago",
+            snap.ageText(now, "Updated %d min ago", "Updated just now")
+        )
+    }
+
+    @Test
+    fun `fresh snapshot reads just now`() {
+        val now = System.currentTimeMillis()
+        val json = JSONObject()
+            .put("hasFavorites", true)
+            .put("updated", now - 10_000L)
+            .put("rows", JSONArray())
+            .toString()
+        val snap = WidgetSnapshotCache.parseSnapshotLenient(json)
+        assertEquals(
+            "Updated just now",
+            snap.ageText(now, "Updated %d min ago", "Updated just now")
+        )
     }
 
     private fun arrival(atMillis: Long) = Arrival(

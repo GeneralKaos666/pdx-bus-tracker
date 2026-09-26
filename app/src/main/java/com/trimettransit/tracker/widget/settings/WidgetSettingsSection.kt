@@ -36,6 +36,7 @@ import com.trimettransit.tracker.ui.components.SettingsIconCircle
 import com.trimettransit.tracker.ui.components.SettingsRadioOption
 import com.trimettransit.tracker.ui.components.SettingsRowOption
 import com.trimettransit.tracker.widget.NextArrivalsWidgetReceiver
+import com.trimettransit.tracker.widget.WidgetSnapshotCache
 import com.trimettransit.tracker.widget.WidgetScheduler
 import com.trimettransit.tracker.widget.config.WidgetConfigActivity
 
@@ -64,6 +65,19 @@ fun WidgetSettingsSection() {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)
+        )
+        // Last-refresh age, recomputed on every recomposition (never remembered) so the
+        // "X min ago" text cannot go stale while this screen is open.
+        val lastRefreshText = WidgetSnapshotCache.snapshot(context).ageText(
+            System.currentTimeMillis(),
+            stringResource(R.string.widget_updated_minutes),
+            stringResource(R.string.widget_updated_now)
+        ) ?: stringResource(R.string.widget_never_updated)
+        Text(
+            text = lastRefreshText,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
         )
         refreshIntervals.forEach { minutes ->
             SettingsRadioOption(

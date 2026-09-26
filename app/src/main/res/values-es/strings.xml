@@ -56,6 +56,9 @@
     <string name="widget_settings_no_widgets">Aún no has colocado ningún widget — añádelo desde tu pantalla de inicio</string>
     <string name="widget_settings_widget_id">Widget %1$d</string>
     <string name="widget_settings_edit">Editar</string>
+    <string name="widget_updated_minutes">Actualizado hace %d min</string>
+    <string name="widget_updated_now">Actualizado ahora mismo</string>
+    <string name="widget_never_updated">Aún no se ha actualizado</string>
 
     <!-- Departure alerts -->
     <string name="departure_alert_channel_name">Alertas de salida</string>

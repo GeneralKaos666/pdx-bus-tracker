@@ -51,7 +51,18 @@ object WidgetSnapshotCache {
         val rows: List<Row>,
         val hasFavorites: Boolean,
         val updatedAtMillis: Long
-    )
+    ) {
+        /**
+         * Human age of this snapshot for settings/config UI, or null when it was never
+         * refreshed (missing/corrupt cache reads back as 0 — never render that as epoch).
+         * Same under-a-minute rule as the trip planner's data-age chip.
+         */
+        fun ageText(nowMillis: Long, minutesFmt: String, justNow: String): String? {
+            if (updatedAtMillis <= 0L) return null
+            val mins = ((nowMillis - updatedAtMillis) / 60_000L).coerceAtLeast(0)
+            return if (mins < 1) justNow else minutesFmt.format(mins)
+        }
+    }
 
     fun snapshot(context: Context): Snapshot {
         val json = prefs(context).getString(KEY_JSON, null) ?: return Snapshot(emptyList(), false, 0L)
