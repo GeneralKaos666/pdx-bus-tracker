@@ -1,3 +1,9 @@
+## What's New in v4.20.0
+
+- **Trip results that survive a restart and show their age:** closing the app no longer throws your planned trip away, and the results say how fresh they are, from "Updated just now" to minutes ago.
+- **Widgets say when they last refreshed:** each widget now shows when its departures were last updated — just now, minutes ago, or never yet — and a failed refresh keeps the last good time instead of blanking it.
+- **Pin a line on a stop:** the arrivals board can remember a favorite line for each stop, so opening that stop filters to your line automatically. "Show all" lifts the filter for that visit only, and the pin can be cleared at any time.
+
 ## What's New in v4.19.0
 
 - **Nearby stops recover from a denied location:** if location permission is permanently denied, the app now offers to open its settings instead of showing a retry that does nothing. An approximate location is also accepted, so "Nearby stops" works without precise GPS.
@@ -19,9 +25,6 @@
 - **Better with a screen reader:** expandable rows say whether they are open or closed, the Settings submenu header announces itself as the way back, trip origin and destination fields say which they are, and stop details are read with commas instead of middle dots.
 - **Trip planner asks first:** it no longer asks for your location just because you opened the page, each endpoint row can pick a spot on the map directly, an arrive-by time that has already passed is not sent, and the time picker follows your phone's 12- or 24-hour setting.
 - **A way to check the API key from inside the app:** Settings → About now shows whether a TriMet API key is configured, so the "API key not configured" message points at something you can actually look at.
-- **Trip results that survive a restart and show their age:** closing the app no longer throws your planned trip away, and the results say how fresh they are, from "Updated just now" to minutes ago.
-- **Widgets say when they last refreshed:** each widget now shows when its departures were last updated — just now, minutes ago, or never yet — and a failed refresh keeps the last good time instead of blanking it.
-- **Pin a line on a stop:** the arrivals board can remember a favorite line for each stop, so opening that stop filters to your line automatically. "Show all" lifts the filter for that visit only, and the pin can be cleared at any time.
 
 ## What's New in v4.18.8
 
