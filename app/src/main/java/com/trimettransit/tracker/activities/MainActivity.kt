@@ -112,6 +112,7 @@ import androidx.preference.PreferenceManager
 import com.trimettransit.tracker.repos
 import com.trimettransit.tracker.widget.WidgetScheduler
 import com.trimettransit.tracker.widget.WidgetLaunch
+import com.trimettransit.tracker.widget.stopFromLaunchExtras
 import com.trimettransit.tracker.notifications.DepartureAlertPrefs
 import com.trimettransit.tracker.notifications.DepartureAlertsSection
 import com.trimettransit.tracker.widget.settings.WidgetSettingsSection
@@ -422,18 +423,17 @@ private fun MainAppContent(
             return@LaunchedEffect
         }
         val stopId = intent.getLongExtra(WidgetLaunch.EXTRA_STOP_ID, -1L)
-        if (stopId <= 0L || stopId > Int.MAX_VALUE.toLong()) {
+        val stop = stopFromLaunchExtras(
+            stopId = stopId,
+            name = intent.getStringExtra(WidgetLaunch.EXTRA_STOP_NAME),
+            routeId = intent.getIntExtra(WidgetLaunch.EXTRA_ROUTE_ID, 0),
+            lat = intent.getDoubleExtra(WidgetLaunch.EXTRA_LAT, 0.0),
+            lng = intent.getDoubleExtra(WidgetLaunch.EXTRA_LNG, 0.0)
+        )
+        if (stop == null) {
             activity.widgetLaunchIntent.value = null
             return@LaunchedEffect
         }
-        val stop = Stop(
-            desc = intent.getStringExtra(WidgetLaunch.EXTRA_STOP_NAME).orEmpty(),
-            latitude = intent.getDoubleExtra(WidgetLaunch.EXTRA_LAT, 0.0),
-            longitude = intent.getDoubleExtra(WidgetLaunch.EXTRA_LNG, 0.0),
-            transitType = "bus",
-            locId = stopId.toInt(),
-            routeNum = intent.getIntExtra(WidgetLaunch.EXTRA_ROUTE_ID, 0)
-        )
         navigateToArrivals(stop, stop.routeNum)
         activity.widgetLaunchIntent.value = null
     }
