@@ -61,7 +61,6 @@ import com.trimettransit.tracker.model.domain.dedupeArrivals
 import com.trimettransit.tracker.model.domain.detoursForLine
 import com.trimettransit.tracker.model.domain.alertsForLine
 import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
-import com.trimettransit.tracker.model.domain.resolveSessionLineFilter
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
@@ -130,26 +129,6 @@ fun ArrivalsScreen(
     var trackingVehicleId by remember { mutableIntStateOf(0) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
     var onlySelectedRoute by remember { mutableStateOf(true) }
-    // Per-stop line-pin default: the stored pin plus the session's filter line.
-    // sessionRouteId starts from the navigation line context; a stored pin fills
-    // it in when navigation carried none. filterLifted ("Show all") drops the
-    // filter for this session only — the stored pin is untouched. Any in-session
-    // change sets sessionFilterTouched so silent refreshes stop re-reading the
-    // global setting over the user's choice.
-    var pinnedLine by remember(stopId, routeId) { mutableStateOf<Int?>(null) }
-    var sessionRouteId by remember(stopId, routeId) { mutableIntStateOf(routeId) }
-    var filterLifted by remember(stopId, routeId) { mutableStateOf(false) }
-    var sessionFilterTouched by remember(stopId, routeId) { mutableStateOf(false) }
-
-    // Line the session is currently filtering to; 0 = show every line. The
-    // global line-pinned setting still gates filtering — the pin only supplies
-    // the line when navigation carried none.
-    fun effectiveFilterRoute(): Int =
-        if (filterLifted || !onlySelectedRoute || sessionRouteId <= 0) 0 else sessionRouteId
-
-    fun applySessionFilter() {
-        arrivals = filterArrivalsByRoute(unfilteredArrivals, effectiveFilterRoute())
-    }
     // Minute-aligned tick forcing the arrival rows' countdowns to recompute in the
     // foreground, so "8 min" doesn't sit frozen until the next manual refresh.
     // The loop itself lives below the lifecycle observer so it can pause in background.
@@ -181,19 +160,6 @@ fun ArrivalsScreen(
         if (stopId > 0) {
             isFavorite = withContext(Dispatchers.IO) {
                 favoritesRepository.isFavorite(stopId)
-            }
-            // Per-stop line-pin default: when navigation carried no line, a
-            // stored pin initializes the session filter. Guarded by
-            // sessionFilterTouched so a slow read can't clobber a pin the user
-            // already set or lifted mid-load.
-            val pin = withContext(Dispatchers.IO) {
-                favoritesRepository.getPinnedLine(stopId)
-            }
-            pinnedLine = pin
-            val resolved = resolveSessionLineFilter(pin, routeId)
-            if (!sessionFilterTouched && resolved != sessionRouteId) {
-                sessionRouteId = resolved
-                applySessionFilter()
             }
             onArrivalsStateChange(stopName.ifBlank { stopNumberLabel }, isFavorite, stopLat, stopLng)
         }
@@ -235,15 +201,14 @@ fun ArrivalsScreen(
                 val allArrivals = dedupeArrivals(result.arrivals)
                 unfilteredArrivals = allArrivals
                 val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-                // A session override (Show all / re-filter) wins over the global
-                // setting until the stop is reopened.
-                if (!sessionFilterTouched) {
-                    onlySelectedRoute = prefs.getBoolean(
-                        AppearancePrefs.ARRIVALS_ONLY_SELECTED_ROUTE,
-                        AppearancePrefs.DEFAULT_ONLY_SHOW_SELECTED_ROUTE
-                    )
-                }
-                applySessionFilter()
+                onlySelectedRoute = prefs.getBoolean(
+                    AppearancePrefs.ARRIVALS_ONLY_SELECTED_ROUTE,
+                    AppearancePrefs.DEFAULT_ONLY_SHOW_SELECTED_ROUTE
+                )
+                arrivals = filterArrivalsByRoute(
+                    allArrivals,
+                    if (onlySelectedRoute && routeId > 0) routeId else 0
+                )
                 detours = result.detours
                 blockPositions = result.blockPositions
                 // Scoped Alerts V2 fetch: routes seen in this stop's arrivals plus the
@@ -468,93 +433,6 @@ fun ArrivalsScreen(
                             // open first. A list shorter than the viewport simply ends early.
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Session line-filter control. Visible whenever the
-                            // session has a line to filter to (navigation line
-                            // or stored pin): "Show all" lifts the filter for
-                            // this session only, "Pin this line"/"Clear pin"
-                            // stores or clears the per-stop default (favorites
-                            // only — the pin lives on the favorites row).
-                            val filterRoute = effectiveFilterRoute()
-                            val showFilterRow = sessionRouteId > 0 &&
-                                (filterRoute > 0 || filterLifted || pinnedLine == sessionRouteId)
-                            if (showFilterRow) {
-                                item(key = "lineFilter", contentType = "lineFilter") {
-                                    Surface(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = appCardShape(),
-                                        color = MaterialTheme.colorScheme.surfaceContainerLow
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 16.dp, vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = if (filterRoute > 0) stringResource(
-                                                    R.string.line_filter_only,
-                                                    sessionRouteId
-                                                )
-                                                else stringResource(R.string.line_filter_all_lines),
-                                                style = MaterialTheme.typography.labelLarge,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                            if (filterRoute > 0) {
-                                                TextButton(onClick = {
-                                                    filterLifted = true
-                                                    sessionFilterTouched = true
-                                                    applySessionFilter()
-                                                }) {
-                                                    Text(stringResource(R.string.line_filter_show_all))
-                                                }
-                                            } else {
-                                                TextButton(onClick = {
-                                                    filterLifted = false
-                                                    onlySelectedRoute = true
-                                                    sessionFilterTouched = true
-                                                    applySessionFilter()
-                                                }) {
-                                                    Text(
-                                                        stringResource(
-                                                            R.string.line_filter_only,
-                                                            sessionRouteId
-                                                        )
-                                                    )
-                                                }
-                                            }
-                                            if (isFavorite) {
-                                                if (pinnedLine == sessionRouteId) {
-                                                    TextButton(onClick = {
-                                                        coroutineScope.launch {
-                                                            favoritesRepository.setPinnedLine(
-                                                                stopId,
-                                                                null
-                                                            )
-                                                            pinnedLine = null
-                                                        }
-                                                    }) {
-                                                        Text(stringResource(R.string.line_filter_unpin))
-                                                    }
-                                                } else {
-                                                    TextButton(onClick = {
-                                                        coroutineScope.launch {
-                                                            favoritesRepository.setPinnedLine(
-                                                                stopId,
-                                                                sessionRouteId
-                                                            )
-                                                            pinnedLine = sessionRouteId
-                                                            sessionFilterTouched = true
-                                                        }
-                                                    }) {
-                                                        Text(stringResource(R.string.line_filter_pin))
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                             val visibleArrivals =
                                 if (showAllArrivals) unfilteredArrivals else arrivals.take(TOP_ARRIVAL_ROWS)
                             items(

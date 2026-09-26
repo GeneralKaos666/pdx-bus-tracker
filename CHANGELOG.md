@@ -2,7 +2,6 @@
 
 - **Trip results that survive a restart and show their age:** closing the app no longer throws your planned trip away, and the results say how fresh they are, from "Updated just now" to minutes ago.
 - **Widgets say when they last refreshed:** each widget now shows when its departures were last updated — just now, minutes ago, or never yet — and a failed refresh keeps the last good time instead of blanking it.
-- **Pin a line on a stop:** the arrivals board can remember a favorite line for each stop, so opening that stop filters to your line automatically. "Show all" lifts the filter for that visit only, and the pin can be cleared at any time.
 
 ## What's New in v4.19.0
 

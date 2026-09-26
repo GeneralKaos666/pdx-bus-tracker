@@ -36,12 +36,4 @@ class FavoritesRepositoryImpl(
     override suspend fun setOrder(idsInOrder: List<Int>) = withContext(Dispatchers.IO) {
         dbHelper.setFavoriteOrder(idsInOrder)
     }
-
-    override suspend fun getPinnedLine(locId: Int): Int? = withContext(Dispatchers.IO) {
-        dbHelper.getPinnedLine(locId)
-    }
-
-    override suspend fun setPinnedLine(locId: Int, routeId: Int?): Unit = withContext(Dispatchers.IO) {
-        dbHelper.setPinnedLine(locId, routeId)
-    }
 }

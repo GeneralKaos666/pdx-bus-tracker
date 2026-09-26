@@ -15,11 +15,6 @@
     <string name="no_upcoming_for_route">No hay próximas llegadas para esta línea.\nLas llegadas de otras líneas están ocultas — desactiva el filtro en los Ajustes.</string>
     <string name="empty_no_arrivals">No hay próximas llegadas.</string>
     <string name="show_fewer">Mostrar menos</string>
-    <string name="line_filter_only">Solo línea %1$d</string>
-    <string name="line_filter_all_lines">Mostrando todas las líneas</string>
-    <string name="line_filter_show_all">Mostrar todo</string>
-    <string name="line_filter_pin">Fijar esta línea</string>
-    <string name="line_filter_unpin">Quitar fijación</string>
     <plurals name="show_all_arrivals">
         <item quantity="one">Mostrar todas las llegadas (%1$d más)</item>
         <item quantity="many">Mostrar todas las llegadas (%1$d más)</item>
