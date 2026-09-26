@@ -94,6 +94,7 @@ private fun FavoritesList(
 ) {
     val dense = rememberDenseGridEnabled()
     val columns = favoritesColumnCount(favoritesColumnsRaw, dense)
+    val isTwoColumn = columns == 2
     val listState = rememberLazyGridState()
     val smoothFling = rememberSmoothFlingBehavior()
     var entranceDone by remember { mutableStateOf(false) }
@@ -114,7 +115,7 @@ private fun FavoritesList(
             end = 16.dp,
             bottom = navPillBottomPadding() + 8.dp
         ),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (isTwoColumn) 8.dp else 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         itemsIndexed(stops, key = { _, stop -> stop.locId }, contentType = { _, _ -> "stop" }) { index, stop ->
@@ -149,20 +150,24 @@ private fun FavoritesList(
                     .favoriteDragToReorder(
                         index = index,
                         itemCount = stops.size,
-                        spanCount = if (dense) 2 else 1,
+                        spanCount = columns,
                         onMove = onMove,
                         onDraggingChange = { dragging = it }
                     )
                     .staggeredFadeIn(index, enabled = !entranceDone),
-                gridMode = dense,
-                trailingContent = {
-                    // This list only ever holds favourites, so the shared toggle always renders filled
-                    // and always removes — keeping its icon and label identical to the hearts on
-                    // search results, Recents and Lines.
-                    FavoriteToggleButton(
-                        isFavorite = true,
-                        onClick = { onDeleteRequest(stop) }
-                    )
+                gridMode = isTwoColumn,
+                trailingContent = if (isTwoColumn) {
+                    null
+                } else {
+                    {
+                        // This list only ever holds favourites, so the shared toggle always renders filled
+                        // and always removes — keeping its icon and label identical to the hearts on
+                        // search results, Recents and Lines. Hidden in two-column mode for space.
+                        FavoriteToggleButton(
+                            isFavorite = true,
+                            onClick = { onDeleteRequest(stop) }
+                        )
+                    }
                 }
             )
         }
