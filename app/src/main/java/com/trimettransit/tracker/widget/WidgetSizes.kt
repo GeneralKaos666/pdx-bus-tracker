@@ -18,3 +18,12 @@ fun layoutForSize(widthDp: Int, heightDp: Int): WidgetLayout = when {
     heightDp >= 320 -> WidgetLayout.TALL
     else -> WidgetLayout.LIST
 }
+
+/**
+ * Grid columns per layout bucket: single column when compact (half-width cells
+ * would truncate every stop name), two side-by-side otherwise.
+ */
+fun columnsForLayout(layout: WidgetLayout): Int = when (layout) {
+    WidgetLayout.COMPACT -> 1
+    WidgetLayout.LIST, WidgetLayout.TALL -> 2
+}

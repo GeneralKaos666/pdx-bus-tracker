@@ -4,6 +4,7 @@
 - **Widgets say when they last refreshed:** each widget now shows when its departures were last updated — just now, minutes ago, or never yet — and a failed refresh keeps the last good time instead of blanking it.
 - **Smarter, better-fitting widgets:** the home-screen widget now adapts to whatever size you stretch it to, shows a live preview when you pick it, refreshes only the widgets whose stops actually changed, and has its own Refresh button plus an Add-widget shortcut in Settings.
 - **Sturdier widget taps:** opening a stop from the widget now validates the tap first, so a bad widget payload quietly does nothing instead of risking a broken arrivals screen.
+- **Two-up widget layout:** roomier widgets now show stops side by side in two columns instead of one long list, so more departures fit without scrolling.
 
 ## What's New in v4.19.0
 

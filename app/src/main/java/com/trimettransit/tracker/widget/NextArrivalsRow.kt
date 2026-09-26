@@ -39,7 +39,7 @@ private fun widgetClockTime(): DateTimeFormatter =
         .withZone(ZoneId.systemDefault())
 
 @Composable
-internal fun StopRow(row: Row, config: WidgetConfig, now: Long) {
+internal fun StopRow(row: Row, config: WidgetConfig, now: Long, inGrid: Boolean = false) {
     val context = LocalContext.current
     val action = actionStartActivity(
         Intent(context, MainActivity::class.java)
@@ -49,7 +49,8 @@ internal fun StopRow(row: Row, config: WidgetConfig, now: Long) {
             .putExtra(WidgetLaunch.EXTRA_LAT, row.stop.latitude)
             .putExtra(WidgetLaunch.EXTRA_LNG, row.stop.longitude)
     )
-    if (config.compactRows) {
+    // Half-width grid cells always render compact; full-width rows honor the config.
+    if (inGrid || config.compactRows) {
         CompactRow(row, config, now, action)
     } else {
         DetailRow(row, config, now, action)

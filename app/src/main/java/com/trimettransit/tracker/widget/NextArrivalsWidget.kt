@@ -19,6 +19,9 @@ import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.LazyVerticalGrid
+import androidx.glance.appwidget.lazy.GridCells
+import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.lazy.itemsIndexed
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -196,9 +199,20 @@ private fun StopList(snapshot: Snapshot, config: WidgetConfig, layout: WidgetLay
         .let { if (layout == WidgetLayout.COMPACT) it.take(1) else it }
     // Rounded clip so scrolling content respects the launcher's widget shape.
     Box(modifier = GlanceModifier.fillMaxSize().cornerRadius(8.dp)) {
-        LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
-            itemsIndexed(rows, { index, row -> (row.stop.locId.toLong() shl 32) xor index.toLong() }) { _, row ->
-                StopRow(row, config, now)
+        if (columnsForLayout(layout) == 1) {
+            LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
+                itemsIndexed(rows, { index, row -> (row.stop.locId.toLong() shl 32) xor index.toLong() }) { _, row ->
+                    StopRow(row, config, now)
+                }
+            }
+        } else {
+            LazyVerticalGrid(
+                gridCells = GridCells.Fixed(2),
+                modifier = GlanceModifier.fillMaxSize()
+            ) {
+                items(rows, { row -> row.stop.locId.toLong() }) { row ->
+                    StopRow(row, config, now, inGrid = true)
+                }
             }
         }
     }

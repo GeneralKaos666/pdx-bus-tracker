@@ -33,4 +33,19 @@ class WidgetSizesTest {
         assertTrue(snapshot.rows.isNotEmpty())
         assertTrue(snapshot.rows.all { row -> row.arrivals.all { it.atMillis > now } })
     }
+
+    @Test
+    fun `compact layout uses one column`() {
+        assertEquals(1, columnsForLayout(WidgetLayout.COMPACT))
+    }
+
+    @Test
+    fun `list layout uses two columns`() {
+        assertEquals(2, columnsForLayout(WidgetLayout.LIST))
+    }
+
+    @Test
+    fun `tall layout uses two columns`() {
+        assertEquals(2, columnsForLayout(WidgetLayout.TALL))
+    }
 }
