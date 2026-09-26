@@ -30,6 +30,8 @@ import androidx.compose.ui.zIndex
 import com.trimettransit.tracker.feature.home.R
 import com.trimettransit.tracker.model.FavoriteEdits
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.domain.ErrorCopyKind
+import com.trimettransit.tracker.model.domain.errorCopyKind
 import com.trimettransit.tracker.ui.components.FavoriteToggleButton
 import com.trimettransit.tracker.ui.components.ListStateShell
 import com.trimettransit.tracker.ui.components.StopListItem
@@ -52,12 +54,18 @@ fun FavoritesStopList(
     emptyActions: @Composable (() -> Unit)? = null,
     onRetry: (() -> Unit)? = null
 ) {
+    // Local SQLite-backed list: a load failure is never a network error, so route the
+    // copy choice through errorCopyKind to keep connection copy off local failures.
+    val errorMessage = when (errorCopyKind(isNetworkError = false, hasCachedData = stops.isNotEmpty())) {
+        ErrorCopyKind.CONNECTION -> stringResource(R.string.no_connection)
+        ErrorCopyKind.LOCAL, ErrorCopyKind.EMPTY -> stringResource(R.string.unable_to_load)
+    }
     ListStateShell(
         isLoading = isLoading,
         isError = isError,
         isEmpty = stops.isEmpty(),
         emptyMessage = emptyText,
-        errorMessage = stringResource(R.string.unable_to_load),
+        errorMessage = errorMessage,
         label = "favoritesStopList",
         emptyActions = emptyActions,
         onRetry = onRetry
