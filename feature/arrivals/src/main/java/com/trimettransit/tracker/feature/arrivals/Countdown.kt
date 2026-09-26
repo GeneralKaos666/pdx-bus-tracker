@@ -1,8 +1,6 @@
 package com.trimettransit.tracker.feature.arrivals
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -31,13 +29,10 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.trimettransit.tracker.ui.theme.AppMotion
+import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import com.trimettransit.tracker.util.systemReduceMotion
 import kotlinx.coroutines.delay
-
-private const val FLIP_DURATION_MS = 240
-
-/** Strong ease-out so the new value registers quickly and the flap settles softly. */
-private val FlipEasing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
 
 /**
  * Countdown "N min" / "Due" label rendered as a split-flap clock: when the minute
@@ -68,21 +63,26 @@ internal fun CountdownLabel(
     var displayedText by remember { mutableStateOf(targetText) }
     var flipProgress by remember { mutableFloatStateOf(1f) }
     val flip = remember { Animatable(1f) }
+    val context = LocalContext.current
+    val reduceMotion = AppMotion.reduceMotion || systemReduceMotion(context)
 
-    LaunchedEffect(targetText) {
+    LaunchedEffect(targetText, reduceMotion) {
         if (targetText != displayedText) {
-            delay(flipDelayMs)
-            flip.snapTo(0f)
-            flip.animateTo(1f, animationSpec = tween(FLIP_DURATION_MS, easing = FlipEasing)) {
-                flipProgress = value
+            if (reduceMotion) {
+                flip.snapTo(1f)
+                flipProgress = 1f
+                displayedText = targetText
+            } else {
+                delay(flipDelayMs)
+                flip.snapTo(0f)
+                flip.animateTo(1f, animationSpec = m3SpatialFast()) {
+                    flipProgress = value
+                }
+                flipProgress = 1f
+                displayedText = targetText
             }
-            flipProgress = 1f
-            displayedText = targetText
         }
     }
-
-    val context = LocalContext.current
-    val reduceMotion = remember(context) { systemReduceMotion(context) }
 
     if (reduceMotion || displayedText == targetText) {
         FlipLabelBox(

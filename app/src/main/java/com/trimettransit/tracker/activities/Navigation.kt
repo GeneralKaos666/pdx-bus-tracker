@@ -17,6 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
 import com.trimettransit.tracker.R
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.theme.AppMotion
@@ -147,7 +149,7 @@ internal fun BackNavigationIcon(onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
         interactionSource = backSource,
-        modifier = Modifier.pressScale(backSource)
+        modifier = Modifier.size(48.dp).pressScale(backSource)
     ) {
         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
     }

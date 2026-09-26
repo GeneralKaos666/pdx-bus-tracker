@@ -135,7 +135,7 @@ internal fun AccentPresetRow(
                     Surface(
                         modifier = Modifier
                             .weight(1f)
-                            .height(44.dp)
+                            .height(48.dp)
                             .pressScale(source, 0.96f)
                             .semantics {
                                 contentDescription =

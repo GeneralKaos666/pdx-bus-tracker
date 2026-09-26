@@ -53,7 +53,7 @@ fun transitOnColor(
     return override?.let { onColorFor(it) } ?: when (type) {
         "R" -> scheme.onTertiary              // Rail
         "M" -> scheme.onSecondary             // MAX Light Rail
-        "W" -> Color.White                    // WES: unchanged for now
+        "W" -> onColorFor(scheme.outline)     // WES: contrast ink for outline fill
         else -> scheme.onPrimary              // Bus, Streetcar
     }
 }

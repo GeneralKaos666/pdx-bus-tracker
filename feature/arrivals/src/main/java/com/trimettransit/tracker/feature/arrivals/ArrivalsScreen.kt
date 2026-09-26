@@ -73,6 +73,7 @@ import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.theme.appCardShape
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
@@ -479,7 +480,7 @@ fun ArrivalsScreen(
                                                 }
                                             }
                                         },
-                                        modifier = Modifier.animateItem()
+                                        modifier = if (AppMotion.reduceMotion) Modifier else Modifier.animateItem()
                                     )
                                     AnimatedVisibility(
                                         visible = trackingKey == rowKey,

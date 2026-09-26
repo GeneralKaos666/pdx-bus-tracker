@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -66,6 +65,7 @@ import com.trimettransit.tracker.feature.settings.ColourPickerDialog
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
+import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.widget.WidgetBackgroundMode
 import com.trimettransit.tracker.widget.WidgetConfig
 import com.trimettransit.tracker.widget.WidgetThemeOption
@@ -160,7 +160,7 @@ fun WidgetConfigScreen(
         bottomBar = {
             Surface(
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                shape = RoundedCornerShape(28.dp),
+                shape = appCardShape(),
                 shadowElevation = 6.dp,
                 modifier = Modifier
                     .navigationBarsPadding()

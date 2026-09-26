@@ -188,7 +188,10 @@ internal fun ArrivalItem(
             Spacer(modifier = Modifier.width(8.dp))
 
             if (arrival.tripID.isNotBlank()) {
-                IconButton(onClick = onShowTripStatus) {
+                IconButton(
+                    onClick = onShowTripStatus,
+                    modifier = Modifier.size(48.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Outlined.Info,
                         contentDescription = stringResource(R.string.show_trip_status),
@@ -202,7 +205,7 @@ internal fun ArrivalItem(
             // keep the solid pill: those are definitive states, not weaker ones.
             val isScheduled = !arrival.isEstimated && !arrival.isCanceled && !arrival.dropOffOnly
             val pillContainerColor = if (isScheduled) {
-                MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.surfaceContainerHigh
             } else {
                 MaterialTheme.colorScheme.onSurface
             }
@@ -229,7 +232,7 @@ internal fun ArrivalItem(
                         if (arrival.reason.isNotEmpty()) {
                             Text(
                                 text = arrival.reason,
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
                                 style = MaterialTheme.typography.labelSmall
                             )
                         }
@@ -248,7 +251,7 @@ internal fun ArrivalItem(
                         if (arrival.reason.isNotEmpty()) {
                             Text(
                                 text = arrival.reason,
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
                                 style = MaterialTheme.typography.labelSmall
                             )
                         }
@@ -270,13 +273,13 @@ internal fun ArrivalItem(
                             if (delayText != null) {
                                 Text(
                                     text = delayText,
-                                    color = pillContentColor.copy(alpha = 0.7f),
+                                    color = pillContentColor,
                                     style = MaterialTheme.typography.labelSmall
                                 )
                             } else if (!arrival.isEstimated) {
                                 Text(
                                     text = stringResource(R.string.scheduled),
-                                    color = pillContentColor.copy(alpha = 0.7f),
+                                    color = pillContentColor,
                                     style = MaterialTheme.typography.labelSmall
                                 )
                             }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -430,7 +431,10 @@ private fun LineContextChip(
                     .weight(1f)
                     .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
             )
-            IconButton(onClick = onCollapse) {
+            IconButton(
+                onClick = onCollapse,
+                modifier = Modifier.size(48.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = stringResource(R.string.lines_back_to_all),

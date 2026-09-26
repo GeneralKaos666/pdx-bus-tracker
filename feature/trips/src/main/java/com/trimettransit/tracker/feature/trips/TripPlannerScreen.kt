@@ -573,7 +573,7 @@ fun TripPlannerScreen(
                         IconButton(
                             onClick = { plannerExpanded = !plannerExpanded },
                             interactionSource = collapseSource,
-                            modifier = Modifier.pressScale(collapseSource)
+                            modifier = Modifier.size(48.dp).pressScale(collapseSource)
                         ) {
                             Icon(
                                 imageVector = if (plannerExpanded) {

@@ -12,5 +12,6 @@ fun systemReduceMotion(context: Context): Boolean {
     val resolver = context.contentResolver
     val animatorScale = Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
     val transitionScale = Settings.Global.getFloat(resolver, Settings.Global.TRANSITION_ANIMATION_SCALE, 1f)
-    return animatorScale == 0f || transitionScale == 0f
+    val windowScale = Settings.Global.getFloat(resolver, Settings.Global.WINDOW_ANIMATION_SCALE, 1f)
+    return animatorScale == 0f || transitionScale == 0f || windowScale == 0f
 }

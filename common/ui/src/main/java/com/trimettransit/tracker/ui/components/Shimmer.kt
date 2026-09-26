@@ -46,9 +46,18 @@ fun ShimmerBox(
     modifier: Modifier = Modifier,
     shape: Shape? = null
 ) {
-    val base = MaterialTheme.colorScheme.surfaceVariant
+    val base = MaterialTheme.colorScheme.surfaceContainerHigh
     val highlight = MaterialTheme.colorScheme.surfaceContainerHighest
     val resolvedShape = shape ?: appCardShape()
+    // Static skeleton under reduced motion: no infinite transition is created or run.
+    if (AppMotion.reduceMotion) {
+        Box(
+            modifier = modifier
+                .clip(resolvedShape)
+                .background(base)
+        )
+        return
+    }
     val transition = rememberInfiniteTransition(label = "shimmer")
     val progress by transition.animateFloat(
         initialValue = 0f,
@@ -64,30 +73,27 @@ fun ShimmerBox(
             .clip(resolvedShape)
             .background(base)
     ) {
-        // Keep the skeleton shape but drop the moving sweep under system reduced motion.
-        if (!AppMotion.reduceMotion) {
-            BoxWithConstraints(modifier = Modifier.matchParentSize()) {
-                val density = LocalDensity.current
-                val bandWidth = maxWidth * 0.45f
-                val bandPx = with(density) { bandWidth.toPx() }
-                val parentPx = with(density) { maxWidth.toPx() }
-                // Sweeps from off the left edge to off the right edge.
-                val x = -bandPx + (parentPx + bandPx) * progress
-                Box(
-                    modifier = Modifier
-                        .width(bandWidth)
-                        .graphicsLayer { translationX = x }
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    highlight.copy(alpha = 0.85f),
-                                    Color.Transparent
-                                )
+        BoxWithConstraints(modifier = Modifier.matchParentSize()) {
+            val density = LocalDensity.current
+            val bandWidth = maxWidth * 0.45f
+            val bandPx = with(density) { bandWidth.toPx() }
+            val parentPx = with(density) { maxWidth.toPx() }
+            // Sweeps from off the left edge to off the right edge.
+            val x = -bandPx + (parentPx + bandPx) * progress
+            Box(
+                modifier = Modifier
+                    .width(bandWidth)
+                    .graphicsLayer { translationX = x }
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                highlight.copy(alpha = 0.85f),
+                                Color.Transparent
                             )
                         )
-                )
-            }
+                    )
+            )
         }
     }
 }

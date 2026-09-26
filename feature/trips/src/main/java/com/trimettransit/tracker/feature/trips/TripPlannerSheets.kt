@@ -67,6 +67,7 @@ import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.searchStops
 import com.trimettransit.tracker.ui.components.StopSearchItem
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.appCardShape
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Dispatchers
@@ -313,7 +314,7 @@ internal fun StopSearchPanel(
                         StopSearchItem(
                             stop = stop,
                             onClick = { onStopClick(stop) },
-                            modifier = Modifier.animateItem()
+                            modifier = if (AppMotion.reduceMotion) Modifier else Modifier.animateItem()
                         )
                     }
                 }
@@ -409,7 +410,8 @@ internal fun TripOptionsSheet(
                     onClick = {
                         onOptionsChanged(options.copy(itineraryCount = options.itineraryCount - 1))
                     },
-                    enabled = options.itineraryCount > 1
+                    enabled = options.itineraryCount > 1,
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         Icons.Default.Remove,
@@ -431,7 +433,8 @@ internal fun TripOptionsSheet(
                     onClick = {
                         onOptionsChanged(options.copy(itineraryCount = options.itineraryCount + 1))
                     },
-                    enabled = options.itineraryCount < 6
+                    enabled = options.itineraryCount < 6,
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         Icons.Default.Add,

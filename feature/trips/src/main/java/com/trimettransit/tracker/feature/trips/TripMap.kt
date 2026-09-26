@@ -38,6 +38,8 @@ import com.trimettransit.tracker.ui.components.transitBadgeLetters
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
 import com.trimettransit.tracker.ui.components.transitOnColor
+import com.trimettransit.tracker.ui.theme.AppMotion
+import com.trimettransit.tracker.util.systemReduceMotion
 import java.util.Locale
 private const val PLAN_CAMERA_ZOOM = 14.0
 private const val MAX_CAMERA_FIT_ATTEMPTS = 3
@@ -69,6 +71,7 @@ internal fun TripMap(
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
     val overrides = LocalAppearanceStyle.current.transitTypeColors
+    val reduceMotion = AppMotion.reduceMotion || systemReduceMotion(context)
     val mapPreset = PreferenceManager.getDefaultSharedPreferences(context)
         .getString(AppearancePrefs.MAP_STYLE, MapStyles.DEFAULT) ?: MapStyles.DEFAULT
     val mapStyleUrl = MapStyles.styleUrlFor(mapPreset, isDark)
@@ -246,7 +249,7 @@ internal fun TripMap(
             mapState.push(origin, dest, itinerary)
             myLocation?.let { mapState.applyMe(it.latitude, it.longitude) }
             if (map != null) {
-                fitPlanCameraIfReady(view, map, mapState, origin, dest, itinerary, fitSize)
+                fitPlanCameraIfReady(view, map, mapState, origin, dest, itinerary, fitSize, 0, reduceMotion)
             }
         }
     )
@@ -261,7 +264,8 @@ internal fun fitPlanCameraIfReady(
     dest: TripPoint?,
     itinerary: TripItinerary?,
     fitSize: IntArray,
-    attempts: Int = 0
+    attempts: Int = 0,
+    reduceMotion: Boolean = false
 ) {
     val points = buildList {
         origin?.let { add(MapCoordinate(it.latitude, it.longitude)) }
@@ -285,7 +289,7 @@ internal fun fitPlanCameraIfReady(
         if (attempts >= MAX_CAMERA_FIT_ATTEMPTS) return
         view.postDelayed({
             if (view.isAttachedToWindow) {
-                fitPlanCameraIfReady(view, map, state, origin, dest, itinerary, fitSize, attempts + 1)
+                fitPlanCameraIfReady(view, map, state, origin, dest, itinerary, fitSize, attempts + 1, reduceMotion)
             }
         }, 150)
         return
@@ -299,17 +303,27 @@ internal fun fitPlanCameraIfReady(
     state.lastFitTag = planTag
 
     if (points.size == 1) {
-        map.easeCamera(
-            MapCameraUpdates.coordinateZoom(points.first(), PLAN_CAMERA_ZOOM), 400
-        )
+        val update = MapCameraUpdates.coordinateZoom(points.first(), PLAN_CAMERA_ZOOM)
+        if (reduceMotion) {
+            map.moveCamera(update)
+        } else {
+            map.easeCamera(update, 400)
+        }
         return
     }
     val cam = map.getCameraForBounds(points, intArrayOf(96, 180, 96, 96))
     if (cam == null) {
-        map.easeCamera(
-            MapCameraUpdates.coordinateZoom(points.first(), PLAN_CAMERA_ZOOM), 400
-        )
+        val update = MapCameraUpdates.coordinateZoom(points.first(), PLAN_CAMERA_ZOOM)
+        if (reduceMotion) {
+            map.moveCamera(update)
+        } else {
+            map.easeCamera(update, 400)
+        }
     } else {
-        map.easeCamera(cam, 400)
+        if (reduceMotion) {
+            map.moveCamera(cam)
+        } else {
+            map.easeCamera(cam, 400)
+        }
     }
 }

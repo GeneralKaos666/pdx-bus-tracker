@@ -233,7 +233,7 @@ internal fun StopMapCard(
                     // clips at the map's top edge. The stop marker still renders but simply
                     // scrolls out of frame once a bus position is available.
                     cameraTarget(blockPositions, trackedVehicleId)?.let { target ->
-                        keepBusCentered(map, target, view.width, view.height, density)
+                        keepBusCentered(map, target, view.width, view.height, density, reduceMotion)
                     }
                 } else {
                     mapState.clearTracking()
@@ -410,7 +410,8 @@ private fun keepBusCentered(
     target: LatLng,
     viewWidth: Int,
     viewHeight: Int,
-    density: Float
+    density: Float,
+    reduceMotion: Boolean = false
 ) {
     val marginPx = (24 * density).toInt()
     val topMarginPx = (72 * density).toInt()
@@ -418,6 +419,11 @@ private fun keepBusCentered(
     val outside = p.x < marginPx || p.x > viewWidth - marginPx ||
             p.y < topMarginPx || p.y > viewHeight - marginPx
     if (outside) {
-        map.easeCamera(CameraUpdateFactory.newLatLng(target), 400)
+        val update = CameraUpdateFactory.newLatLng(target)
+        if (reduceMotion) {
+            map.moveCamera(update)
+        } else {
+            map.easeCamera(update, 400)
+        }
     }
 }

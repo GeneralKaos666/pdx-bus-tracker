@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -51,6 +52,7 @@ import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.searchStops
 import com.trimettransit.tracker.ui.components.StopSearchItem
 import com.trimettransit.tracker.ui.theme.appCardShape
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import androidx.compose.runtime.snapshotFlow
@@ -142,7 +144,7 @@ fun HomeSearchBar(
                                 focusManager.clearFocus()
                             },
                             interactionSource = clearSource,
-                            modifier = Modifier.pressScale(clearSource)
+                            modifier = Modifier.size(48.dp).pressScale(clearSource)
                         ) {
                             Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear_search))
                         }
@@ -268,7 +270,7 @@ private fun SearchResultsDropdown(
                             StopSearchItem(
                                 stop = stop,
                                 onClick = { onStopClick(stop) },
-                                modifier = Modifier.animateItem(),
+                                modifier = if (AppMotion.reduceMotion) Modifier else Modifier.animateItem(),
                                 gridMode = dense,
                                 trailingContent = {
                                     FavoriteToggleButton(

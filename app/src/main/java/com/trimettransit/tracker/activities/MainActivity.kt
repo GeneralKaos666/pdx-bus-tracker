@@ -148,6 +148,12 @@ class MainActivity : ComponentActivity() {
         widgetLaunchIntent.value = intent
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Re-read so a mid-session "Remove animations" toggle applies on return.
+        AppMotion.reduceMotion = systemReduceMotion(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Seed the widget/notification launch intent only on a truly cold start: after
@@ -440,7 +446,11 @@ private fun MainAppContent(
 
     fun onTopPageSelected(page: Int) {
         scope.launch {
-            topPagerState.animateScrollToPage(page)
+            if (AppMotion.reduceMotion) {
+                topPagerState.scrollToPage(page)
+            } else {
+                topPagerState.animateScrollToPage(page)
+            }
         }
     }
 
@@ -453,7 +463,13 @@ private fun MainAppContent(
 
     // System back walks the top-level pager back to Favorites (page 0) before leaving the app
     BackHandler(enabled = isTopLevel && topPagerState.currentPage > 0) {
-        scope.launch { topPagerState.animateScrollToPage(0) }
+        scope.launch {
+            if (AppMotion.reduceMotion) {
+                topPagerState.scrollToPage(0)
+            } else {
+                topPagerState.animateScrollToPage(0)
+            }
+        }
     }
 
     // Two-pane: system back first closes the arrivals detail pane, then falls back to pager/exit.
@@ -528,11 +544,17 @@ private fun MainAppContent(
                 val paneRefreshSource = remember(dest.stopId) { MutableInteractionSource() }
                 IconButton(
                     onClick = {
-                        scope.launch { refreshRotation.animateTo(refreshRotation.value + 360f, m3EffectsFast()) }
+                        scope.launch {
+                            if (AppMotion.reduceMotion) {
+                                refreshRotation.snapTo(refreshRotation.value + 360f)
+                            } else {
+                                refreshRotation.animateTo(refreshRotation.value + 360f, m3EffectsFast())
+                            }
+                        }
                         arrivalsOnRefresh?.invoke()
                     },
                     interactionSource = paneRefreshSource,
-                    modifier = Modifier.pressScale(paneRefreshSource)
+                    modifier = Modifier.size(48.dp).pressScale(paneRefreshSource)
                 ) {
                     Icon(
                         Icons.Default.Refresh,
@@ -544,7 +566,7 @@ private fun MainAppContent(
                 IconButton(
                     onClick = { detailStop = null },
                     interactionSource = paneCloseSource,
-                    modifier = Modifier.pressScale(paneCloseSource)
+                    modifier = Modifier.size(48.dp).pressScale(paneCloseSource)
                 ) {
                     Icon(
                         Icons.Filled.Close,
@@ -644,6 +666,7 @@ private fun MainAppContent(
                                 },
                                 interactionSource = pipSource,
                                 modifier = Modifier
+                                    .size(48.dp)
                                     .pressScale(pipSource)
                                     .onGloballyPositioned { coords ->
                                         val pos = coords.positionInWindow()
@@ -676,11 +699,17 @@ private fun MainAppContent(
                             val refreshSource = remember { MutableInteractionSource() }
                             IconButton(
                                 onClick = {
-                                    scope.launch { refreshRotation.animateTo(refreshRotation.value + 360f, m3EffectsFast()) }
+                                    scope.launch {
+                                        if (AppMotion.reduceMotion) {
+                                            refreshRotation.snapTo(refreshRotation.value + 360f)
+                                        } else {
+                                            refreshRotation.animateTo(refreshRotation.value + 360f, m3EffectsFast())
+                                        }
+                                    }
                                     arrivalsOnRefresh?.invoke()
                                 },
                                 interactionSource = refreshSource,
-                                modifier = Modifier.pressScale(refreshSource)
+                                modifier = Modifier.size(48.dp).pressScale(refreshSource)
                             ) {
                                 Icon(
                                     Icons.Default.Refresh,

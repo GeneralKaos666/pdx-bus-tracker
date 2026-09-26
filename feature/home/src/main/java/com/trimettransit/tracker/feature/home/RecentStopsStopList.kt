@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -28,6 +29,7 @@ import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
+import com.trimettransit.tracker.ui.theme.AppMotion
 
 @Composable
 fun RecentStopsStopList(
@@ -98,7 +100,7 @@ private fun RecentStopsList(
                 StopListItem(
                     stop = stop,
                     onClick = { onNavigateToArrivals(stop) },
-                    modifier = Modifier.animateItem(),
+                    modifier = if (AppMotion.reduceMotion) Modifier else Modifier.animateItem(),
                     gridMode = dense,
                     trailingContent = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -106,7 +108,10 @@ private fun RecentStopsList(
                                 isFavorite = favoriteIds.contains(stop.locId),
                                 onClick = { onToggleFavorite(stop) }
                             )
-                            IconButton(onClick = { onDismiss(stop) }) {
+                            IconButton(
+                                onClick = { onDismiss(stop) },
+                                modifier = Modifier.size(48.dp)
+                            ) {
                                 Icon(
                                     imageVector = Icons.Filled.Delete,
                                     contentDescription = stringResource(R.string.remove_recent)

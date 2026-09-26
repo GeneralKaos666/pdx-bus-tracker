@@ -48,6 +48,7 @@ import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 
 @Composable
@@ -124,7 +125,7 @@ fun StopsRouteList(
                 route = route,
                 isExpanded = selectedRoute?.routeId == route.routeId,
                 onClick = { onRouteToggle(route) },
-                modifier = Modifier.animateItem(),
+                modifier = if (AppMotion.reduceMotion) Modifier else Modifier.animateItem(),
                 gridMode = gridMode
             )
         },

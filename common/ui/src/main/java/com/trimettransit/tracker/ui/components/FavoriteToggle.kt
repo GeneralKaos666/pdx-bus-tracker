@@ -1,6 +1,7 @@
 package com.trimettransit.tracker.ui.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -16,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.ui.R
@@ -43,7 +45,9 @@ fun FavoriteToggleButton(
     IconButton(
         onClick = onClick,
         interactionSource = interactionSource,
-        modifier = modifier.pressScale(interactionSource)
+        modifier = modifier
+            .size(48.dp)
+            .pressScale(interactionSource)
     ) {
         Icon(
             imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,

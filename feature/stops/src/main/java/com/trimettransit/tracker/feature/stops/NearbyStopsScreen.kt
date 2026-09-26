@@ -70,6 +70,7 @@ import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.util.SingleJobRunner
 
@@ -299,7 +300,7 @@ fun NearbyStopsScreen(
                                 StopListItem(
                                     stop = stop,
                                     onClick = { onNavigateToArrivals(stop, -1) },
-                                    modifier = Modifier.animateItem(),
+                                    modifier = if (AppMotion.reduceMotion) Modifier else Modifier.animateItem(),
                                     trailingContent = nextArrivalPreview(arrivalsByStop[stop.locId]),
                                     proximityLabel = nearbyProximityLabel(stop, userLocation)
                                 )
