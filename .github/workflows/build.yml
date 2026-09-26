@@ -45,5 +45,12 @@ jobs:
       - name: Check Spanish string parity
         run: bash scripts/check-strings-parity.sh
 
+      - name: Create throwaway CI keystore
+        run: |
+          keytool -genkeypair -v -keystore app/release.keystore -alias release \
+            -keyalg RSA -keysize 2048 -validity 30 \
+            -storepass android -keypass android \
+            -dname "CN=CI, OU=CI, O=CI, L=Portland, S=OR, C=US"
+
       - name: Run tests, lint, and debug build
-        run: ./gradlew clean test lint assembleDebug --stacktrace
+        run: ./gradlew clean test lint assembleDebug -PreleaseSigningFallback=true --stacktrace
