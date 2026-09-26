@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -29,6 +30,7 @@ import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.Row
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
@@ -161,6 +163,20 @@ private fun Content(
                     ctx = context
                 )
             }
+            // Freshness label, same under-a-minute rule as Settings. Hidden in the
+            // compact bucket and the empty states, where there is no room for it.
+            if (layout != WidgetLayout.COMPACT && snapshot.rows.isNotEmpty()) {
+                Text(
+                    text = snapshot.ageText(
+                        System.currentTimeMillis(),
+                        context.getString(R.string.widget_updated_minutes),
+                        context.getString(R.string.widget_updated_now)
+                    ) ?: context.getString(R.string.widget_never_updated),
+                    style = TextStyle(color = c.onBackground, fontSize = 12.sp),
+                    maxLines = 1,
+                    modifier = GlanceModifier.fillMaxWidth().padding(top = 4.dp)
+                )
+            }
         }
     }
 }
@@ -193,12 +209,13 @@ private fun HeaderRow(title: String, preview: Boolean) {
 }
 
 @Composable
-private fun StopList(snapshot: Snapshot, config: WidgetConfig, layout: WidgetLayout) {
+private fun ColumnScope.StopList(snapshot: Snapshot, config: WidgetConfig, layout: WidgetLayout) {
     val now = System.currentTimeMillis()
     val rows = applyRowConfig(snapshot.rows, config)
         .let { if (layout == WidgetLayout.COMPACT) it.take(1) else it }
+    // Weight (not fillMaxSize) leaves room for the freshness footer below.
     // Rounded clip so scrolling content respects the launcher's widget shape.
-    Box(modifier = GlanceModifier.fillMaxSize().cornerRadius(8.dp)) {
+    Box(modifier = GlanceModifier.fillMaxWidth().defaultWeight().cornerRadius(8.dp)) {
         if (columnsForLayout(layout) == 1) {
             LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
                 itemsIndexed(rows, { index, row -> (row.stop.locId.toLong() shl 32) xor index.toLong() }) { _, row ->

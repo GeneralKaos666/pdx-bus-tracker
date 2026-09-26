@@ -5,6 +5,7 @@
 - **Smarter, better-fitting widgets:** the home-screen widget now adapts to whatever size you stretch it to, shows a live preview when you pick it, refreshes only the widgets whose stops actually changed, and has its own Refresh button plus an Add-widget shortcut in Settings.
 - **Sturdier widget taps:** opening a stop from the widget now validates the tap first, so a bad widget payload quietly does nothing instead of risking a broken arrivals screen.
 - **Two-up widget layout:** roomier widgets now show stops side by side in two columns instead of one long list, so more departures fit without scrolling.
+- **Widgets own their freshness:** each widget now carries its own "updated" timestamp, and the Add-widget shortcut previews your actual departures before you pin it.
 
 ## What's New in v4.19.0
 

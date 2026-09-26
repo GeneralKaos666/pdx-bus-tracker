@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
@@ -112,7 +113,10 @@ fun WidgetSettingsSection() {
                         runCatching {
                             GlanceAppWidgetManager(context).requestPinGlanceAppWidget(
                                 NextArrivalsWidgetReceiver::class.java,
-                                NextArrivalsWidget()
+                                NextArrivalsWidget(),
+                                // Pin dialog preview: providePreview renders the live
+                                // snapshot (or sample rows) at this size.
+                                DpSize(250.dp, 180.dp)
                             )
                         }.onFailure { e -> Timber.w(e, "Widget pin request failed") }
                     }
