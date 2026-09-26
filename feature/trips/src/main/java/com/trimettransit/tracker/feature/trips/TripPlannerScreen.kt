@@ -3,6 +3,7 @@ package com.trimettransit.tracker.feature.trips
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Bundle
 import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -71,6 +72,7 @@ import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripPlannerError
+import com.trimettransit.tracker.model.TripPlannerMin
 import com.trimettransit.tracker.model.TripPlannerMode
 import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripPoint
@@ -78,6 +80,7 @@ import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.map.MapCoordinate
 import com.trimettransit.tracker.model.domain.itinerarySelectionAfterPlan
+import com.trimettransit.tracker.model.domain.TripDraft
 import com.trimettransit.tracker.model.domain.isInThePast
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
@@ -100,24 +103,65 @@ import org.joda.time.DateTime
 import java.util.Calendar
 import java.util.Locale
 private const val DEFAULT_ARRIVE_BY_ADVANCE_MS = 60L * 60_000L
-/** Saves a trip endpoint across configuration changes (rotation/process death). */
-private val tripPointSaver: Saver<TripPoint?, List<Any>> = Saver(
-    save = {
-        it?.let { point -> listOf(point.latitude, point.longitude, point.description) }
-            ?: emptyList()
+/** Saves the whole planner draft (endpoints, scheduling choice, options) across rotation/process death. */
+private val tripDraftSaver: Saver<TripDraft, Bundle> = Saver(
+    save = { draft ->
+        Bundle().apply {
+            putBoolean("hasOrigin", draft.origin != null)
+            draft.origin?.let {
+                putDouble("oLat", it.latitude)
+                putDouble("oLon", it.longitude)
+                putString("oDesc", it.description)
+            }
+            putBoolean("hasDest", draft.destination != null)
+            draft.destination?.let {
+                putDouble("dLat", it.latitude)
+                putDouble("dLon", it.longitude)
+                putString("dDesc", it.description)
+            }
+            draft.departAtMillis?.let { putLong("departAt", it) }
+            draft.arriveByMillis?.let { putLong("arriveBy", it) }
+            putString("mode", draft.options.mode.name)
+            putString("min", draft.options.min.name)
+            putFloat("maxWalk", draft.options.maxWalkMiles)
+            putInt("itineraryCount", draft.options.itineraryCount)
+        }
     },
     restore = { saved ->
-        val latitude = (saved.getOrNull(0) as? Number)?.toDouble()
-        val longitude = (saved.getOrNull(1) as? Number)?.toDouble()
-        if (latitude == null || longitude == null) {
-            null
-        } else {
+        val origin = if (saved.getBoolean("hasOrigin")) {
             TripPoint(
-                latitude = latitude,
-                longitude = longitude,
-                description = saved.getOrNull(2) as? String ?: ""
+                latitude = saved.getDouble("oLat"),
+                longitude = saved.getDouble("oLon"),
+                description = saved.getString("oDesc") ?: ""
             )
+        } else {
+            null
         }
+        val destination = if (saved.getBoolean("hasDest")) {
+            TripPoint(
+                latitude = saved.getDouble("dLat"),
+                longitude = saved.getDouble("dLon"),
+                description = saved.getString("dDesc") ?: ""
+            )
+        } else {
+            null
+        }
+        TripDraft(
+            origin = origin,
+            destination = destination,
+            departAtMillis = saved.takeIf { it.containsKey("departAt") }?.getLong("departAt"),
+            arriveByMillis = saved.takeIf { it.containsKey("arriveBy") }?.getLong("arriveBy"),
+            options = TripRequestOptions(
+                mode = saved.getString("mode")?.let {
+                    runCatching { TripPlannerMode.valueOf(it) }.getOrNull()
+                } ?: TripPlannerMode.ALL,
+                min = saved.getString("min")?.let {
+                    runCatching { TripPlannerMin.valueOf(it) }.getOrNull()
+                } ?: TripPlannerMin.TIME,
+                maxWalkMiles = saved.getFloat("maxWalk", 0.5f).coerceIn(0.01f, 0.999f),
+                itineraryCount = saved.getInt("itineraryCount", 3).coerceIn(1, 6)
+            )
+        )
     }
 )
 /**
@@ -139,8 +183,12 @@ fun TripPlannerScreen(
     val myLocationLabel = stringResource(R.string.my_location)
     val pinnedLocationLabel = stringResource(R.string.pinned_location)
 
-    var origin by rememberSaveable(stateSaver = tripPointSaver) { mutableStateOf<TripPoint?>(null) }
-    var dest by rememberSaveable(stateSaver = tripPointSaver) { mutableStateOf<TripPoint?>(null) }
+    // The in-progress request: endpoints, scheduling choice, and options in one value.
+    // Arrive-by mode is derived (arriveByMillis != null means arrive-by); depart-now leaves
+    // both times null.
+    var draft by rememberSaveable(stateSaver = tripDraftSaver) {
+        mutableStateOf(TripDraft(options = TripPlannerPrefs.load(context)))
+    }
     var picking by remember { mutableStateOf(PickSlot.NONE) }
     var pickerSlot by remember { mutableStateOf<PickSlot?>(null) }
     var showResults by rememberSaveable { mutableStateOf(false) }
@@ -161,11 +209,18 @@ fun TripPlannerScreen(
     var showLocationExplainer by remember { mutableStateOf(false) }
     var pendingMyLocationOrigin by remember { mutableStateOf(false) }
 
-    var arriveBy by rememberSaveable { mutableStateOf(false) }
-    var arriveByTimeMillis by rememberSaveable { mutableStateOf<Long?>(null) }
+    // The arrive-by scheduling choice lives in the draft (arriveByMillis != null means
+    // arrive-by; depart-now leaves both times null), so there is no separate flag.
     var showTimePicker by remember { mutableStateOf(false) }
 
-    var options by remember { mutableStateOf(TripPlannerPrefs.load(context)) }
+    // Options ride along in the draft (and stay prefs-persisted via TripPlannerPrefs).
+    // Read aliases below re-evaluate on every recomposition; every write goes through
+    // draft.copy so save/restore sees a single value.
+    val origin = draft.origin
+    val dest = draft.destination
+    val arriveBy = draft.arriveByMillis != null
+    val arriveByTimeMillis = draft.arriveByMillis
+    val options = draft.options
     var showOptionsSheet by remember { mutableStateOf(false) }
 
     var planResult by remember { mutableStateOf<TripPlanResult?>(null) }
@@ -239,7 +294,7 @@ fun TripPlannerScreen(
         if (pendingMyLocationOrigin) {
             val location = myLocation
             if (location != null) {
-                origin = TripPoint(location.latitude, location.longitude, myLocationLabel)
+                draft = draft.copy(origin = TripPoint(location.latitude, location.longitude, myLocationLabel))
                 pendingMyLocationOrigin = false
                 invalidatePlan()
             }
@@ -272,9 +327,11 @@ fun TripPlannerScreen(
         when (picking) {
             PickSlot.ORIGIN -> {
                 pendingMyLocationOrigin = false
-                origin = TripPoint(value.latitude, value.longitude, pinnedLocationLabel)
+                draft = draft.copy(origin = TripPoint(value.latitude, value.longitude, pinnedLocationLabel))
             }
-            PickSlot.DEST -> dest = TripPoint(value.latitude, value.longitude, pinnedLocationLabel)
+            PickSlot.DEST -> draft = draft.copy(
+                destination = TripPoint(value.latitude, value.longitude, pinnedLocationLabel)
+            )
             PickSlot.NONE -> return
         }
         picking = PickSlot.NONE
@@ -301,19 +358,18 @@ fun TripPlannerScreen(
         planRunner.launchWithJob { job ->
             try {
                 // A time that has passed while the user was deciding -- or that survived process
-                // death in a stale saved state -- cannot be planned for, so it falls back to the
-                // same default the picker starts from rather than being sent to the API as-is.
+                // death in a stale saved state -- is refused, never sent to the API: the draft
+                // falls back to the same default the picker starts from (0ab3386 behavior).
                 val now = System.currentTimeMillis()
-                val requestedTime = if (arriveBy) {
-                    arriveByTimeMillis?.takeIf {
-                        !TripRequestTime(arriveBy = true, timeMillis = it).isInThePast(now)
-                    } ?: (now + DEFAULT_ARRIVE_BY_ADVANCE_MS)
-                } else null
-                if (arriveBy && requestedTime != arriveByTimeMillis) {
-                    // Keep the label honest: it shows the time the request actually used.
-                    arriveByTimeMillis = requestedTime
+                if (!draft.isSubmittable(now) && draft.isArriveByStale(now)) {
+                    draft = draft.copy(arriveByMillis = now + DEFAULT_ARRIVE_BY_ADVANCE_MS)
                 }
-                val time = TripRequestTime(arriveBy = arriveBy, timeMillis = requestedTime)
+                // Keep the label honest: it shows the time the request actually used.
+                val requestedTime = draft.arriveByMillis
+                val time = TripRequestTime(
+                    arriveBy = draft.arriveByMillis != null,
+                    timeMillis = requestedTime
+                )
                 val result = transitRepository.planTrip(from, to, time, options)
                 val successPlan = (result as? TripPlanResult.Success)?.plan
                 if (successPlan?.itineraries?.isNotEmpty() == true) {
@@ -340,9 +396,9 @@ fun TripPlannerScreen(
 
     /** Persists planner options and refreshes an existing plan with the new request. */
     fun updateOptions(newOptions: TripRequestOptions) {
-        if (newOptions == options) return
-        val shouldReplan = planResult != null && origin != null && dest != null
-        options = newOptions
+        if (newOptions == draft.options) return
+        val shouldReplan = planResult != null && draft.origin != null && draft.destination != null
+        draft = draft.copy(options = newOptions)
         TripPlannerPrefs.save(context, newOptions)
         invalidatePlan()
         if (shouldReplan) planIt(refresh = true)
@@ -539,7 +595,7 @@ fun TripPlannerScreen(
                                     pickerSlot = PickSlot.ORIGIN
                                     picking = PickSlot.NONE
                                 },
-                                onClear = { pendingMyLocationOrigin = false; origin = null; invalidatePlan() },
+                                onClear = { pendingMyLocationOrigin = false; draft = draft.copy(origin = null); invalidatePlan() },
                                 onPickOnMap = { picking = PickSlot.ORIGIN; pickerSlot = null }
                             )
                             Row(
@@ -551,10 +607,9 @@ fun TripPlannerScreen(
                                 val swapSource = remember { MutableInteractionSource() }
                                 IconButton(
                                     onClick = {
-                                        val from = origin
+                                        val from = draft.origin
                                         pendingMyLocationOrigin = false
-                                        origin = dest
-                                        dest = from
+                                        draft = draft.copy(origin = draft.destination, destination = from)
                                         invalidatePlan()
                                     },
                                     enabled = origin != null || dest != null,
@@ -579,7 +634,7 @@ fun TripPlannerScreen(
                                     pickerSlot = PickSlot.DEST
                                     picking = PickSlot.NONE
                                 },
-                                onClear = { dest = null; invalidatePlan() },
+                                onClear = { draft = draft.copy(destination = null); invalidatePlan() },
                                 onPickOnMap = { picking = PickSlot.DEST; pickerSlot = null }
                             )
 
@@ -590,7 +645,7 @@ fun TripPlannerScreen(
                                 FilterChip(
                                     selected = !arriveBy,
                                     onClick = {
-                                        arriveBy = false
+                                        draft = draft.copy(arriveByMillis = null)
                                         invalidatePlan()
                                     },
                                     label = { Text(stringResource(R.string.depart_now)) }
@@ -598,9 +653,10 @@ fun TripPlannerScreen(
                                 FilterChip(
                                     selected = arriveBy,
                                     onClick = {
-                                        arriveBy = true
-                                        if (arriveByTimeMillis == null) {
-                                            arriveByTimeMillis = System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS
+                                        if (draft.arriveByMillis == null) {
+                                            draft = draft.copy(
+                                                arriveByMillis = System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS
+                                            )
                                         }
                                         invalidatePlan()
                                     },
@@ -806,7 +862,7 @@ fun TripPlannerScreen(
                         showTimePicker = false
                         cal.set(Calendar.HOUR_OF_DAY, timeState.hour)
                         cal.set(Calendar.MINUTE, timeState.minute)
-                        arriveByTimeMillis = cal.timeInMillis
+                        draft = draft.copy(arriveByMillis = cal.timeInMillis)
                         invalidatePlan()
                     }
                 ) { Text(stringResource(R.string.done)) }
@@ -828,9 +884,9 @@ fun TripPlannerScreen(
                 val point = TripPoint(stop.latitude, stop.longitude, stop.desc)
                 if (slot == PickSlot.ORIGIN) {
                     pendingMyLocationOrigin = false
-                    origin = point
+                    draft = draft.copy(origin = point)
                 } else {
-                    dest = point
+                    draft = draft.copy(destination = point)
                 }
                 invalidatePlan()
                 pickerSlot = null
