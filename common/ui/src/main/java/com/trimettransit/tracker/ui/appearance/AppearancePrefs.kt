@@ -34,6 +34,7 @@ object AppearancePrefs {
     const val DENSITY = "pref_key_density"              // String: "comfortable" | "compact"
     const val FONT_SCALE = "pref_key_font_scale"        // String: "smaller" | "default" | "larger"
     const val MOTION = "pref_key_motion"                // String: "low" | "default" | "expressive"
+    const val FAVORITES_COLUMNS = "pref_key_favorites_columns" // String: "auto" | "one" | "two"
     const val ARRIVALS_REFRESH_SECONDS = "pref_key_arrivals_refresh_seconds" // Int: 15..300
     const val ARRIVALS_SHOW_CLOCK = "pref_key_arrivals_show_clock"           // Boolean
     const val ARRIVALS_SHOW_ROUTE_BADGES = "pref_key_arrivals_show_route_badges" // Boolean
@@ -63,6 +64,9 @@ object AppearancePrefs {
         const val MOTION_LOW = "low"
         const val MOTION_DEFAULT = "default"
         const val MOTION_EXPRESSIVE = "expressive"
+        const val FAVORITES_AUTO = "auto"
+        const val FAVORITES_ONE = "one"
+        const val FAVORITES_TWO = "two"
         const val CARD_OUTLINE_AUTO = "auto"
         const val CARD_STYLE_ROUNDED = "rounded"
         const val CARD_STYLE_CUT = "cut"
@@ -74,6 +78,7 @@ object AppearancePrefs {
     const val DEFAULT_DENSITY = Values.DENSITY_COMFORTABLE
     const val DEFAULT_FONT_SCALE = Values.FONT_DEFAULT
     const val DEFAULT_MOTION = Values.MOTION_EXPRESSIVE
+    const val DEFAULT_FAVORITES_COLUMNS = Values.FAVORITES_AUTO
     const val DEFAULT_CARD_OUTLINE_COLOR = Values.CARD_OUTLINE_AUTO
     const val DEFAULT_CARD_CORNER_STYLE = Values.CARD_STYLE_ROUNDED
     const val DEFAULT_CARD_CORNER_RADIUS = 16
@@ -98,7 +103,8 @@ fun appearanceStyleFromPrefs(
     transitWes: String = "",
     density: String,
     fontScale: String,
-    motion: String
+    motion: String,
+    favoritesColumns: String = AppearancePrefs.DEFAULT_FAVORITES_COLUMNS
 ): AppearanceStyle = AppearanceStyle(
     theme = when (theme) {
         "light" -> ThemePreference.LIGHT
@@ -130,6 +136,11 @@ fun appearanceStyleFromPrefs(
         "low" -> MotionIntensity.LOW
         "default" -> MotionIntensity.DEFAULT
         else -> MotionIntensity.EXPRESSIVE
+    },
+    favoritesColumns = when (favoritesColumns) {
+        AppearancePrefs.Values.FAVORITES_ONE -> FavoritesColumns.ONE
+        AppearancePrefs.Values.FAVORITES_TWO -> FavoritesColumns.TWO
+        else -> FavoritesColumns.AUTO
     }
 )
 
@@ -171,8 +182,19 @@ fun readAppearanceStyle(prefs: SharedPreferences): AppearanceStyle {
         transitWes = prefs.getString(AppearancePrefs.TRANSIT_WES, "") ?: "",
         density = prefs.getString(AppearancePrefs.DENSITY, "comfortable") ?: "comfortable",
         fontScale = prefs.getString(AppearancePrefs.FONT_SCALE, "default") ?: "default",
-        motion = prefs.getString(AppearancePrefs.MOTION, "expressive") ?: "expressive"
+        motion = prefs.getString(AppearancePrefs.MOTION, "expressive") ?: "expressive",
+        favoritesColumns = prefs.getString(
+            AppearancePrefs.FAVORITES_COLUMNS,
+            AppearancePrefs.DEFAULT_FAVORITES_COLUMNS
+        ) ?: AppearancePrefs.DEFAULT_FAVORITES_COLUMNS
     )
+}
+
+/** Effective Favorites grid span: forced 1/2 win, Auto follows width (>=600dp = 2). Pure. */
+fun favoritesColumnCount(raw: String, dense: Boolean): Int = when (raw) {
+    AppearancePrefs.Values.FAVORITES_ONE -> 1
+    AppearancePrefs.Values.FAVORITES_TWO -> 2
+    else -> if (dense) 2 else 1
 }
 
 /**

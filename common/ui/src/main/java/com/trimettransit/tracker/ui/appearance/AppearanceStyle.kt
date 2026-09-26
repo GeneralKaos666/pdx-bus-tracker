@@ -39,6 +39,11 @@ enum class MotionIntensity {
     LOW, DEFAULT, EXPRESSIVE
 }
 
+/** Favorites list layout: follow width (auto) or force 1 / 2 columns. */
+enum class FavoritesColumns {
+    AUTO, ONE, TWO
+}
+
 /** User-chosen per-transit-type colors; `null` falls back to scheme-derived tokens. */
 data class TransitTypeColors(
     val bus: Color? = null,
@@ -65,7 +70,8 @@ data class AppearanceStyle(
     val fontScale: FontScale = FontScale.DEFAULT,
     val pillAccent: Color? = null,
     val transitTypeColors: TransitTypeColors = TransitTypeColors(),
-    val motionIntensity: MotionIntensity = MotionIntensity.EXPRESSIVE
+    val motionIntensity: MotionIntensity = MotionIntensity.EXPRESSIVE,
+    val favoritesColumns: FavoritesColumns = FavoritesColumns.AUTO
 )
 
 /** Parses a stored colour-string pref ("#AARRGGBB" or "#RRGGBB"); empty/unparseable → null. */

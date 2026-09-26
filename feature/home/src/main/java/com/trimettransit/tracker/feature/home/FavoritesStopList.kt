@@ -39,6 +39,9 @@ import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.staggeredFadeIn
+import com.trimettransit.tracker.ui.appearance.AppearancePrefs
+import com.trimettransit.tracker.ui.appearance.favoritesColumnCount
+import com.trimettransit.tracker.ui.theme.AppMotion
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -52,7 +55,8 @@ fun FavoritesStopList(
     onMove: (from: Int, to: Int) -> Unit,
     onDeleteRequest: (Stop) -> Unit,
     emptyActions: @Composable (() -> Unit)? = null,
-    onRetry: (() -> Unit)? = null
+    onRetry: (() -> Unit)? = null,
+    favoritesColumnsRaw: String = AppearancePrefs.DEFAULT_FAVORITES_COLUMNS
 ) {
     // Local SQLite-backed list: a load failure is never a network error, so route the
     // copy choice through errorCopyKind to keep connection copy off local failures.
@@ -74,7 +78,8 @@ fun FavoritesStopList(
             stops = stops,
             onNavigateToArrivals = onNavigateToArrivals,
             onMove = onMove,
-            onDeleteRequest = onDeleteRequest
+            onDeleteRequest = onDeleteRequest,
+            favoritesColumnsRaw = favoritesColumnsRaw
         )
     }
 }
@@ -84,9 +89,11 @@ private fun FavoritesList(
     stops: List<Stop>,
     onNavigateToArrivals: (Stop) -> Unit,
     onMove: (from: Int, to: Int) -> Unit,
-    onDeleteRequest: (Stop) -> Unit
+    onDeleteRequest: (Stop) -> Unit,
+    favoritesColumnsRaw: String = AppearancePrefs.DEFAULT_FAVORITES_COLUMNS
 ) {
     val dense = rememberDenseGridEnabled()
+    val columns = favoritesColumnCount(favoritesColumnsRaw, dense)
     val listState = rememberLazyGridState()
     val smoothFling = rememberSmoothFlingBehavior()
     var entranceDone by remember { mutableStateOf(false) }
@@ -96,7 +103,7 @@ private fun FavoritesList(
         entranceDone = true
     }
     LazyVerticalGrid(
-        columns = GridCells.Fixed(if (dense) 2 else 1),
+        columns = GridCells.Fixed(columns),
         state = listState,
         modifier = Modifier.fillMaxSize(),
         flingBehavior = smoothFling,
@@ -118,7 +125,7 @@ private fun FavoritesList(
                 onClick = { onNavigateToArrivals(stop) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .animateItem()
+                    .then(if (AppMotion.reduceMotion) Modifier else Modifier.animateItem())
                     .semantics {
                         customActions = listOf(
                             CustomAccessibilityAction(moveUpLabel) {

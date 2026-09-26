@@ -86,6 +86,12 @@
     <string name="motion_default_subtitle">Firm springs without overshoot</string>
     <string name="motion_low">Subtle</string>
     <string name="motion_low_subtitle">Calmer, slower, no overshoot</string>
+    <string name="favorites_columns_auto">Auto</string>
+    <string name="favorites_columns_auto_subtitle">One column on phones, two on wide screens</string>
+    <string name="favorites_columns_one">One column</string>
+    <string name="favorites_columns_one_subtitle">Single list on every screen size</string>
+    <string name="favorites_columns_two">Two columns</string>
+    <string name="favorites_columns_two_subtitle">Side-by-side favorites everywhere</string>
     <string name="section_maps">Maps</string>
     <string name="section_maps_intro">Chooses the basemap for the trip planner and arrivals maps.</string>
     <string name="map_style_streets">Streets</string>

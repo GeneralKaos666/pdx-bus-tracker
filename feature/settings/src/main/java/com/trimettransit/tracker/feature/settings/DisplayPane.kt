@@ -8,6 +8,8 @@ import androidx.compose.material.icons.filled.MotionPhotosOn
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material.icons.filled.TextIncrease
 import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.filled.ViewColumn
+import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material.icons.filled.ViewStream
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
@@ -16,7 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.ui.components.SettingsCard
 import com.trimettransit.tracker.ui.components.SettingsRadioOption
-/** Display pane: density, font scale, and motion options. */
+/** Display pane: density, font scale, motion, and favorites columns options. */
 @Composable
 internal fun DisplayPane(
     densityRaw: String,
@@ -24,7 +26,9 @@ internal fun DisplayPane(
     fontScaleRaw: String,
     onFontScaleChange: (String) -> Unit,
     motionRaw: String,
-    onMotionChange: (String) -> Unit
+    onMotionChange: (String) -> Unit,
+    favoritesColumnsRaw: String,
+    onFavoritesColumnsChange: (String) -> Unit
 )
 {
     SettingsCard {
@@ -105,6 +109,36 @@ internal fun DisplayPane(
                     selected = motionRaw == "low",
                     onClick = {
                         onMotionChange("low")
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+                SettingsRadioOption(
+                    label = stringResource(R.string.favorites_columns_auto),
+                    subtitle = stringResource(R.string.favorites_columns_auto_subtitle),
+                    icon = Icons.Filled.ViewModule,
+                    selected = favoritesColumnsRaw == "auto",
+                    onClick = {
+                        onFavoritesColumnsChange("auto")
+                    }
+                )
+                SettingsRadioOption(
+                    label = stringResource(R.string.favorites_columns_one),
+                    subtitle = stringResource(R.string.favorites_columns_one_subtitle),
+                    icon = Icons.Filled.ViewStream,
+                    selected = favoritesColumnsRaw == "one",
+                    onClick = {
+                        onFavoritesColumnsChange("one")
+                    }
+                )
+                SettingsRadioOption(
+                    label = stringResource(R.string.favorites_columns_two),
+                    subtitle = stringResource(R.string.favorites_columns_two_subtitle),
+                    icon = Icons.Filled.ViewColumn,
+                    selected = favoritesColumnsRaw == "two",
+                    onClick = {
+                        onFavoritesColumnsChange("two")
                     }
                 )
             }

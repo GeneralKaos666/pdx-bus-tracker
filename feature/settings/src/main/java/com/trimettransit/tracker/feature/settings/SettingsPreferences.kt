@@ -24,6 +24,7 @@ internal data class SettingsPreferenceState(
     val density: String,
     val fontScale: String,
     val motion: String,
+    val favoritesColumns: String,
     val mapStyle: String,
     val onlyShowSelectedRoute: Boolean,
     val cardOutlines: Boolean,
@@ -50,6 +51,7 @@ internal data class SettingsPreferenceState(
             putString(AppearancePrefs.DENSITY, density)
             putString(AppearancePrefs.FONT_SCALE, fontScale)
             putString(AppearancePrefs.MOTION, motion)
+            putString(AppearancePrefs.FAVORITES_COLUMNS, favoritesColumns)
             putString(AppearancePrefs.MAP_STYLE, mapStyle)
             putBoolean(AppearancePrefs.ARRIVALS_ONLY_SELECTED_ROUTE, onlyShowSelectedRoute)
             putBoolean(AppearancePrefs.CARDS_OUTLINES, cardOutlines)
@@ -87,6 +89,7 @@ internal data class SettingsPreferenceState(
                 density = normalizeDensity(prefs.getString(AppearancePrefs.DENSITY, null)),
                 fontScale = normalizeFontScale(prefs.getString(AppearancePrefs.FONT_SCALE, null)),
                 motion = normalizeMotion(prefs.getString(AppearancePrefs.MOTION, null)),
+                favoritesColumns = normalizeFavoritesColumns(prefs.getString(AppearancePrefs.FAVORITES_COLUMNS, null)),
                 mapStyle = normalizeMapStyle(prefs.getString(AppearancePrefs.MAP_STYLE, null)),
                 onlyShowSelectedRoute = prefs.getBoolean(
                     AppearancePrefs.ARRIVALS_ONLY_SELECTED_ROUTE,
@@ -166,6 +169,13 @@ internal fun normalizeMotion(value: String?): String = when (value) {
     AppearancePrefs.Values.MOTION_DEFAULT,
     AppearancePrefs.Values.MOTION_EXPRESSIVE -> value
     else -> AppearancePrefs.DEFAULT_MOTION
+}
+
+internal fun normalizeFavoritesColumns(value: String?): String = when (value) {
+    AppearancePrefs.Values.FAVORITES_ONE,
+    AppearancePrefs.Values.FAVORITES_TWO,
+    AppearancePrefs.Values.FAVORITES_AUTO -> value
+    else -> AppearancePrefs.DEFAULT_FAVORITES_COLUMNS
 }
 
 internal fun normalizeMapStyle(value: String?): String = when (value) {

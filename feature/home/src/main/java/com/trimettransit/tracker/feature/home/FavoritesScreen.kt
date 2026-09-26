@@ -40,6 +40,8 @@ import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.rememberFavoriteIds
+import com.trimettransit.tracker.ui.appearance.AppearancePrefs
+import com.trimettransit.tracker.ui.components.RememberOnResume
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -59,18 +61,36 @@ fun FavoritesScreen(
 ) {
     val favorites = rememberStopListLoader(read = { favoritesRepository.getFavorites() })
     val favoriteIds = rememberFavoriteIds(favoritesRepository, pageVisible)
-
-    // The pager keeps adjacent pages composed, so returning to this tab fires no resume event.
-    // Reload when it becomes visible so a stop saved elsewhere is actually in the list.
-    LaunchedEffect(pageVisible) {
-        if (pageVisible) favorites.reload()
-    }
-    var editable by remember(favorites.stops) { mutableStateOf(favorites.stops) }
-    var deleteTarget by remember { mutableStateOf<Stop?>(null) }
     val scope = rememberCoroutineScope()
     val removeMutex = remember { Mutex() }
     val context = LocalContext.current
     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+    var favoritesColumnsRaw by remember {
+        mutableStateOf(
+            prefs.getString(
+                AppearancePrefs.FAVORITES_COLUMNS,
+                AppearancePrefs.DEFAULT_FAVORITES_COLUMNS
+            ) ?: AppearancePrefs.DEFAULT_FAVORITES_COLUMNS
+        )
+    }
+    fun refreshColumns() {
+        favoritesColumnsRaw = prefs.getString(
+            AppearancePrefs.FAVORITES_COLUMNS,
+            AppearancePrefs.DEFAULT_FAVORITES_COLUMNS
+        ) ?: AppearancePrefs.DEFAULT_FAVORITES_COLUMNS
+    }
+
+    // The pager keeps adjacent pages composed, so returning to this tab fires no resume event.
+    // Reload when it becomes visible so a stop saved elsewhere is actually in the list.
+    LaunchedEffect(pageVisible) {
+        if (pageVisible) {
+            favorites.reload()
+            refreshColumns()
+        }
+    }
+    var editable by remember(favorites.stops) { mutableStateOf(favorites.stops) }
+    var deleteTarget by remember { mutableStateOf<Stop?>(null) }
+    RememberOnResume { refreshColumns() }
     var welcomeDismissed by remember { mutableStateOf(prefs.getBoolean(PREF_WELCOME_SHOWN, false)) }
     fun dismissWelcome() {
         welcomeDismissed = true
@@ -156,6 +176,7 @@ fun FavoritesScreen(
                     isError = favorites.isError,
                     emptyText = stringResource(R.string.no_favorite_stops),
                     onNavigateToArrivals = onNavigateToArrivals,
+                    favoritesColumnsRaw = favoritesColumnsRaw,
                     onMove = { from, to ->
                         handleMove(from, to)
                         // Learned by doing: retire the hint the moment it is no longer needed.

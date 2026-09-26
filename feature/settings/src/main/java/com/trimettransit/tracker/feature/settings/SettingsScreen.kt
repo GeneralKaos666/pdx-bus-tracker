@@ -198,7 +198,9 @@ fun SettingsScreen(
                             fontScaleRaw = settings.fontScale,
                             onFontScaleChange = { updateSettings { state -> state.copy(fontScale = it) } },
                             motionRaw = settings.motion,
-                            onMotionChange = { updateSettings { state -> state.copy(motion = it) } }
+                            onMotionChange = { updateSettings { state -> state.copy(motion = it) } },
+                            favoritesColumnsRaw = settings.favoritesColumns,
+                            onFavoritesColumnsChange = { updateSettings { state -> state.copy(favoritesColumns = it) } }
                         )
 
                         SettingsSection.CARDS -> CardsPane(

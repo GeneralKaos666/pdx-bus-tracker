@@ -105,11 +105,39 @@ class AppearanceTest {
             pillAccent = "",
             density = "custom",
             fontScale = "huge",
-            motion = "silly"
+            motion = "silly",
+            favoritesColumns = "wide"
         )
         assertEquals(Density.COMFORTABLE, style.density)
         assertEquals(FontScale.DEFAULT, style.fontScale)
         assertEquals(MotionIntensity.EXPRESSIVE, style.motionIntensity)
+        assertEquals(FavoritesColumns.AUTO, style.favoritesColumns)
+    }
+
+    @Test
+    fun `favorites columns map and default`() {
+        val forced = appearanceStyleFromPrefs(
+            theme = "system",
+            colorMode = "dynamic",
+            accentColor = "",
+            vibrancy = "default",
+            amoledDark = false,
+            pillAccent = "",
+            density = "comfortable",
+            fontScale = "default",
+            motion = "expressive",
+            favoritesColumns = "two"
+        )
+        assertEquals(FavoritesColumns.TWO, forced.favoritesColumns)
+    }
+
+    @Test
+    fun `favorites column count forces or follows width`() {
+        assertEquals(1, favoritesColumnCount("one", true))
+        assertEquals(2, favoritesColumnCount("two", false))
+        assertEquals(2, favoritesColumnCount("auto", true))
+        assertEquals(1, favoritesColumnCount("auto", false))
+        assertEquals(1, favoritesColumnCount("wide", false))
     }
 
     @Test

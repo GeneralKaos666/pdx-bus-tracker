@@ -86,6 +86,12 @@
     <string name="motion_default_subtitle">Muelles firmes sin rebote</string>
     <string name="motion_low">Sutil</string>
     <string name="motion_low_subtitle">Más tranquilo y lento, sin rebote</string>
+    <string name="favorites_columns_auto">Automático</string>
+    <string name="favorites_columns_auto_subtitle">Una columna en teléfonos, dos en pantallas anchas</string>
+    <string name="favorites_columns_one">Una columna</string>
+    <string name="favorites_columns_one_subtitle">Lista única en todos los tamaños</string>
+    <string name="favorites_columns_two">Dos columnas</string>
+    <string name="favorites_columns_two_subtitle">Favoritos lado a lado en todas partes</string>
     <string name="section_maps">Mapas</string>
     <string name="section_maps_intro">Elige el mapa base para el planificador de viajes y los mapas de llegadas.</string>
     <string name="map_style_streets">Calles</string>

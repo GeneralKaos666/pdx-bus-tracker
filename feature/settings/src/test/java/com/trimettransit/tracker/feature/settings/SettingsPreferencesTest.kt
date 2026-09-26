@@ -14,6 +14,7 @@ class SettingsPreferencesTest {
         assertEquals(AppearancePrefs.DEFAULT_DENSITY, normalizeDensity("wide"))
         assertEquals(AppearancePrefs.DEFAULT_FONT_SCALE, normalizeFontScale("huge"))
         assertEquals(AppearancePrefs.DEFAULT_MOTION, normalizeMotion("none"))
+        assertEquals(AppearancePrefs.DEFAULT_FAVORITES_COLUMNS, normalizeFavoritesColumns("wide"))
         assertEquals(MapStyles.DEFAULT, normalizeMapStyle("satellite"))
     }
 
@@ -25,6 +26,7 @@ class SettingsPreferencesTest {
         assertEquals(AppearancePrefs.Values.DENSITY_COMPACT, normalizeDensity("compact"))
         assertEquals(AppearancePrefs.Values.FONT_LARGER, normalizeFontScale("larger"))
         assertEquals(AppearancePrefs.Values.MOTION_LOW, normalizeMotion("low"))
+        assertEquals(AppearancePrefs.Values.FAVORITES_TWO, normalizeFavoritesColumns("two"))
         assertEquals(MapStyles.POSITRON, normalizeMapStyle(MapStyles.POSITRON))
     }
 }
