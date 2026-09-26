@@ -3,13 +3,19 @@ package com.trimettransit.tracker.transit
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class GtfsStaticParserTest {
+    @get:Rule
+    val tempFolder = TemporaryFolder()
     @Test
     fun `parses the minimal static tables and quoted commas`() {
         val bytes = ByteArrayOutputStream()
@@ -48,17 +54,31 @@ class GtfsStaticParserTest {
 
     @Test
     fun `store rejects a feed larger than the byte bound`() {
-        val oversized = ByteArray((MAX_GTFS_STATIC_BYTES + 1).toInt())
-        // The declared size already exceeds the bound, so the dest file is never touched.
+        // The declared size alone exceeds the bound, so no bytes are read and dest is
+        // never touched — no large allocation needed to exercise this check.
         val dest = File("bounded-rejected.zip")
         try {
             val result = runCatching {
-                FileGtfsStaticStore.writeBounded(oversized.inputStream(), oversized.size.toLong(), dest)
+                FileGtfsStaticStore.writeBounded(ByteArray(0).inputStream(), MAX_GTFS_STATIC_BYTES + 1, dest)
             }
             assertTrue(result.isFailure)
+            assertFalse(dest.exists())
         } finally {
             dest.delete()
         }
+    }
+
+    @Test
+    fun `store aborts a mid-download breach when the declared size lies`() {
+        // A server may omit (declared -1) or understate Content-Length; the chunk loop must
+        // still abort once the actual streamed bytes exceed the bound, leaving no complete feed.
+        val actualBytes = MAX_GTFS_STATIC_BYTES + 1
+        val dest = tempFolder.newFile("bounded-streamed.zip")
+        val result = runCatching {
+            FileGtfsStaticStore.writeBounded(ZeroStream(actualBytes), -1, dest)
+        }
+        assertTrue(result.isFailure)
+        assertTrue(dest.length() < actualBytes)
     }
 
     @Test
@@ -84,6 +104,19 @@ class GtfsStaticParserTest {
             zip.closeEntry()
         }
         return ByteArrayInputStream(bytes.toByteArray())
+    }
+
+    /** Zero-filled stream of [remaining] bytes without allocating them on the heap. */
+    private class ZeroStream(private var remaining: Long) : InputStream() {
+        override fun read(b: ByteArray, off: Int, len: Int): Int {
+            if (remaining <= 0) return -1
+            val n = minOf(len.toLong(), remaining).toInt()
+            java.util.Arrays.fill(b, off, off + n, 0.toByte())
+            remaining -= n
+            return n
+        }
+
+        override fun read(): Int = if (remaining-- > 0) 0 else -1
     }
 
     private fun add(zip: ZipOutputStream, name: String, content: String) {
