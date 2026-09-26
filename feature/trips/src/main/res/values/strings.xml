@@ -85,4 +85,6 @@
     <string name="trip_planner_error_outside_district">That trip leaves the TriMet service area</string>
     <string name="trip_planner_error_outage">Trip Planner is temporarily unavailable</string>
     <string name="trip_planner_error_unknown">Trip Planner couldn\'t plan that trip</string>
+    <string name="trip_updated_minutes">Updated %d min ago</string>
+    <string name="trip_updated_now">Updated just now</string>
 </resources>

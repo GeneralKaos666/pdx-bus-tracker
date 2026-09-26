@@ -87,4 +87,6 @@
     <string name="trip_planner_error_outside_district">Ese viaje sale del área de servicio de TriMet</string>
     <string name="trip_planner_error_outage">El Planificador de viajes no está disponible temporalmente</string>
     <string name="trip_planner_error_unknown">El Planificador de viajes no pudo planificar ese viaje</string>
+    <string name="trip_updated_minutes">Actualizado hace %d min</string>
+    <string name="trip_updated_now">Actualizado ahora mismo</string>
 </resources>

@@ -96,8 +96,10 @@ import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import com.trimettransit.tracker.util.SingleJobRunner
 import com.trimettransit.tracker.util.clockTime
+import com.trimettransit.tracker.util.nextMinuteBoundaryDelayMillis
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.joda.time.DateTime
 import java.util.Calendar
@@ -121,6 +123,7 @@ private val tripDraftSaver: Saver<TripDraft, Bundle> = Saver(
             }
             draft.departAtMillis?.let { putLong("departAt", it) }
             draft.arriveByMillis?.let { putLong("arriveBy", it) }
+            draft.plannedAtMillis?.let { putLong("plannedAt", it) }
             putString("mode", draft.options.mode.name)
             putString("min", draft.options.min.name)
             putFloat("maxWalk", draft.options.maxWalkMiles)
@@ -151,6 +154,7 @@ private val tripDraftSaver: Saver<TripDraft, Bundle> = Saver(
             destination = destination,
             departAtMillis = saved.takeIf { it.containsKey("departAt") }?.getLong("departAt"),
             arriveByMillis = saved.takeIf { it.containsKey("arriveBy") }?.getLong("arriveBy"),
+            plannedAtMillis = saved.takeIf { it.containsKey("plannedAt") }?.getLong("plannedAt"),
             options = TripRequestOptions(
                 mode = saved.getString("mode")?.let {
                     runCatching { TripPlannerMode.valueOf(it) }.getOrNull()
@@ -226,6 +230,15 @@ fun TripPlannerScreen(
     var planResult by remember { mutableStateOf<TripPlanResult?>(null) }
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
     var isPlanning by remember { mutableStateOf(false) }
+    // Data-age tick: minute-aligned to the wall clock (same discipline as the arrival
+    // countdowns) so the sheet's "Updated X min ago" chip flips exactly on the minute.
+    var ageTick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(nextMinuteBoundaryDelayMillis())
+            ageTick++
+        }
+    }
     val planRunner = remember { SingleJobRunner(coroutineScope) }
     var locationJob by remember { mutableStateOf<Job?>(null) }
     var legGeometries by remember { mutableStateOf<Map<Int, List<GeoPoint>>>(emptyMap()) }
@@ -378,6 +391,7 @@ fun TripPlannerScreen(
                         itineraryCount = successPlan.itineraries.size,
                         reset = resetSelection
                     )
+                    draft = draft.copy(plannedAtMillis = System.currentTimeMillis())
                 }
                 planResult = result
                 showResults = result is TripPlanResult.Success &&
@@ -923,7 +937,14 @@ fun TripPlannerScreen(
                     selectedIndex = it
                     picking = PickSlot.NONE
                 },
-                onDismiss = { showResults = false }
+                onDismiss = { showResults = false },
+                // ageTick is read (not otherwise used) so the age string recomputes on
+                // every minute-boundary tick instead of going stale.
+                ageText = draft.ageText(
+                    System.currentTimeMillis(),
+                    stringResource(R.string.trip_updated_minutes),
+                    stringResource(R.string.trip_updated_now)
+                ).let { text -> ageTick; text }
             )
         }
     }

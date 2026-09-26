@@ -56,7 +56,8 @@ internal fun ItineraryResultsSheet(
     plan: TripPlan,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    ageText: String? = null
 ) {
     val sheetState = rememberBottomSheetState(
         initialValue = SheetValue.Hidden,
@@ -70,6 +71,14 @@ internal fun ItineraryResultsSheet(
     ) {
         Column(modifier = Modifier.padding(bottom = 24.dp)) {
             val ranks = remember(plan.itineraries) { itineraryRanks(plan.itineraries) }
+            if (ageText != null) {
+                Text(
+                    text = ageText,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
+                )
+            }
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),

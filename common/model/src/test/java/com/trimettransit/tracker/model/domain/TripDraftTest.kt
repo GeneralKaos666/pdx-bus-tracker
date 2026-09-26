@@ -1,7 +1,9 @@
 package com.trimettransit.tracker.model.domain
 
 import com.trimettransit.tracker.model.TripPoint
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -41,5 +43,23 @@ class TripDraftTest {
     fun `draft missing an endpoint is not submittable`() {
         assertFalse(TripDraft(origin = null, destination = destination).isSubmittable(now))
         assertFalse(TripDraft(origin = origin, destination = null).isSubmittable(now))
+    }
+
+    @Test
+    fun `age text is minutes between planned-at and now`() {
+        val draft = TripDraft(origin = origin, destination = destination, plannedAtMillis = now - 5 * 60_000L)
+        assertEquals("Updated 5 min ago", draft.ageText(now, "Updated %d min ago", "Updated just now"))
+    }
+
+    @Test
+    fun `fresh plan reads just now`() {
+        val draft = TripDraft(origin = origin, destination = destination, plannedAtMillis = now - 10_000L)
+        assertEquals("Updated just now", draft.ageText(now, "Updated %d min ago", "Updated just now"))
+    }
+
+    @Test
+    fun `unplanned draft has no age text`() {
+        val draft = TripDraft(origin = origin, destination = destination)
+        assertNull(draft.ageText(now, "Updated %d min ago", "Updated just now"))
     }
 }
