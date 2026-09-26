@@ -38,28 +38,6 @@ class WidgetRowConfigTest {
     }
 
     @Test
-    fun `filters rows by routeFilter`() {
-        val rows = listOf(
-            rowAt(1, route = 4),
-            rowAt(2, route = 9),
-            rowAt(3, route = 12)
-        )
-        val config = WidgetConfig().copy(routeFilter = listOf("4", "9"))
-        assertEquals(listOf(4, 9), applyRowConfig(rows, config).map { it.stop.routeNum })
-    }
-
-    @Test
-    fun `routeFilter alone keeps favorite order`() {
-        val rows = listOf(
-            rowAt(3, route = 9),
-            rowAt(1, route = 4),
-            rowAt(2, route = 9)
-        )
-        val config = WidgetConfig().copy(routeFilter = listOf("9"))
-        assertEquals(listOf(3, 2), applyRowConfig(rows, config).map { it.stop.locId })
-    }
-
-    @Test
     fun `caps rows at maxStops`() {
         val rows = (1..5).map { rowAt(it) }
         val config = WidgetConfig().copy(maxStops = 2)
@@ -67,7 +45,7 @@ class WidgetRowConfigTest {
     }
 
     @Test
-    fun `empty selection and routeFilter return all rows`() {
+    fun `empty selection returns all rows`() {
         val rows = listOf(rowAt(1, route = 4), rowAt(2, route = 12))
         val config = WidgetConfig()
         assertEquals(2, applyRowConfig(rows, config).size)

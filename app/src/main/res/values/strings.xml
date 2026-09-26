@@ -39,8 +39,13 @@
         <item quantity="one">Show %1$d stop</item>
         <item quantity="other">Show %1$d stops</item>
     </plurals>
-    <string name="widget_config_route_filter">Only these lines (comma-separated)</string>
-    <string name="widget_config_route_filter_hint">e.g. 4, 9, 12</string>
+    <string name="widget_config_background">Background</string>
+    <string name="widget_config_background_system">System</string>
+    <string name="widget_config_background_custom">Custom</string>
+    <string name="widget_config_custom_color">Custom color</string>
+    <string name="widget_config_custom_color_hint">e.g. #1A73E8</string>
+    <string name="widget_config_opacity">Opacity — %1$d%%</string>
+    <string name="widget_config_show_dividers">Outlines and dividers</string>
     <string name="widget_config_title_field">Title</string>
     <string name="widget_config_hide_title">Hide title</string>
     <string name="widget_config_done">Done</string>

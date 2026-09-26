@@ -1,10 +1,12 @@
 package com.trimettransit.tracker.widget
 
+import com.trimettransit.tracker.widget.WidgetBackgroundMode.CUSTOM
+import com.trimettransit.tracker.widget.WidgetBackgroundMode.SYSTEM
 import com.trimettransit.tracker.widget.WidgetThemeOption.DARK
 import com.trimettransit.tracker.widget.WidgetThemeOption.LIGHT
-import com.trimettransit.tracker.widget.WidgetThemeOption.SYSTEM
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -24,7 +26,12 @@ class WidgetConfigTest {
             showDetourAlerts = false,
             showArrivalStatus = false,
             maxStops = 6,
-            routeFilter = listOf("4", "17")
+            backgroundMode = CUSTOM,
+            customBackgroundHex = "#1A73E8",
+            backgroundOpacity = 80,
+            showGridDividers = true,
+            outlineMode = CUSTOM,
+            customOutlineHex = "#FF7F00"
         )
         assertEquals(config, WidgetConfig.fromPersistentMap(config.toPersistentMap()))
     }
@@ -98,19 +105,31 @@ class WidgetConfigTest {
     }
 
     @Test
-    fun `round trips route filter`() {
-        val config = WidgetConfig(routeFilter = listOf("4", "17", "20"))
+    fun `round trips custom background settings`() {
+        val config = WidgetConfig(
+            backgroundMode = CUSTOM,
+            customBackgroundHex = "#1A73E8",
+            backgroundOpacity = 45,
+            showGridDividers = true,
+            outlineMode = CUSTOM,
+            customOutlineHex = "#FF7F00"
+        )
         assertEquals(config, WidgetConfig.fromPersistentMap(config.toPersistentMap()))
     }
 
     @Test
-    fun `new options default on with max stops at twelve and an empty route filter`() {
+    fun `new options default to system background fully opaque without dividers`() {
         val config = WidgetConfig.fromPersistentMap(emptyMap())
         assertTrue(config.showRouteBadge)
         assertTrue(config.showDetourAlerts)
         assertTrue(config.showArrivalStatus)
         assertEquals(12, config.maxStops)
-        assertEquals(emptyList<String>(), config.routeFilter)
+        assertEquals(SYSTEM, config.backgroundMode)
+        assertNull(config.customBackgroundHex)
+        assertEquals(100, config.backgroundOpacity)
+        assertFalse(config.showGridDividers)
+        assertEquals(SYSTEM, config.outlineMode)
+        assertNull(config.customOutlineHex)
     }
 
     @Test
@@ -141,11 +160,69 @@ class WidgetConfigTest {
     }
 
     @Test
-    fun `route filter omits blank entries`() {
-        assertEquals(
-            listOf("4", "20"),
-            WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_ROUTE_FILTER to "4,,20, ,")).routeFilter
-        )
+    fun `background opacity clamps out-of-range values to the default`() {
+        assertEquals(100, WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_BACKGROUND_OPACITY to "-1")).backgroundOpacity)
+        assertEquals(100, WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_BACKGROUND_OPACITY to "101")).backgroundOpacity)
+        assertEquals(100, WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_BACKGROUND_OPACITY to "abc")).backgroundOpacity)
+    }
+
+    @Test
+    fun `background opacity accepts the boundary values`() {
+        assertEquals(0, WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_BACKGROUND_OPACITY to "0")).backgroundOpacity)
+        assertEquals(100, WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_BACKGROUND_OPACITY to "100")).backgroundOpacity)
+    }
+
+    @Test
+    fun `unknown background mode falls back to system`() {
+        val config = WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_BACKGROUND_MODE to "sepia"))
+        assertEquals(SYSTEM, config.backgroundMode)
+    }
+
+    @Test
+    fun `blank custom background decodes to null`() {
+        assertNull(WidgetConfig.fromPersistentMap(emptyMap()).customBackgroundHex)
+        assertNull(WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_CUSTOM_BACKGROUND to "  ")).customBackgroundHex)
+        assertNull(WidgetConfig.fromPersistentMap(emptyMap()).customOutlineHex)
+        assertNull(WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_CUSTOM_OUTLINE to "  ")).customOutlineHex)
+    }
+
+    @Test
+    fun `unknown outline mode falls back to system`() {
+        val config = WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_OUTLINE_MODE to "neon"))
+        assertEquals(SYSTEM, config.outlineMode)
+    }
+
+    @Test
+    fun `hex parser accepts six and eight digit colors with or without hash`() {
+        assertEquals(0xFF1A73E8.toInt(), parseWidgetBackgroundArgb("#1A73E8"))
+        assertEquals(0xFF1A73E8.toInt(), parseWidgetBackgroundArgb("1A73E8"))
+        assertEquals(0x801A73E8.toInt(), parseWidgetBackgroundArgb("#801A73E8"))
+        assertEquals(0x801A73E8.toInt(), parseWidgetBackgroundArgb("801A73E8"))
+    }
+
+    @Test
+    fun `hex parser rejects malformed input`() {
+        assertNull(parseWidgetBackgroundArgb(null))
+        assertNull(parseWidgetBackgroundArgb(""))
+        assertNull(parseWidgetBackgroundArgb("  "))
+        assertNull(parseWidgetBackgroundArgb("#12345"))
+        assertNull(parseWidgetBackgroundArgb("not-a-color"))
+        assertNull(parseWidgetBackgroundArgb("#GGGGGG"))
+    }
+
+    @Test
+    fun `picker confirm format round trips through the parser`() {
+        val spec = String.format(java.util.Locale.US, "#%08X", 0xCC1A73E8.toInt())
+        assertEquals(0xCC1A73E8.toInt(), parseWidgetBackgroundArgb(spec))
+    }
+
+    @Test
+    fun `opacity fraction scales and coerces`() {
+        assertEquals(1f, backgroundOpacityFraction(100))
+        assertEquals(0f, backgroundOpacityFraction(0))
+        assertEquals(0.45f, backgroundOpacityFraction(45), 0.0001f)
+        assertEquals(1f, backgroundOpacityFraction(140))
+        assertEquals(0f, backgroundOpacityFraction(-5))
     }
 
     @Test
@@ -190,7 +267,7 @@ class WidgetConfigTest {
     @Test
     fun `unknown theme falls back to system`() {
         val config = WidgetConfig.fromPersistentMap(mapOf(WidgetConfig.KEY_THEME to "sepia"))
-        assertEquals(SYSTEM, config.theme)
+        assertEquals(WidgetThemeOption.SYSTEM, config.theme)
     }
 
     @Test
@@ -198,12 +275,14 @@ class WidgetConfigTest {
         val map = mapOf(
             WidgetConfig.KEY_SHOW_CLOCK_TIME to "yes",
             WidgetConfig.KEY_COMPACT_ROWS to "1",
-            WidgetConfig.KEY_HIDE_TITLE to "on"
+            WidgetConfig.KEY_HIDE_TITLE to "on",
+            WidgetConfig.KEY_SHOW_GRID_DIVIDERS to "on"
         )
         val config = WidgetConfig.fromPersistentMap(map)
         assertFalse(config.showClockTime)
         assertFalse(config.compactRows)
         assertFalse(config.hideTitle)
+        assertFalse(config.showGridDividers)
     }
 
     @Test
@@ -220,7 +299,12 @@ class WidgetConfigTest {
             showDetourAlerts = false,
             showArrivalStatus = false,
             maxStops = 3,
-            routeFilter = listOf("4", "20")
+            backgroundMode = CUSTOM,
+            customBackgroundHex = "#1A73E8",
+            backgroundOpacity = 80,
+            showGridDividers = true,
+            outlineMode = CUSTOM,
+            customOutlineHex = "#FF7F00"
         )
         assertEquals(
             mapOf(
@@ -235,14 +319,19 @@ class WidgetConfigTest {
                 "show_detour_alerts" to "false",
                 "show_arrival_status" to "false",
                 "max_stops" to "3",
-                "route_filter" to "4,20"
+                "background_mode" to "custom",
+                "custom_background" to "#1A73E8",
+                "background_opacity" to "80",
+                "show_grid_dividers" to "true",
+                "outline_mode" to "custom",
+                "custom_outline" to "#FF7F00"
             ),
             config.toPersistentMap()
         )
     }
 
     @Test
-    fun `null title text omits the key and empty stop ids store an empty string`() {
+    fun `null title text and background omit their keys and empty stop ids store an empty string`() {
         assertEquals(
             mapOf(
                 "stop_ids" to "",
@@ -255,7 +344,10 @@ class WidgetConfigTest {
                 "show_detour_alerts" to "true",
                 "show_arrival_status" to "true",
                 "max_stops" to "12",
-                "route_filter" to ""
+                "background_mode" to "system",
+                "background_opacity" to "100",
+                "show_grid_dividers" to "false",
+                "outline_mode" to "system"
             ),
             WidgetConfig().toPersistentMap()
         )

@@ -40,8 +40,13 @@
         <item quantity="many">Mostrar %1$d paradas</item>
         <item quantity="other">Mostrar %1$d paradas</item>
     </plurals>
-    <string name="widget_config_route_filter">Solo estas líneas (separadas por comas)</string>
-    <string name="widget_config_route_filter_hint">p. ej. 4, 9, 12</string>
+    <string name="widget_config_background">Fondo</string>
+    <string name="widget_config_background_system">Sistema</string>
+    <string name="widget_config_background_custom">Personalizado</string>
+    <string name="widget_config_custom_color">Color personalizado</string>
+    <string name="widget_config_custom_color_hint">p. ej. #1A73E8</string>
+    <string name="widget_config_opacity">Opacidad — %1$d%%</string>
+    <string name="widget_config_show_dividers">Bordes y divisores</string>
     <string name="widget_config_title_field">Título</string>
     <string name="widget_config_hide_title">Ocultar título</string>
     <string name="widget_config_done">Listo</string>

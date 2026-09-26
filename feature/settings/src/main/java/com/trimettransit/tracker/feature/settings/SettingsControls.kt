@@ -216,11 +216,12 @@ internal fun SettingsSliderOption(
 }
 
 @Composable
-internal fun ColourPickerDialog(
+fun ColourPickerDialog(
     title: String,
     autoLabel: String,
     initialArgb: String? = null,
     allowAuto: Boolean = true,
+    allowAlpha: Boolean = true,
     onDismiss: () -> Unit,
     onAuto: () -> Unit,
     onConfirm: (String) -> Unit
@@ -235,7 +236,7 @@ internal fun ColourPickerDialog(
     var hue by remember(initialArgb) { mutableFloatStateOf(initialHsv[0]) }
     var sat by remember(initialArgb) { mutableFloatStateOf(initialHsv[1]) }
     var value by remember(initialArgb) { mutableFloatStateOf(initialHsv[2]) }
-    var alpha by remember(initialArgb) { mutableFloatStateOf(startColor.alpha) }
+    var alpha by remember(initialArgb) { mutableFloatStateOf(if (allowAlpha) startColor.alpha else 1f) }
 
     val draft = remember(hue, sat, value, alpha) {
         Color(AndroidColor.HSVToColor((alpha * 255).roundToInt(), floatArrayOf(hue, sat, value)))
@@ -306,14 +307,16 @@ internal fun ColourPickerDialog(
                         markCustom()
                     }
                 )
-                ColourSlider(
-                    label = stringResource(R.string.color_opacity),
-                    value = alpha,
-                    onValueChange = {
-                        alpha = it
-                        markCustom()
-                    }
-                )
+                if (allowAlpha) {
+                    ColourSlider(
+                        label = stringResource(R.string.color_opacity),
+                        value = alpha,
+                        onValueChange = {
+                            alpha = it
+                            markCustom()
+                        }
+                    )
+                }
             }
         },
         confirmButton = {
@@ -334,7 +337,7 @@ internal fun ColourPickerDialog(
 }
 
 @Composable
-internal fun ColourSlider(
+fun ColourSlider(
     label: String,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,

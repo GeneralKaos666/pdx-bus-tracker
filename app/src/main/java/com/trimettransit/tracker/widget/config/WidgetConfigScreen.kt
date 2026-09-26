@@ -2,6 +2,7 @@ package com.trimettransit.tracker.widget.config
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -19,7 +20,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -49,6 +52,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -58,11 +62,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.trimettransit.tracker.R
+import com.trimettransit.tracker.feature.settings.ColourPickerDialog
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
+import com.trimettransit.tracker.widget.WidgetBackgroundMode
 import com.trimettransit.tracker.widget.WidgetConfig
 import com.trimettransit.tracker.widget.WidgetThemeOption
+import com.trimettransit.tracker.widget.parseWidgetBackgroundArgb
 
 /**
  * Per-widget configuration editor. An empty [WidgetConfig.selectedStopIds] means "all
@@ -88,7 +95,14 @@ fun WidgetConfigScreen(
     val showDetourAlerts = remember { mutableStateOf(initial.showDetourAlerts) }
     val showArrivalStatus = remember { mutableStateOf(initial.showArrivalStatus) }
     val maxStops = remember { mutableIntStateOf(initial.maxStops) }
-    val routeFilter = remember { mutableStateOf(initial.routeFilter.joinToString(", ")) }
+    val backgroundMode = remember { mutableStateOf(initial.backgroundMode) }
+    val customBackground = remember { mutableStateOf(initial.customBackgroundHex.orEmpty()) }
+    val backgroundOpacity = remember { mutableIntStateOf(initial.backgroundOpacity) }
+    val showGridDividers = remember { mutableStateOf(initial.showGridDividers) }
+    val showColorDialog = remember { mutableStateOf(false) }
+    val outlineMode = remember { mutableStateOf(initial.outlineMode) }
+    val customOutline = remember { mutableStateOf(initial.customOutlineHex.orEmpty()) }
+    val showOutlineDialog = remember { mutableStateOf(false) }
     val titleText = remember { mutableStateOf(initial.titleText.orEmpty()) }
     val hideTitle = remember { mutableStateOf(initial.hideTitle) }
     val favorites = remember { mutableStateOf(listOf<Stop>()) }
@@ -130,11 +144,12 @@ fun WidgetConfigScreen(
         showDetourAlerts = showDetourAlerts.value,
         showArrivalStatus = showArrivalStatus.value,
         maxStops = maxStops.intValue,
-        routeFilter = routeFilter.value
-            .split(',', ' ')
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-            .distinct(),
+        backgroundMode = backgroundMode.value,
+        customBackgroundHex = customBackground.value.trim().takeIf { it.isNotBlank() },
+        backgroundOpacity = backgroundOpacity.intValue,
+        showGridDividers = showGridDividers.value,
+        outlineMode = outlineMode.value,
+        customOutlineHex = customOutline.value.trim().takeIf { it.isNotBlank() },
         titleText = titleText.value.trim().takeIf { it.isNotBlank() },
         hideTitle = hideTitle.value
     )
@@ -307,18 +322,97 @@ fun WidgetConfigScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
+            SectionHeader(R.string.widget_config_background)
+            ChoiceSegmentedRow(
+                selected = backgroundMode.value,
+                onSelect = { backgroundMode.value = it },
+                options = WidgetBackgroundMode.entries,
+                labelFor = { option ->
+                    when (option) {
+                        WidgetBackgroundMode.SYSTEM -> stringResource(R.string.widget_config_background_system)
+                        WidgetBackgroundMode.CUSTOM -> stringResource(R.string.widget_config_background_custom)
+                    }
+                }
+            )
+            if (backgroundMode.value == WidgetBackgroundMode.CUSTOM) {
+                ColorSwatchRow(
+                    hex = customBackground.value,
+                    onClick = { showColorDialog.value = true }
+                )
+                if (showColorDialog.value) {
+                    ColourPickerDialog(
+                        title = stringResource(R.string.widget_config_background),
+                        autoLabel = "",
+                        initialArgb = customBackground.value.ifBlank { null },
+                        allowAuto = false,
+                        allowAlpha = false,
+                        onDismiss = { showColorDialog.value = false },
+                        onAuto = {},
+                        onConfirm = { spec ->
+                            customBackground.value = spec
+                            showColorDialog.value = false
+                        }
+                    )
+                }
+            }
             Text(
-                text = stringResource(R.string.widget_config_route_filter),
+                text = stringResource(R.string.widget_config_opacity, backgroundOpacity.intValue),
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
             )
-            OutlinedTextField(
-                value = routeFilter.value,
-                onValueChange = { routeFilter.value = it },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                placeholder = { Text(stringResource(R.string.widget_config_route_filter_hint)) }
+            val opacitySlider = rememberSliderState(
+                value = backgroundOpacity.intValue.toFloat(),
+                trackRange = 0f..100f,
+                steps = 99
             )
+            Slider(
+                state = opacitySlider,
+                onValueChange = { v ->
+                    val snapped = v.toInt().coerceIn(0, 100)
+                    backgroundOpacity.intValue = snapped
+                    opacitySlider.value = snapped.toFloat()
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+            ToggleRow(
+                label = stringResource(R.string.widget_config_show_dividers),
+                checked = showGridDividers.value,
+                onCheckedChange = { showGridDividers.value = it }
+            )
+            if (showGridDividers.value) {
+                ChoiceSegmentedRow(
+                    selected = outlineMode.value,
+                    onSelect = { outlineMode.value = it },
+                    options = WidgetBackgroundMode.entries,
+                    labelFor = { option ->
+                        when (option) {
+                            WidgetBackgroundMode.SYSTEM -> stringResource(R.string.widget_config_background_system)
+                            WidgetBackgroundMode.CUSTOM -> stringResource(R.string.widget_config_background_custom)
+                        }
+                    }
+                )
+                if (outlineMode.value == WidgetBackgroundMode.CUSTOM) {
+                    ColorSwatchRow(
+                        hex = customOutline.value,
+                        onClick = { showOutlineDialog.value = true }
+                    )
+                    if (showOutlineDialog.value) {
+                        ColourPickerDialog(
+                            title = stringResource(R.string.widget_config_show_dividers),
+                            autoLabel = "",
+                            initialArgb = customOutline.value.ifBlank { null },
+                            allowAuto = false,
+                            allowAlpha = false,
+                            onDismiss = { showOutlineDialog.value = false },
+                            onAuto = {},
+                            onConfirm = { spec ->
+                                customOutline.value = spec
+                                showOutlineDialog.value = false
+                            }
+                        )
+                    }
+                }
+            }
 
             SectionHeader(R.string.widget_config_title_field)
             OutlinedTextField(
@@ -535,6 +629,46 @@ private fun Modifier.dragToReorder(
 private fun stopSubtitle(stop: Stop): String {
     val id = "#${stop.locId}"
     return if (stop.dirDesc.isNotBlank()) "$id \u00b7 ${stop.dirDesc}" else id
+}
+
+@Composable
+private fun ColorSwatchRow(hex: String, onClick: () -> Unit) {
+    val previewColor = hex
+        .let { parseWidgetBackgroundArgb(it) }
+        ?.let { Color(it) }
+    val interactionSource = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                onClick = onClick
+            )
+            .padding(top = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            modifier = Modifier.size(40.dp),
+            shape = CircleShape,
+            color = previewColor ?: Color.Transparent,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {}
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.widget_config_custom_color),
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = hex.ifBlank {
+                    stringResource(R.string.widget_config_custom_color_hint)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 @Composable
