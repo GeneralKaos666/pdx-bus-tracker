@@ -2,6 +2,7 @@
 
 - **Trip results that survive a restart and show their age:** closing the app no longer throws your planned trip away, and the results say how fresh they are, from "Updated just now" to minutes ago.
 - **Widgets say when they last refreshed:** each widget now shows when its departures were last updated — just now, minutes ago, or never yet — and a failed refresh keeps the last good time instead of blanking it.
+- **Smarter, better-fitting widgets:** the home-screen widget now adapts to whatever size you stretch it to, shows a live preview when you pick it, refreshes only the widgets whose stops actually changed, and has its own Refresh button plus an Add-widget shortcut in Settings.
 
 ## What's New in v4.19.0
 

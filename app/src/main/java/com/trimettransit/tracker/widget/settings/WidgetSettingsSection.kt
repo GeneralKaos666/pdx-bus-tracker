@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,10 +36,14 @@ import com.trimettransit.tracker.ui.components.SettingsCard
 import com.trimettransit.tracker.ui.components.SettingsIconCircle
 import com.trimettransit.tracker.ui.components.SettingsRadioOption
 import com.trimettransit.tracker.ui.components.SettingsRowOption
+import com.trimettransit.tracker.widget.NextArrivalsWidget
 import com.trimettransit.tracker.widget.NextArrivalsWidgetReceiver
 import com.trimettransit.tracker.widget.WidgetSnapshotCache
 import com.trimettransit.tracker.widget.WidgetScheduler
 import com.trimettransit.tracker.widget.config.WidgetConfigActivity
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 private const val DEFAULT_INTERVAL_MIN = 30
 
@@ -97,6 +102,26 @@ fun WidgetSettingsSection() {
         }
 
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+
+        // Direct pin entry point; hidden on launchers without pin support.
+        if (AppWidgetManager.getInstance(context).isRequestPinAppWidgetSupported) {
+            val scope = rememberCoroutineScope()
+            TextButton(
+                onClick = {
+                    scope.launch {
+                        runCatching {
+                            GlanceAppWidgetManager(context).requestPinGlanceAppWidget(
+                                NextArrivalsWidgetReceiver::class.java,
+                                NextArrivalsWidget()
+                            )
+                        }.onFailure { e -> Timber.w(e, "Widget pin request failed") }
+                    }
+                },
+                modifier = Modifier.padding(start = 8.dp, end = 8.dp)
+            ) {
+                Text(stringResource(R.string.widget_settings_add))
+            }
+        }
 
         if (placedWidgetIds.isEmpty()) {
             Text(

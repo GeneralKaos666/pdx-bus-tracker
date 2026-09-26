@@ -16,4 +16,21 @@ class WidgetRefreshWorkerTest {
     fun `successful fetch persists, even when empty`() {
         assertTrue(shouldPersistSnapshot(ArrivalsResult()))
     }
+
+    @Test
+    fun `empty selection renders on any fetch`() {
+        assertTrue(shouldRenderInstance(WidgetConfig(), setOf("8384")))
+    }
+
+    @Test
+    fun `selection overlapping fetch renders`() {
+        val config = WidgetConfig(selectedStopIds = listOf("8384", "777"))
+        assertTrue(shouldRenderInstance(config, setOf("777", "999")))
+    }
+
+    @Test
+    fun `selection missing from fetch skips render`() {
+        val config = WidgetConfig(selectedStopIds = listOf("8384"))
+        assertFalse(shouldRenderInstance(config, setOf("777", "999")))
+    }
 }

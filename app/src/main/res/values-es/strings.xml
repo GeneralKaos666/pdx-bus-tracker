@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">PDX Bus Tracker</string>
     <string name="next_arrivals_widget_label">Próximas llegadas</string>
+    <string name="next_arrivals_widget_description">Próximas salidas de tus paradas favoritas</string>
     <string name="next_arrivals_widget_placeholder">Cargando…</string>
     <string name="widget_empty_no_favorites">Aún no hay favoritos — toca para añadir algunos</string>
     <string name="widget_empty_refreshing">Actualizando — toca para abrir la app</string>
@@ -9,6 +10,7 @@
     <string name="widget_canceled">Cancelado</string>
     <string name="widget_delayed">Retrasado</string>
     <string name="widget_due">Ahora</string>
+    <string name="widget_refresh">Actualizar</string>
     <string name="widget_countdown_min">%1$d min</string>
     <string name="widget_arrival_separator">  \u00b7  </string>
     <string name="widget_config_title">Configuración del widget</string>
@@ -54,6 +56,7 @@
         <item quantity="other">Actualizar cada %d minutos</item>
     </plurals>
     <string name="widget_settings_no_widgets">Aún no has colocado ningún widget — añádelo desde tu pantalla de inicio</string>
+    <string name="widget_settings_add">Añadir widget</string>
     <string name="widget_settings_widget_id">Widget %1$d</string>
     <string name="widget_settings_edit">Editar</string>
     <string name="widget_updated_minutes">Actualizado hace %1$d min</string>

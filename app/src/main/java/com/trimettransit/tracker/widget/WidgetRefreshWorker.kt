@@ -1,7 +1,9 @@
 package com.trimettransit.tracker.widget
 
 import android.content.Context
+import androidx.datastore.preferences.core.Preferences
 import androidx.glance.appwidget.updateAll
+import androidx.glance.appwidget.updateIf
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.trimettransit.tracker.model.Arrival
@@ -56,7 +58,17 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
             val requestedIds = ids.toSet()
             val rows = favorites.map { stop -> buildRow(stop, arrivals, detours, requestedIds) }
             WidgetSnapshotCache.update(app, favorites, rows)
-            NextArrivalsWidget().updateAll(app)
+            // Targeted refresh: instances whose selected stops are absent from this
+            // fetch keep their current composition instead of re-rendering.
+            NextArrivalsWidget().updateIf<Preferences>(app) { prefs ->
+                shouldRenderInstance(
+                    WidgetConfig.fromPersistentMap(prefs.toConfigMap()),
+                    requestedIds.map(Int::toString).toSet()
+                )
+            }
+            // Push the picker preview when due (hourly throttle inside); the
+            // platform rate-limits these, so this never runs in a loop.
+            WidgetPreviews.pushIfDue(app)
             Result.success()
         }
     }
@@ -85,6 +97,16 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
         const val ARRIVALS_PER_STOP = 4
         const val MAX_ATTEMPTS = 3
     }
+}
+
+/**
+ * Targeted-refresh predicate: an instance with no explicit stop selection shows
+ * every favorite and always re-renders; otherwise it re-renders only when at
+ * least one of its selected stops was part of this fetch.
+ */
+internal fun shouldRenderInstance(config: WidgetConfig, fetchedIds: Set<String>): Boolean {
+    if (config.selectedStopIds.isEmpty()) return true
+    return config.selectedStopIds.any { it in fetchedIds }
 }
 
 /**
