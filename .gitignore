@@ -27,3 +27,4 @@ app/my-release-key.jks
 screenshot-editor
 .gplay
 scripts/verify-16kb-alignment.sh
+.worktrees/
