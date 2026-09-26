@@ -35,5 +35,8 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Check Spanish string parity
+        run: bash scripts/check-strings-parity.sh
+
       - name: Run tests, lint, and debug build
         run: ./gradlew clean test lint assembleDebug --stacktrace
