@@ -136,10 +136,10 @@ fun ArrivalsScreen(
     // filter for this session only — the stored pin is untouched. Any in-session
     // change sets sessionFilterTouched so silent refreshes stop re-reading the
     // global setting over the user's choice.
-    var pinnedLine by remember(stopId) { mutableStateOf<Int?>(null) }
-    var sessionRouteId by remember(stopId) { mutableIntStateOf(routeId) }
-    var filterLifted by remember(stopId) { mutableStateOf(false) }
-    var sessionFilterTouched by remember(stopId) { mutableStateOf(false) }
+    var pinnedLine by remember(stopId, routeId) { mutableStateOf<Int?>(null) }
+    var sessionRouteId by remember(stopId, routeId) { mutableIntStateOf(routeId) }
+    var filterLifted by remember(stopId, routeId) { mutableStateOf(false) }
+    var sessionFilterTouched by remember(stopId, routeId) { mutableStateOf(false) }
 
     // Line the session is currently filtering to; 0 = show every line. The
     // global line-pinned setting still gates filtering — the pin only supplies
@@ -177,7 +177,7 @@ fun ArrivalsScreen(
     }
 
     // Read initial favorite state from DB
-    LaunchedEffect(stopId) {
+    LaunchedEffect(stopId, routeId) {
         if (stopId > 0) {
             isFavorite = withContext(Dispatchers.IO) {
                 favoritesRepository.isFavorite(stopId)

@@ -9,8 +9,8 @@ while IFS= read -r base; do
 		fail=1
 		continue
 	}
-	base_keys=$(grep -o 'name="[^"]*"' "$base" | sort -u)
-	es_keys=$(grep -o 'name="[^"]*"' "$es" | sort -u)
+	base_keys=$(grep -o 'name="[^"]*"' "$base" | sort -u || true)
+	es_keys=$(grep -o 'name="[^"]*"' "$es" | sort -u || true)
 	missing=$(comm -23 <(echo "$base_keys") <(echo "$es_keys") || true)
 	if [ -n "$missing" ]; then
 		echo "Missing es translations in $es:"

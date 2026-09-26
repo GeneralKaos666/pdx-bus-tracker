@@ -105,9 +105,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.navDeepLink
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
@@ -127,12 +124,6 @@ import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.feature.arrivals.ArrivalsScreen
-import com.trimettransit.tracker.feature.home.FavoritesScreen
-import com.trimettransit.tracker.feature.home.RecentStopsScreen
-import com.trimettransit.tracker.feature.settings.SettingsScreen
-import com.trimettransit.tracker.feature.stops.NearbyStopsScreen
-import com.trimettransit.tracker.feature.stops.StopsScreen
-import com.trimettransit.tracker.feature.trips.TripPlannerScreen
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
 import com.trimettransit.tracker.ui.appearance.FontScale
 import com.trimettransit.tracker.ui.appearance.ThemePreference
