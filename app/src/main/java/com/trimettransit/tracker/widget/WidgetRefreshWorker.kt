@@ -5,6 +5,7 @@ import androidx.glance.appwidget.updateAll
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.trimettransit.tracker.model.Arrival
+import com.trimettransit.tracker.model.ArrivalsResult
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.repos
 import com.trimettransit.tracker.retryFetch
@@ -42,8 +43,16 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
                     maxArrivals = (ARRIVALS_PER_STOP + 1) * ids.size
                 )
             }
-            val arrivals = result?.arrivals.orEmpty()
-            val detours = result?.detours.orEmpty()
+            if (!shouldPersistSnapshot(result)) {
+                // Failed fetch (every retry missed): keep the existing snapshot so the
+                // old rows and timestamp stay instead of reporting "Updated just now"
+                // for stale data. Still re-render from cache.
+                NextArrivalsWidget().updateAll(app)
+                return@withContext Result.success()
+            }
+            val succeeded = requireNotNull(result)
+            val arrivals = succeeded.arrivals
+            val detours = succeeded.detours
             val requestedIds = ids.toSet()
             val rows = favorites.map { stop -> buildRow(stop, arrivals, detours, requestedIds) }
             WidgetSnapshotCache.update(app, favorites, rows)
@@ -77,6 +86,13 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
         const val MAX_ATTEMPTS = 3
     }
 }
+
+/**
+ * Failure guard: a fetch that failed every retry (null) must never rewrite the
+ * snapshot — the old rows and timestamp stay until fresh data arrives. A
+ * successful-but-empty fetch still persists (a genuinely empty stop renders empty).
+ */
+internal fun shouldPersistSnapshot(result: ArrivalsResult?): Boolean = result != null
 
 /**
  * Returns the arrivals belonging to [stopLocId]. Falls back to the full list

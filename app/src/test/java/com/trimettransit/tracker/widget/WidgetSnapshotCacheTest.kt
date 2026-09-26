@@ -2,6 +2,7 @@ package com.trimettransit.tracker.widget
 
 import com.trimettransit.tracker.model.Arrival
 import com.trimettransit.tracker.model.Detour
+import com.trimettransit.tracker.model.Stop
 import org.joda.time.DateTime
 import org.json.JSONArray
 import org.json.JSONObject
@@ -158,15 +159,32 @@ class WidgetSnapshotCacheTest {
     @Test
     fun `saved snapshot records when it was written`() {
         val before = System.currentTimeMillis()
-        val json = JSONObject()
-            .put("hasFavorites", true)
-            .put("updated", System.currentTimeMillis())
-            .put("rows", JSONArray())
-            .toString()
+        val stop = Stop(desc = "Stop A", locId = 1)
+        val json = WidgetSnapshotCache.snapshotToJson(
+            favorites = listOf(stop),
+            rows = listOf(WidgetSnapshotCache.Row(stop, emptyList()))
+        )
         val loaded = WidgetSnapshotCache.parseSnapshotLenient(json)
         assertNotNull(loaded)
         assertTrue(loaded.updatedAtMillis >= before)
         assertTrue(loaded.updatedAtMillis <= System.currentTimeMillis())
+    }
+
+    @Test
+    fun `write path pins the timestamp key alongside existing fields`() {
+        val now = 1_700_000_000_000L
+        val stop = Stop(desc = "Stop A", locId = 1)
+        val loaded = WidgetSnapshotCache.parseSnapshotLenient(
+            WidgetSnapshotCache.snapshotToJson(
+                favorites = listOf(stop),
+                rows = listOf(WidgetSnapshotCache.Row(stop, emptyList())),
+                nowMillis = now
+            )
+        )
+        assertEquals(now, loaded.updatedAtMillis)
+        assertTrue(loaded.hasFavorites)
+        assertEquals(1, loaded.rows.size)
+        assertEquals(1, loaded.rows[0].stop.locId)
     }
 
     @Test

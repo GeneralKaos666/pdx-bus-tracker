@@ -99,14 +99,27 @@ object WidgetSnapshotCache {
         }
     }
 
-    fun update(context: Context, favorites: List<Stop>, rows: List<Row>) {
+    /**
+     * Pure snapshot serializer — the write half of [parseSnapshotLenient], kept
+     * Context-free so unit tests pin the real persisted shape (including the
+     * "updated" timestamp) without Android framework calls.
+     */
+    fun snapshotToJson(
+        favorites: List<Stop>,
+        rows: List<Row>,
+        nowMillis: Long = System.currentTimeMillis()
+    ): String {
         val arr = JSONArray()
         rows.forEach { row -> arr.put(rowToJson(row)) }
-        val root = JSONObject()
+        return JSONObject()
             .put("hasFavorites", favorites.isNotEmpty())
-            .put("updated", System.currentTimeMillis())
+            .put("updated", nowMillis)
             .put("rows", arr)
-        prefs(context).edit { putString(KEY_JSON, root.toString()) }
+            .toString()
+    }
+
+    fun update(context: Context, favorites: List<Stop>, rows: List<Row>) {
+        prefs(context).edit { putString(KEY_JSON, snapshotToJson(favorites, rows)) }
     }
 
     private fun rowToJson(row: Row) = JSONObject()
