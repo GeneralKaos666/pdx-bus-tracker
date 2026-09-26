@@ -10,13 +10,16 @@ import java.util.concurrent.TimeUnit
 
 internal object JSONParser {
 
-    private val httpClient = OkHttpClient.Builder()
-        .followRedirects(true)
-        .followSslRedirects(true)
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
-        .callTimeout(20, TimeUnit.SECONDS)
-        .build()
+    internal fun newHardenedHttpClient(): OkHttpClient =
+        OkHttpClient.Builder()
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .callTimeout(20, TimeUnit.SECONDS)
+            .build()
+
+    private val httpClient = newHardenedHttpClient()
 
     @Throws(IllegalArgumentException::class, IOException::class, JSONException::class)
     fun fetch(url: String): JSONObject {

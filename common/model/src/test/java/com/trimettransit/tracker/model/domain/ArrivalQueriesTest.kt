@@ -186,4 +186,16 @@ class ArrivalQueriesTest {
         val scheduled = arrival(status = "scheduled", estimatedMillis = 5_000L, scheduledMillis = 1_000L)
         assertEquals(1_000L, scheduled.displayTimeMillis)
     }
+
+    @Test
+    fun `isHttpAlertLink allows http and https only`() {
+        assertTrue(isHttpAlertLink("https://trimet.org/alerts/7001"))
+        assertTrue(isHttpAlertLink("http://trimet.org/alerts/7001"))
+        assertFalse(isHttpAlertLink("javascript:alert(1)"))
+        assertFalse(isHttpAlertLink("intent://arrivals#Intent;scheme=pdxbus;end"))
+        assertFalse(isHttpAlertLink("file:///etc/passwd"))
+        assertFalse(isHttpAlertLink("pdxbus://arrivals/123"))
+        assertFalse(isHttpAlertLink(null))
+        assertFalse(isHttpAlertLink("  "))
+    }
 }

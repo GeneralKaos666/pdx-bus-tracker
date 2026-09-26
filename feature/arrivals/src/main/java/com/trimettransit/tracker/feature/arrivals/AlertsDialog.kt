@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.TransitAlert
+import com.trimettransit.tracker.model.domain.isHttpAlertLink
 
 @Composable
 internal fun AlertsDialog(
@@ -99,7 +100,7 @@ internal fun AlertsDialog(
                                 )
                             }
                             val link = alert.infoLinkUrl
-                            if (!link.isNullOrBlank()) {
+                            if (isHttpAlertLink(link)) {
                                 val linkInteractionSource = remember { MutableInteractionSource() }
                                 Text(
                                     text = stringResource(R.string.alert_learn_more),
@@ -111,7 +112,12 @@ internal fun AlertsDialog(
                                             interactionSource = linkInteractionSource,
                                             indication = LocalIndication.current
                                         ) {
-                                            context.startActivity(Intent(Intent.ACTION_VIEW, link.toUri()))
+                                            runCatching {
+                                                val intent = Intent(Intent.ACTION_VIEW, link!!.trim().toUri())
+                                                if (intent.resolveActivity(context.packageManager) != null) {
+                                                    context.startActivity(intent)
+                                                }
+                                            }
                                         }
                                 )
                             }

@@ -51,6 +51,23 @@ fun detoursForLine(detours: List<Detour>?, routeId: Int): List<Detour> =
 fun alertsForLine(alerts: List<TransitAlert>?, routeId: Int): List<TransitAlert> =
     alerts.orEmpty().filter { it.routeIds.contains(routeId) }
 
+/**
+ * True when [url] is safe to open as an alert "learn more" link: `http`/`https`
+ * only, hierarchical (`://`) with a host. Rejects `javascript:`, `intent:`,
+ * `file:`, custom schemes (`pdxbus:`), and blank/null. Pure so it is unit-testable
+ * in `common:model` without Android framework calls.
+ */
+fun isHttpAlertLink(url: String?): Boolean {
+    if (url.isNullOrBlank()) return false
+    val trimmed = url.trim()
+    val colon = trimmed.indexOf(':')
+    if (colon <= 0) return false
+    val scheme = trimmed.substring(0, colon).lowercase()
+    if (scheme != "http" && scheme != "https") return false
+    if (!trimmed.regionMatches(colon, "://", 0, 3, ignoreCase = false)) return false
+    return trimmed.length > colon + 3
+}
+
 /** TriMet arrival status tokens used by the API parse and the UI. */
 private const val STATUS_ESTIMATED = "estimated"
 private const val STATUS_CANCELED = "canceled"

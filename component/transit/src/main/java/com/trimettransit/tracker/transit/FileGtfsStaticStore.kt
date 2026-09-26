@@ -25,7 +25,7 @@ const val MAX_GTFS_STATIC_BYTES: Long = 32L * 1024L * 1024L
 class FileGtfsStaticStore(
     private val root: File,
     private val feedUrl: String,
-    private val client: OkHttpClient = OkHttpClient()
+    private val client: OkHttpClient = JSONParser.newHardenedHttpClient()
 ) : GtfsStaticStore {
     private val feedFile get() = File(root, "current.zip")
     private val tempFile get() = File(root, "current.zip.download")
@@ -70,9 +70,13 @@ class FileGtfsStaticStore(
 
     override suspend fun refresh(): GtfsStaticSnapshot = withContext(Dispatchers.IO) {
         root.mkdirs()
+        requireHttpsFeedUrl(feedUrl)
         val request = Request.Builder().url(feedUrl).build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IOException("GTFS static download failed: HTTP ${response.code}")
+            if (!response.request.url.isHttps) {
+                throw IOException("Only HTTPS endpoints are allowed; redirect downgraded GTFS static feed")
+            }
             val body = response.body
             try {
                 writeBounded(body.byteStream(), body.contentLength(), tempFile)
