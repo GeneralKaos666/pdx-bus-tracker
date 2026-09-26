@@ -40,7 +40,7 @@ jobs:
           export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
           yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager --install "platform-tools" "platforms;android-37" "build-tools;37.0.0"
+          sdkmanager --install "platform-tools" "platforms;android-37.0" "build-tools;37.0.0"
 
       - name: Check Spanish string parity
         run: bash scripts/check-strings-parity.sh
