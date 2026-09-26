@@ -6,6 +6,9 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import androidx.core.database.sqlite.transaction
 import com.trimettransit.tracker.model.Stop
+import com.trimettransit.tracker.model.domain.ADD_PINNED_LINE_COLUMN_SQL
+import com.trimettransit.tracker.model.domain.PINNED_LINE_COLUMN
+import com.trimettransit.tracker.model.domain.mapPinnedLine
 
 class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
 
@@ -74,7 +77,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         // reads or writes it yet, but the v8 upgrade path already adds the column
         // on existing installs, so fresh installs keep it for schema parity. Do not
         // drop it without a new versioned migration.
-        db.execSQL("CREATE TABLE IF NOT EXISTS favorites(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER,sort_order INTEGER DEFAULT 0,label TEXT DEFAULT '')")
+        // `pinned_line` (v9) holds the per-stop line-pin default; NULL = no default.
+        db.execSQL("CREATE TABLE IF NOT EXISTS favorites(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER,sort_order INTEGER DEFAULT 0,label TEXT DEFAULT '',pinned_line INTEGER)")
         db.execSQL("CREATE TABLE IF NOT EXISTS recent_stops(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER)")
     }
 
@@ -107,6 +111,11 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
             // kept deliberately so v7 databases match the v8 schema.
             runCatching { db.execSQL("ALTER TABLE favorites ADD COLUMN label TEXT DEFAULT ''") }
             runCatching { db.execSQL("UPDATE favorites SET sort_order = id WHERE sort_order = 0 OR sort_order IS NULL") }
+        }
+        if (oldVersion < 9) {
+            // Per-stop line-pin default. Plain nullable INTEGER: every existing
+            // row reads back NULL, i.e. today's behavior, with no backfill.
+            runCatching { db.execSQL(ADD_PINNED_LINE_COLUMN_SQL) }
         }
     }
 
@@ -154,6 +163,40 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         }
     }
 
+    /**
+     * Stored per-stop line-pin default, or null when the stop is not favorited
+     * or no pin was ever set (NULL column = today's behavior).
+     */
+    fun getPinnedLine(locId: Int): Int? {
+        val db = readableDatabase
+        return db.query(
+            "favorites",
+            arrayOf(PINNED_LINE_COLUMN),
+            "loc_id = ?",
+            arrayOf(locId.toString()),
+            null, null, null
+        ).use { cursor ->
+            if (!cursor.moveToFirst()) null
+            else mapPinnedLine(cursor.isNull(0), cursor.getInt(0))
+        }
+    }
+
+    /**
+     * Stores ([routeId]) or clears (null) the per-stop line-pin default. A
+     * no-op for stops that are not favorited. Transactional like the other
+     * favorites writes.
+     */
+    fun setPinnedLine(locId: Int, routeId: Int?) {
+        val db = writableDatabase
+        db.transaction {
+            val values = ContentValues().apply {
+                if (routeId == null) putNull(PINNED_LINE_COLUMN)
+                else put(PINNED_LINE_COLUMN, routeId)
+            }
+            update("favorites", values, "loc_id = ?", arrayOf(locId.toString()))
+        }
+    }
+
     fun removeRecentStop(locId: Int): Boolean {
         val db = writableDatabase
         return db.delete("recent_stops", "loc_id = ?", arrayOf(locId.toString())) > 0
@@ -191,6 +234,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
 
     companion object {
         private const val DB_NAME = "TriMet_Go.db"
-        private const val DB_VERSION = 8
+        private const val DB_VERSION = 9
     }
 }

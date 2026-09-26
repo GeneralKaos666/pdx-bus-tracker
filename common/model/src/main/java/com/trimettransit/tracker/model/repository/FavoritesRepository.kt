@@ -19,4 +19,13 @@ interface FavoritesRepository {
     suspend fun favoriteIds(): Set<Int>
 
     suspend fun setOrder(idsInOrder: List<Int>)
+
+    /**
+     * Stored per-stop line-pin default, or null for "no default" (today's
+     * behavior). Null also covers stops that are not favorited.
+     */
+    suspend fun getPinnedLine(locId: Int): Int?
+
+    /** Stores ([routeId]) or clears (null) the per-stop line-pin default. */
+    suspend fun setPinnedLine(locId: Int, routeId: Int?)
 }

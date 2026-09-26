@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="arrival_cancelled">Cancelled</string>
     <string name="arrival_dropoff_only">Dropoff Only</string>
     <string name="alerts_count">Alerts (%1$d)</string>
@@ -15,6 +15,12 @@
     <string name="no_upcoming_for_route">No upcoming arrivals for this line.\nArrivals from other lines are hidden — disable the filter in Settings.</string>
     <string name="empty_no_arrivals">No upcoming arrivals.</string>
     <string name="show_fewer">Show fewer</string>
+    <!-- %1$d is a line number, never a count: not a plural. -->
+    <string name="line_filter_only" tools:ignore="PluralsCandidate">Line %1$d only</string>
+    <string name="line_filter_all_lines">Showing all lines</string>
+    <string name="line_filter_show_all">Show all</string>
+    <string name="line_filter_pin">Pin this line</string>
+    <string name="line_filter_unpin">Clear pin</string>
     <plurals name="show_all_arrivals">
         <item quantity="one">Show all arrivals (%1$d more)</item>
         <item quantity="other">Show all arrivals (%1$d more)</item>
