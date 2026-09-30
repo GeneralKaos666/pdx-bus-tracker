@@ -8,25 +8,28 @@ PDX Bus Tracker is an unofficial, community-built app. It is not affiliated with
 
 ## Features
 
-- **Live arrivals.** See when the next bus, train, or MAX leaves any stop. Pull to refresh, and the list refreshes itself when you come back to the app.
-- **Trip Planner.** Pick a start and an end point by tapping the map, searching stops, or using your current location. Choose depart-now or arrive-by, and compare itinerary options drawn over the map.
-- **Line & stop browser.** Drill from lines to directions to stops in an animated accordion.
-- **Nearby stops.** Find stops around where you are, and search stops by name right from the Home screen (the local stop list stays usable offline).
-- **Favorites & recent stops.** Bookmark stops and step back to them in a tap. Everything is stored on your device in SQLite, and saved stops always land on the Favorites tab.
-- **Detours on arrival cards.** TriMet detour notices for a stop's lines appear as small badges right on the arrival rows.
-- **Floating pill navigation.** A compact pill bar keeps Home, Recents, Lines, Trips, and Settings within reach.
-- **Picture-in-picture.** Keep an arrival countdown in a floating mini-window while you use other apps.
-- **Dynamic theming.** Material 3 follows your system theme, with light and dark overrides in Settings.
-- **Line-pinned mode.** Optionally show only the arrivals for the line you opened a stop from.
+- **Live arrivals.** You pick a stop and read the countdown. The app refreshes the list when you come back, and you pull for a fresh read when you want.
+- **Trip planner.** You set a start and an end from stop search or a map pin. Your location works too. You leave now or pick an arrival time, then compare itineraries drawn on the map.
+- **Line and stop browser.** You browse lines down to directions and stops.
+- **Nearby stops and search.** You find stops near you, with distance and direction, and search stops by name from Home. The cached stop list keeps search working offline.
+- **Favorites and recents.** You save stops from search, recents, or the lines browser. Saved stops land on your Home list.
+- **Detour pills.** You see a pill on arrival rows for your line when TriMet reports a detour.
+- **Home-screen widget.** You pin favorite stops and read departures without opening the app.
+- **Departure alerts.** You opt in per stop and get a ping minutes before your ride leaves.
+- **Pill navigation.** One bottom pill holds Home, Recents, Lines, and Trips. Settings is one tap away.
+- **Picture-in-picture.** You keep a countdown floating while you use other apps.
+- **Your colors.** You pick the accent and tune its vibrancy. True-black AMOLED is there for OLED screens. You can also recolor each line badge.
+- **Line-pinned mode.** You narrow the board to the line you came from.
+- **Spanish.** The full app follows your device language.
 
 ## Screenshots
 
 | | | | |
 |---|---|---|---|
-| <img src="docs/screenshots/play-phone-01-arrivals-hero.png" width="190" alt="Real-time arrivals"> | <img src="docs/screenshots/play-phone-02-trip-planner.png" width="190" alt="Trip Planner"> | <img src="docs/screenshots/play-phone-03-search-stops.png" width="190" alt="Search stops"> | <img src="docs/screenshots/play-phone-04-route-browser.png" width="190" alt="Line & stop browser"> |
-| Real-time arrivals | Trip Planner | Search stops | Line & stop browser |
-| <img src="docs/screenshots/play-phone-05-favorites.png" width="190" alt="Favorites in light and dark"> | <img src="docs/screenshots/play-phone-06-recent-stops.png" width="190" alt="Recents"> | <img src="docs/screenshots/play-phone-07-trip-results.png" width="190" alt="Trip results"> | |
-| Favorites (light & dark) | Recents | Trip results | |
+| <img src="docs/screenshots/play-phone-01-arrivals.png" width="190" alt="Real-time arrivals"> | <img src="docs/screenshots/play-phone-02-trip-planner.png" width="190" alt="Trip planner"> | <img src="docs/screenshots/play-phone-03-search.png" width="190" alt="Stop search"> | <img src="docs/screenshots/play-phone-04-lines.png" width="190" alt="Lines browser"> |
+| Arrivals | Trip planner | Search | Lines |
+| <img src="docs/screenshots/play-phone-05-favorites.png" width="190" alt="Favorites"> | <img src="docs/screenshots/play-phone-06-recents.png" width="190" alt="Recents"> | <img src="docs/screenshots/play-phone-07-trip-results.png" width="190" alt="Trip results"> | <img src="docs/screenshots/play-phone-08-settings.png" width="190" alt="Settings"> |
+| Favorites | Recents | Trip results | Settings |
 
 ## Requirements
 
