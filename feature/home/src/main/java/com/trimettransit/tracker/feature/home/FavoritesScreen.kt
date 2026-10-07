@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.home
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +43,7 @@ import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.rememberFavoriteIds
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
 import com.trimettransit.tracker.ui.components.RememberOnResume
+import com.trimettransit.tracker.ui.components.pressScale
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -201,15 +203,17 @@ fun FavoritesScreen(
             title = { Text(stringResource(R.string.remove_favorite_title)) },
             text = { Text(target.desc) },
             confirmButton = {
+                val confirmSource = remember { MutableInteractionSource() }
                 TextButton(onClick = {
                     deleteTarget = null
                     handleRemove(target)
-                }) {
+                }, interactionSource = confirmSource, modifier = Modifier.pressScale(confirmSource)) {
                     Text(stringResource(R.string.remove_favorite))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) {
+                val cancelSource = remember { MutableInteractionSource() }
+                TextButton(onClick = { deleteTarget = null }, interactionSource = cancelSource, modifier = Modifier.pressScale(cancelSource)) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -246,10 +250,12 @@ private fun FavoritesEmptyActions(
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         modifier = Modifier.fillMaxWidth()
     ) {
-        TextButton(onClick = onBrowseRoutes) {
+        val browseSource = remember { MutableInteractionSource() }
+        TextButton(onClick = onBrowseRoutes, interactionSource = browseSource, modifier = Modifier.pressScale(browseSource)) {
             Text(stringResource(R.string.browse_routes))
         }
-        TextButton(onClick = onFindNearby) {
+        val nearbySource = remember { MutableInteractionSource() }
+        TextButton(onClick = onFindNearby, interactionSource = nearbySource, modifier = Modifier.pressScale(nearbySource)) {
             Text(stringResource(R.string.find_nearby))
         }
     }
@@ -266,16 +272,19 @@ private fun WelcomeDialog(
         title = { Text(stringResource(R.string.welcome_title)) },
         text = { Text(stringResource(R.string.welcome_message)) },
         confirmButton = {
-            TextButton(onClick = onFindNearby) {
+            val welcomeNearbySource = remember { MutableInteractionSource() }
+            TextButton(onClick = onFindNearby, interactionSource = welcomeNearbySource, modifier = Modifier.pressScale(welcomeNearbySource)) {
                 Text(stringResource(R.string.find_nearby))
             }
         },
         dismissButton = {
             Row {
-                TextButton(onClick = onBrowseRoutes) {
+                val welcomeBrowseSource = remember { MutableInteractionSource() }
+                TextButton(onClick = onBrowseRoutes, interactionSource = welcomeBrowseSource, modifier = Modifier.pressScale(welcomeBrowseSource)) {
                     Text(stringResource(R.string.browse_routes))
                 }
-                TextButton(onClick = onDismiss) {
+                val gotItSource = remember { MutableInteractionSource() }
+                TextButton(onClick = onDismiss, interactionSource = gotItSource, modifier = Modifier.pressScale(gotItSource)) {
                     Text(stringResource(R.string.got_it))
                 }
             }
@@ -328,7 +337,8 @@ private fun ReorderHint(onDismiss: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f)
         )
-        TextButton(onClick = onDismiss) {
+        val dismissSource = remember { MutableInteractionSource() }
+        TextButton(onClick = onDismiss, interactionSource = dismissSource, modifier = Modifier.pressScale(dismissSource)) {
             Text(stringResource(R.string.favorites_reorder_hint_dismiss))
         }
     }

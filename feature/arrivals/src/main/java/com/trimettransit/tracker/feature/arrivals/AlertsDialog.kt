@@ -27,6 +27,7 @@ import androidx.core.net.toUri
 import com.trimettransit.tracker.model.Detour
 import com.trimettransit.tracker.model.TransitAlert
 import com.trimettransit.tracker.model.domain.isHttpAlertLink
+import com.trimettransit.tracker.ui.components.pressScale
 
 @Composable
 internal fun AlertsDialog(
@@ -127,7 +128,8 @@ internal fun AlertsDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            val closeSource = remember { MutableInteractionSource() }
+            TextButton(onClick = onDismiss, interactionSource = closeSource, modifier = Modifier.pressScale(closeSource)) {
                 Text(stringResource(R.string.close))
             }
         }
