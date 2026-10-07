@@ -124,20 +124,22 @@ internal fun ItineraryResultsSheet(
                     label = "itineraryBody"
                 ) { idx ->
                     val body = plan.itineraries.getOrNull(idx) ?: selected
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                    TripSummaryHeader(itinerary = body, modifier = Modifier.padding(horizontal = 20.dp))
-                    Spacer(modifier = Modifier.height(12.dp))
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 360.dp)
-                    ) {
-                        itemsIndexed(
-                            body.legs,
-                            key = { index, leg -> "${index}_${leg.mode}_${leg.routeNumber}_${leg.from.latitude}_${leg.from.longitude}_${leg.to.latitude}_${leg.to.longitude}" },
-                            contentType = { _, _ -> "leg" }
-                        ) { _, leg ->
-                            LegRow(leg = leg)
+                    Column {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        TripSummaryHeader(itinerary = body, modifier = Modifier.padding(horizontal = 20.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 360.dp)
+                        ) {
+                            itemsIndexed(
+                                body.legs,
+                                key = { index, leg -> "${index}_${leg.mode}_${leg.routeNumber}_${leg.from.latitude}_${leg.from.longitude}_${leg.to.latitude}_${leg.to.longitude}" },
+                                contentType = { _, _ -> "leg" }
+                            ) { _, leg ->
+                                LegRow(leg = leg)
+                            }
                         }
                     }
                 }
