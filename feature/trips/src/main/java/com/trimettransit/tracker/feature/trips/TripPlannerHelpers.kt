@@ -110,7 +110,8 @@ internal fun EndpointRow(
                 )
             }
             // Available whether or not a point is set, unlike the clear button below.
-            IconButton(onClick = onPickOnMap, modifier = Modifier.size(48.dp)) {
+            val pickSource = remember { MutableInteractionSource() }
+            IconButton(onClick = onPickOnMap, interactionSource = pickSource, modifier = Modifier.size(48.dp).pressScale(pickSource)) {
                 Icon(
                     Icons.Default.LocationOn,
                     contentDescription = stringResource(R.string.pick_on_map),
@@ -118,12 +119,13 @@ internal fun EndpointRow(
                     modifier = Modifier.size(20.dp)
                 )
             }
+            val clearSource = remember { MutableInteractionSource() }
             AnimatedVisibility(
                 visible = point != null,
                 enter = fadeIn(m3EffectsDefault()),
                 exit = fadeOut(m3EffectsFast())
             ) {
-                IconButton(onClick = onClear, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = onClear, interactionSource = clearSource, modifier = Modifier.size(48.dp).pressScale(clearSource)) {
                     Icon(
                         Icons.Default.Close,
                         contentDescription = stringResource(R.string.clear),
