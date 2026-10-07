@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -51,6 +51,7 @@ import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.searchStops
 import com.trimettransit.tracker.ui.components.StopSearchItem
+import com.trimettransit.tracker.ui.components.staggeredFadeIn
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3ContentExpand
@@ -58,6 +59,7 @@ import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.withContext
@@ -253,6 +255,11 @@ private fun SearchResultsDropdown(
                     val dense = rememberDenseGridEnabled()
                     val listState = rememberLazyGridState()
                     val smoothFling = rememberSmoothFlingBehavior()
+                    var entranceDone by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) {
+                        delay(700)
+                        entranceDone = true
+                    }
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(if (dense) 2 else 1),
                         state = listState,
@@ -266,11 +273,12 @@ private fun SearchResultsDropdown(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(results, key = { it.locId }, contentType = { "stopSearch" }) { stop ->
+                        itemsIndexed(results, key = { _, stop -> stop.locId }, contentType = { _, _ -> "stopSearch" }) { index, stop ->
                             StopSearchItem(
                                 stop = stop,
                                 onClick = { onStopClick(stop) },
-                                modifier = if (AppMotion.reduceMotion) Modifier else Modifier.animateItem(),
+                                modifier = (if (AppMotion.reduceMotion) Modifier else Modifier.animateItem())
+                                    .staggeredFadeIn(index, enabled = !entranceDone),
                                 gridMode = dense,
                                 trailingContent = {
                                     FavoriteToggleButton(
