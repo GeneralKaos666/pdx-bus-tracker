@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -65,13 +65,13 @@ import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
 import com.trimettransit.tracker.ui.appearance.refreshDelayMillis
-import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.ListStateShell
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
+import com.trimettransit.tracker.ui.components.staggeredFadeIn
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3ContentExpand
@@ -417,137 +417,140 @@ fun ArrivalsScreen(
             label = "arrivalsState",
             onRetry = { loadArrivals() }
         ) {
-            ContentEntrance(modifier = Modifier.fillMaxSize()) {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    flingBehavior = smoothFling,
-                    contentPadding = PaddingValues(
-                        start = 12.dp,
-                                end = 12.dp,
-                                top = 8.dp,
-                                bottom = navPillBottomPadding() + 8.dp
-                            ),
-                            // Top-aligned. An earlier attempt centred a short list to avoid the
-                            // gap underneath it, but that put a large gap ABOVE the first row
-                            // instead, which reads as broken padding on the screen most users
-                            // open first. A list shorter than the viewport simply ends early.
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            val visibleArrivals =
-                                if (showAllArrivals) unfilteredArrivals else arrivals.take(TOP_ARRIVAL_ROWS)
-                            items(
-                                visibleArrivals,
-                                key = { arrivalKey(it) },
-                                contentType = { "arrival" }) { arrival ->
-                                val lineDetours = detoursForLine(detours, arrival.routeId)
-                                val lineAlerts = alertsForLine(alerts, arrival.routeId)
-                                val rowKey = arrivalKey(arrival)
-                                Column {
-                                    ArrivalItem(
-                                        arrival = arrival,
-                                        context = context,
-                                        refreshKey = countdownTick,
-                                        lineDetours = lineDetours,
-                                        lineAlerts = lineAlerts,
-                                        showClock = showClock,
-                                        showRouteBadge = showRouteBadge,
-                                        showVehicleInfo = showVehicleInfo,
-                                        onShowAlerts = { d, a -> selectedDetours = d; selectedAlerts = a },
-                                        onShowTripStatus = {
-                                            selectedTripId = arrival.tripID
-                                            selectedTripStatus = null
-                                            isTripStatusLoading = true
-                                            coroutineScope.launch {
-                                                selectedTripStatus = transitRepository
-                                                    .getTripStatus(tripIds = listOf(arrival.tripID))
-                                                    ?.trips
-                                                    ?.firstOrNull { it.tripId == arrival.tripID }
-                                                isTripStatusLoading = false
+            var entranceDone by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                delay(700)
+                entranceDone = true
+            }
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                flingBehavior = smoothFling,
+                contentPadding = PaddingValues(
+                    start = 12.dp,
+                            end = 12.dp,
+                            top = 8.dp,
+                            bottom = navPillBottomPadding() + 8.dp
+                        ),
+                        // Top-aligned. An earlier attempt centred a short list to avoid the
+                        // gap underneath it, but that put a large gap ABOVE the first row
+                        // instead, which reads as broken padding on the screen most users
+                        // open first. A list shorter than the viewport simply ends early.
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val visibleArrivals =
+                            if (showAllArrivals) unfilteredArrivals else arrivals.take(TOP_ARRIVAL_ROWS)
+                        itemsIndexed(
+                            visibleArrivals,
+                            key = { _, arrival -> arrivalKey(arrival) },
+                            contentType = { _, _ -> "arrival" }) { index, arrival ->
+                            val lineDetours = detoursForLine(detours, arrival.routeId)
+                            val lineAlerts = alertsForLine(alerts, arrival.routeId)
+                            val rowKey = arrivalKey(arrival)
+                            Column(modifier = Modifier.staggeredFadeIn(index, enabled = !entranceDone)) {
+                                ArrivalItem(
+                                    arrival = arrival,
+                                    context = context,
+                                    refreshKey = countdownTick,
+                                    lineDetours = lineDetours,
+                                    lineAlerts = lineAlerts,
+                                    showClock = showClock,
+                                    showRouteBadge = showRouteBadge,
+                                    showVehicleInfo = showVehicleInfo,
+                                    onShowAlerts = { d, a -> selectedDetours = d; selectedAlerts = a },
+                                    onShowTripStatus = {
+                                        selectedTripId = arrival.tripID
+                                        selectedTripStatus = null
+                                        isTripStatusLoading = true
+                                        coroutineScope.launch {
+                                            selectedTripStatus = transitRepository
+                                                .getTripStatus(tripIds = listOf(arrival.tripID))
+                                                ?.trips
+                                                ?.firstOrNull { it.tripId == arrival.tripID }
+                                            isTripStatusLoading = false
+                                        }
+                                    },
+                                    onClick = {
+                                        if (hasValidCoords) {
+                                            if (trackingKey == rowKey) {
+                                                trackingKey =
+                                                    null              // tap the tracked row again to close
+                                            } else {
+                                                trackingKey =
+                                                    rowKey            // opens under this row; switches if another row is tracked
+                                                trackingRouteId = arrival.routeId
+                                                trackingVehicleId = arrival.vehicleID
+                                                dismissTapToTrackHint()
                                             }
-                                        },
-                                        onClick = {
-                                            if (hasValidCoords) {
-                                                if (trackingKey == rowKey) {
-                                                    trackingKey =
-                                                        null              // tap the tracked row again to close
-                                                } else {
-                                                    trackingKey =
-                                                        rowKey            // opens under this row; switches if another row is tracked
-                                                    trackingRouteId = arrival.routeId
-                                                    trackingVehicleId = arrival.vehicleID
-                                                    dismissTapToTrackHint()
-                                                }
-                                            }
-                                        },
-                                        modifier = if (AppMotion.reduceMotion) Modifier else Modifier.animateItem()
+                                        }
+                                    },
+                                    modifier = if (AppMotion.reduceMotion) Modifier else Modifier.animateItem()
+                                )
+                                AnimatedVisibility(
+                                    visible = trackingKey == rowKey,
+                                    enter = m3ContentExpand(),
+                                    exit = m3ContentShrink()
+                                ) {
+                                    StopMapCard(
+                                        lat = stopLat,
+                                        lng = stopLng,
+                                        blockPositions = trackedPositions,
+                                        arrivals = unfilteredArrivals,
+                                        trackedVehicleId = trackingVehicleId,
+                                        isDark = isDark
                                     )
-                                    AnimatedVisibility(
-                                        visible = trackingKey == rowKey,
-                                        enter = m3ContentExpand(),
-                                        exit = m3ContentShrink()
+                                }
+                            }
+                        }
+
+                        if (showExpandButton) {
+                            item(key = "showAll", contentType = "showAll") {
+                                val interactionSource =
+                                    remember { MutableInteractionSource() }
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = appCardShape(),
+                                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .pressScale(interactionSource)
+                                            .clickable(
+                                                interactionSource = interactionSource,
+                                                indication = LocalIndication.current
+                                            ) { showAllArrivals = !showAllArrivals }
+                                            .padding(
+                                                horizontal = 16.dp,
+                                                vertical = 12.dp
+                                            ),
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        StopMapCard(
-                                            lat = stopLat,
-                                            lng = stopLng,
-                                            blockPositions = trackedPositions,
-                                            arrivals = unfilteredArrivals,
-                                            trackedVehicleId = trackingVehicleId,
-                                            isDark = isDark
+                                        Text(
+                                            text = if (showAllArrivals) stringResource(R.string.show_fewer)
+                                            else pluralStringResource(R.plurals.show_all_arrivals, unfilteredArrivals.size - visibleCount, unfilteredArrivals.size - visibleCount),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        val showAllArrowRotation by animateFloatAsState(
+                                            targetValue = if (showAllArrivals) 180f else 0f,
+                                            animationSpec = m3SpatialDefault()
+                                        )
+                                        Icon(
+                                            imageVector = Icons.Default.KeyboardArrowDown,
+                                            contentDescription = if (showAllArrivals) stringResource(R.string.collapse_arrivals)
+                                            else stringResource(R.string.expand_arrivals),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.rotate(
+                                                showAllArrowRotation
+                                            )
                                         )
                                     }
                                 }
                             }
-
-                            if (showExpandButton) {
-                                item(key = "showAll", contentType = "showAll") {
-                                    val interactionSource =
-                                        remember { MutableInteractionSource() }
-                                    Surface(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = appCardShape(),
-                                        color = MaterialTheme.colorScheme.surfaceContainerLow
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .pressScale(interactionSource)
-                                                .clickable(
-                                                    interactionSource = interactionSource,
-                                                    indication = LocalIndication.current
-                                                ) { showAllArrivals = !showAllArrivals }
-                                                .padding(
-                                                    horizontal = 16.dp,
-                                                    vertical = 12.dp
-                                                ),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = if (showAllArrivals) stringResource(R.string.show_fewer)
-                                                else pluralStringResource(R.plurals.show_all_arrivals, unfilteredArrivals.size - visibleCount, unfilteredArrivals.size - visibleCount),
-                                                style = MaterialTheme.typography.labelLarge,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                            val showAllArrowRotation by animateFloatAsState(
-                                                targetValue = if (showAllArrivals) 180f else 0f,
-                                                animationSpec = m3SpatialDefault()
-                                            )
-                                            Icon(
-                                                imageVector = Icons.Default.KeyboardArrowDown,
-                                                contentDescription = if (showAllArrivals) stringResource(R.string.collapse_arrivals)
-                                                else stringResource(R.string.expand_arrivals),
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.rotate(
-                                                    showAllArrowRotation
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
                         }
+
                     }
         }
     }
