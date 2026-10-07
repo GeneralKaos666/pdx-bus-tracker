@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.ui.components
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.ui.R
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -49,18 +51,24 @@ fun FavoriteToggleButton(
             .size(48.dp)
             .pressScale(interactionSource)
     ) {
-        Icon(
-            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-            contentDescription = stringResource(
-                if (isFavorite) R.string.common_remove_from_favorites
-                else R.string.common_save_to_favorites
-            ),
-            tint = if (isFavorite) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
-        )
+        Crossfade(
+            targetState = isFavorite,
+            animationSpec = m3EffectsDefault(),
+            label = "favoriteIcon"
+        ) { fav ->
+            Icon(
+                imageVector = if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                contentDescription = stringResource(
+                    if (fav) R.string.common_remove_from_favorites
+                    else R.string.common_save_to_favorites
+                ),
+                tint = if (fav) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+        }
     }
 }
 
