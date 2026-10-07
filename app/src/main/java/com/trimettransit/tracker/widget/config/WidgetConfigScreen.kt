@@ -2,6 +2,7 @@ package com.trimettransit.tracker.widget.config
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -64,9 +65,11 @@ import com.trimettransit.tracker.R
 import com.trimettransit.tracker.feature.settings.ColourPickerDialog
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
+import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.theme.appCardShape
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.widget.WidgetBackgroundMode
 import com.trimettransit.tracker.widget.WidgetConfig
 import com.trimettransit.tracker.widget.WidgetThemeOption
@@ -190,200 +193,152 @@ fun WidgetConfigScreen(
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp)
-                .padding(bottom = navPillBottomPadding() + 24.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.widget_config_title),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            SectionHeader(R.string.widget_config_stops)
-            Text(
-                text = stringResource(R.string.widget_config_stops_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            if (favoritesError.value) {
+        ContentEntrance(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp)
+                    .padding(bottom = navPillBottomPadding() + 24.dp)
+            ) {
                 Text(
-                    text = stringResource(R.string.widget_config_favorites_error),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
+                    text = stringResource(R.string.widget_config_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+    
+                SectionHeader(R.string.widget_config_stops)
+                Text(
+                    text = stringResource(R.string.widget_config_stops_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-            } else if (favorites.value.isEmpty()) {
+                Crossfade(
+                    targetState = when {
+                        favoritesError.value -> 0
+                        favorites.value.isEmpty() -> 1
+                        else -> 2
+                    },
+                    animationSpec = m3EffectsDefault(),
+                    label = "widgetStopsState"
+                ) { state ->
+                    when (state) {
+                        0 -> Text(
+                            text = stringResource(R.string.widget_config_favorites_error),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        1 -> Text(
+                            text = stringResource(R.string.widget_config_no_favorites),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        else -> StopReorderList(
+                            favorites = favorites.value,
+                            selectedStopIds = selectedStopIds,
+                            onToggle = { stop -> toggleStop(stop) },
+                            reorder = { from, to -> reorder(from, to) }
+                        )
+                    }
+                }
+    
+                SectionHeader(R.string.widget_config_arrivals)
                 Text(
-                    text = stringResource(R.string.widget_config_no_favorites),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = stringResource(R.string.widget_config_arrivals_per_stop),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-            } else {
-                StopReorderList(
-                    favorites = favorites.value,
-                    selectedStopIds = selectedStopIds,
-                    onToggle = { stop -> toggleStop(stop) },
-                    reorder = { from, to -> reorder(from, to) }
-                )
-            }
-
-            SectionHeader(R.string.widget_config_arrivals)
-            Text(
-                text = stringResource(R.string.widget_config_arrivals_per_stop),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            ChoiceSegmentedRow(
-                selected = arrivalsPerStop.intValue,
-                onSelect = { arrivalsPerStop.intValue = it },
-                options = listOf(1, 2, 3),
-                labelFor = { it.toString() }
-            )
-
-            SectionHeader(R.string.widget_config_time)
-            ChoiceSegmentedRow(
-                selected = showClockTime.value,
-                onSelect = { showClockTime.value = it },
-                options = listOf(false, true),
-                labelFor = {
-                    if (it) stringResource(R.string.widget_config_clock)
-                    else stringResource(R.string.widget_config_countdown)
-                }
-            )
-
-            SectionHeader(R.string.widget_config_theme)
-            ChoiceSegmentedRow(
-                selected = theme.value,
-                onSelect = { theme.value = it },
-                options = WidgetThemeOption.entries,
-                labelFor = { option ->
-                    when (option) {
-                        WidgetThemeOption.SYSTEM -> stringResource(R.string.widget_config_theme_system)
-                        WidgetThemeOption.LIGHT -> stringResource(R.string.widget_config_theme_light)
-                        WidgetThemeOption.DARK -> stringResource(R.string.widget_config_theme_dark)
-                    }
-                }
-            )
-
-            SectionHeader(R.string.widget_config_rows)
-            ChoiceSegmentedRow(
-                selected = compactRows.value,
-                onSelect = { compactRows.value = it },
-                options = listOf(false, true),
-                labelFor = {
-                    if (it) stringResource(R.string.widget_config_compact)
-                    else stringResource(R.string.widget_config_detailed)
-                }
-            )
-
-            SectionHeader(R.string.widget_config_display)
-            ToggleRow(
-                label = stringResource(R.string.widget_config_show_route_badge),
-                checked = showRouteBadge.value,
-                onCheckedChange = { showRouteBadge.value = it }
-            )
-            ToggleRow(
-                label = stringResource(R.string.widget_config_show_detour_alerts),
-                checked = showDetourAlerts.value,
-                onCheckedChange = { showDetourAlerts.value = it }
-            )
-            ToggleRow(
-                label = stringResource(R.string.widget_config_show_arrival_status),
-                checked = showArrivalStatus.value,
-                onCheckedChange = { showArrivalStatus.value = it }
-            )
-
-            SectionHeader(R.string.widget_config_limit)
-            Text(
-                text = pluralStringResource(
-                    R.plurals.widget_config_max_stops,
-                    maxStops.intValue,
-                    maxStops.intValue
-                ),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-            val maxStopsSlider = rememberSliderState(
-                value = maxStops.intValue.toFloat(),
-                trackRange = 1f..12f,
-                steps = 10
-            )
-            Slider(
-                state = maxStopsSlider,
-                onValueChange = { v ->
-                    val snapped = v.toInt().coerceIn(1, 12)
-                    maxStops.intValue = snapped
-                    maxStopsSlider.value = snapped.toFloat()
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            SectionHeader(R.string.widget_config_background)
-            ChoiceSegmentedRow(
-                selected = backgroundMode.value,
-                onSelect = { backgroundMode.value = it },
-                options = WidgetBackgroundMode.entries,
-                labelFor = { option ->
-                    when (option) {
-                        WidgetBackgroundMode.SYSTEM -> stringResource(R.string.widget_config_background_system)
-                        WidgetBackgroundMode.CUSTOM -> stringResource(R.string.widget_config_background_custom)
-                    }
-                }
-            )
-            if (backgroundMode.value == WidgetBackgroundMode.CUSTOM) {
-                ColorSwatchRow(
-                    hex = customBackground.value,
-                    onClick = { showColorDialog.value = true }
-                )
-                if (showColorDialog.value) {
-                    ColourPickerDialog(
-                        title = stringResource(R.string.widget_config_background),
-                        autoLabel = "",
-                        initialArgb = customBackground.value.ifBlank { null },
-                        allowAuto = false,
-                        allowAlpha = false,
-                        onDismiss = { showColorDialog.value = false },
-                        onAuto = {},
-                        onConfirm = { spec ->
-                            customBackground.value = spec
-                            showColorDialog.value = false
-                        }
-                    )
-                }
-            }
-            Text(
-                text = stringResource(R.string.widget_config_opacity, backgroundOpacity.intValue),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-            )
-            val opacitySlider = rememberSliderState(
-                value = backgroundOpacity.intValue.toFloat(),
-                trackRange = 0f..100f,
-                steps = 99
-            )
-            Slider(
-                state = opacitySlider,
-                onValueChange = { v ->
-                    val snapped = v.toInt().coerceIn(0, 100)
-                    backgroundOpacity.intValue = snapped
-                    opacitySlider.value = snapped.toFloat()
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            ToggleRow(
-                label = stringResource(R.string.widget_config_show_dividers),
-                checked = showGridDividers.value,
-                onCheckedChange = { showGridDividers.value = it }
-            )
-            if (showGridDividers.value) {
                 ChoiceSegmentedRow(
-                    selected = outlineMode.value,
-                    onSelect = { outlineMode.value = it },
+                    selected = arrivalsPerStop.intValue,
+                    onSelect = { arrivalsPerStop.intValue = it },
+                    options = listOf(1, 2, 3),
+                    labelFor = { it.toString() }
+                )
+    
+                SectionHeader(R.string.widget_config_time)
+                ChoiceSegmentedRow(
+                    selected = showClockTime.value,
+                    onSelect = { showClockTime.value = it },
+                    options = listOf(false, true),
+                    labelFor = {
+                        if (it) stringResource(R.string.widget_config_clock)
+                        else stringResource(R.string.widget_config_countdown)
+                    }
+                )
+    
+                SectionHeader(R.string.widget_config_theme)
+                ChoiceSegmentedRow(
+                    selected = theme.value,
+                    onSelect = { theme.value = it },
+                    options = WidgetThemeOption.entries,
+                    labelFor = { option ->
+                        when (option) {
+                            WidgetThemeOption.SYSTEM -> stringResource(R.string.widget_config_theme_system)
+                            WidgetThemeOption.LIGHT -> stringResource(R.string.widget_config_theme_light)
+                            WidgetThemeOption.DARK -> stringResource(R.string.widget_config_theme_dark)
+                        }
+                    }
+                )
+    
+                SectionHeader(R.string.widget_config_rows)
+                ChoiceSegmentedRow(
+                    selected = compactRows.value,
+                    onSelect = { compactRows.value = it },
+                    options = listOf(false, true),
+                    labelFor = {
+                        if (it) stringResource(R.string.widget_config_compact)
+                        else stringResource(R.string.widget_config_detailed)
+                    }
+                )
+    
+                SectionHeader(R.string.widget_config_display)
+                ToggleRow(
+                    label = stringResource(R.string.widget_config_show_route_badge),
+                    checked = showRouteBadge.value,
+                    onCheckedChange = { showRouteBadge.value = it }
+                )
+                ToggleRow(
+                    label = stringResource(R.string.widget_config_show_detour_alerts),
+                    checked = showDetourAlerts.value,
+                    onCheckedChange = { showDetourAlerts.value = it }
+                )
+                ToggleRow(
+                    label = stringResource(R.string.widget_config_show_arrival_status),
+                    checked = showArrivalStatus.value,
+                    onCheckedChange = { showArrivalStatus.value = it }
+                )
+    
+                SectionHeader(R.string.widget_config_limit)
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.widget_config_max_stops,
+                        maxStops.intValue,
+                        maxStops.intValue
+                    ),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                val maxStopsSlider = rememberSliderState(
+                    value = maxStops.intValue.toFloat(),
+                    trackRange = 1f..12f,
+                    steps = 10
+                )
+                Slider(
+                    state = maxStopsSlider,
+                    onValueChange = { v ->
+                        val snapped = v.toInt().coerceIn(1, 12)
+                        maxStops.intValue = snapped
+                        maxStopsSlider.value = snapped.toFloat()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                SectionHeader(R.string.widget_config_background)
+                ChoiceSegmentedRow(
+                    selected = backgroundMode.value,
+                    onSelect = { backgroundMode.value = it },
                     options = WidgetBackgroundMode.entries,
                     labelFor = { option ->
                         when (option) {
@@ -392,43 +347,101 @@ fun WidgetConfigScreen(
                         }
                     }
                 )
-                if (outlineMode.value == WidgetBackgroundMode.CUSTOM) {
+                if (backgroundMode.value == WidgetBackgroundMode.CUSTOM) {
                     ColorSwatchRow(
-                        hex = customOutline.value,
-                        onClick = { showOutlineDialog.value = true }
+                        hex = customBackground.value,
+                        onClick = { showColorDialog.value = true }
                     )
-                    if (showOutlineDialog.value) {
+                    if (showColorDialog.value) {
                         ColourPickerDialog(
-                            title = stringResource(R.string.widget_config_show_dividers),
+                            title = stringResource(R.string.widget_config_background),
                             autoLabel = "",
-                            initialArgb = customOutline.value.ifBlank { null },
+                            initialArgb = customBackground.value.ifBlank { null },
                             allowAuto = false,
                             allowAlpha = false,
-                            onDismiss = { showOutlineDialog.value = false },
+                            onDismiss = { showColorDialog.value = false },
                             onAuto = {},
                             onConfirm = { spec ->
-                                customOutline.value = spec
-                                showOutlineDialog.value = false
+                                customBackground.value = spec
+                                showColorDialog.value = false
                             }
                         )
                     }
                 }
+                Text(
+                    text = stringResource(R.string.widget_config_opacity, backgroundOpacity.intValue),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                )
+                val opacitySlider = rememberSliderState(
+                    value = backgroundOpacity.intValue.toFloat(),
+                    trackRange = 0f..100f,
+                    steps = 99
+                )
+                Slider(
+                    state = opacitySlider,
+                    onValueChange = { v ->
+                        val snapped = v.toInt().coerceIn(0, 100)
+                        backgroundOpacity.intValue = snapped
+                        opacitySlider.value = snapped.toFloat()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                ToggleRow(
+                    label = stringResource(R.string.widget_config_show_dividers),
+                    checked = showGridDividers.value,
+                    onCheckedChange = { showGridDividers.value = it }
+                )
+                if (showGridDividers.value) {
+                    ChoiceSegmentedRow(
+                        selected = outlineMode.value,
+                        onSelect = { outlineMode.value = it },
+                        options = WidgetBackgroundMode.entries,
+                        labelFor = { option ->
+                            when (option) {
+                                WidgetBackgroundMode.SYSTEM -> stringResource(R.string.widget_config_background_system)
+                                WidgetBackgroundMode.CUSTOM -> stringResource(R.string.widget_config_background_custom)
+                            }
+                        }
+                    )
+                    if (outlineMode.value == WidgetBackgroundMode.CUSTOM) {
+                        ColorSwatchRow(
+                            hex = customOutline.value,
+                            onClick = { showOutlineDialog.value = true }
+                        )
+                        if (showOutlineDialog.value) {
+                            ColourPickerDialog(
+                                title = stringResource(R.string.widget_config_show_dividers),
+                                autoLabel = "",
+                                initialArgb = customOutline.value.ifBlank { null },
+                                allowAuto = false,
+                                allowAlpha = false,
+                                onDismiss = { showOutlineDialog.value = false },
+                                onAuto = {},
+                                onConfirm = { spec ->
+                                    customOutline.value = spec
+                                    showOutlineDialog.value = false
+                                }
+                            )
+                        }
+                    }
+                }
+    
+                SectionHeader(R.string.widget_config_title_field)
+                OutlinedTextField(
+                    value = titleText.value,
+                    onValueChange = { titleText.value = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(stringResource(R.string.next_arrivals_widget_label)) },
+                    singleLine = true
+                )
+                ToggleRow(
+                    label = stringResource(R.string.widget_config_hide_title),
+                    checked = hideTitle.value,
+                    onCheckedChange = { hideTitle.value = it }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
             }
-
-            SectionHeader(R.string.widget_config_title_field)
-            OutlinedTextField(
-                value = titleText.value,
-                onValueChange = { titleText.value = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(stringResource(R.string.next_arrivals_widget_label)) },
-                singleLine = true
-            )
-            ToggleRow(
-                label = stringResource(R.string.widget_config_hide_title),
-                checked = hideTitle.value,
-                onCheckedChange = { hideTitle.value = it }
-            )
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
