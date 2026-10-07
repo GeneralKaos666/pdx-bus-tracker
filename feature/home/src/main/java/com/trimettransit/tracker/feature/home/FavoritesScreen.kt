@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.home
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +45,8 @@ import com.trimettransit.tracker.ui.components.rememberFavoriteIds
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.theme.m3ContentExpand
+import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -167,7 +170,11 @@ fun FavoritesScreen(
                     // Only worth teaching once there is something to reorder: with fewer than
                     // two favorites the gesture cannot do anything, and a one-time hint spent on
                     // an empty list is a hint wasted.
-                    if (showReorderHint && editable.size >= 2) {
+                    AnimatedVisibility(
+                        visible = showReorderHint && editable.size >= 2,
+                        enter = m3ContentExpand(),
+                        exit = m3ContentShrink(shrinkTowards = Alignment.Top)
+                    ) {
                         ReorderHint(onDismiss = { dismissReorderHint() })
                     }
                 }
