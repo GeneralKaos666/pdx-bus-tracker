@@ -1,5 +1,11 @@
 package com.trimettransit.tracker.feature.trips
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,7 +53,9 @@ import com.trimettransit.tracker.model.domain.itineraryRanks
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.appCardShape
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.util.clockTime
 import org.joda.time.DateTime
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,20 +112,33 @@ internal fun ItineraryResultsSheet(
             }
 
             if (selected != null) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                TripSummaryHeader(itinerary = selected, modifier = Modifier.padding(horizontal = 20.dp))
-                Spacer(modifier = Modifier.height(12.dp))
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 360.dp)
-                ) {
-                    itemsIndexed(
-                        selected.legs,
-                        key = { index, leg -> "${index}_${leg.mode}_${leg.routeNumber}_${leg.from.latitude}_${leg.from.longitude}_${leg.to.latitude}_${leg.to.longitude}" },
-                        contentType = { _, _ -> "leg" }
-                    ) { _, leg ->
-                        LegRow(leg = leg)
+                AnimatedContent(
+                    targetState = selectedIndex,
+                    transitionSpec = {
+                        (fadeIn(m3EffectsDefault()) togetherWith fadeOut(m3EffectsDefault())).using(
+                            SizeTransform(sizeAnimationSpec = { _, _ ->
+                                if (AppMotion.reduceMotion) snap() else m3EffectsDefault()
+                            })
+                        )
+                    },
+                    label = "itineraryBody"
+                ) { idx ->
+                    val body = plan.itineraries.getOrNull(idx) ?: selected
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    TripSummaryHeader(itinerary = body, modifier = Modifier.padding(horizontal = 20.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 360.dp)
+                    ) {
+                        itemsIndexed(
+                            body.legs,
+                            key = { index, leg -> "${index}_${leg.mode}_${leg.routeNumber}_${leg.from.latitude}_${leg.from.longitude}_${leg.to.latitude}_${leg.to.longitude}" },
+                            contentType = { _, _ -> "leg" }
+                        ) { _, leg ->
+                            LegRow(leg = leg)
+                        }
                     }
                 }
             }
