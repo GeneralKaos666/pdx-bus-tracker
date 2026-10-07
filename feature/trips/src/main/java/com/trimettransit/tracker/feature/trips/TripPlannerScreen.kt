@@ -786,9 +786,11 @@ fun TripPlannerScreen(
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
                         )
+                        val cancelPickSource = remember { MutableInteractionSource() }
                         IconButton(
                             onClick = { picking = PickSlot.NONE },
-                            modifier = Modifier.size(48.dp).pressScale(remember { MutableInteractionSource() })
+                            interactionSource = cancelPickSource,
+                            modifier = Modifier.size(48.dp).pressScale(cancelPickSource)
                         ) {
                             Icon(
                                 Icons.Default.Close,
