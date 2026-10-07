@@ -65,6 +65,7 @@ import com.trimettransit.tracker.feature.settings.ColourPickerDialog
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
+import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.widget.WidgetBackgroundMode
 import com.trimettransit.tracker.widget.WidgetConfig
@@ -476,6 +477,7 @@ private fun FavoriteStopRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .pressScale(interactionSource)
             .clickable(
                 interactionSource = interactionSource,
                 indication = LocalIndication.current,
@@ -640,6 +642,7 @@ private fun ColorSwatchRow(hex: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .pressScale(interactionSource)
             .clickable(
                 interactionSource = interactionSource,
                 indication = LocalIndication.current,
@@ -677,6 +680,7 @@ private fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .pressScale(interactionSource)
             .clickable(
                 interactionSource = interactionSource,
                 indication = LocalIndication.current,
