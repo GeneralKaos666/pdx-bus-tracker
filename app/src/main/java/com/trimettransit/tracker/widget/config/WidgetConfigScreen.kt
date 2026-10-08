@@ -3,6 +3,8 @@ package com.trimettransit.tracker.widget.config
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -49,6 +51,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,12 +71,18 @@ import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import com.trimettransit.tracker.widget.WidgetBackgroundMode
 import com.trimettransit.tracker.widget.WidgetConfig
 import com.trimettransit.tracker.widget.WidgetThemeOption
 import com.trimettransit.tracker.widget.parseWidgetBackgroundArgb
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 /**
  * Per-widget configuration editor. An empty [WidgetConfig.selectedStopIds] means "all
@@ -535,6 +544,8 @@ private fun StopReorderList(
     val itemHeightPx = remember { mutableFloatStateOf(0f) }
     val draggedLocId = remember { mutableStateOf<String?>(null) }
     val dragOffset = remember { mutableFloatStateOf(0f) }
+    val settleJob = remember { mutableStateOf<Job?>(null) }
+    val settleScope = rememberCoroutineScope()
 
     favorites.forEach { stop ->
         val id = stop.locId.toString()
@@ -551,6 +562,8 @@ private fun StopReorderList(
                     itemHeightPx = itemHeightPx,
                     draggedLocId = draggedLocId,
                     dragOffset = dragOffset,
+                    settleJob = settleJob,
+                    settleScope = settleScope,
                     reorder = reorder
                 )
             } else {
@@ -577,9 +590,17 @@ private fun Modifier.dragToReorder(
     itemHeightPx: MutableFloatState,
     draggedLocId: MutableState<String?>,
     dragOffset: MutableFloatState,
+    settleJob: MutableState<Job?>,
+    settleScope: CoroutineScope,
     reorder: (Int, Int) -> Unit
 ): Modifier {
     val isDragged = draggedLocId.value == id
+    val settleActive = remember { mutableStateOf(false) }
+    val dragScale = animateFloatAsState(
+        targetValue = if (isDragged && !settleActive.value && !AppMotion.reduceMotion) 1.03f else 1f,
+        animationSpec = m3SpatialFast(),
+        label = "dragScale"
+    )
     val currentIds = rememberUpdatedState(selectedStopIds.value)
     val currentItemHeight = rememberUpdatedState(itemHeightPx.floatValue)
     val currentDragOffset = rememberUpdatedState(dragOffset.floatValue)
@@ -589,7 +610,13 @@ private fun Modifier.dragToReorder(
         .zIndex(if (isDragged) 1f else 0f)
         .pointerInput(id) {
             detectDragGesturesAfterLongPress(
-                onDragStart = { draggedLocId.value = id },
+                onDragStart = {
+                    settleJob.value?.cancel()
+                    settleJob.value = null
+                    settleActive.value = false
+                    dragOffset.floatValue = 0f
+                    draggedLocId.value = id
+                },
                 onDrag = { change, dragAmount ->
                     change.consume()
                     dragOffset.floatValue += dragAmount.y
@@ -601,6 +628,7 @@ private fun Modifier.dragToReorder(
                         return@detectDragGesturesAfterLongPress
                     }
                     val from = currentIds.value.indexOf(id)
+                    var reordered = false
                     if (from >= 0) {
                         val h = currentItemHeight.value
                         val favIndexOf = { other: String ->
@@ -620,23 +648,52 @@ private fun Modifier.dragToReorder(
                         }
                         if (target in currentIds.value.indices && target != from) {
                             reorder(from, target)
+                            reordered = true
                         }
                     }
-                    draggedLocId.value = null
-                    dragOffset.floatValue = 0f
+                    if (reordered || AppMotion.reduceMotion) {
+                        // plain Column reorders with an instant layout jump — the instant zero compensates it
+                        draggedLocId.value = null
+                        dragOffset.floatValue = 0f
+                        settleActive.value = false
+                    } else {
+                        settleActive.value = true
+                        settleJob.value?.cancel()
+                        settleJob.value = settleScope.launch {
+                            animate(dragOffset.floatValue, 0f, animationSpec = m3SpatialDefault()) { value, _ ->
+                                dragOffset.floatValue = value
+                            }
+                            dragOffset.floatValue = 0f
+                            draggedLocId.value = null      // clear BEFORE settleActive — reverse order flickers the scale
+                            settleActive.value = false
+                        }
+                    }
                 },
                 onDragCancel = {
-                    draggedLocId.value = null
-                    dragOffset.floatValue = 0f
+                    if (currentDragOffset.value == 0f || AppMotion.reduceMotion) {
+                        draggedLocId.value = null
+                        dragOffset.floatValue = 0f
+                        settleActive.value = false
+                    } else {
+                        settleActive.value = true
+                        settleJob.value?.cancel()
+                        settleJob.value = settleScope.launch {
+                            animate(dragOffset.floatValue, 0f, animationSpec = m3SpatialDefault()) { value, _ ->
+                                dragOffset.floatValue = value
+                            }
+                            dragOffset.floatValue = 0f
+                            draggedLocId.value = null
+                            settleActive.value = false
+                        }
+                    }
                 }
             )
         }
         .graphicsLayer {
             if (isDragged) {
                 translationY = dragOffset.floatValue
-                val scale = 1.03f
-                scaleX = scale
-                scaleY = scale
+                scaleX = dragScale.value
+                scaleY = dragScale.value
             }
         }
 }
