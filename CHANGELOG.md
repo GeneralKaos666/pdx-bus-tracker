@@ -1,5 +1,7 @@
 ## What's New in v4.20.0
 
+- **Motion that feels alive and responsive:** buttons and dialogs across the trip planner, favorites, and widget setup now press with a visible response, switching between trip options fades instead of snapping, and the lists you open most — recent stops, arrivals, and search results — introduce their rows one at a time.
+- **Drags that glide to a stop:** reordering favorites and widget stops now springs the row home instead of snapping, and the widget setup screen fades in when it opens and transitions between its list, message, and error states.
 - **Roomier two-column favorites:** the two-column favorites layout now hides the heart button and pulls the columns a little closer together, leaving more room for stop names.
 - **Favorites layout, your choice:** Settings → Display now offers Auto, one column, or two columns for the Favorites list — Auto keeps today's width behavior.
 - **Easier to hit, calmer with animations off:** icon buttons across arrivals, lists, search, and the trip planner now meet the full touch-target size, and turning on Remove animations also stills press feedback, list movement, countdown flips, map camera glides, and loading shimmer.
