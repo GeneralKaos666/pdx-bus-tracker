@@ -2,17 +2,6 @@
 
 - **Motion that feels alive and responsive:** buttons and dialogs across the trip planner, favorites, and widget setup now press with a visible response, switching between trip options fades instead of snapping, and the lists you open most — recent stops, arrivals, and search results — introduce their rows one at a time.
 - **Drags that glide to a stop:** reordering favorites and widget stops now springs the row home instead of snapping, and the widget setup screen fades in when it opens and transitions between its list, message, and error states.
-- **Roomier two-column favorites:** the two-column favorites layout now hides the heart button and pulls the columns a little closer together, leaving more room for stop names.
-- **Favorites layout, your choice:** Settings → Display now offers Auto, one column, or two columns for the Favorites list — Auto keeps today's width behavior.
-- **Easier to hit, calmer with animations off:** icon buttons across arrivals, lists, search, and the trip planner now meet the full touch-target size, and turning on Remove animations also stills press feedback, list movement, countdown flips, map camera glides, and loading shimmer.
-- **Widget backgrounds, your way:** each home-screen widget can now use a custom background color — picked with the same hue/saturation/brightness sliders as Settings, with opacity handled by the widget's own slider from fully solid to fully transparent — plus optional outlines and dividers with roomier spacing whose color you can also customize. The old filter-by-line-number box is gone.
-- **Trip results that survive a restart and show their age:** closing the app no longer throws your planned trip away, and the results say how fresh they are, from "Updated just now" to minutes ago.
-- **Widgets say when they last refreshed:** each widget now shows when its departures were last updated — just now, minutes ago, or never yet — and a failed refresh keeps the last good time instead of blanking it.
-- **Smarter, better-fitting widgets:** the home-screen widget now adapts to whatever size you stretch it to, shows a live preview when you pick it, refreshes only the widgets whose stops actually changed, and has its own Refresh button plus an Add-widget shortcut in Settings.
-- **Sturdier widget taps:** opening a stop from the widget now validates the tap first, so a bad widget payload quietly does nothing instead of risking a broken arrivals screen.
-- **Two-up widget layout:** roomier widgets now show stops side by side in two columns instead of one long list, so more departures fit without scrolling.
-- **Widgets own their freshness:** each widget now carries its own "updated" timestamp, and the Add-widget shortcut previews your actual departures before you pin it.
-
 ## What's New in v4.19.0
 
 - **Nearby stops recover from a denied location:** if location permission is permanently denied, the app now offers to open its settings instead of showing a retry that does nothing. An approximate location is also accepted, so "Nearby stops" works without precise GPS.
