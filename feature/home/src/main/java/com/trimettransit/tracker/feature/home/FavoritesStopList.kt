@@ -1,5 +1,7 @@
 package com.trimettransit.tracker.feature.home
 
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,10 +13,13 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -42,7 +47,12 @@ import com.trimettransit.tracker.ui.components.staggeredFadeIn
 import com.trimettransit.tracker.ui.appearance.AppearancePrefs
 import com.trimettransit.tracker.ui.appearance.favoritesColumnCount
 import com.trimettransit.tracker.ui.theme.AppMotion
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import com.trimettransit.tracker.ui.theme.m3SpatialFast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
@@ -200,12 +210,23 @@ private fun Modifier.favoriteDragToReorder(
     val currentSpanCount = rememberUpdatedState(spanCount)
     val currentOnMove = rememberUpdatedState(onMove)
     val currentOnDraggingChange = rememberUpdatedState(onDraggingChange)
+    val settling = remember { mutableStateOf(false) }
+    val settleJob = remember { mutableStateOf<Job?>(null) }
+    val scope = rememberCoroutineScope()
+    val dragScale by animateFloatAsState(
+        targetValue = if (dragged.value && !AppMotion.reduceMotion) 1.02f else 1f,
+        animationSpec = m3SpatialFast(),
+        label = "dragScale"
+    )
     return this
         .onSizeChanged { itemHeightPx.floatValue = it.height.toFloat() }
-        .zIndex(if (dragged.value) 1f else 0f)
+        .zIndex(if (dragged.value || settling.value) 1f else 0f)
         .pointerInput(Unit) {
             detectDragGesturesAfterLongPress(
                 onDragStart = {
+                    settleJob.value?.cancel()
+                    settleJob.value = null
+                    settling.value = false
                     dragged.value = true
                     currentOnDraggingChange.value(true)
                 },
@@ -216,9 +237,7 @@ private fun Modifier.favoriteDragToReorder(
                 onDragEnd = {
                     val h = itemHeightPx.floatValue
                     val offset = dragOffset.floatValue
-                    dragged.value = false
                     currentOnDraggingChange.value(false)
-                    dragOffset.floatValue = 0f
                     if (h > 0f && offset != 0f) {
                         val rows = (offset / h).roundToInt()
                         val from = currentIndex.value
@@ -231,19 +250,49 @@ private fun Modifier.favoriteDragToReorder(
                             currentOnMove.value(from, target)
                         }
                     }
+                    dragged.value = false
+                    settleToRest(scope, settleJob, settling, dragOffset, offset)
                 },
                 onDragCancel = {
-                    dragged.value = false
                     currentOnDraggingChange.value(false)
-                    dragOffset.floatValue = 0f
+                    dragged.value = false
+                    settleToRest(scope, settleJob, settling, dragOffset, dragOffset.floatValue)
                 }
             )
         }
         .graphicsLayer {
-            if (dragged.value) {
-                translationY = dragOffset.floatValue
-                scaleX = 1.02f
-                scaleY = 1.02f
-            }
+            translationY = dragOffset.floatValue
+            scaleX = dragScale
+            scaleY = dragScale
         }
+}
+
+/**
+ * Glides [dragOffset] back to rest after a release. Snaps instead of springing when the
+ * offset is already zero or the rider asked for reduced motion. Cancels any in-flight
+ * settle first so re-grabs and repeated releases never stack jobs.
+ */
+private fun settleToRest(
+    scope: CoroutineScope,
+    job: MutableState<Job?>,
+    settling: MutableState<Boolean>,
+    dragOffset: MutableFloatState,
+    offset: Float
+) {
+    job.value?.cancel()
+    if (offset == 0f || AppMotion.reduceMotion) {
+        dragOffset.floatValue = 0f
+        settling.value = false
+        job.value = null
+        return
+    }
+    settling.value = true
+    job.value = scope.launch {
+        animate(dragOffset.floatValue, 0f, animationSpec = m3SpatialDefault()) { value, _ ->
+            dragOffset.floatValue = value
+        }
+        dragOffset.floatValue = 0f
+        settling.value = false
+        job.value = null
+    }
 }
