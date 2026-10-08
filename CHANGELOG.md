@@ -2,6 +2,7 @@
 
 - **Motion that feels alive and responsive:** buttons and dialogs across the trip planner, favorites, and widget setup now press with a visible response, switching between trip options fades instead of snapping, and the lists you open most — recent stops, arrivals, and search results — introduce their rows one at a time.
 - **Drags that glide to a stop:** reordering favorites and widget stops now springs the row home instead of snapping, and the widget setup screen fades in when it opens and transitions between its list, message, and error states.
+
 ## What's New in v4.19.0
 
 - **Nearby stops recover from a denied location:** if location permission is permanently denied, the app now offers to open its settings instead of showing a retry that does nothing. An approximate location is also accepted, so "Nearby stops" works without precise GPS.
