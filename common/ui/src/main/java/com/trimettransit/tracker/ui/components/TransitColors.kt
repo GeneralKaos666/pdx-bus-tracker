@@ -82,13 +82,17 @@ fun transitTypeLabel(type: String?): Int = when (type) {
  * Streetcar, "W" for WES, "B" for buses; "" when unknown).
  * TriMet route numbers: MAX Blue=100, Red=90, Yellow=190, Green=200,
  * Orange=290, Vintage Trolley=196; WES=203; Streetcar A=193, B=194, NS=195.
+ * MAX disruption shuttle buses (287/288 Blue, 291 Orange, 292 Red,
+ * 293 Yellow) take the "M" letter of the MAX line they substitute.
  */
 fun transitBadgeLetter(routeNumber: Int): String = when {
     routeNumber == 90 || routeNumber == 100 || routeNumber == 190 ||
-        routeNumber == 200 || routeNumber == 290 || routeNumber == 196 -> "M"
+        routeNumber == 200 || routeNumber == 290 || routeNumber == 196 ||
+        routeNumber == 287 || routeNumber == 288 || routeNumber == 291 ||
+        routeNumber == 292 || routeNumber == 293 -> "M"
     routeNumber == 203 -> "W"
     routeNumber in 193..195 -> "S"
-    routeNumber in 1..99 -> "B"
+    routeNumber > 0 -> "B"
     else -> ""
 }
 
