@@ -1,8 +1,13 @@
+## What's New in v4.20.2
+
+- **MAX shuttles show the line they replace:** when construction sends shuttle buses out for the MAX Blue, Orange, Red, and Yellow lines, their arrivals and map markers now carry that line's badge and colours instead of a generic bus one, and the bus lines numbered above 99 (155-Sunnyside and 156-Mather Rd) get a proper bus badge.
+- **A delay that says which way:** the trip status sheet now names whether a vehicle is running early or delayed instead of showing a bare number of seconds.
+- **The scheduled time is the scheduled time again:** the clock under each arrival shows the timetable's posted time, as the "Show scheduled time" setting promises, instead of the live estimate that drifts with a bus's lateness. A late bus now reads its scheduled departure while the countdown and the "min late" note keep tracking it in real time.
+
 ## What's New in v4.20.1
 
 - **Motion that feels alive and responsive:** buttons and dialogs across the trip planner, favorites, and widget setup now press with a visible response, switching between trip options fades instead of snapping, and the lists you open most — recent stops, arrivals, and search results — introduce their rows one at a time.
 - **Drags that glide to a stop:** reordering favorites and widget stops now springs the row home instead of snapping, and the widget setup screen fades in when it opens and transitions between its list, message, and error states.
-- **MAX shuttles show the line they replace:** when construction sends shuttle buses out for the MAX Blue, Orange, Red, and Yellow lines, their arrivals and map markers now carry that line's badge and colours instead of a generic bus one, and the bus lines numbered above 99 (155-Sunnyside and 156-Mather Rd) get a proper bus badge.
 
 ## What's New in v4.19.0
 

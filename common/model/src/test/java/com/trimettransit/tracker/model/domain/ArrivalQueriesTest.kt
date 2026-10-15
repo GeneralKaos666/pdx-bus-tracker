@@ -188,6 +188,24 @@ class ArrivalQueriesTest {
     }
 
     @Test
+    fun `scheduledClockMillis keeps the schedule even when a live estimate exists`() {
+        val live = arrival(status = "estimated", estimatedMillis = 5_000L, scheduledMillis = 1_000L)
+        assertEquals(1_000L, live.scheduledClockMillis)
+    }
+
+    @Test
+    fun `scheduledClockMillis falls back to the estimate when the schedule is absent`() {
+        val noSchedule = arrival(status = "estimated", estimatedMillis = 5_000L, scheduledMillis = 0L)
+        assertEquals(5_000L, noSchedule.scheduledClockMillis)
+    }
+
+    @Test
+    fun `scheduledClockMillis returns zero when neither time is present`() {
+        val none = arrival(status = "estimated", estimatedMillis = 0L, scheduledMillis = 0L)
+        assertEquals(0L, none.scheduledClockMillis)
+    }
+
+    @Test
     fun `isHttpAlertLink allows http and https only`() {
         assertTrue(isHttpAlertLink("https://trimet.org/alerts/7001"))
         assertTrue(isHttpAlertLink("http://trimet.org/alerts/7001"))

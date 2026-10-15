@@ -43,6 +43,7 @@ import com.trimettransit.tracker.model.domain.arrivalKey
 import com.trimettransit.tracker.model.domain.displayTimeMillis
 import com.trimettransit.tracker.model.domain.isCanceled
 import com.trimettransit.tracker.model.domain.isEstimated
+import com.trimettransit.tracker.model.domain.scheduledClockMillis
 import com.trimettransit.tracker.util.minutesUntil
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.transitBadgeLetter
@@ -85,10 +86,14 @@ internal fun ArrivalItem(
     val overrides = LocalAppearanceStyle.current.transitTypeColors
     val color = transitColor(type, scheme, overrides)
     val displayTime = arrival.displayTimeMillis
+    // The clock line reads as the timetable reference, so it uses the original scheduled
+    // time; the countdown (displayTime) stays live. Falls back to the estimate only when
+    // the API omitted a schedule.
+    val clockTime = arrival.scheduledClockMillis
 
     // refreshKey is ArrivalsScreen countdownTick: reading it keys the countdown below.
-    val formattedTime = remember(displayTime, refreshKey, context) {
-        if (displayTime > 0L) formatDateTime(DateTime(displayTime), context) else ""
+    val formattedTime = remember(clockTime, context) {
+        if (clockTime > 0L) formatDateTime(DateTime(clockTime), context) else ""
     }
     val minutesAway = remember(displayTime, refreshKey) {
         if (displayTime > 0L) minutesUntil(displayTime) else 0L

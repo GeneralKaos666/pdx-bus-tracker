@@ -88,3 +88,13 @@ val Arrival.displayTimeMillis: Long
         val fallback = scheduledMillis
         return if (isEstimated) estimatedMillis.takeIf { it > 0L } ?: fallback else fallback
     }
+
+/**
+ * The clock time the UI shows under an arrival: the original *scheduled* time, never
+ * the live-adjusted estimate. Unlike [displayTimeMillis] (the countdown's live source),
+ * this is the timetable reference the "scheduled time" row is meant to read as, so a
+ * late bus still shows its posted departure. Falls back to the estimate only when the
+ * API omitted a schedule.
+ */
+val Arrival.scheduledClockMillis: Long
+    get() = scheduledMillis.takeIf { it > 0L } ?: estimatedMillis
