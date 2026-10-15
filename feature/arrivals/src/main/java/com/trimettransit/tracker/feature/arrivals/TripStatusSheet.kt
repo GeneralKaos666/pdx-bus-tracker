@@ -128,7 +128,14 @@ private fun TripStatusContent(trip: TripStatus) {
                             Text(
                                 text = listOfNotNull(
                                     status.takeIf { it.isNotBlank() },
-                                    delay?.let { pluralStringResource(R.plurals.trip_status_delay, it, it) }
+                                    delay?.let {
+                                        if (it >= 0) {
+                                            pluralStringResource(R.plurals.trip_status_delay, it, it)
+                                        } else {
+                                            val absDelay = -it
+                                            pluralStringResource(R.plurals.trip_status_early, absDelay, absDelay)
+                                        }
+                                    }
                                 ).joinToString(" · "),
                                 color = if (stop.isCanceled) {
                                     MaterialTheme.colorScheme.error

@@ -41,7 +41,11 @@
     <string name="trip_status_dropoff_only">Drop-off only</string>
     <string name="trip_status_passed">Passed</string>
     <plurals name="trip_status_delay">
-        <item quantity="one">%1$d sec</item>
-        <item quantity="other">%1$d sec</item>
+        <item quantity="one">Delayed %1$d sec</item>
+        <item quantity="other">Delayed %1$d sec</item>
+    </plurals>
+    <plurals name="trip_status_early">
+        <item quantity="one">Early %1$d sec</item>
+        <item quantity="other">Early %1$d sec</item>
     </plurals>
 </resources>
