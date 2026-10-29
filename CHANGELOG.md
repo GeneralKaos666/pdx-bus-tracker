@@ -1,3 +1,9 @@
+## What's New in v4.20.3
+
+- **A newer foundation underneath:** the build toolchain now runs on the latest Gradle and Android Gradle Plugin, with the Kotlin compiler on 2.5. Nothing is meant to look different — this release clears the way for the next round of features.
+- **Library refresh:** Material 3, the home-screen widget libraries, Navigation, WorkManager, the network client, the date/time library, and the map engine are all on their newest releases. Maps keep the same OpenGL renderer, so phones without Vulkan support are unaffected.
+- **Status bar icons still follow your theme:** the full-screen layout setup moved to the newer AndroidX API, which leaves the status and navigation bar icon colours to the app. They are still set from your light or dark theme, so they never disappear into the background.
+
 ## What's New in v4.20.2
 
 - **MAX shuttles show the line they replace:** when construction sends shuttle buses out for the MAX Blue, Orange, Red, and Yellow lines, their arrivals and map markers now carry that line's badge and colours instead of a generic bus one, and the bus lines numbered above 99 (155-Sunnyside and 156-Mather Rd) get a proper bus badge.
