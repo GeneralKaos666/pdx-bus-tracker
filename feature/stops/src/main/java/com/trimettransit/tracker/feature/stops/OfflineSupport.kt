@@ -59,6 +59,12 @@ internal fun OnNetworkRegained(onRegained: () -> Unit) {
             }
         }
         manager.registerDefaultNetworkCallback(callback)
-        onDispose { runCatching { manager.unregisterNetworkCallback(callback) } }
+        onDispose {
+            try {
+                manager.unregisterNetworkCallback(callback)
+            } catch (_: Exception) {
+                // The platform already dropped the callback; nothing left to release.
+            }
+        }
     }
 }

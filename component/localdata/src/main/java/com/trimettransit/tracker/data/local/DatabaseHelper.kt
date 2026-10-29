@@ -78,15 +78,28 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
         db.execSQL("CREATE TABLE IF NOT EXISTS recent_stops(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER UNIQUE,longitude REAL,latitude REAL,route_num INTEGER)")
     }
 
+    /**
+     * Runs [sql], ignoring failure on purpose. Every statement routed through here adds a column
+     * that may already exist on a partially-upgraded database, so the upgrade must not abort on
+     * "duplicate column name".
+     */
+    private fun SQLiteDatabase.execSQLQuietly(sql: String) {
+        try {
+            execSQL(sql)
+        } catch (_: Exception) {
+            // Column already present: the schema is what we wanted anyway.
+        }
+    }
+
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
             db.execSQL("CREATE TABLE IF NOT EXISTS recent_stops(id INTEGER PRIMARY KEY AUTOINCREMENT,desc TEXT,dir_desc TEXT,transit_type TEXT,loc_id INTEGER,longitude REAL,latitude REAL)")
         }
         if (oldVersion < 4) {
-            runCatching { db.execSQL("ALTER TABLE favorites ADD COLUMN longitude REAL") }
-            runCatching { db.execSQL("ALTER TABLE recent_stops ADD COLUMN longitude REAL") }
-            runCatching { db.execSQL("ALTER TABLE favorites ADD COLUMN latitude REAL") }
-            runCatching { db.execSQL("ALTER TABLE recent_stops ADD COLUMN latitude REAL") }
+            db.execSQLQuietly("ALTER TABLE favorites ADD COLUMN longitude REAL")
+            db.execSQLQuietly("ALTER TABLE recent_stops ADD COLUMN longitude REAL")
+            db.execSQLQuietly("ALTER TABLE favorites ADD COLUMN latitude REAL")
+            db.execSQLQuietly("ALTER TABLE recent_stops ADD COLUMN latitude REAL")
         }
         if (oldVersion < 5) {
             db.execSQL("DROP TABLE IF EXISTS search_data")
@@ -98,15 +111,15 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DB_NAME, null
             db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_recent_stops_loc_id ON recent_stops(loc_id)")
         }
         if (oldVersion < 7) {
-            runCatching { db.execSQL("ALTER TABLE favorites ADD COLUMN route_num INTEGER DEFAULT 0") }
-            runCatching { db.execSQL("ALTER TABLE recent_stops ADD COLUMN route_num INTEGER DEFAULT 0") }
+            db.execSQLQuietly("ALTER TABLE favorites ADD COLUMN route_num INTEGER DEFAULT 0")
+            db.execSQLQuietly("ALTER TABLE recent_stops ADD COLUMN route_num INTEGER DEFAULT 0")
         }
         if (oldVersion < 8) {
-            runCatching { db.execSQL("ALTER TABLE favorites ADD COLUMN sort_order INTEGER DEFAULT 0") }
+            db.execSQLQuietly("ALTER TABLE favorites ADD COLUMN sort_order INTEGER DEFAULT 0")
             // Reserved for the deferred custom favorite-name feature (see onCreate):
             // kept deliberately so v7 databases match the v8 schema.
-            runCatching { db.execSQL("ALTER TABLE favorites ADD COLUMN label TEXT DEFAULT ''") }
-            runCatching { db.execSQL("UPDATE favorites SET sort_order = id WHERE sort_order = 0 OR sort_order IS NULL") }
+            db.execSQLQuietly("ALTER TABLE favorites ADD COLUMN label TEXT DEFAULT ''")
+            db.execSQLQuietly("UPDATE favorites SET sort_order = id WHERE sort_order = 0 OR sort_order IS NULL")
         }
     }
 

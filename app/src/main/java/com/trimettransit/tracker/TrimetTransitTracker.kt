@@ -26,8 +26,10 @@ class TrimetTransitTracker : Application() {
     private fun installCrashRecorder() {
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            // Best effort: a failure here must never mask the original crash.
-            runCatching {
+            // Best effort: a failure here must never mask the original crash. Catches Throwable
+            // (not just Exception) because this runs while an Error may already be propagating,
+            // and the original handler must still be reached.
+            try {
                 val runtime = Runtime.getRuntime()
                 File(filesDir, CRASH_FILE).appendText(
                     buildString {
@@ -44,6 +46,8 @@ class TrimetTransitTracker : Application() {
                         appendLine()
                     }
                 )
+            } catch (_: Throwable) {
+                // Recording is best effort only; the original crash is reported below regardless.
             }
             previous?.uncaughtException(thread, throwable)
         }

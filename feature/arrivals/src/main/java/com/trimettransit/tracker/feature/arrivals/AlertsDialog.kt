@@ -113,11 +113,13 @@ internal fun AlertsDialog(
                                             interactionSource = linkInteractionSource,
                                             indication = LocalIndication.current
                                         ) {
-                                            runCatching {
+                                            try {
                                                 val intent = Intent(Intent.ACTION_VIEW, link!!.trim().toUri())
                                                 if (intent.resolveActivity(context.packageManager) != null) {
                                                     context.startActivity(intent)
                                                 }
+                                            } catch (_: Exception) {
+                                                // No app can open this link; the tap stays inert.
                                             }
                                         }
                                 )

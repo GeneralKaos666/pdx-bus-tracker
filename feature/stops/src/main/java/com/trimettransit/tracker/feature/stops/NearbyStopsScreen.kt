@@ -472,7 +472,11 @@ private fun openAppSettings(context: Context) {
         Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
         Uri.fromParts("package", context.packageName, null)
     ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    runCatching { context.startActivity(intent) }
+    try {
+        context.startActivity(intent)
+    } catch (_: Exception) {
+        // No settings activity resolved for this device; the button simply does nothing.
+    }
 }
 
 /**

@@ -21,8 +21,10 @@ object WidgetPreviews {
         // Generated picker previews exist only on Android 15+; older launchers
         // fall back to previewLayout/previewImage from the provider XML.
         if (Build.VERSION.SDK_INT < 35) return false
-        runCatching {
+        try {
             GlanceAppWidgetManager(context).setWidgetPreviews(NextArrivalsWidgetReceiver::class)
+        } catch (_: Exception) {
+            // Previews are cosmetic; a launcher that rejects them still gets the XML ones.
         }
         prefs.edit().putLong(KEY_LAST_PUSH_MILLIS, nowMillis).apply()
         return true
