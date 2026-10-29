@@ -10,8 +10,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.SideEffect
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.graphics.toColorInt
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -168,9 +168,11 @@ class MainActivity : ComponentActivity() {
         WidgetScheduler.schedulePeriodic(this)
         WidgetScheduler.refreshNow(this)
         // Play's "deprecated Android 15 edge-to-edge APIs" warning comes from
-        // androidx.activity's enableEdgeToEdge() backward-compat internals, not
-        // app code. Known/benign — don't reimplement edge-to-edge to "fix" it.
-        enableEdgeToEdge()
+        // androidx.core's enableEdgeToEdge() backward-compat internals, not app
+        // code. Known/benign — don't reimplement edge-to-edge to "fix" it.
+        // WindowCompat's version deliberately leaves system-bar icon appearance to
+        // the caller; the SideEffect below sets it from the in-app theme.
+        WindowCompat.enableEdgeToEdge(window)
         AppMotion.reduceMotion = systemReduceMotion(this)
         setContent {
             val prefs = PreferenceManager.getDefaultSharedPreferences(this)

@@ -5,12 +5,15 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
@@ -54,9 +57,19 @@ class WidgetConfigActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // WindowCompat's enableEdgeToEdge leaves system-bar icon appearance to the
+        // caller (unlike the deprecated ComponentActivity helper), so mirror the
+        // theme's light/dark choice here.
+        WindowCompat.enableEdgeToEdge(window)
         setContent {
-            TriMetGoTheme {
+            val darkTheme = isSystemInDarkTheme()
+            TriMetGoTheme(darkTheme = darkTheme) {
+                SideEffect {
+                    WindowInsetsControllerCompat(window, window.decorView).apply {
+                        isAppearanceLightStatusBars = !darkTheme
+                        isAppearanceLightNavigationBars = !darkTheme
+                    }
+                }
                 // New placement starts from defaults; reconfig loads the live config first.
                 var initialConfig by remember {
                     mutableStateOf(if (glanceId == null) WidgetConfig() else null)
