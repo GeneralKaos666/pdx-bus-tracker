@@ -28,3 +28,5 @@ screenshot-editor
 .gplay
 scripts/verify-16kb-alignment.sh
 .worktrees/
+docs/plans
+docs
