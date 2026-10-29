@@ -45,8 +45,8 @@ android {
 dependencies {
     implementation(project(":common:utils"))
     implementation(project(":common:model"))
-    implementation("com.squareup.okhttp3:okhttp:5.5.0")
-    implementation("net.danlew:android.joda:2.14.3.1")
+    implementation("com.squareup.okhttp3:okhttp:5.5.1")
+    implementation("net.danlew:android.joda:2.15.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation("com.jakewharton.timber:timber:5.0.1")
     implementation("com.google.transit:gtfs-realtime-bindings:0.0.4")
@@ -54,5 +54,5 @@ dependencies {
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20260814")
-    testImplementation("net.danlew:android.joda:2.14.3.1")
+    testImplementation("net.danlew:android.joda:2.15.0")
 }

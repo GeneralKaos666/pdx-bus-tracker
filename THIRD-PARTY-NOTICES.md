@@ -10,9 +10,9 @@ itself is licensed under the MIT License (see `LICENSE`).
 
 ### AndroidX / Jetpack Compose
 - **Artifacts:** `androidx.compose:compose-bom` 2026.09.00 (`compose-ui`, `compose-foundation`,
-  `material3` 1.5.0-alpha28, `material-icons-extended`), `androidx.activity:activity-compose` 1.13.0,
-  `androidx.navigation:navigation-compose` 2.10.1, `androidx.appcompat:appcompat` 1.8.0,
-  `androidx.core:core` / `core-ktx` 1.19.0, `androidx.preference:preference` 1.2.1
+  `material3` 1.5.0-beta02, `material-icons-extended`), `androidx.activity:activity-compose` 1.14.0-alpha03,
+  `androidx.navigation:navigation-compose` 2.10.2, `androidx.appcompat:appcompat` 1.8.0,
+  `androidx.core:core` / `core-ktx` 1.19.1, `androidx.preference:preference` 1.2.1
 - **License:** Apache License 2.0
 - **Copyright:** Copyright The Android Open Source Project
 - **Project:** https://developer.android.com/jetpack
@@ -31,13 +31,13 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **Project:** https://kotlinlang.org / https://github.com/Kotlin/kotlinx.coroutines
 
 ### OkHttp
-- **Artifact:** `com.squareup.okhttp3:okhttp` 5.5.0
+- **Artifact:** `com.squareup.okhttp3:okhttp` 5.5.1
 - **License:** Apache License 2.0
 - **Copyright:** Copyright Square, Inc.
 - **Project:** https://github.com/square/okhttp
 
 ### MapLibre Native (Android, OpenGL backend)
-- **Artifact:** `org.maplibre.gl:android-sdk-opengl` 13.6.1
+- **Artifact:** `org.maplibre.gl:android-sdk-opengl` 13.7.1
 - **License:** BSD 2-Clause License
 - **Copyright:** Copyright (C) 2025 MapLibre contributors; portions Copyright (C) 2020 Mapbox
 - **Project:** https://github.com/maplibre/maplibre-native
@@ -45,7 +45,7 @@ itself is licensed under the MIT License (see `LICENSE`).
   (OpenStreetMap data, ODbL); map attribution is displayed in-app.
 
 ### Joda-Time Android
-- **Artifact:** `net.danlew:android.joda` 2.14.3.1
+- **Artifact:** `net.danlew:android.joda` 2.15.0
 - **License:** Apache License 2.0
 - **Copyright:** Copyright Daniel Lew; based on Joda-Time, Copyright 2001-2006 Stephen Colebourne
   and contributors
@@ -58,14 +58,14 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **Project:** https://github.com/JakeWharton/timber
 
 ### AndroidX Glance (home-screen widget)
-- **Artifacts:** `androidx.glance:glance` 1.2.0, `androidx.glance:glance-appwidget` 1.2.0,
-  `androidx.glance:glance-material3` 1.2.0
+- **Artifacts:** `androidx.glance:glance` 1.3.0-alpha02, `androidx.glance:glance-appwidget` 1.3.0-alpha02,
+  `androidx.glance:glance-material3` 1.3.0-alpha02
 - **License:** Apache License 2.0
 - **Copyright:** Copyright The Android Open Source Project
 - **Project:** https://developer.android.com/jetpack/compose/layouts/glance
 
 ### AndroidX WorkManager (widget background refresh)
-- **Artifact:** `androidx.work:work-runtime-ktx` 2.11.2
+- **Artifact:** `androidx.work:work-runtime-ktx` 2.12.0
 - **License:** Apache License 2.0
 - **Copyright:** Copyright The Android Open Source Project
 - **Project:** https://developer.android.com/jetpack/libraries/work

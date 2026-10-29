@@ -22,7 +22,7 @@ android {
 }
 
 dependencies {
-    implementation("net.danlew:android.joda:2.14.3.1")
+    implementation("net.danlew:android.joda:2.15.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

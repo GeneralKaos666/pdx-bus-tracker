@@ -10,7 +10,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.github.triplet.play") version "4.1.1"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.20"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.5.0-Beta2"
 }
 
 // AGP's produceMergeComposeMapping tokenizer cannot parse the compiler-generated
@@ -240,18 +240,18 @@ dependencies {
     implementation(project(":component:localdata"))
 
     // AndroidX Core
-    implementation("androidx.core:core:1.19.0")
+    implementation("androidx.core:core:1.19.1")
     implementation("androidx.appcompat:appcompat:1.8.0")
     // Compose
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3:1.5.0-alpha28")
+    implementation("androidx.compose.material3:material3:1.5.0-beta02")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("androidx.activity:activity-compose:1.14.0-alpha03")
     implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.navigation:navigation-compose:2.10.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    implementation("androidx.navigation:navigation-compose:2.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // UI
@@ -261,9 +261,9 @@ dependencies {
     implementation("androidx.preference:preference:1.2.1")
 
     // Home-screen widget (Glance) + its background refresh (WorkManager)
-    implementation("androidx.glance:glance-appwidget:1.2.0")
-    implementation("androidx.glance:glance-material3:1.2.0")
-    implementation("androidx.work:work-runtime-ktx:2.11.2")
+    implementation("androidx.glance:glance-appwidget:1.3.0-alpha02")
+    implementation("androidx.glance:glance-material3:1.3.0-alpha02")
+    implementation("androidx.work:work-runtime-ktx:2.12.0")
 
     // Logging (Timber tree planted in TrimetTransitTracker)
     implementation("com.jakewharton.timber:timber:5.0.1")
@@ -271,5 +271,5 @@ dependencies {
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20260814")
-    testImplementation("net.danlew:android.joda:2.14.3.1")
+    testImplementation("net.danlew:android.joda:2.15.0")
 }

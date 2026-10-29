@@ -90,13 +90,13 @@ For a local smoke test without real credentials, build with `-PreleaseSigningFal
 
 | Stack | Version |
 |---|---|
-| Gradle / AGP | 9.7.1 / 9.4.0 |
-| Kotlin / Compose compiler plugin | 2.4.20 |
-| Jetpack Compose | BOM 2026.09.00 (Material 3 1.5.0-alpha28, Navigation 2.10.1) |
-| OkHttp | 5.5.0 |
-| Joda-Time (android.joda) | 2.14.3.1 |
+| Gradle / AGP | 9.8.2 / 9.5.0 |
+| Kotlin / Compose compiler plugin | 2.5.0-Beta2 |
+| Jetpack Compose | BOM 2026.09.00 (Material 3 1.5.0-beta02, Navigation 2.10.2) |
+| OkHttp | 5.5.1 |
+| Joda-Time (android.joda) | 2.15.0 |
 | Kotlin coroutines | 1.11.0 |
-| MapLibre GL Native (OpenGL backend) | 13.6.1 + OpenFreeMap tiles |
+| MapLibre GL Native (OpenGL backend) | 13.7.1 + OpenFreeMap tiles |
 
 ## Privacy
 
