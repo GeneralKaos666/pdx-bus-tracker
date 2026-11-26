@@ -1,3 +1,10 @@
+## What's New in v4.21.0
+
+- **Plan for any time:** the trip planner now offers Depart now, Depart at, and Arrive by. Pick a day and a time in one sheet, so tomorrow's trip no longer has to be planned as today's.
+- **Results that use the whole screen:** trip options open in a full view with the route map at the top, one card per option showing its departure and arrival times, duration, transfers, and line badges, then the full leg list with waiting times between legs. Back returns to the planner with your trip still there.
+- **Your usual stops, one tap away:** the origin and destination picker now opens with your recent trips, favorite stops, and recent stops above the search box.
+- **Fewer taps to plan:** travel mode and the fastest/fewest-transfers/least-walking choice are visible in the planner card instead of behind the options sheet, and Find trips stays pinned at the bottom of the card so it never scrolls away.
+
 ## What's New in v4.20.3
 
 - **A newer foundation underneath:** the build toolchain now runs on the latest Gradle and Android Gradle Plugin, with the Kotlin compiler on 2.5. Nothing is meant to look different — this release clears the way for the next round of features.
