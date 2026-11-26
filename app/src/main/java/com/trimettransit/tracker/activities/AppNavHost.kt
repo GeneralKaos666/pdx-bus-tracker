@@ -135,6 +135,8 @@ fun AppNavHost(
                         )
                         3 -> TripPlannerScreen(
                             transitRepository = transitRepository,
+                            favoritesRepository = favoritesRepository,
+                            recentStopsRepository = recentStopsRepository,
                             pageVisible = topPagerState.currentPage == page,
                             isDark = isDark
                         )

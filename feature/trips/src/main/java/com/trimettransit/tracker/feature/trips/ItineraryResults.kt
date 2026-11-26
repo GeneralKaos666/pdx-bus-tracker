@@ -1,38 +1,32 @@
 package com.trimettransit.tracker.feature.trips
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -44,105 +38,230 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.TripItinerary
 import com.trimettransit.tracker.model.TripLeg
 import com.trimettransit.tracker.model.TripPlan
 import com.trimettransit.tracker.model.domain.ItineraryRank
+import com.trimettransit.tracker.model.domain.ItineraryRowItem
 import com.trimettransit.tracker.model.domain.itineraryRanks
+import com.trimettransit.tracker.model.domain.itineraryRows
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
+import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
-import com.trimettransit.tracker.ui.theme.AppMotion
+import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.appCardShape
-import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.util.clockTime
 import org.joda.time.DateTime
-@OptIn(ExperimentalMaterial3Api::class)
+
+/** Map strip height above the itinerary list; keeps the route visible without pushing legs offscreen. */
+private val MAP_PREVIEW_HEIGHT = 180.dp
+
+/**
+ * Full-screen results view: a map preview of the selected itinerary on top, then every option
+ * as a comparison card, then the selected option's totals and legs (with waits between them).
+ * Replaces the planner rather than covering part of it, so the leg list gets the full height.
+ */
 @Composable
-internal fun ItineraryResultsSheet(
+internal fun ItineraryResultsScreen(
     plan: TripPlan,
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
-    onDismiss: () -> Unit,
-    ageText: String? = null
+    onBack: () -> Unit,
+    onRefresh: () -> Unit,
+    isRefreshing: Boolean,
+    ageText: String?,
+    mapPreview: @Composable () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val sheetState = rememberBottomSheetState(
-        initialValue = SheetValue.Hidden,
-        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-    )
-    val selected = plan.itineraries.getOrNull(selectedIndex)
+    val ranks = remember(plan.itineraries) { itineraryRanks(plan.itineraries) }
+    val selected = plan.itineraries.getOrNull(selectedIndex) ?: plan.itineraries.firstOrNull()
+    // Clear the floating nav pill, which sits over the bottom of every full-screen tab.
+    val listBottomInset = navPillBottomPadding() + 8.dp
+    val rows = remember(selected) { selected?.let { itineraryRows(it.legs) }.orEmpty() }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
-    ) {
-        Column(modifier = Modifier.padding(bottom = 24.dp)) {
-            val ranks = remember(plan.itineraries) { itineraryRanks(plan.itineraries) }
-            if (ageText != null) {
+    Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(MAP_PREVIEW_HEIGHT)
+            ) {
+                mapPreview()
+                Surface(
+                    onClick = onBack,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shadowElevation = 3.dp,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.back_to_planner),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .size(24.dp)
+                    )
+                }
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 8.dp)
+            ) {
                 Text(
-                    text = ageText,
+                    text = ageText.orEmpty(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
+                    modifier = Modifier.weight(1f)
                 )
+                TextButton(onClick = onRefresh, enabled = !isRefreshing) {
+                    if (isRefreshing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(stringResource(R.string.refresh_trips))
+                    }
+                }
             }
+
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 itemsIndexed(
                     plan.itineraries,
                     key = { index, itinerary -> itinerary.id.ifBlank { "itinerary_$index" } }
                 ) { index, itinerary ->
-                    val rank = ranks.getOrElse(index) { ItineraryRank.OTHER }
-                    val label = when (rank) {
-                        ItineraryRank.FASTEST -> stringResource(R.string.itinerary_1)
-                        ItineraryRank.FEWEST_TRANSFERS -> stringResource(R.string.itinerary_2)
-                        ItineraryRank.LEAST_WALKING -> stringResource(R.string.itinerary_3)
-                        ItineraryRank.OTHER -> stringResource(R.string.itinerary_option, index + 1)
-                    }
-                    FilterChip(
-                        selected = selectedIndex == index,
-                        onClick = { onSelect(index) },
-                        label = { Text("$label · ${formatDurationMillis(itinerary.durationMillis)}") }
+                    ItineraryOptionCard(
+                        itinerary = itinerary,
+                        rank = ranks.getOrElse(index) { ItineraryRank.OTHER },
+                        optionNumber = index + 1,
+                        selected = index == selectedIndex,
+                        onClick = { onSelect(index) }
                     )
                 }
             }
 
-            if (selected != null) {
-                AnimatedContent(
-                    targetState = selectedIndex,
-                    transitionSpec = {
-                        (fadeIn(m3EffectsDefault()) togetherWith fadeOut(m3EffectsDefault())).using(
-                            SizeTransform(sizeAnimationSpec = { _, _ ->
-                                if (AppMotion.reduceMotion) snap() else m3EffectsDefault()
-                            })
+            HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+
+            if (selected == null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(R.string.no_trips_found),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentPadding = PaddingValues(bottom = listBottomInset)
+                ) {
+                    item(key = "summary") {
+                        TripSummaryHeader(
+                            itinerary = selected,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
                         )
-                    },
-                    label = "itineraryBody"
-                ) { idx ->
-                    val body = plan.itineraries.getOrNull(idx) ?: selected
-                    Column {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        TripSummaryHeader(itinerary = body, modifier = Modifier.padding(horizontal = 20.dp))
-                        Spacer(modifier = Modifier.height(12.dp))
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 360.dp)
-                        ) {
-                            itemsIndexed(
-                                body.legs,
-                                key = { index, leg -> "${index}_${leg.mode}_${leg.routeNumber}_${leg.from.latitude}_${leg.from.longitude}_${leg.to.latitude}_${leg.to.longitude}" },
-                                contentType = { _, _ -> "leg" }
-                            ) { _, leg ->
-                                LegRow(leg = leg)
-                            }
+                    }
+                    itemsIndexed(
+                        rows,
+                        key = { index, _ -> index },
+                        contentType = { _, row -> row::class.simpleName.orEmpty() }
+                    ) { _, row ->
+                        when (row) {
+                            is ItineraryRowItem.Leg -> LegRow(leg = row.leg)
+                            is ItineraryRowItem.Wait -> WaitRow(millis = row.millis)
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/** One comparison card in the options strip: times, duration, transfers, and route badges. */
+@Composable
+private fun ItineraryOptionCard(
+    itinerary: TripItinerary,
+    rank: ItineraryRank,
+    optionNumber: Int,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val rankLabel = when (rank) {
+        ItineraryRank.FASTEST -> stringResource(R.string.itinerary_1)
+        ItineraryRank.FEWEST_TRANSFERS -> stringResource(R.string.itinerary_2)
+        ItineraryRank.LEAST_WALKING -> stringResource(R.string.itinerary_3)
+        ItineraryRank.OTHER -> stringResource(R.string.itinerary_option, optionNumber)
+    }
+    Surface(
+        onClick = onClick,
+        shape = appCardShape(),
+        color = if (selected) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        },
+        border = appCardBorder(),
+        modifier = Modifier.width(176.dp)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Text(
+                text = rankLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = stringResource(
+                    R.string.trip_depart_arrive_fmt,
+                    itinerary.departure.clockTimeText(),
+                    itinerary.arrival.clockTimeText()
+                ),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
+            Text(
+                text = formatDurationMillis(itinerary.durationMillis),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                itinerary.legs.filter { !it.isWalk }
+                    .distinctBy { it.routeNumber to it.routeName }
+                    .take(3)
+                    .forEach { leg ->
+                        RouteBadge(leg = leg, compact = true)
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.transfers_count,
+                        itinerary.numberOfTransfers,
+                        itinerary.numberOfTransfers
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
@@ -177,7 +296,11 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
             if (itinerary.numberOfTransfers > 0) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = pluralStringResource(R.plurals.transfers_count, itinerary.numberOfTransfers, itinerary.numberOfTransfers),
+                    text = pluralStringResource(
+                        R.plurals.transfers_count,
+                        itinerary.numberOfTransfers,
+                        itinerary.numberOfTransfers
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -197,11 +320,20 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
                     Spacer(modifier = Modifier.width(6.dp))
                 }
             Text(
-                text = stringResource(
-                    R.string.walk_transit_fmt,
-                    formatDurationMillis(itinerary.walkTimeMillis),
-                    formatDurationMillis(itinerary.transitTimeMillis)
-                ),
+                text = if (itinerary.waitingTimeMillis > 0) {
+                    stringResource(
+                        R.string.walk_ride_wait_fmt,
+                        formatDurationMillis(itinerary.walkTimeMillis),
+                        formatDurationMillis(itinerary.transitTimeMillis),
+                        formatDurationMillis(itinerary.waitingTimeMillis)
+                    )
+                } else {
+                    stringResource(
+                        R.string.walk_transit_fmt,
+                        formatDurationMillis(itinerary.walkTimeMillis),
+                        formatDurationMillis(itinerary.transitTimeMillis)
+                    )
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
@@ -222,12 +354,14 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
 internal fun RouteBadge(
     leg: TripLeg,
     modifier: Modifier = Modifier,
-    contentDescription: String? = null
+    contentDescription: String? = null,
+    compact: Boolean = false
 ) {
     val scheme = MaterialTheme.colorScheme
     val letter = leg.mode.transitTypeLetter()
     val badgeDescription = contentDescription
     val overrides = LocalAppearanceStyle.current.transitTypeColors
+    val badgeSize: Dp = if (compact) 22.dp else 28.dp
     Surface(
         shape = appCardShape(),
         color = transitColor(letter, scheme, overrides),
@@ -240,14 +374,19 @@ internal fun RouteBadge(
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(28.dp)
+                .size(badgeSize)
                 .clearAndSetSemantics { }
         ) {
             Text(
                 text = (leg.routeNumber?.takeIf { it.isNotEmpty() && letter == "B" }) ?: letter,
-                style = MaterialTheme.typography.labelMedium,
+                style = if (compact) {
+                    MaterialTheme.typography.labelSmall
+                } else {
+                    MaterialTheme.typography.labelMedium
+                },
                 fontWeight = FontWeight.Bold,
-                color = transitOnColor(letter, scheme, overrides)
+                color = transitOnColor(letter, scheme, overrides),
+                maxLines = 1
             )
         }
     }
@@ -255,7 +394,6 @@ internal fun RouteBadge(
 
 @Composable
 internal fun LegRow(leg: TripLeg) {
-    val scheme = MaterialTheme.colorScheme
     Row(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
         if (leg.isWalk) {
             Icon(
@@ -289,7 +427,6 @@ internal fun LegRow(leg: TripLeg) {
                 }
             }
         } else {
-            val letter = leg.mode.transitTypeLetter()
             RouteBadge(leg = leg)
             Spacer(modifier = Modifier.width(12.dp))
             Column {
@@ -330,6 +467,31 @@ internal fun LegRow(leg: TripLeg) {
                 }
             }
         }
+    }
+}
+
+/** A quiet divider between legs when the rider has to wait for the next departure. */
+@Composable
+private fun WaitRow(millis: Long) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Schedule,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = stringResource(
+                R.string.wait_minutes_fmt,
+                (millis / 60_000L).coerceAtLeast(1L)
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

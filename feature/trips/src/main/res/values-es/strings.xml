@@ -18,7 +18,19 @@
     <string name="origin_field_hint">Origen</string>
     <string name="destination_field_hint">Destino</string>
     <string name="depart_now">Salir ahora</string>
+    <string name="depart_at">Salir a las</string>
     <string name="arrive_by">Llegar a</string>
+    <string name="depart_at_time_title">Salir a las</string>
+    <string name="trip_today_fmt">Hoy %1$s</string>
+    <string name="trip_tomorrow_fmt">Mañana %1$s</string>
+    <string name="trip_date_time_fmt">%1$s %2$s</string>
+    <string name="back_to_planner">Volver al planificador</string>
+    <string name="refresh_trips">Actualizar</string>
+    <string name="recent_trips_label">Viajes recientes</string>
+    <string name="favorites_label">Favoritos</string>
+    <string name="recent_stops_label">Paradas recientes</string>
+    <string name="wait_minutes_fmt">Espera %1$d min</string>
+    <string name="trip_depart_arrive_fmt">%1$s → %2$s</string>
     <string name="find_trips">Buscar viajes</string>
     <string name="planning_trips">Planificando…</string>
     <string name="no_trips_found">No se encontraron viajes</string>
@@ -43,6 +55,7 @@
     <string name="no_stops_found">Ninguna parada coincide con esa búsqueda</string>
     <string name="fare_label">Tarifa: %1$s</string>
     <string name="walk_transit_fmt">Caminar %1$s · Transporte %2$s</string>
+    <string name="walk_ride_wait_fmt">Caminar %1$s · Viaje %2$s · Espera %3$s</string>
     <string name="trip_options_title">Opciones de viaje</string>
     <string name="trip_options_open">Opciones</string>
     <string name="trip_options_mode">Modo de viaje</string>

@@ -3,7 +3,6 @@ package com.trimettransit.tracker.feature.trips
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Remove
@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,9 +59,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.Stop
-import com.trimettransit.tracker.model.TripPlannerMin
-import com.trimettransit.tracker.model.TripPlannerMode
+import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripRequestOptions
+import com.trimettransit.tracker.model.repository.FavoritesRepository
+import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.searchStops
@@ -82,7 +82,11 @@ import kotlin.time.Duration.Companion.milliseconds
 internal fun EndpointPickerSheet(
     slot: PickSlot,
     transitRepository: TransitRepository,
+    favoritesRepository: FavoritesRepository,
+    recentStopsRepository: RecentStopsRepository,
+    recentTrips: List<TripPoint>,
     onStopPicked: (Stop) -> Unit,
+    onTripPointPicked: (TripPoint) -> Unit,
     onMyLocationPicked: () -> Unit,
     onMapPinPicked: () -> Unit,
     onDismiss: () -> Unit
@@ -92,6 +96,15 @@ internal fun EndpointPickerSheet(
         enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
     )
     var tab by remember { mutableIntStateOf(0) }
+    var favorites by remember { mutableStateOf<List<Stop>>(emptyList()) }
+    var recentStops by remember { mutableStateOf<List<Stop>>(emptyList()) }
+
+    // Local SQLite reads: the quick picks appear as soon as they resolve, and a failure just
+    // leaves the sections out (search still works).
+    LaunchedEffect(Unit) {
+        favorites = runCatching { favoritesRepository.getFavorites() }.getOrDefault(emptyList())
+        recentStops = runCatching { recentStopsRepository.getRecentStops() }.getOrDefault(emptyList())
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -124,6 +137,10 @@ internal fun EndpointPickerSheet(
                 StopSearchPanel(
                     transitRepository = transitRepository,
                     onStopClick = onStopPicked,
+                    favorites = favorites,
+                    recentStops = recentStops,
+                    recentTrips = recentTrips,
+                    onTripPointClick = onTripPointPicked,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
@@ -194,6 +211,10 @@ internal fun EndpointPickerSheet(
 internal fun StopSearchPanel(
     transitRepository: TransitRepository,
     onStopClick: (Stop) -> Unit,
+    favorites: List<Stop>,
+    recentStops: List<Stop>,
+    recentTrips: List<TripPoint>,
+    onTripPointClick: (TripPoint) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var query by remember { mutableStateOf("") }
@@ -286,13 +307,13 @@ internal fun StopSearchPanel(
                 }
             }
             query.isBlank() -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = stringResource(R.string.search_stops_prompt),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                QuickPicksList(
+                    favorites = favorites,
+                    recentStops = recentStops,
+                    recentTrips = recentTrips,
+                    onStopClick = onStopClick,
+                    onTripPointClick = onTripPointClick
+                )
             }
             results.isEmpty() -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -323,6 +344,109 @@ internal fun StopSearchPanel(
     }
 }
 
+/**
+ * The empty-query state of the stop search: remembered trips, favorites, then recent stops.
+ * These are the endpoints riders pick most often, so they cost one tap instead of a search.
+ */
+@Composable
+private fun QuickPicksList(
+    favorites: List<Stop>,
+    recentStops: List<Stop>,
+    recentTrips: List<TripPoint>,
+    onStopClick: (Stop) -> Unit,
+    onTripPointClick: (TripPoint) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val favoriteIds = favorites.map { it.locId }.toSet()
+    val favoriteStops = favorites.take(QUICK_PICK_LIMIT)
+    val recentsOnly = recentStops.filterNot { it.locId in favoriteIds }.take(QUICK_PICK_LIMIT)
+    val trips = recentTrips.take(QUICK_PICK_LIMIT)
+
+    if (trips.isEmpty() && favoriteStops.isEmpty() && recentsOnly.isEmpty()) {
+        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = stringResource(R.string.search_stops_prompt),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
+        if (trips.isNotEmpty()) {
+            item(key = "recentTripsHeader") {
+                QuickPickHeader(stringResource(R.string.recent_trips_label))
+            }
+            items(trips, key = { "trip_${it.latitude}_${it.longitude}" }) { trip ->
+                TripPointRow(trip = trip, onClick = { onTripPointClick(trip) })
+            }
+        }
+        if (favoriteStops.isNotEmpty()) {
+            item(key = "favoritesHeader") {
+                QuickPickHeader(stringResource(R.string.favorites_label))
+            }
+            items(favoriteStops, key = { "favorite_${it.locId}" }) { stop ->
+                StopSearchItem(stop = stop, onClick = { onStopClick(stop) })
+            }
+        }
+        if (recentsOnly.isNotEmpty()) {
+            item(key = "recentStopsHeader") {
+                QuickPickHeader(stringResource(R.string.recent_stops_label))
+            }
+            items(recentsOnly, key = { "recent_${it.locId}" }) { stop ->
+                StopSearchItem(stop = stop, onClick = { onStopClick(stop) })
+            }
+        }
+    }
+}
+
+private const val QUICK_PICK_LIMIT = 8
+
+@Composable
+private fun QuickPickHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp)
+    )
+}
+
+@Composable
+private fun TripPointRow(trip: TripPoint, onClick: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressScale(source)
+            .clickable(
+                interactionSource = source,
+                indication = LocalIndication.current,
+                onClick = onClick
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.History,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = trip.description.ifBlank { stringResource(R.string.pinned_location) },
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
 /** Slim text style for the search input field. */
 @Composable
 internal fun modalSearchTextStyle() =
@@ -344,32 +468,6 @@ internal fun TripOptionsSheet(
             )
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                text = stringResource(R.string.trip_options_mode),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ModeChip(TripPlannerMode.ALL, R.string.trip_mode_all, options, onOptionsChanged)
-                ModeChip(TripPlannerMode.BUS, R.string.trip_mode_bus, options, onOptionsChanged)
-                ModeChip(TripPlannerMode.TRAIN, R.string.trip_mode_train, options, onOptionsChanged)
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = stringResource(R.string.trip_options_min),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MinChip(TripPlannerMin.TIME, R.string.trip_min_time, options, onOptionsChanged)
-                MinChip(TripPlannerMin.TRANSFERS, R.string.trip_min_transfers, options, onOptionsChanged)
-                MinChip(TripPlannerMin.WALKING, R.string.trip_min_walking, options, onOptionsChanged)
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
             Text(
                 text = stringResource(R.string.trip_options_walk),
                 style = MaterialTheme.typography.labelLarge,
@@ -447,32 +545,4 @@ internal fun TripOptionsSheet(
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
-}
-
-@Composable
-private fun ModeChip(
-    mode: TripPlannerMode,
-    labelRes: Int,
-    options: TripRequestOptions,
-    onOptionsChanged: (TripRequestOptions) -> Unit
-) {
-    FilterChip(
-        selected = options.mode == mode,
-        onClick = { onOptionsChanged(options.copy(mode = mode)) },
-        label = { Text(stringResource(labelRes)) }
-    )
-}
-
-@Composable
-private fun MinChip(
-    min: TripPlannerMin,
-    labelRes: Int,
-    options: TripRequestOptions,
-    onOptionsChanged: (TripRequestOptions) -> Unit
-) {
-    FilterChip(
-        selected = options.min == min,
-        onClick = { onOptionsChanged(options.copy(min = min)) },
-        label = { Text(stringResource(labelRes)) }
-    )
 }

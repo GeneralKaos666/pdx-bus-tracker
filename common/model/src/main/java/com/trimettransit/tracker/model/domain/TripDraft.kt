@@ -2,15 +2,17 @@ package com.trimettransit.tracker.model.domain
 
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripRequestOptions
+import com.trimettransit.tracker.model.TripRequestTime
 
 /**
  * The user's in-progress trip-plan request: both endpoints plus the scheduling choice.
- * Depart-now is represented by leaving both times null; arrive-by sets [arriveByMillis].
- * ([departAtMillis] is reserved for a future depart-at choice; nothing sets it yet.)
+ * Depart-now leaves both times null, depart-at sets [departAtMillis], and arrive-by sets
+ * [arriveByMillis]. The two timed modes are mutually exclusive; the screen clears one when
+ * setting the other.
  *
  * A plain value so the planner screen can hold it in `rememberSaveable` and so future
  * metadata can join it without changing the API shape. [plannedAtMillis] records when the
- * current results were fetched, so the sheet header can show the data age.
+ * current results were fetched, so the results header can show the data age.
  */
 data class TripDraft(
     val origin: TripPoint? = null,
@@ -28,9 +30,21 @@ data class TripDraft(
     fun isArriveByStale(nowMillis: Long): Boolean =
         arriveByMillis != null && arriveByMillis <= nowMillis
 
-    /** True when the draft has both endpoints and no stale arrive-by time. */
+    /** True when the chosen depart-at time has already gone. Depart-now has no time to stale. */
+    fun isDepartAtStale(nowMillis: Long): Boolean =
+        departAtMillis != null && departAtMillis <= nowMillis
+
+    /** True when the draft has both endpoints and no stale scheduled time. */
     fun isSubmittable(nowMillis: Long): Boolean =
-        origin != null && destination != null && !isArriveByStale(nowMillis)
+        origin != null && destination != null &&
+            !isArriveByStale(nowMillis) && !isDepartAtStale(nowMillis)
+
+    /** The scheduling choice to send: arrive-by wins, then depart-at, else depart-now. */
+    fun requestTime(): TripRequestTime {
+        val arriveBy = arriveByMillis
+        if (arriveBy != null) return TripRequestTime(arriveBy = true, timeMillis = arriveBy)
+        return TripRequestTime(arriveBy = false, timeMillis = departAtMillis)
+    }
 
     /**
      * Human-readable age of the fetched results, or null when nothing has been planned yet.

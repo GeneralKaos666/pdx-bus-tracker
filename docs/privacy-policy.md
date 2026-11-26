@@ -33,6 +33,9 @@ stops, favorites, and arrivals by name.
 - **Favorites and recent stops** are saved in the app's local SQLite database on your
   device (including stop names/IDs and their map coordinates). This data never leaves
   your device and is removed if you uninstall the app or clear its data.
+- **Recent trip destinations** (the last few places you planned a trip to, with their map
+  coordinates) are stored in local app preferences so the Trip Planner can offer them
+  again. They stay on your device and are removed with the rest of the app's data.
 - **Settings** (theme, display preferences) are stored in local app preferences.
 - **Home-screen widget:** the optional "Next arrivals" widget stores a short arrival
   snapshot (stop, line, and countdown time) in local preferences to display the next
@@ -82,7 +85,7 @@ stops, favorites, and arrivals by name.
 ## 6. Data deletion
 
 Uninstalling the app (or clearing its storage from Android Settings → Apps) deletes all
-favorites, recent stops, and settings stored on the device. There is no server-side
+favorites, recent stops, recent trip destinations, and settings stored on the device. There is no server-side
 account or stored profile to delete.
 
 ## 7. Open source

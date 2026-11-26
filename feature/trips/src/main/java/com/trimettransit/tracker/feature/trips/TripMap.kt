@@ -43,6 +43,8 @@ import com.trimettransit.tracker.util.systemReduceMotion
 import java.util.Locale
 private const val PLAN_CAMERA_ZOOM = 14.0
 private const val MAX_CAMERA_FIT_ATTEMPTS = 3
+/** Padding around the fitted plan on the full planner map (top leaves room for the card). */
+private val DEFAULT_MAP_FIT_PADDING = intArrayOf(96, 180, 96, 96)
 
 internal enum class PickSlot { NONE, ORIGIN, DEST }
 /**
@@ -59,12 +61,14 @@ internal fun TripMap(
     onMapTap: (MapCoordinate) -> Unit,
     modifier: Modifier = Modifier,
     isDark: Boolean = false,
-    legGeometries: Map<Int, List<GeoPoint>> = emptyMap()
+    legGeometries: Map<Int, List<GeoPoint>> = emptyMap(),
+    fitPadding: IntArray = DEFAULT_MAP_FIT_PADDING
 ) {
     val currentOnMapTap by rememberUpdatedState(onMapTap)
     val pickingActive = picking != PickSlot.NONE
     val currentPickingActive by rememberUpdatedState(pickingActive)
     val currentLegGeometries by rememberUpdatedState(legGeometries)
+    val currentFitPadding by rememberUpdatedState(fitPadding)
     val mapState = remember { TripMapState() }
     val fitSize = remember { intArrayOf(-1, -1) }
     val density = LocalDensity.current.density
@@ -249,7 +253,10 @@ internal fun TripMap(
             mapState.push(origin, dest, itinerary)
             myLocation?.let { mapState.applyMe(it.latitude, it.longitude) }
             if (map != null) {
-                fitPlanCameraIfReady(view, map, mapState, origin, dest, itinerary, fitSize, 0, reduceMotion)
+                fitPlanCameraIfReady(
+                    view, map, mapState, origin, dest, itinerary, fitSize,
+                    padding = currentFitPadding, attempts = 0, reduceMotion = reduceMotion
+                )
             }
         }
     )
@@ -264,6 +271,7 @@ internal fun fitPlanCameraIfReady(
     dest: TripPoint?,
     itinerary: TripItinerary?,
     fitSize: IntArray,
+    padding: IntArray = DEFAULT_MAP_FIT_PADDING,
     attempts: Int = 0,
     reduceMotion: Boolean = false
 ) {
@@ -289,7 +297,10 @@ internal fun fitPlanCameraIfReady(
         if (attempts >= MAX_CAMERA_FIT_ATTEMPTS) return
         view.postDelayed({
             if (view.isAttachedToWindow) {
-                fitPlanCameraIfReady(view, map, state, origin, dest, itinerary, fitSize, attempts + 1, reduceMotion)
+                fitPlanCameraIfReady(
+                    view, map, state, origin, dest, itinerary, fitSize,
+                    padding = padding, attempts = attempts + 1, reduceMotion = reduceMotion
+                )
             }
         }, 150)
         return
@@ -311,7 +322,7 @@ internal fun fitPlanCameraIfReady(
         }
         return
     }
-    val cam = map.getCameraForBounds(points, intArrayOf(96, 180, 96, 96))
+    val cam = map.getCameraForBounds(points, padding)
     if (cam == null) {
         val update = MapCameraUpdates.coordinateZoom(points.first(), PLAN_CAMERA_ZOOM)
         if (reduceMotion) {

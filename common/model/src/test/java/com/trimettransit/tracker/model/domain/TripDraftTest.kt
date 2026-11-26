@@ -36,7 +36,29 @@ class TripDraftTest {
     fun `depart-now draft with both endpoints is submittable`() {
         val draft = TripDraft(origin = origin, destination = destination)
         assertFalse(draft.isArriveByStale(now))
+        assertFalse(draft.isDepartAtStale(now))
         assertTrue(draft.isSubmittable(now))
+    }
+
+    @Test
+    fun `future depart-at is submittable`() {
+        val draft = TripDraft(origin = origin, destination = destination, departAtMillis = now + 60_000L)
+        assertFalse(draft.isDepartAtStale(now))
+        assertTrue(draft.isSubmittable(now))
+    }
+
+    @Test
+    fun `past depart-at is stale and not submittable`() {
+        val draft = TripDraft(origin = origin, destination = destination, departAtMillis = now - 60_000L)
+        assertTrue(draft.isDepartAtStale(now))
+        assertFalse(draft.isSubmittable(now))
+    }
+
+    @Test
+    fun `depart-at exactly now is stale, never sent`() {
+        val draft = TripDraft(origin = origin, destination = destination, departAtMillis = now)
+        assertTrue(draft.isDepartAtStale(now))
+        assertFalse(draft.isSubmittable(now))
     }
 
     @Test
