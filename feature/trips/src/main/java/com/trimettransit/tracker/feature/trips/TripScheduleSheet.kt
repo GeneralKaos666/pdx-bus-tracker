@@ -1,6 +1,9 @@
 package com.trimettransit.tracker.feature.trips
 
 import android.text.format.DateFormat
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -31,6 +35,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.domain.ScheduleDayKind
 import com.trimettransit.tracker.model.domain.scheduleDayKind
+import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.theme.m3ContentExpand
+import com.trimettransit.tracker.ui.theme.m3ContentShrink
 import com.trimettransit.tracker.util.clockTime
 import org.joda.time.DateTime
 import java.time.Instant
@@ -75,6 +82,17 @@ internal fun TripScheduleSheet(
     )
     val chosenIsStale = chosenMillis != null && chosenMillis <= System.currentTimeMillis()
 
+    // Quick picks for the times riders actually choose. The date+time pickers stay for
+    // everything else, but a common trip should not need a calendar scroll.
+    fun applyPreset(minutesAhead: Int) {
+        val target = System.currentTimeMillis() + minutesAhead * 60_000L
+        val calendar = java.util.Calendar.getInstance().apply { timeInMillis = target }
+        dateState.selectedDateMillis = utcMidnightMillis(target, zone)
+        timeState.hour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+        timeState.minute = calendar.get(java.util.Calendar.MINUTE)
+    }
+    val presets = listOf(15, 30, 60, 120)
+
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
             modifier = Modifier
@@ -90,11 +108,32 @@ internal fun TripScheduleSheet(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                presets.forEach { minutes ->
+                    AssistChip(
+                        onClick = { applyPreset(minutes) },
+                        label = {
+                            Text(
+                                if (minutes < 60) {
+                                    stringResource(R.string.trip_preset_minutes_fmt, minutes)
+                                } else {
+                                    stringResource(R.string.trip_preset_hours_fmt, minutes / 60)
+                                }
+                            )
+                        }
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
             DatePicker(state = dateState, modifier = Modifier.fillMaxWidth())
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             TimePicker(state = timeState, modifier = Modifier.fillMaxWidth())
-            if (chosenIsStale) {
+            AnimatedVisibility(
+                visible = chosenIsStale,
+                enter = m3ContentExpand(),
+                exit = m3ContentShrink()
+            ) {
                 Text(
                     text = stringResource(R.string.arrive_by_in_past),
                     style = MaterialTheme.typography.bodySmall,
@@ -104,9 +143,15 @@ internal fun TripScheduleSheet(
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(modifier = Modifier.weight(1f))
-                TextButton(onClick = onDismiss) {
+                val cancelSource = remember { MutableInteractionSource() }
+                TextButton(
+                    onClick = onDismiss,
+                    interactionSource = cancelSource,
+                    modifier = Modifier.pressScale(cancelSource)
+                ) {
                     Text(stringResource(R.string.cancel))
                 }
+                val doneSource = remember { MutableInteractionSource() }
                 TextButton(
                     // A time that has already passed cannot be planned for, so it cannot be
                     // confirmed either.
@@ -114,7 +159,9 @@ internal fun TripScheduleSheet(
                     onClick = {
                         chosenMillis?.let(onConfirm)
                         onDismiss()
-                    }
+                    },
+                    interactionSource = doneSource,
+                    modifier = Modifier.pressScale(doneSource)
                 ) {
                     Text(stringResource(R.string.done))
                 }

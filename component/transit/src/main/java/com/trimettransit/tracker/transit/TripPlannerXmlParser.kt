@@ -114,7 +114,10 @@ internal object TripPlannerXmlParser {
             // TriMet echoes back the URL-encoded fromPlace/toPlace label we sent as the
             // leg/trip description, so undo that encoding (bear minimum: decode %HH only).
             // The fallback keeps the JVM-defined contract (never null) for stub mocks.
-            description = Uri.decode(obj.textOf("description")).orEmpty()
+            description = Uri.decode(obj.textOf("description")).orEmpty(),
+            // Numbered stops carry their TriMet stop ID; free points (addresses, map pins)
+            // carry none, which is what gates "open arrivals" on a leg.
+            stopId = obj.textOf("stopId").takeIf { it.isNotBlank() }
         )
         return if (point.isValid) point else TripPoint(0.0, 0.0, point.description)
     }

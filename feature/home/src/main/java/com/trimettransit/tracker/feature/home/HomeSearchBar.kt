@@ -1,6 +1,7 @@
 package com.trimettransit.tracker.feature.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -56,6 +57,7 @@ import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3ContentExpand
 import com.trimettransit.tracker.ui.theme.m3ContentShrink
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -242,51 +244,63 @@ private fun SearchResultsDropdown(
             tonalElevation = 4.dp,
             modifier = Modifier.fillMaxHeight(0.65f)
         ) {
-            when {
+            val panelState = when {
                 // The rest of the app shows shimmer placeholders while a list loads; a lone
                 // spinner here was the odd one out.
-                isLoading && allStops == null -> ListLoadingSkeleton(rows = 4)
-                hasError && allStops == null -> ErrorState(
-                    message = stringResource(R.string.no_connection),
-                    onRetry = onRetry
-                )
-                results.isEmpty() -> SearchPanelMessage(stringResource(R.string.no_stops_found))
-                else -> {
-                    val dense = rememberDenseGridEnabled()
-                    val listState = rememberLazyGridState()
-                    val smoothFling = rememberSmoothFlingBehavior()
-                    var entranceDone by remember { mutableStateOf(false) }
-                    LaunchedEffect(Unit) {
-                        delay(700)
-                        entranceDone = true
-                    }
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(if (dense) 2 else 1),
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        flingBehavior = smoothFling,
-                        contentPadding = PaddingValues(
-                            start = 16.dp,
-                            end = 16.dp,
-                            bottom = navPillBottomPadding()
-                        ),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        itemsIndexed(results, key = { _, stop -> stop.locId }, contentType = { _, _ -> "stopSearch" }) { index, stop ->
-                            StopSearchItem(
-                                stop = stop,
-                                onClick = { onStopClick(stop) },
-                                modifier = (if (AppMotion.reduceMotion) Modifier else Modifier.animateItem())
-                                    .staggeredFadeIn(index, enabled = !entranceDone),
-                                gridMode = dense,
-                                trailingContent = {
-                                    FavoriteToggleButton(
-                                        isFavorite = favoriteIds.contains(stop.locId),
-                                        onClick = { onToggleFavorite(stop) }
-                                    )
-                                }
-                            )
+                isLoading && allStops == null -> 0
+                hasError && allStops == null -> 1
+                results.isEmpty() -> 2
+                else -> 3
+            }
+            Crossfade(
+                targetState = panelState,
+                animationSpec = m3EffectsDefault(),
+                label = "searchPanelState"
+            ) { state ->
+                when (state) {
+                    0 -> ListLoadingSkeleton(rows = 4)
+                    1 -> ErrorState(
+                        message = stringResource(R.string.no_connection),
+                        onRetry = onRetry
+                    )
+                    2 -> SearchPanelMessage(stringResource(R.string.no_stops_found))
+                    else -> {
+                        val dense = rememberDenseGridEnabled()
+                        val listState = rememberLazyGridState()
+                        val smoothFling = rememberSmoothFlingBehavior()
+                        var entranceDone by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) {
+                            delay(700)
+                            entranceDone = true
+                        }
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(if (dense) 2 else 1),
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            flingBehavior = smoothFling,
+                            contentPadding = PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                bottom = navPillBottomPadding()
+                            ),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            itemsIndexed(results, key = { _, stop -> stop.locId }, contentType = { _, _ -> "stopSearch" }) { index, stop ->
+                                StopSearchItem(
+                                    stop = stop,
+                                    onClick = { onStopClick(stop) },
+                                    modifier = (if (AppMotion.reduceMotion) Modifier else Modifier.animateItem())
+                                        .staggeredFadeIn(index, enabled = !entranceDone),
+                                    gridMode = dense,
+                                    trailingContent = {
+                                        FavoriteToggleButton(
+                                            isFavorite = favoriteIds.contains(stop.locId),
+                                            onClick = { onToggleFavorite(stop) }
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 }

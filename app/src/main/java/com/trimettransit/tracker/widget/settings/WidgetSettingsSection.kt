@@ -4,6 +4,9 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -37,6 +40,8 @@ import com.trimettransit.tracker.ui.components.SettingsCard
 import com.trimettransit.tracker.ui.components.SettingsIconCircle
 import com.trimettransit.tracker.ui.components.SettingsRadioOption
 import com.trimettransit.tracker.ui.components.SettingsRowOption
+import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.widget.NextArrivalsWidget
 import com.trimettransit.tracker.widget.NextArrivalsWidgetReceiver
 import com.trimettransit.tracker.widget.WidgetSnapshotCache
@@ -107,6 +112,7 @@ fun WidgetSettingsSection() {
         // Direct pin entry point; hidden on launchers without pin support.
         if (AppWidgetManager.getInstance(context).isRequestPinAppWidgetSupported) {
             val scope = rememberCoroutineScope()
+            val pinSource = remember { MutableInteractionSource() }
             TextButton(
                 onClick = {
                     scope.launch {
@@ -121,22 +127,33 @@ fun WidgetSettingsSection() {
                         }.onFailure { e -> Timber.w(e, "Widget pin request failed") }
                     }
                 },
-                modifier = Modifier.padding(start = 8.dp, end = 8.dp)
+                interactionSource = pinSource,
+                modifier = Modifier
+                    .padding(start = 8.dp, end = 8.dp)
+                    .pressScale(pinSource)
             ) {
                 Text(stringResource(R.string.widget_settings_add))
             }
         }
 
-        if (placedWidgetIds.isEmpty()) {
-            Text(
-                text = stringResource(R.string.widget_settings_no_widgets),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-            )
-        } else {
-            placedWidgetIds.forEach { widgetId ->
-                WidgetPlacedRow(widgetId = widgetId)
+        Crossfade(
+            targetState = placedWidgetIds.isEmpty(),
+            animationSpec = m3EffectsDefault(),
+            label = "widgetPlacedState"
+        ) { empty ->
+            if (empty) {
+                Text(
+                    text = stringResource(R.string.widget_settings_no_widgets),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                )
+            } else {
+                Column {
+                    placedWidgetIds.forEach { widgetId ->
+                        WidgetPlacedRow(widgetId = widgetId)
+                    }
+                }
             }
         }
     }
@@ -172,7 +189,12 @@ private fun WidgetPlacedRow(widgetId: Int) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
-        TextButton(onClick = { openWidgetConfig(context, widgetId) }) {
+        val editSource = remember { MutableInteractionSource() }
+        TextButton(
+            onClick = { openWidgetConfig(context, widgetId) },
+            interactionSource = editSource,
+            modifier = Modifier.pressScale(editSource)
+        ) {
             Text(stringResource(R.string.widget_settings_edit))
         }
     }

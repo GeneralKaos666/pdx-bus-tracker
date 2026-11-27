@@ -1,5 +1,9 @@
 package com.trimettransit.tracker.activities
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -50,6 +54,8 @@ import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.notifications.DepartureAlertPrefs
 import com.trimettransit.tracker.notifications.DepartureAlertsSection
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
+import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.widget.WidgetScheduler
 import com.trimettransit.tracker.widget.settings.WidgetSettingsSection
 
@@ -137,6 +143,9 @@ fun AppNavHost(
                             transitRepository = transitRepository,
                             favoritesRepository = favoritesRepository,
                             recentStopsRepository = recentStopsRepository,
+                            onNavigateToArrivals = { stop: Stop, routeId: Int ->
+                                onNavigateToArrivals(stop, routeId)
+                            },
                             pageVisible = topPagerState.currentPage == page,
                             isDark = isDark
                         )
@@ -156,37 +165,45 @@ fun AppNavHost(
                         topLevelPage(page)
                     }
                     VerticalDivider(modifier = Modifier.fillMaxHeight())
-                    val dest = detailStop
-                    if (dest == null) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Filled.Schedule,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(48.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = stringResource(R.string.expanded_arrivals_placeholder),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                    AnimatedContent(
+                        targetState = detailStop,
+                        transitionSpec = {
+                            fadeIn(m3EffectsDefault()) togetherWith fadeOut(m3EffectsFast())
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        label = "detailPane"
+                    ) { paneDest ->
+                        if (paneDest == null) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        Icons.Filled.Schedule,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = stringResource(R.string.expanded_arrivals_placeholder),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
-                        }
-                    } else {
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .padding(start = 8.dp, end = 16.dp)
-                        ) {
-                            arrivalsDetailPane(dest)
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(start = 8.dp, end = 16.dp)
+                            ) {
+                                arrivalsDetailPane(paneDest)
+                            }
                         }
                     }
                 }

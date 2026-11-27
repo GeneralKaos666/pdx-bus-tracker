@@ -89,12 +89,20 @@ fun StopsScreen(
         )
         // Persistent "where am I": the pill's own label is hidden on narrow phones, and the
         // accordion can be scrolled far from the route it belongs to.
-        selectedRoute?.let { route ->
-            LineContextChip(
-                route = route,
-                direction = selectedDirection,
-                onCollapse = { onRouteToggle(route) }
-            )
+        var lastSelectedRoute by remember { mutableStateOf<Route?>(null) }
+        selectedRoute?.let { lastSelectedRoute = it }
+        AnimatedVisibility(
+            visible = selectedRoute != null,
+            enter = m3ContentExpand(),
+            exit = m3ContentShrink(shrinkTowards = Alignment.Top)
+        ) {
+            lastSelectedRoute?.let { route ->
+                LineContextChip(
+                    route = route,
+                    direction = selectedDirection,
+                    onCollapse = { onRouteToggle(route) }
+                )
+            }
         }
         StopsRouteList(
             transitRepository = transitRepository,
@@ -417,23 +425,33 @@ private fun LineContextChip(
             .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = buildString {
-                    append(route.routeId)
-                    if (route.desc.isNotBlank()) append(" · ").append(route.desc)
-                    direction?.desc?.takeIf { it.isNotBlank() }?.let { append(" · ").append(it) }
-                },
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
-            )
+            val label = buildString {
+                append(route.routeId)
+                if (route.desc.isNotBlank()) append(" · ").append(route.desc)
+                direction?.desc?.takeIf { it.isNotBlank() }?.let { append(" · ").append(it) }
+            }
+            Crossfade(
+                targetState = label,
+                animationSpec = m3EffectsDefault(),
+                modifier = Modifier.weight(1f),
+                label = "lineContextLabel"
+            ) { text ->
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
+                )
+            }
+            val collapseSource = remember { MutableInteractionSource() }
             IconButton(
                 onClick = onCollapse,
-                modifier = Modifier.size(48.dp)
+                interactionSource = collapseSource,
+                modifier = Modifier
+                    .size(48.dp)
+                    .pressScale(collapseSource)
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,

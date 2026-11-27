@@ -1,5 +1,7 @@
 package com.trimettransit.tracker.feature.trips
 
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,22 +22,33 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,12 +61,16 @@ import com.trimettransit.tracker.model.domain.ItineraryRank
 import com.trimettransit.tracker.model.domain.ItineraryRowItem
 import com.trimettransit.tracker.model.domain.itineraryRanks
 import com.trimettransit.tracker.model.domain.itineraryRows
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
+import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.appCardShape
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.util.clockTime
 import org.joda.time.DateTime
 
@@ -68,19 +86,25 @@ private val MAP_PREVIEW_HEIGHT = 180.dp
 internal fun ItineraryResultsScreen(
     plan: TripPlan,
     selectedIndex: Int,
+    originLabel: String,
+    destinationLabel: String,
     onSelect: (Int) -> Unit,
     onBack: () -> Unit,
     onRefresh: () -> Unit,
     isRefreshing: Boolean,
     ageText: String?,
+    canBrowseEarlier: Boolean,
+    onEarlier: () -> Unit,
+    onLater: () -> Unit,
+    onSwapEndpoints: () -> Unit,
+    onShare: () -> Unit,
+    onLegClick: (TripLeg) -> Unit,
     mapPreview: @Composable () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val ranks = remember(plan.itineraries) { itineraryRanks(plan.itineraries) }
-    val selected = plan.itineraries.getOrNull(selectedIndex) ?: plan.itineraries.firstOrNull()
     // Clear the floating nav pill, which sits over the bottom of every full-screen tab.
     val listBottomInset = navPillBottomPadding() + 8.dp
-    val rows = remember(selected) { selected?.let { itineraryRows(it.legs) }.orEmpty() }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -90,12 +114,15 @@ internal fun ItineraryResultsScreen(
                     .height(MAP_PREVIEW_HEIGHT)
             ) {
                 mapPreview()
+                val backSource = remember { MutableInteractionSource() }
                 Surface(
                     onClick = onBack,
+                    interactionSource = backSource,
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     shadowElevation = 3.dp,
                     modifier = Modifier
+                        .pressScale(backSource)
                         .align(Alignment.TopStart)
                         .padding(12.dp)
                 ) {
@@ -104,8 +131,64 @@ internal fun ItineraryResultsScreen(
                         contentDescription = stringResource(R.string.back_to_planner),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
-                            .padding(10.dp)
+                            .padding(12.dp)
                             .size(24.dp)
+                    )
+                }
+                val shareSource = remember { MutableInteractionSource() }
+                Surface(
+                    onClick = onShare,
+                    interactionSource = shareSource,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shadowElevation = 3.dp,
+                    modifier = Modifier
+                        .pressScale(shareSource)
+                        .align(Alignment.TopEnd)
+                        .padding(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Share,
+                        contentDescription = stringResource(R.string.share_trip),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .size(24.dp)
+                    )
+                }
+            }
+
+            // Where the results go. The map alone is ambiguous once the sheet is reopened
+            // later, and the swap control is the one-tap return trip.
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 8.dp, top = 4.dp)
+                    .semantics { liveRegion = LiveRegionMode.Polite }
+            ) {
+                Text(
+                    text = stringResource(R.string.trip_from_to_fmt, originLabel, destinationLabel),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                val swapSource = remember { MutableInteractionSource() }
+                IconButton(
+                    onClick = onSwapEndpoints,
+                    enabled = !isRefreshing,
+                    interactionSource = swapSource,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .pressScale(swapSource)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SwapVert,
+                        contentDescription = stringResource(R.string.swap_origin_destination),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -122,7 +205,36 @@ internal fun ItineraryResultsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f)
                 )
-                TextButton(onClick = onRefresh, enabled = !isRefreshing) {
+                val browses = !isRefreshing
+                IconButton(
+                    onClick = onEarlier,
+                    enabled = browses && canBrowseEarlier,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = stringResource(R.string.earlier_trip),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(
+                    onClick = onLater,
+                    enabled = browses,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = stringResource(R.string.later_trip),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                val refreshSource = remember { MutableInteractionSource() }
+                TextButton(
+                    onClick = onRefresh,
+                    enabled = !isRefreshing,
+                    interactionSource = refreshSource,
+                    modifier = Modifier.pressScale(refreshSource)
+                ) {
                     if (isRefreshing) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
@@ -155,35 +267,57 @@ internal fun ItineraryResultsScreen(
 
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
-            if (selected == null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = stringResource(R.string.no_trips_found),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentPadding = PaddingValues(bottom = listBottomInset)
-                ) {
-                    item(key = "summary") {
-                        TripSummaryHeader(
-                            itinerary = selected,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+            Crossfade(
+                targetState = selectedIndex,
+                animationSpec = m3EffectsDefault(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                label = "itinerarySelection"
+            ) { index ->
+                val itinerary = plan.itineraries.getOrNull(index) ?: plan.itineraries.firstOrNull()
+                if (itinerary == null) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = stringResource(R.string.no_trips_found),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    itemsIndexed(
-                        rows,
-                        key = { index, _ -> index },
-                        contentType = { _, row -> row::class.simpleName.orEmpty() }
-                    ) { _, row ->
-                        when (row) {
-                            is ItineraryRowItem.Leg -> LegRow(leg = row.leg)
-                            is ItineraryRowItem.Wait -> WaitRow(millis = row.millis)
+                } else {
+                    val rows = remember(itinerary) { itineraryRows(itinerary.legs) }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = listBottomInset)
+                    ) {
+                        item(key = "summary") {
+                            TripSummaryHeader(
+                                itinerary = itinerary,
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                            )
+                        }
+                        itemsIndexed(
+                            rows,
+                            key = { rowIndex, _ -> rowIndex },
+                            contentType = { _, row -> row::class.simpleName.orEmpty() }
+                        ) { _, row ->
+                            when (row) {
+                                is ItineraryRowItem.Leg -> {
+                                    val boardStop = row.leg.takeUnless { it.isWalk }
+                                        ?.from
+                                        ?.takeIf { !it.stopId.isNullOrBlank() }
+                                    LegRow(
+                                        leg = row.leg,
+                                        onClick = boardStop?.let {
+                                            { onLegClick(row.leg) }
+                                        },
+                                        clickLabel = boardStop?.let {
+                                            stringResource(R.string.open_stop_arrivals_fmt, it.description)
+                                        }
+                                    )
+                                }
+                                is ItineraryRowItem.Wait -> WaitRow(millis = row.millis)
+                            }
                         }
                     }
                 }
@@ -207,16 +341,29 @@ private fun ItineraryOptionCard(
         ItineraryRank.LEAST_WALKING -> stringResource(R.string.itinerary_3)
         ItineraryRank.OTHER -> stringResource(R.string.itinerary_option, optionNumber)
     }
-    Surface(
-        onClick = onClick,
-        shape = appCardShape(),
-        color = if (selected) {
+    val containerColor by animateColorAsState(
+        targetValue = if (selected) {
             MaterialTheme.colorScheme.secondaryContainer
         } else {
             MaterialTheme.colorScheme.surfaceContainerHigh
         },
+        animationSpec = m3EffectsDefault(),
+        label = "itineraryOptionColor"
+    )
+    val interactionSource = remember { MutableInteractionSource() }
+    Surface(
+        onClick = onClick,
+        interactionSource = interactionSource,
+        shape = appCardShape(),
+        color = containerColor,
         border = appCardBorder(),
-        modifier = Modifier.width(176.dp)
+        modifier = Modifier
+            .width(176.dp)
+            .semantics {
+                this.selected = selected
+                role = Role.Tab
+            }
+            .pressScale(interactionSource)
     ) {
         Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
             Text(
@@ -393,8 +540,32 @@ internal fun RouteBadge(
 }
 
 @Composable
-internal fun LegRow(leg: TripLeg) {
-    Row(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+internal fun LegRow(
+    leg: TripLeg,
+    onClick: (() -> Unit)? = null,
+    clickLabel: String? = null
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (onClick != null) {
+                    Modifier
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = LocalIndication.current,
+                            role = Role.Button,
+                            onClickLabel = clickLabel,
+                            onClick = onClick
+                        )
+                        .pressScale(interactionSource)
+                } else {
+                    Modifier
+                }
+            )
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+    ) {
         if (leg.isWalk) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
@@ -403,7 +574,7 @@ internal fun LegRow(leg: TripLeg) {
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(R.string.walk),
                     style = MaterialTheme.typography.bodyLarge,
@@ -429,7 +600,7 @@ internal fun LegRow(leg: TripLeg) {
         } else {
             RouteBadge(leg = leg)
             Spacer(modifier = Modifier.width(12.dp))
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = leg.routeName?.takeIf { it.isNotBlank() }
                         ?: leg.direction.takeIf { it.isNotBlank() }
@@ -466,6 +637,14 @@ internal fun LegRow(leg: TripLeg) {
                     }
                 }
             }
+        }
+        if (onClick != null) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
@@ -509,3 +688,40 @@ internal fun formatDurationMillis(ms: Long): String {
 /** Formats a scheduled time, or an em dash when the WS returned none (walk legs/itineraries). */
 internal fun DateTime?.clockTimeText(): String =
     this?.let { val t = clockTime(it); "${t.text} ${t.period}" } ?: "—"
+
+/**
+ * Plain-text version of one itinerary for the share sheet. Kept free of Android types so the
+ * format is directly testable: endpoints, date, times with duration, then the route numbers
+ * in boarding order.
+ */
+internal fun buildTripShareText(
+    originLabel: String,
+    destinationLabel: String,
+    dateLabel: String,
+    itinerary: TripItinerary
+): String {
+    val times = "${itinerary.departure.clockTimeText()} – ${itinerary.arrival.clockTimeText()}"
+    val routes = itinerary.legs
+        .filterNot { it.isWalk }
+        .mapNotNull { leg -> leg.routeNumber?.takeIf { it.isNotBlank() } }
+        .distinct()
+        .joinToString(" → ")
+    return buildString {
+        append(originLabel)
+        append(" → ")
+        append(destinationLabel)
+        append('\n')
+        if (dateLabel.isNotBlank()) {
+            append(dateLabel)
+            append('\n')
+        }
+        append(times)
+        append(" (")
+        append(formatDurationMillis(itinerary.durationMillis))
+        append(')')
+        if (routes.isNotBlank()) {
+            append('\n')
+            append(routes)
+        }
+    }
+}

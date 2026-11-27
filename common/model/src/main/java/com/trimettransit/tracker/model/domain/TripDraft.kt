@@ -47,6 +47,26 @@ data class TripDraft(
     }
 
     /**
+     * True when the results can be browsed to an earlier departure: only a timed mode has a
+     * reference time to move back. Depart-now has none.
+     */
+    val canShiftEarlier: Boolean
+        get() = arriveByMillis != null || departAtMillis != null
+
+    /**
+     * Moves the scheduled time by [deltaMillis] for the results' earlier/later controls.
+     * Keep the mode: a depart-at stays depart-at, an arrive-by stays arrive-by. A depart-now
+     * draft has no time to move, so browsing turns it into an explicit depart-at anchored at
+     * [nowMillis] + delta; the UI disables "earlier" in that case, so this only ever moves
+     * forward.
+     */
+    fun shiftedSchedule(deltaMillis: Long, nowMillis: Long): TripDraft = when {
+        arriveByMillis != null -> copy(arriveByMillis = arriveByMillis + deltaMillis)
+        departAtMillis != null -> copy(departAtMillis = departAtMillis + deltaMillis)
+        else -> copy(departAtMillis = nowMillis + deltaMillis)
+    }
+
+    /**
      * Human-readable age of the fetched results, or null when nothing has been planned yet.
      * Sub-minute ages read as [justNow]; older ages format [minutesFmt] with the whole
      * minutes elapsed. Future timestamps (clock skew) clamp to [justNow].

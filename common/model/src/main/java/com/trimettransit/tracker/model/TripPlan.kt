@@ -6,7 +6,13 @@ import org.joda.time.DateTime
 data class TripPoint(
     val latitude: Double,
     val longitude: Double,
-    val description: String = ""
+    val description: String = "",
+    /**
+     * TriMet stop ID when the point is a numbered stop, as the Trip Planner WS reports for
+     * transit-leg endpoints. Null for free points (my location, a map pin, a street address),
+     * which is why arrivals can only be opened from a leg that boards at a real stop.
+     */
+    val stopId: String? = null
 ) {
     val isValid: Boolean
         get() = latitude.isFinite() && longitude.isFinite() &&

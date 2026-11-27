@@ -42,6 +42,7 @@ import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
+import com.trimettransit.tracker.ui.components.staggeredFadeIn
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.appearance.rowContentPadding
 import com.trimettransit.tracker.ui.components.transitColor
@@ -50,6 +51,7 @@ import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
+import kotlinx.coroutines.delay
 
 @Composable
 fun StopsRouteList(
@@ -93,6 +95,11 @@ fun StopsRouteList(
     val gridMode = rememberDenseGridEnabled()
     val safeRoutes = routes
     val listState = rememberLazyGridState()
+    var entranceDone by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(700)
+        entranceDone = true
+    }
 
     // Bring a newly expanded route into view. Without this, tapping a route near the bottom of a
     // long list opens its directions below the fold with nothing on screen to show they appeared.
@@ -120,12 +127,13 @@ fun StopsRouteList(
         // Neither an offline device nor a missing API key can be fixed by tapping again.
         onRetry = if (isOffline || isMissingApiKey) null else ({ retryKey++ }),
         listState = listState,
-        itemContent = { route ->
+        itemContent = { route, index ->
             RouteListItem(
                 route = route,
                 isExpanded = selectedRoute?.routeId == route.routeId,
                 onClick = { onRouteToggle(route) },
-                modifier = if (AppMotion.reduceMotion) Modifier else Modifier.animateItem(),
+                modifier = (if (AppMotion.reduceMotion) Modifier else Modifier.animateItem())
+                    .staggeredFadeIn(index, enabled = !entranceDone),
                 gridMode = gridMode
             )
         },

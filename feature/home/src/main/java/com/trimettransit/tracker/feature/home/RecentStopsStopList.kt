@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.home
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import com.trimettransit.tracker.model.domain.errorCopyKind
 import com.trimettransit.tracker.ui.components.FavoriteToggleButton
 import com.trimettransit.tracker.ui.components.ListStateShell
 import com.trimettransit.tracker.ui.components.StopListItem
+import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
@@ -119,9 +121,13 @@ private fun RecentStopsList(
                             isFavorite = favoriteIds.contains(stop.locId),
                             onClick = { onToggleFavorite(stop) }
                         )
+                        val deleteSource = remember { MutableInteractionSource() }
                         IconButton(
                             onClick = { onDismiss(stop) },
-                            modifier = Modifier.size(48.dp)
+                            interactionSource = deleteSource,
+                            modifier = Modifier
+                                .size(48.dp)
+                                .pressScale(deleteSource)
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Delete,

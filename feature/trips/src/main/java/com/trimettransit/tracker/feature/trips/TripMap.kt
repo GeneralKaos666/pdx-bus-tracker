@@ -1,16 +1,25 @@
 package com.trimettransit.tracker.feature.trips
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -62,7 +71,9 @@ internal fun TripMap(
     modifier: Modifier = Modifier,
     isDark: Boolean = false,
     legGeometries: Map<Int, List<GeoPoint>> = emptyMap(),
-    fitPadding: IntArray = DEFAULT_MAP_FIT_PADDING
+    fitPadding: IntArray = DEFAULT_MAP_FIT_PADDING,
+    /** Shows a locate control once a fix exists (planner only; the results preview is too short). */
+    showMyLocationButton: Boolean = false
 ) {
     val currentOnMapTap by rememberUpdatedState(onMapTap)
     val pickingActive = picking != PickSlot.NONE
@@ -223,43 +234,67 @@ internal fun TripMap(
         )
     }
 
-    MapLibreMapHost(
-        styleUrl = mapStyleUrl,
-        modifier = modifier.then(mapSemantics),
-        consumeSingleFingerTouches = false,
-        onStyleReady = { map, style, isReapply ->
-            mapState.map = map
-            applyTripStyle(style)
-            mapState.legGeometries = currentLegGeometries
-            mapState.push(origin, dest, itinerary)
-            if (!isReapply) {
-                // Tap-to-drop-pin and the falling-back camera only need setup once; style
-                // re-applies reuse the existing listener and camera position.
-                map.addOnMapClickListener { latLng ->
-                    if (currentPickingActive) {
-                        currentOnMapTap(latLng)
-                        true
-                    } else {
-                        false
+    Box(modifier = modifier) {
+        MapLibreMapHost(
+            styleUrl = mapStyleUrl,
+            modifier = Modifier.fillMaxSize().then(mapSemantics),
+            consumeSingleFingerTouches = false,
+            onStyleReady = { map, style, isReapply ->
+                mapState.map = map
+                applyTripStyle(style)
+                mapState.legGeometries = currentLegGeometries
+                mapState.push(origin, dest, itinerary)
+                if (!isReapply) {
+                    // Tap-to-drop-pin and the falling-back camera only need setup once; style
+                    // re-applies reuse the existing listener and camera position.
+                    map.addOnMapClickListener { latLng ->
+                        if (currentPickingActive) {
+                            currentOnMapTap(latLng)
+                            true
+                        } else {
+                            false
+                        }
                     }
+                    map.moveCamera(
+                        MapCameraUpdates.coordinateZoom(FALLBACK_MAP_CENTER, DEFAULT_MAP_ZOOM)
+                    )
                 }
-                map.moveCamera(
-                    MapCameraUpdates.coordinateZoom(FALLBACK_MAP_CENTER, DEFAULT_MAP_ZOOM)
-                )
+            },
+            onUpdate = { view, map ->
+                mapState.legGeometries = currentLegGeometries
+                mapState.push(origin, dest, itinerary)
+                myLocation?.let { mapState.applyMe(it.latitude, it.longitude) }
+                if (map != null) {
+                    fitPlanCameraIfReady(
+                        view, map, mapState, origin, dest, itinerary, fitSize,
+                        padding = currentFitPadding, attempts = 0, reduceMotion = reduceMotion
+                    )
+                }
             }
-        },
-        onUpdate = { view, map ->
-            mapState.legGeometries = currentLegGeometries
-            mapState.push(origin, dest, itinerary)
-            myLocation?.let { mapState.applyMe(it.latitude, it.longitude) }
-            if (map != null) {
-                fitPlanCameraIfReady(
-                    view, map, mapState, origin, dest, itinerary, fitSize,
-                    padding = currentFitPadding, attempts = 0, reduceMotion = reduceMotion
+        )
+        val located = myLocation
+        if (showMyLocationButton && located != null) {
+            FilledTonalIconButton(
+                onClick = {
+                    val map = mapState.map ?: return@FilledTonalIconButton
+                    val update = MapCameraUpdates.coordinateZoom(located, PLAN_CAMERA_ZOOM)
+                    if (reduceMotion) {
+                        map.moveCamera(update)
+                    } else {
+                        map.easeCamera(update, 400)
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MyLocation,
+                    contentDescription = stringResource(R.string.recenter_map)
                 )
             }
         }
-    )
+    }
 }
 
 /** Fits the camera to the current plan once the viewport size has settled. */

@@ -1,6 +1,12 @@
 package com.trimettransit.tracker.feature.settings
 
 import android.graphics.Color as AndroidColor
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -52,6 +58,9 @@ import com.trimettransit.tracker.ui.components.SettingsIconCircle
 import com.trimettransit.tracker.ui.components.SettingsRowOption
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.theme.appCardShape
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
+import com.trimettransit.tracker.ui.theme.m3EffectsFast
+import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -132,6 +141,12 @@ internal fun AccentPresetRow(
                     val isSelected = preset.color == selected
                     val selectedLabel = stringResource(R.string.accent_preset_selected)
                     val source = remember { MutableInteractionSource() }
+                    val ringColor by animateColorAsState(
+                        targetValue = if (isSelected) MaterialTheme.colorScheme.onSurface
+                        else MaterialTheme.colorScheme.outlineVariant,
+                        animationSpec = m3EffectsDefault(),
+                        label = "accentPresetRing"
+                    )
                     Surface(
                         modifier = Modifier
                             .weight(1f)
@@ -149,11 +164,16 @@ internal fun AccentPresetRow(
                         color = preset.color,
                         border = BorderStroke(
                             width = if (isSelected) 3.dp else 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.outlineVariant
+                            color = ringColor
                         )
                     ) {
-                        if (isSelected) {
+                        AnimatedVisibility(
+                            visible = isSelected,
+                            enter = fadeIn(m3EffectsDefault()) +
+                                scaleIn(initialScale = 0.8f, animationSpec = m3SpatialDefault()),
+                            exit = fadeOut(m3EffectsFast()) +
+                                scaleOut(targetScale = 0.8f, animationSpec = m3EffectsFast())
+                        ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Filled.Check,
@@ -320,16 +340,24 @@ fun ColourPickerDialog(
             }
         },
         confirmButton = {
+            val doneSource = remember { MutableInteractionSource() }
             TextButton(
                 onClick = {
                     if (isAuto) onAuto() else onConfirm(String.format(Locale.US, "#%08X", draft.toArgb()))
-                }
+                },
+                interactionSource = doneSource,
+                modifier = Modifier.pressScale(doneSource)
             ) {
                 Text(stringResource(R.string.done))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            val cancelSource = remember { MutableInteractionSource() }
+            TextButton(
+                onClick = onDismiss,
+                interactionSource = cancelSource,
+                modifier = Modifier.pressScale(cancelSource)
+            ) {
                 Text(stringResource(R.string.cancel))
             }
         }

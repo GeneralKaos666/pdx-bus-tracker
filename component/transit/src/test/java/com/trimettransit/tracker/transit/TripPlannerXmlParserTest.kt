@@ -144,6 +144,34 @@ class TripPlannerXmlParserTest {
     }
 
     @Test
+    fun `parseTripPlanResponse keeps stop ids on stop points only`() {
+        val xml = """
+            <response>
+              <from><pos><lat>45.5</lat><lon>-122.6</lon></pos><description>My location</description></from>
+              <to><pos><lat>45.6</lat><lon>-122.7</lon></pos><description>SE Division &amp; 12th</description><stopId>14244</stopId></to>
+              <itineraries>
+                <itinerary id="i1">
+                  <time-distance><date>4/26/26</date><startTime>10:09 AM</startTime><endTime>10:43 AM</endTime><duration>34</duration></time-distance>
+                  <leg mode="3" order="1">
+                    <from><pos><lat>45.5</lat><lon>-122.6</lon></pos><description>SE 82nd &amp; Schiller</description><stopId>8040</stopId></from>
+                    <to><pos><lat>45.6</lat><lon>-122.7</lon></pos><description>SE Division &amp; 12th</description><stopId>14244</stopId></to>
+                    <time-distance><date>4/26/26</date><startTime>10:09 AM</startTime><endTime>10:43 AM</endTime></time-distance>
+                  </leg>
+                </itinerary>
+              </itineraries>
+            </response>
+        """.trimIndent()
+
+        val result = TripPlannerXmlParser.parseTripPlanResponse(xml) as TripPlanResult.Success
+        val plan = result.plan!!
+        val leg = plan.itineraries[0].legs[0]
+        assertNull(plan.from.stopId)
+        assertEquals("14244", plan.to.stopId)
+        assertEquals("8040", leg.from.stopId)
+        assertEquals("14244", leg.to.stopId)
+    }
+
+    @Test
     fun `parseTripPlanResponse parses multiple itineraries`() {
         val xml = """
             <response>

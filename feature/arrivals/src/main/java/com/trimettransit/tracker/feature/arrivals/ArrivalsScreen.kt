@@ -584,7 +584,12 @@ fun ArrivalsScreen(
             title = { Text(stringResource(R.string.tap_to_track_title)) },
             text = { Text(stringResource(R.string.tap_to_track_message)) },
             confirmButton = {
-                TextButton(onClick = { dismissTapToTrackHint() }) {
+                val gotItSource = remember { MutableInteractionSource() }
+                TextButton(
+                    onClick = { dismissTapToTrackHint() },
+                    interactionSource = gotItSource,
+                    modifier = Modifier.pressScale(gotItSource)
+                ) {
                     Text(stringResource(R.string.got_it))
                 }
             }

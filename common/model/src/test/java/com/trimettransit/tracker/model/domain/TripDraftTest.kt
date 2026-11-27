@@ -84,4 +84,41 @@ class TripDraftTest {
         val draft = TripDraft(origin = origin, destination = destination)
         assertNull(draft.ageText(now, "Updated %d min ago", "Updated just now"))
     }
+
+    @Test
+    fun `depart-now cannot browse earlier`() {
+        assertFalse(TripDraft(origin = origin, destination = destination).canShiftEarlier)
+        assertTrue(
+            TripDraft(origin = origin, destination = destination, departAtMillis = now + 60_000L)
+                .canShiftEarlier
+        )
+        assertTrue(
+            TripDraft(origin = origin, destination = destination, arriveByMillis = now + 60_000L)
+                .canShiftEarlier
+        )
+    }
+
+    @Test
+    fun `shifting a depart-at keeps its mode and moves the time`() {
+        val draft = TripDraft(origin = origin, destination = destination, departAtMillis = now + 60 * 60_000L)
+        val shifted = draft.shiftedSchedule(30 * 60_000L, now)
+        assertEquals(now + 90 * 60_000L, shifted.departAtMillis)
+        assertNull(shifted.arriveByMillis)
+    }
+
+    @Test
+    fun `shifting an arrive-by keeps its mode and moves the time`() {
+        val draft = TripDraft(origin = origin, destination = destination, arriveByMillis = now + 60 * 60_000L)
+        val shifted = draft.shiftedSchedule(-30 * 60_000L, now)
+        assertEquals(now + 30 * 60_000L, shifted.arriveByMillis)
+        assertNull(shifted.departAtMillis)
+    }
+
+    @Test
+    fun `shifting depart-now anchors an explicit departure`() {
+        val draft = TripDraft(origin = origin, destination = destination)
+        val shifted = draft.shiftedSchedule(30 * 60_000L, now)
+        assertEquals(now + 30 * 60_000L, shifted.departAtMillis)
+        assertNull(shifted.arriveByMillis)
+    }
 }

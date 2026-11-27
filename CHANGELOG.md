@@ -1,3 +1,16 @@
+## Unreleased
+
+- **Trip results now say where they go:** the results view names the origin and destination above the options, and the swap control re-plans the trip in the opposite direction so it becomes the return trip in one tap.
+- **Steps lead somewhere:** tapping a bus or train leg opens the arrivals board for the stop you board at, instead of leaving the leg as a dead end.
+- **Browsing trips is one tap:** earlier and later controls step the plan half an hour at a time from the results view, a share control sends the selected option as text, and changing an option or refreshing no longer blanks the map and closes the results while the new request runs.
+- **Fewer taps to schedule:** the depart-at and arrive-by chips show their chosen time instead of hiding it in a second control, quick presets add 15 minutes, 30 minutes, 1 hour, or 2 hours above the date picker, and the stop picker opens with the keyboard already in the search field.
+- **A way out of dead ends:** a failed request offers Try again, and a plan with no trips offers to allow more walking or depart now.
+- **Your usual origins, too:** the origin picker remembers where you started from and lists recent origins, while the destination picker lists recent destinations, instead of both showing past destinations under one "Recent trips" heading.
+- **Clearer results for screen readers:** the selected trip option announces itself as selected, the origin and destination are announced when results open, and a leg that opens arrivals says so before it is activated.
+- **A map that keeps up:** a locate control centers the planner map on your position, the trip card starts collapsed on compact screens, and travel mode and priority moved into the options sheet so the map keeps more room.
+- **Motion that follows every change:** planning a trip now eases its results in instead of swapping screens, switching between trip options fades the totals and legs, search panels fade between loading, results, and "no stops found", the trip status sheet fades from its spinner to the stop list, and the wider-screen arrivals pane fades in when it opens. The line chip above the routes list now expands and collapses with the accordion it belongs to.
+- **Every control reacts:** the buttons that were still static now press like the rest of the app — the retry button in error states, the arrivals trip-info button, the line chip's close button, Recents actions, the results back and refresh controls, the time picker, widget setup, and the Settings colour picker. Selected colour swatches and corner-style rows also fade their highlight, and switching between a scheduled and a live arrival fades the countdown pill instead of snapping.
+
 ## What's New in v4.21.0
 
 - **Plan for any time:** the trip planner now offers Depart now, Depart at, and Arrive by. Pick a day and a time in one sheet, so tomorrow's trip no longer has to be planned as today's.

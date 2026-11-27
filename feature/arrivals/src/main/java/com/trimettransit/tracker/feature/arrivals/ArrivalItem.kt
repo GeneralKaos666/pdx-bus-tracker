@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -193,9 +195,13 @@ internal fun ArrivalItem(
             Spacer(modifier = Modifier.width(8.dp))
 
             if (arrival.tripID.isNotBlank()) {
+                val infoSource = remember { MutableInteractionSource() }
                 IconButton(
                     onClick = onShowTripStatus,
-                    modifier = Modifier.size(48.dp)
+                    interactionSource = infoSource,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .pressScale(infoSource)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Info,
@@ -209,16 +215,24 @@ internal fun ArrivalItem(
             // pairing instead of the solid pill live arrivals use. Cancelled and drop-off-only
             // keep the solid pill: those are definitive states, not weaker ones.
             val isScheduled = !arrival.isEstimated && !arrival.isCanceled && !arrival.dropOffOnly
-            val pillContainerColor = if (isScheduled) {
-                MaterialTheme.colorScheme.surfaceContainerHigh
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            }
-            val pillContentColor = if (isScheduled) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
+            val pillContainerColor by animateColorAsState(
+                targetValue = if (isScheduled) {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                animationSpec = m3EffectsDefault(),
+                label = "arrivalPillContainer"
+            )
+            val pillContentColor by animateColorAsState(
+                targetValue = if (isScheduled) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
+                animationSpec = m3EffectsDefault(),
+                label = "arrivalPillContent"
+            )
             Surface(
                 shape = appCardShape(),
                 color = pillContainerColor

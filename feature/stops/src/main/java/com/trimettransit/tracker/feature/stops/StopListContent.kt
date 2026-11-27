@@ -8,7 +8,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -38,7 +38,7 @@ internal fun <T> StopListContent(
     gridMode: Boolean,
     key: (T) -> Any,
     contentType: (T) -> Any?,
-    itemContent: @Composable LazyGridItemScope.(T) -> Unit,
+    itemContent: @Composable LazyGridItemScope.(T, Int) -> Unit,
     itemTrailingContent: @Composable (T) -> Unit = {},
     onRetry: (() -> Unit)? = null,
     /** Hoisted so callers that need to scroll a specific item can; defaults to a private state. */
@@ -81,8 +81,12 @@ internal fun <T> StopListContent(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(safeItems ?: emptyList(), key = key, contentType = contentType) { item ->
-                            itemContent(item)
+                        itemsIndexed(
+                            safeItems ?: emptyList(),
+                            key = { _, item -> key(item) },
+                            contentType = { _, item -> contentType(item) }
+                        ) { index, item ->
+                            itemContent(item, index)
                             itemTrailingContent(item)
                         }
                     }

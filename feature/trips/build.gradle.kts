@@ -20,6 +20,10 @@ android {
         abortOnError = true
         baseline = file("lint-baseline.xml")
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -37,4 +41,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.preference:preference:1.2.1")
     implementation("net.danlew:android.joda:2.15.0")
+
+    testImplementation("junit:junit:4.13.2")
 }

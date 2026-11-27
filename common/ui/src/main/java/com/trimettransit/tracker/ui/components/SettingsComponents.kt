@@ -163,6 +163,18 @@ fun SettingsCornerOption(
 ) {
     val radius = LocalCardStyle.current.cornerRadius
     val previewShape = if (cut) CutCornerShape(radius) else RoundedCornerShape(radius)
+    val previewContainer by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer
+                      else MaterialTheme.colorScheme.surfaceContainerHighest,
+        animationSpec = m3EffectsDefault(),
+        label = "cornerOptionContainer"
+    )
+    val previewBorder by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                      else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = m3EffectsDefault(),
+        label = "cornerOptionBorder"
+    )
     val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
@@ -179,8 +191,7 @@ fun SettingsCornerOption(
         Surface(
             modifier = Modifier.size(40.dp),
             shape = previewShape,
-            color = if (selected) MaterialTheme.colorScheme.primaryContainer
-                    else MaterialTheme.colorScheme.surfaceContainerHighest
+            color = previewContainer
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Surface(
@@ -189,8 +200,7 @@ fun SettingsCornerOption(
                     color = Color.Transparent,
                     border = BorderStroke(
                         2.dp,
-                        if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant
+                        previewBorder
                     )
                 ) {}
             }

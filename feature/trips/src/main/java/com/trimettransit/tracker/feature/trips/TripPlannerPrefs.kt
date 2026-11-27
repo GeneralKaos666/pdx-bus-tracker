@@ -25,6 +25,7 @@ internal object TripPlannerPrefs {
     private const val KEY_MAX_WALK = "trip_planner.max_walk"
     private const val KEY_ITINERARIES = "trip_planner.itineraries"
     private const val KEY_RECENT_TRIPS = "trip_planner.recent_destinations"
+    private const val KEY_RECENT_ORIGINS = "trip_planner.recent_origins"
 
     fun load(context: Context): TripRequestOptions {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
@@ -58,24 +59,37 @@ internal object TripPlannerPrefs {
     }
 
     /** Remembered destinations, newest first. */
-    fun loadRecentTrips(context: Context): List<TripPoint> {
-        val raw = PreferenceManager.getDefaultSharedPreferences(context)
-            .getString(KEY_RECENT_TRIPS, null)
-        return decodeRecentTrips(raw)
-    }
+    fun loadRecentTrips(context: Context): List<TripPoint> = loadPoints(context, KEY_RECENT_TRIPS)
+
+    /** Remembered origins, newest first. Kept apart from destinations so each picker offers
+     *  the endpoints the rider actually starts and ends at. */
+    fun loadRecentOrigins(context: Context): List<TripPoint> = loadPoints(context, KEY_RECENT_ORIGINS)
 
     /** Moves [destination] to the front of the remembered list and returns the new list. */
-    fun addRecentTrip(context: Context, destination: TripPoint): List<TripPoint> {
-        val updated = addRecentTrip(loadRecentTrips(context), destination)
-        PreferenceManager.getDefaultSharedPreferences(context).edit {
-            putString(KEY_RECENT_TRIPS, encodeRecentTrips(updated))
-        }
-        return updated
-    }
+    fun addRecentTrip(context: Context, destination: TripPoint): List<TripPoint> =
+        addPoint(context, KEY_RECENT_TRIPS, destination)
+
+    /** Moves [origin] to the front of the remembered origins and returns the new list. */
+    fun addRecentOrigin(context: Context, origin: TripPoint): List<TripPoint> =
+        addPoint(context, KEY_RECENT_ORIGINS, origin)
 
     fun clearRecentTrips(context: Context) {
         PreferenceManager.getDefaultSharedPreferences(context).edit {
             remove(KEY_RECENT_TRIPS)
+            remove(KEY_RECENT_ORIGINS)
         }
+    }
+
+    private fun loadPoints(context: Context, key: String): List<TripPoint> {
+        val raw = PreferenceManager.getDefaultSharedPreferences(context).getString(key, null)
+        return decodeRecentTrips(raw)
+    }
+
+    private fun addPoint(context: Context, key: String, point: TripPoint): List<TripPoint> {
+        val updated = addRecentTrip(loadPoints(context, key), point)
+        PreferenceManager.getDefaultSharedPreferences(context).edit {
+            putString(key, encodeRecentTrips(updated))
+        }
+        return updated
     }
 }

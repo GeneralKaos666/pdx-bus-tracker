@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.arrivals
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.model.TripStatus
 import com.trimettransit.tracker.model.TripStopStatus
+import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import org.joda.time.DateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,13 +54,24 @@ internal fun TripStatusSheet(
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
-            when {
-                isLoading -> CircularProgressIndicator(modifier = Modifier.padding(24.dp))
-                trip == null -> Text(
-                    text = stringResource(R.string.trip_status_unavailable),
-                    modifier = Modifier.padding(20.dp)
-                )
-                else -> TripStatusContent(trip)
+            val statusState = when {
+                isLoading -> 0
+                trip == null -> 1
+                else -> 2
+            }
+            Crossfade(
+                targetState = statusState,
+                animationSpec = m3EffectsDefault(),
+                label = "tripStatusState"
+            ) { state ->
+                when (state) {
+                    0 -> CircularProgressIndicator(modifier = Modifier.padding(24.dp))
+                    1 -> Text(
+                        text = stringResource(R.string.trip_status_unavailable),
+                        modifier = Modifier.padding(20.dp)
+                    )
+                    else -> trip?.let { TripStatusContent(it) }
+                }
             }
         }
     }

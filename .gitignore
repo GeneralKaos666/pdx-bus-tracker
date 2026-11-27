@@ -29,4 +29,5 @@ screenshot-editor
 scripts/verify-16kb-alignment.sh
 .worktrees/
 docs/plans
-docs
+docs/specs
+.deja

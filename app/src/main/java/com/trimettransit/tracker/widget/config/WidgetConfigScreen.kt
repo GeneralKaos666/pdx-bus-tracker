@@ -186,15 +186,23 @@ fun WidgetConfigScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    val cancelSource = remember { MutableInteractionSource() }
                     OutlinedButton(
                         onClick = onCancel,
-                        modifier = Modifier.weight(1f)
+                        interactionSource = cancelSource,
+                        modifier = Modifier
+                            .weight(1f)
+                            .pressScale(cancelSource)
                     ) {
                         Text(stringResource(R.string.widget_config_cancel))
                     }
+                    val doneSource = remember { MutableInteractionSource() }
                     Button(
                         onClick = { onDone(buildConfig()) },
-                        modifier = Modifier.weight(1f)
+                        interactionSource = doneSource,
+                        modifier = Modifier
+                            .weight(1f)
+                            .pressScale(doneSource)
                     ) {
                         Text(stringResource(R.string.widget_config_done))
                     }

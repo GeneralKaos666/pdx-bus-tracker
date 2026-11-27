@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -70,6 +70,7 @@ import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.StopListItem
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
+import com.trimettransit.tracker.ui.components.staggeredFadeIn
 import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.util.SingleJobRunner
@@ -77,6 +78,7 @@ import com.trimettransit.tracker.util.SingleJobRunner
 import kotlin.math.roundToInt
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -170,13 +172,23 @@ fun NearbyStopsScreen(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    showLocationExplainer = false
-                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                }) { Text(stringResource(R.string.continue_)) }
+                val continueSource = remember { MutableInteractionSource() }
+                TextButton(
+                    onClick = {
+                        showLocationExplainer = false
+                        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    },
+                    interactionSource = continueSource,
+                    modifier = Modifier.pressScale(continueSource)
+                ) { Text(stringResource(R.string.continue_)) }
             },
             dismissButton = {
-                TextButton(onClick = { showLocationExplainer = false }) { Text(stringResource(R.string.not_now)) }
+                val notNowSource = remember { MutableInteractionSource() }
+                TextButton(
+                    onClick = { showLocationExplainer = false },
+                    interactionSource = notNowSource,
+                    modifier = Modifier.pressScale(notNowSource)
+                ) { Text(stringResource(R.string.not_now)) }
             }
         )
     }
@@ -289,6 +301,11 @@ fun NearbyStopsScreen(
                 3 -> {
                     ContentEntrance(modifier = Modifier.fillMaxSize()) {
                         val smoothFling = rememberSmoothFlingBehavior()
+                        var entranceDone by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) {
+                            delay(700)
+                            entranceDone = true
+                        }
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
@@ -296,11 +313,16 @@ fun NearbyStopsScreen(
                             contentPadding = PaddingValues(bottom = navPillBottomPadding()),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            items(safeStops ?: emptyList(), key = { it.locId }, contentType = { "stop" }) { stop ->
+                            itemsIndexed(
+                                safeStops ?: emptyList(),
+                                key = { _, stop -> stop.locId },
+                                contentType = { _, _ -> "stop" }
+                            ) { index, stop ->
                                 StopListItem(
                                     stop = stop,
                                     onClick = { onNavigateToArrivals(stop, -1) },
-                                    modifier = if (AppMotion.reduceMotion) Modifier else Modifier.animateItem(),
+                                    modifier = (if (AppMotion.reduceMotion) Modifier else Modifier.animateItem())
+                                        .staggeredFadeIn(index, enabled = !entranceDone),
                                     trailingContent = nextArrivalPreview(arrivalsByStop[stop.locId]),
                                     proximityLabel = nearbyProximityLabel(stop, userLocation)
                                 )

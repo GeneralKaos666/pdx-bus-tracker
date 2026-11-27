@@ -2,8 +2,10 @@ package com.trimettransit.tracker.feature.trips
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -59,9 +61,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -70,6 +74,7 @@ import androidx.core.content.ContextCompat
 import com.trimettransit.tracker.model.Direction
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.TripItinerary
+import com.trimettransit.tracker.model.TripLeg
 import com.trimettransit.tracker.model.TripPlannerError
 import com.trimettransit.tracker.model.TripPlannerMin
 import com.trimettransit.tracker.model.TripPlannerMode
@@ -82,6 +87,7 @@ import com.trimettransit.tracker.model.domain.TripDraft
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
+import com.trimettransit.tracker.ui.components.ContentEntrance
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.theme.AppMotion
@@ -99,6 +105,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Date
 import java.util.Locale
 private const val DEFAULT_ARRIVE_BY_ADVANCE_MS = 60L * 60_000L
 private const val DEFAULT_DEPART_AT_ADVANCE_MS = 15L * 60_000L
@@ -111,12 +118,14 @@ private val tripDraftSaver: Saver<TripDraft, Bundle> = Saver(
                 putDouble("oLat", it.latitude)
                 putDouble("oLon", it.longitude)
                 putString("oDesc", it.description)
+                it.stopId?.let { id -> putString("oStop", id) }
             }
             putBoolean("hasDest", draft.destination != null)
             draft.destination?.let {
                 putDouble("dLat", it.latitude)
                 putDouble("dLon", it.longitude)
                 putString("dDesc", it.description)
+                it.stopId?.let { id -> putString("dStop", id) }
             }
             draft.departAtMillis?.let { putLong("departAt", it) }
             draft.arriveByMillis?.let { putLong("arriveBy", it) }
@@ -132,7 +141,8 @@ private val tripDraftSaver: Saver<TripDraft, Bundle> = Saver(
             TripPoint(
                 latitude = saved.getDouble("oLat"),
                 longitude = saved.getDouble("oLon"),
-                description = saved.getString("oDesc") ?: ""
+                description = saved.getString("oDesc") ?: "",
+                stopId = saved.getString("oStop")
             )
         } else {
             null
@@ -141,7 +151,8 @@ private val tripDraftSaver: Saver<TripDraft, Bundle> = Saver(
             TripPoint(
                 latitude = saved.getDouble("dLat"),
                 longitude = saved.getDouble("dLon"),
-                description = saved.getString("dDesc") ?: ""
+                description = saved.getString("dDesc") ?: "",
+                stopId = saved.getString("dStop")
             )
         } else {
             null
@@ -176,6 +187,7 @@ fun TripPlannerScreen(
     transitRepository: TransitRepository,
     favoritesRepository: FavoritesRepository,
     recentStopsRepository: RecentStopsRepository,
+    onNavigateToArrivals: (Stop, Int) -> Unit,
     pageVisible: Boolean,
     isDark: Boolean = false
 ) {
@@ -195,7 +207,10 @@ fun TripPlannerScreen(
     var picking by remember { mutableStateOf(PickSlot.NONE) }
     var pickerSlot by remember { mutableStateOf<PickSlot?>(null) }
     var showResults by rememberSaveable { mutableStateOf(false) }
-    var plannerExpanded by rememberSaveable { mutableStateOf(true) }
+    // Tall screens can afford the expanded card; compact phones start collapsed so the map
+    // keeps a usable area. Remembered once the rider decides either way.
+    val startsExpanded = LocalConfiguration.current.screenHeightDp >= 700
+    var plannerExpanded by rememberSaveable { mutableStateOf(startsExpanded) }
     // Endpoints of the last *requested* plan, as a saveable key. The result itself is not
     // saveable (DateTime-heavy), so restore re-requests it when this matches the current
     // endpoints and no result is present.
@@ -217,6 +232,7 @@ fun TripPlannerScreen(
     // sheet's target slot (null = closed), not the choice itself.
     var scheduleSheetArriveBy by remember { mutableStateOf<Boolean?>(null) }
     var recentTrips by remember { mutableStateOf(TripPlannerPrefs.loadRecentTrips(context)) }
+    var recentOrigins by remember { mutableStateOf(TripPlannerPrefs.loadRecentOrigins(context)) }
 
     // Options ride along in the draft (and stay prefs-persisted via TripPlannerPrefs).
     // Read aliases below re-evaluate on every recomposition; every write goes through
@@ -351,22 +367,43 @@ fun TripPlannerScreen(
         invalidatePlan()
     }
 
-    fun planIt(refresh: Boolean = false, resetSelection: Boolean = true) {
-        val from = origin ?: return
-        val to = dest ?: return
-        if (!from.isValid || !to.isValid) return
+    /**
+     * Requests a plan. [from]/[to] default to the endpoints in composition; a caller that has
+     * just swapped the draft must pass the new pair explicitly, because the composition-level
+     * aliases still hold the previous values until the next recomposition.
+     */
+    fun planIt(
+        refresh: Boolean = false,
+        resetSelection: Boolean = true,
+        from: TripPoint? = null,
+        to: TripPoint? = null
+    ) {
+        val start = from ?: origin ?: return
+        val end = to ?: dest ?: return
+        if (!start.isValid || !end.isValid) return
         // "Find trips" with an already-matching plan just reopens the results sheet; the
         // resume path forces a fresh request to keep the map current.
         val current = planResult
         if (!refresh && current is TripPlanResult.Success) {
             val existingPlan = current.plan
-            if (existingPlan != null && existingPlan.from == from && existingPlan.to == to) {
+            if (existingPlan != null && existingPlan.from == start && existingPlan.to == end) {
                 showResults = true
                 return
             }
         }
-        invalidatePlan()
-        plannedEndpointKey = endpointKey(from, to)
+        // A plan for the same endpoints stays visible while the new request runs: refresh,
+        // option changes, and the earlier/later controls must not blank the map or close the
+        // results. A different endpoint pairing still clears, so stale results are never
+        // mistaken for the new ones.
+        val currentPlan = (current as? TripPlanResult.Success)?.plan
+        val keepVisible = currentPlan != null && currentPlan.from == start && currentPlan.to == end
+        planRunner.current.value?.cancel()
+        planRunner.current.value = null
+        if (!keepVisible) {
+            planResult = null
+            showResults = false
+        }
+        plannedEndpointKey = endpointKey(start, end)
         isPlanning = true
         planRunner.launchWithJob { job ->
             try {
@@ -382,7 +419,7 @@ fun TripPlannerScreen(
                     // request that still answers the rider.
                     draft = draft.copy(departAtMillis = null)
                 }
-                val result = transitRepository.planTrip(from, to, draft.requestTime(), options)
+                val result = transitRepository.planTrip(start, end, draft.requestTime(), options)
                 val successPlan = (result as? TripPlanResult.Success)?.plan
                 if (successPlan?.itineraries?.isNotEmpty() == true) {
                     selectedIndex = itinerarySelectionAfterPlan(
@@ -394,6 +431,13 @@ fun TripPlannerScreen(
                     draft.destination?.let { destination ->
                         recentTrips = TripPlannerPrefs.addRecentTrip(context, destination)
                     }
+                    // A located origin is dynamic, so remembering it would only replay stale
+                    // coordinates; everything else makes a useful one-tap origin next time.
+                    draft.origin
+                        ?.takeIf { it.description.isNotBlank() && it.description != myLocationLabel }
+                        ?.let { plannedOrigin ->
+                            recentOrigins = TripPlannerPrefs.addRecentOrigin(context, plannedOrigin)
+                        }
                 }
                 planResult = result
                 showResults = result is TripPlanResult.Success &&
@@ -416,8 +460,56 @@ fun TripPlannerScreen(
         val shouldReplan = planResult != null && draft.origin != null && draft.destination != null
         draft = draft.copy(options = newOptions)
         TripPlannerPrefs.save(context, newOptions)
-        invalidatePlan()
-        if (shouldReplan) planIt(refresh = true)
+        // planIt keeps the current plan on screen while the new request runs.
+        if (shouldReplan) {
+            planIt(refresh = true, resetSelection = false)
+        } else {
+            invalidatePlan()
+        }
+    }
+
+    /**
+     * Re-plans the same endpoints shifted by [deltaMillis] for the results' earlier/later
+     * controls, keeping the results view and option selection in place.
+     */
+    fun browseSchedule(deltaMillis: Long) {
+        if (draft.origin == null || draft.destination == null) return
+        draft = draft.shiftedSchedule(deltaMillis, System.currentTimeMillis())
+        // Same endpoints, so planIt keeps the results open while the shifted request runs.
+        planIt(refresh = true, resetSelection = false)
+    }
+
+    /** The one-tap return trip: swap the endpoints and re-plan in place. */
+    fun planReturnTrip() {
+        val previousOrigin = draft.origin ?: return
+        val previousDestination = draft.destination ?: return
+        draft = draft.copy(origin = previousDestination, destination = previousOrigin)
+        pendingMyLocationOrigin = false
+        // Pass the swapped pair directly: the composition aliases still hold the old
+        // direction, and planIt must not re-request the trip the rider just reversed.
+        planIt(
+            refresh = true,
+            resetSelection = false,
+            from = previousDestination,
+            to = previousOrigin
+        )
+    }
+
+    /** Opens arrivals for the stop a transit leg boards at. */
+    fun openLegArrivals(leg: TripLeg) {
+        val stopId = leg.from.stopId?.toIntOrNull() ?: return
+        val routeId = leg.routeNumber?.toIntOrNull() ?: -1
+        onNavigateToArrivals(
+            Stop(
+                desc = leg.from.description,
+                latitude = leg.from.latitude,
+                longitude = leg.from.longitude,
+                transitType = leg.mode.transitTypeLetter(),
+                locId = stopId,
+                routeNum = leg.routeNumber?.toIntOrNull() ?: 0
+            ),
+            routeId
+        )
     }
 
     // Re-plan on app re-entry only if a plan already exists (keeps the map fresh without
@@ -471,7 +563,23 @@ fun TripPlannerScreen(
         options.itineraryCount,
         options.itineraryCount
     )
-    val optionsSummary = "$walkSummary · $countSummary"
+    // The chips for mode and priority moved into the options sheet; this summary keeps both
+    // choices visible on the card, where they used to cost two full chip rows.
+    val modeSummary = stringResource(
+        when (options.mode) {
+            TripPlannerMode.BUS -> R.string.trip_mode_bus
+            TripPlannerMode.TRAIN -> R.string.trip_mode_train
+            TripPlannerMode.ALL -> R.string.trip_mode_all
+        }
+    )
+    val prioritySummary = stringResource(
+        when (options.min) {
+            TripPlannerMin.TRANSFERS -> R.string.trip_min_transfers
+            TripPlannerMin.WALKING -> R.string.trip_min_walking
+            TripPlannerMin.TIME -> R.string.trip_min_time
+        }
+    )
+    val optionsSummary = "$modeSummary · $prioritySummary · $walkSummary · $countSummary"
 
     // Back from the results view returns to the planner with the plan (and draft) intact.
     BackHandler(enabled = showResults) { showResults = false }
@@ -490,43 +598,65 @@ fun TripPlannerScreen(
 
     val resultPlan = (planResult as? TripPlanResult.Success)?.plan
         ?.takeIf { it.itineraries.isNotEmpty() }
-    val showingResults = showResults && resultPlan != null
     // ageTick is read so the age label recomputes on every minute boundary.
     val resultsAgeText = draft.ageText(
         System.currentTimeMillis(),
         stringResource(R.string.trip_updated_minutes),
         stringResource(R.string.trip_updated_now)
     ).let { text -> ageTick; text }
+    val originLabel = origin?.description?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.origin_field_hint)
+    val destinationLabel = dest?.description?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.destination_field_hint)
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (showingResults) {
-            ItineraryResultsScreen(
-                plan = resultPlan,
-                selectedIndex = selectedIndex,
-                onSelect = {
-                    selectedIndex = it
-                    picking = PickSlot.NONE
-                },
-                onBack = { showResults = false },
-                onRefresh = { planIt(refresh = true, resetSelection = false) },
-                isRefreshing = isPlanning,
-                ageText = resultsAgeText,
-                mapPreview = {
-                    TripMap(
-                        origin = origin,
-                        dest = dest,
-                        itinerary = resultPlan.itineraries.getOrNull(selectedIndex),
-                        legGeometries = legGeometries,
-                        myLocation = myLocation,
-                        picking = PickSlot.NONE,
-                        onMapTap = {},
-                        isDark = isDark,
-                        fitPadding = intArrayOf(32, 32, 32, 32),
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            )
-        } else {
+    val resultsPlan = resultPlan
+    if (showResults && resultsPlan != null) {
+        // Selected option, resolved once for both the share text and the map preview.
+        val shareItinerary = resultsPlan.itineraries.getOrNull(selectedIndex)
+        Box(modifier = Modifier.fillMaxSize()) {
+            ContentEntrance {
+                ItineraryResultsScreen(
+                    plan = resultsPlan,
+                    selectedIndex = selectedIndex,
+                    originLabel = originLabel,
+                    destinationLabel = destinationLabel,
+                    onSelect = {
+                        selectedIndex = it
+                        picking = PickSlot.NONE
+                    },
+                    onBack = { showResults = false },
+                    onRefresh = { planIt(refresh = true, resetSelection = false) },
+                    isRefreshing = isPlanning,
+                    ageText = resultsAgeText,
+                    canBrowseEarlier = draft.canShiftEarlier,
+                    onEarlier = { browseSchedule(-RESULT_BROWSE_STEP_MS) },
+                    onLater = { browseSchedule(RESULT_BROWSE_STEP_MS) },
+                    onSwapEndpoints = { planReturnTrip() },
+                    onShare = {
+                        shareItinerary?.let { itinerary ->
+                            shareTrip(context, originLabel, destinationLabel, itinerary)
+                        }
+                    },
+                    onLegClick = { leg -> openLegArrivals(leg) },
+                    mapPreview = {
+                        TripMap(
+                            origin = origin,
+                            dest = dest,
+                            itinerary = resultsPlan.itineraries.getOrNull(selectedIndex),
+                            legGeometries = legGeometries,
+                            myLocation = myLocation,
+                            picking = PickSlot.NONE,
+                            onMapTap = {},
+                            isDark = isDark,
+                            fitPadding = intArrayOf(32, 32, 32, 32),
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                )
+            }
+        }
+    } else {
+        Box(modifier = Modifier.fillMaxSize()) {
             TripMap(
                 origin = origin,
                 dest = dest,
@@ -536,6 +666,7 @@ fun TripPlannerScreen(
                 picking = picking,
                 onMapTap = { onMapTap(it) },
                 isDark = isDark,
+                showMyLocationButton = true,
                 modifier = Modifier.fillMaxSize()
             )
 
@@ -680,15 +811,21 @@ fun TripPlannerScreen(
                                     onPickOnMap = { picking = PickSlot.DEST; pickerSlot = null }
                                 )
 
-                                // Depart-now / depart-at / arrive-by. A timed mode keeps its
-                                // time in the draft and can be edited from the time button
-                                // directly below the chips.
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
+                                // Depart-now / depart-at / arrive-by. A timed chip shows its
+                                // chosen time in the label, so the chip is the only control (no
+                                // duplicate time button below). The spoken label keeps the
+                                // direction ("Depart at ...") that the visible label drops.
+                                val departAtMillis = draft.departAtMillis
+                                val arriveByMillis = draft.arriveByMillis
+                                val departChipDescription = departAtMillis?.let {
+                                    stringResource(R.string.trip_depart_at_fmt, scheduleTimeLabel(it))
+                                }
+                                val arriveChipDescription = arriveByMillis?.let {
+                                    stringResource(R.string.trip_arrive_by_fmt, scheduleTimeLabel(it))
+                                }
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     FilterChip(
-                                        selected = !arriveBy && draft.departAtMillis == null,
+                                        selected = !arriveBy && departAtMillis == null,
                                         onClick = {
                                             draft = draft.copy(arriveByMillis = null, departAtMillis = null)
                                             invalidatePlan()
@@ -696,9 +833,9 @@ fun TripPlannerScreen(
                                         label = { Text(stringResource(R.string.depart_now)) }
                                     )
                                     FilterChip(
-                                        selected = draft.departAtMillis != null,
+                                        selected = departAtMillis != null,
                                         onClick = {
-                                            if (draft.departAtMillis == null) {
+                                            if (departAtMillis == null) {
                                                 draft = draft.copy(
                                                     departAtMillis = System.currentTimeMillis() + DEFAULT_DEPART_AT_ADVANCE_MS,
                                                     arriveByMillis = null
@@ -707,12 +844,20 @@ fun TripPlannerScreen(
                                             }
                                             scheduleSheetArriveBy = false
                                         },
-                                        label = { Text(stringResource(R.string.depart_at)) }
+                                        label = {
+                                            Text(
+                                                text = departAtMillis?.let { scheduleTimeLabel(it) }
+                                                    ?: stringResource(R.string.depart_at),
+                                                modifier = departChipDescription?.let { description ->
+                                                    Modifier.semantics { contentDescription = description }
+                                                } ?: Modifier
+                                            )
+                                        }
                                     )
                                     FilterChip(
                                         selected = arriveBy,
                                         onClick = {
-                                            if (draft.arriveByMillis == null) {
+                                            if (arriveByMillis == null) {
                                                 draft = draft.copy(
                                                     arriveByMillis = System.currentTimeMillis() + DEFAULT_ARRIVE_BY_ADVANCE_MS,
                                                     departAtMillis = null
@@ -721,38 +866,16 @@ fun TripPlannerScreen(
                                             }
                                             scheduleSheetArriveBy = true
                                         },
-                                        label = { Text(stringResource(R.string.arrive_by)) }
+                                        label = {
+                                            Text(
+                                                text = arriveByMillis?.let { scheduleTimeLabel(it) }
+                                                    ?: stringResource(R.string.arrive_by),
+                                                modifier = arriveChipDescription?.let { description ->
+                                                    Modifier.semantics { contentDescription = description }
+                                                } ?: Modifier
+                                            )
+                                        }
                                     )
-                                }
-                                val scheduledMillis = draft.arriveByMillis ?: draft.departAtMillis
-                                if (scheduledMillis != null) {
-                                    val editingArriveBy = draft.arriveByMillis != null
-                                    TextButton(onClick = { scheduleSheetArriveBy = editingArriveBy }) {
-                                        Text(scheduleTimeLabel(scheduledMillis))
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = stringResource(R.string.trip_options_mode),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    PlanModeChip(TripPlannerMode.ALL, R.string.trip_mode_all, options) { updateOptions(it) }
-                                    PlanModeChip(TripPlannerMode.BUS, R.string.trip_mode_bus, options) { updateOptions(it) }
-                                    PlanModeChip(TripPlannerMode.TRAIN, R.string.trip_mode_train, options) { updateOptions(it) }
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = stringResource(R.string.trip_options_min),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    PlanPriorityChip(TripPlannerMin.TIME, R.string.trip_min_time, options) { updateOptions(it) }
-                                    PlanPriorityChip(TripPlannerMin.TRANSFERS, R.string.trip_min_transfers, options) { updateOptions(it) }
-                                    PlanPriorityChip(TripPlannerMin.WALKING, R.string.trip_min_walking, options) { updateOptions(it) }
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -875,29 +998,75 @@ fun TripPlannerScreen(
 
                 // Inline plan status / error / empty result surface.
                 val statusText = resolvedError
-                if (statusText != null) {
-                    Surface(
-                        shape = appCardShape(),
-                        color = if (planResult is TripPlanResult.Error) {
-                            MaterialTheme.colorScheme.errorContainer
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainerHigh
-                        },
-                        shadowElevation = 4.dp,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(top = 8.dp)
-                    ) {
-                        Text(
-                            text = statusText,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (planResult is TripPlanResult.Error) {
-                                MaterialTheme.colorScheme.onErrorContainer
+                val statusIsError = planResult is TripPlanResult.Error
+                var lastStatus by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
+                if (statusText != null) lastStatus = statusText to statusIsError
+                AnimatedVisibility(
+                    visible = statusText != null,
+                    enter = m3ContentExpand(),
+                    exit = m3ContentShrink(),
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 8.dp)
+                ) {
+                    val shown = lastStatus
+                    if (shown != null) {
+                        Surface(
+                            shape = appCardShape(),
+                            color = if (shown.second) {
+                                MaterialTheme.colorScheme.errorContainer
                             } else {
-                                MaterialTheme.colorScheme.onSurface
+                                MaterialTheme.colorScheme.surfaceContainerHigh
                             },
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
-                        )
+                            shadowElevation = 4.dp
+                        ) {
+                            Column(modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 4.dp)) {
+                                Text(
+                                    text = shown.first,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (shown.second) {
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                                // Dead-end states get a way out: retry a failed request, or
+                                // loosen the search that found no trips.
+                                if (origin != null && dest != null) {
+                                    Row {
+                                        if (shown.second) {
+                                            TextButton(onClick = { planIt(refresh = true) }) {
+                                                Text(stringResource(R.string.trip_retry))
+                                            }
+                                        } else {
+                                            TextButton(
+                                                onClick = {
+                                                    updateOptions(
+                                                        options.copy(
+                                                            maxWalkMiles = (options.maxWalkMiles + 0.2f)
+                                                                .coerceAtMost(0.9f)
+                                                        )
+                                                    )
+                                                }
+                                            ) {
+                                                Text(stringResource(R.string.trip_allow_more_walking))
+                                            }
+                                            if (draft.departAtMillis != null || draft.arriveByMillis != null) {
+                                                TextButton(
+                                                    onClick = {
+                                                        draft = draft.copy(departAtMillis = null, arriveByMillis = null)
+                                                        planIt(refresh = true)
+                                                    }
+                                                ) {
+                                                    Text(stringResource(R.string.depart_now))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -937,7 +1106,7 @@ fun TripPlannerScreen(
             transitRepository = transitRepository,
             favoritesRepository = favoritesRepository,
             recentStopsRepository = recentStopsRepository,
-            recentTrips = recentTrips,
+            recentPoints = if (slot == PickSlot.ORIGIN) recentOrigins else recentTrips,
             onStopPicked = { stop ->
                 val point = TripPoint(stop.latitude, stop.longitude, stop.desc)
                 if (slot == PickSlot.ORIGIN) {
@@ -982,32 +1151,36 @@ fun TripPlannerScreen(
 
 }
 
-@Composable
-private fun PlanModeChip(
-    mode: TripPlannerMode,
-    labelRes: Int,
-    options: TripRequestOptions,
-    onOptionsChanged: (TripRequestOptions) -> Unit
-) {
-    FilterChip(
-        selected = options.mode == mode,
-        onClick = { onOptionsChanged(options.copy(mode = mode)) },
-        label = { Text(stringResource(labelRes)) }
-    )
-}
+/** Step for the results' earlier/later controls. */
+private const val RESULT_BROWSE_STEP_MS = 30L * 60_000L
 
-@Composable
-private fun PlanPriorityChip(
-    min: TripPlannerMin,
-    labelRes: Int,
-    options: TripRequestOptions,
-    onOptionsChanged: (TripRequestOptions) -> Unit
+/** Shares the selected option as plain text so a rider can forward a plan. */
+private fun shareTrip(
+    context: Context,
+    originLabel: String,
+    destinationLabel: String,
+    itinerary: TripItinerary
 ) {
-    FilterChip(
-        selected = options.min == min,
-        onClick = { onOptionsChanged(options.copy(min = min)) },
-        label = { Text(stringResource(labelRes)) }
-    )
+    val dateLabel = itinerary.departure?.let { departure ->
+        DateFormat.getMediumDateFormat(context).format(Date(departure.millis))
+    }.orEmpty()
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(
+            Intent.EXTRA_SUBJECT,
+            context.getString(R.string.share_trip_subject_fmt, originLabel, destinationLabel)
+        )
+        putExtra(
+            Intent.EXTRA_TEXT,
+            buildTripShareText(
+                originLabel = originLabel,
+                destinationLabel = destinationLabel,
+                dateLabel = dateLabel,
+                itinerary = itinerary
+            )
+        )
+    }
+    context.startActivity(Intent.createChooser(send, context.getString(R.string.share_trip)))
 }
 
 /** Stable identity for a from→to pair, used to decide whether a restored plan is still relevant. */
