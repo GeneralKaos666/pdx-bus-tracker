@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -89,8 +90,9 @@ fun StopsScreen(
         )
         // Persistent "where am I": the pill's own label is hidden on narrow phones, and the
         // accordion can be scrolled far from the route it belongs to.
-        var lastSelectedRoute by remember { mutableStateOf<Route?>(null) }
-        selectedRoute?.let { lastSelectedRoute = it }
+        // rememberUpdatedState, not a composition-time write: assigning the var here
+        // scheduled an extra recomposition on every selection.
+        val lastSelectedRoute by rememberUpdatedState(selectedRoute)
         AnimatedVisibility(
             visible = selectedRoute != null,
             enter = m3ContentExpand(),
