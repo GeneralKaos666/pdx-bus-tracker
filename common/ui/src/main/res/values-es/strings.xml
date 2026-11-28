@@ -11,4 +11,12 @@
     <string name="transit_type_streetcar">Tranvía</string>
     <string name="transit_type_wes_commuter_rail">Tren de cercanías WES</string>
     <string name="transit_type_transit">Transporte</string>
+    <string name="accent_trimet_blue">Azul TriMet</string>
+    <string name="accent_transit_orange">Naranja de tránsito</string>
+    <string name="accent_emerald">Esmeralda</string>
+    <string name="accent_violet">Violeta</string>
+    <string name="accent_crimson">Carmesí</string>
+    <string name="accent_amber">Ámbar</string>
+    <string name="accent_teal">Verde azulado</string>
+    <string name="accent_slate">Pizarra</string>
 </resources>

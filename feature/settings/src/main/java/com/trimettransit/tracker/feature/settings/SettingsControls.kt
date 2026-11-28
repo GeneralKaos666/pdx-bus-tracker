@@ -147,15 +147,15 @@ internal fun AccentPresetRow(
                         animationSpec = m3EffectsDefault(),
                         label = "accentPresetRing"
                     )
+                    val presetLabel = stringResource(preset.labelRes)
+                    val presetDescription =
+                        if (isSelected) "$presetLabel, $selectedLabel" else presetLabel
                     Surface(
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp)
                             .pressScale(source, 0.96f)
-                            .semantics {
-                                contentDescription =
-                                    if (isSelected) "${preset.name}, $selectedLabel" else preset.name
-                            }
+                            .semantics { contentDescription = presetDescription }
                             .clickable(
                                 interactionSource = source,
                                 indication = LocalIndication.current
