@@ -1,4 +1,4 @@
-## Unreleased
+## What's New in v4.22.0
 
 - **The Lines tab looks like lines:** its tab icon is now a route sign instead of a map.
 - **Rotation keeps your place:** the search text, an expanded arrivals list, the tracked vehicle, and the open line in the routes browser all survive a rotation.
