@@ -1,13 +1,19 @@
 ## Unreleased
 
+- **The Lines tab looks like lines:** its tab icon is now a route sign instead of a map.
+- **Rotation keeps your place:** the search text, an expanded arrivals list, the tracked vehicle, and the open line in the routes browser all survive a rotation.
+- **The data-age note counts up:** the "Updated X min ago" line now ticks over while you watch instead of freezing at the first value.
+- **Departure alerts are not thrown away:** a departure that came due while notifications were blocked is still eligible to alert once they are allowed.
+- **Screen readers hear the state:** settings and widget rows announce themselves as switches or choices with their on/off or selected state, section titles are headings, and alert links have a full-size tap target.
+- **Colour choices are translated:** the accent preset names are read in Spanish instead of English.
 - **Times speak your language:** the clock follows the phone's 12- or 24-hour convention instead of always showing AM/PM in English, and trip durations are translated.
 - **Station alerts reach the stop:** an alert scoped to a stop, such as a lift outage or a closure with no line attached, now appears above that stop's arrivals.
 - **Midnight trips stay on the right day:** a trip that starts before midnight and ends after it now keeps the correct arrival day and shows its transfer wait.
 - **The widget says what it means:** after the last favourite is removed it shows the no-favourites hint instead of a permanent "Refreshing" message.
 - **Readable where colour is customised:** route badges pick a contrasting glyph colour, and option cards no longer clip their times at large font sizes.
-- **The return trip keeps its place:** swapping origin and destination re-plans in the opposite direction without blanking the map or closing the results while the new plan loads.
-- **Trip results now say where they go:** the results view names the origin and destination above the options, and the swap control re-plans the trip in the opposite direction so it becomes the return trip in one tap.
-- **Steps lead somewhere:** tapping a bus or train leg opens the arrivals board for the stop you board at, instead of leaving the leg as a dead end.
+- **The return trip keeps its place:** the swap control re-plans the trip in the opposite direction, and the current plan stays on the map and in the results while the return trip loads instead of blanking.
+- **Trip results now say where they go:** the results view names the origin and destination above the options.
+- **Steps lead somewhere:** tapping a bus or train leg opens the arrivals board for the stop you board at, instead of leaving the leg as a dead end. Streetcar and lettered lines now highlight their own line on that board.
 - **Browsing trips is one tap:** earlier and later controls step the plan half an hour at a time from the results view, a share control sends the selected option as text, and changing an option or refreshing no longer blanks the map and closes the results while the new request runs.
 - **Fewer taps to schedule:** the depart-at and arrive-by chips show their chosen time instead of hiding it in a second control, quick presets add 15 minutes, 30 minutes, 1 hour, or 2 hours above the date picker, and the stop picker opens with the keyboard already in the search field.
 - **A way out of dead ends:** a failed request offers Try again, and a plan with no trips offers to allow more walking or depart now.
