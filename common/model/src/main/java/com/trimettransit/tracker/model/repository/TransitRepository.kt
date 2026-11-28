@@ -18,18 +18,20 @@ import com.trimettransit.tracker.model.TripStatusResult
  * this interface rather than on the concrete [TransitApi] object so the data
  * source can be substituted or tested.
  */
-interface TransitRepository {
-    /** True when a TriMet API key is configured; false means live calls will no-op. */
+/**
+ * Stops, routes, and their arrival boards.
+ */
+interface ArrivalsSource {
     fun isConfigured(): Boolean
     suspend fun getRoutes(): List<Route>?
     suspend fun getDirections(routeId: Int): List<Direction>?
     suspend fun getStops(routeId: Int, directionId: Int): List<Stop>?
 
     /**
-     * Fetches TriMet Alerts V2 entries scoped to specific [routes] and/or stop
-     * [locIds]. At least one non-empty scope must be supplied: this app has no
-     * unscoped/system-wide alerts UI, so passing both null/empty refuses the call
-     * (returns null) rather than fetching the unfiltered feed.
+     * Fetches TriMet Alerts V2 entries scoped to specific routes and/or stop locIds.
+     * At least one non-empty scope must be supplied: this app has no unscoped/system-wide
+     * alerts UI, so passing both null/empty refuses the call (returns null) rather than
+     * fetching the unfiltered feed.
      */
     suspend fun getAlerts(routes: List<Int>? = null, locIds: List<Int>? = null): List<TransitAlert>?
 
@@ -39,6 +41,19 @@ interface TransitRepository {
         minutes: Int = 20,
         maxArrivals: Int = 2
     ): ArrivalsResult?
+
+    suspend fun getTripStatus(
+        tripIds: List<String>? = null,
+        blockIds: List<Int>? = null,
+        showRoutes: Boolean = true,
+        showStops: Boolean = true
+    ): TripStatusResult?
+}
+
+/**
+ * Stop discovery and lookup: nearby, by id, and the full search catalogue.
+ */
+interface StopsSource {
     suspend fun getStopsByLocation(
         ll: String,
         feet: Int? = null,
@@ -49,11 +64,9 @@ interface TransitRepository {
     ): List<Stop>?
 
     /**
-     * Nearby-stops "fast path": stops near [ll] with their arrivals already embedded
-     * in the same response, keyed by stop locId in [StopsWithArrivals.arrivalsByStop].
-     * Returns null on the same offline/missing-key/error conditions as
-     * [getStopsByLocation] — callers should fall back to that call (and, if arrival
-     * previews are still wanted, a separate [getArrivals] call) when this returns null.
+     * Nearby-stops "fast path": stops near ll with their arrivals already embedded in the
+     * same response, keyed by stop locId in [StopsWithArrivals.arrivalsByStop]. Returns null
+     * on the same offline/missing-key/error conditions as [getStopsByLocation].
      */
     suspend fun getStopsWithArrivals(
         ll: String,
@@ -67,21 +80,26 @@ interface TransitRepository {
         minutes: Int? = null,
         maxArrivals: Int? = null
     ): StopsWithArrivals?
+
     suspend fun getStopById(locId: Int): Stop?
     suspend fun searchStops(): List<Stop>?
+}
 
-    /** Plans a from→to trip via the TriMet Trip Planner WS. Offline/missing key surfaces as [TripPlanResult.Error]. */
+/** The Trip Planner WS, kept separate so planner consumers do not depend on everything. */
+interface TripPlannerSource {
+    /** Plans a from→to trip. Offline/missing key surfaces as [TripPlanResult.Error]. */
     suspend fun planTrip(
         from: TripPoint,
         to: TripPoint,
         time: TripRequestTime = TripRequestTime(),
         options: TripRequestOptions = TripRequestOptions()
     ): TripPlanResult
-
-    suspend fun getTripStatus(
-        tripIds: List<String>? = null,
-        blockIds: List<Int>? = null,
-        showRoutes: Boolean = true,
-        showStops: Boolean = true
-    ): TripStatusResult?
 }
+
+/**
+ * Data-access boundary for the TriMet live transit API. Implementations live in
+ * `component:transit`. App code (phone screens and widget workers) depends on these
+ * interfaces rather than on the concrete `TransitApi` object so the data source can be
+ * substituted or tested. Consumers should take the narrowest source they use.
+ */
+interface TransitRepository : ArrivalsSource, StopsSource, TripPlannerSource

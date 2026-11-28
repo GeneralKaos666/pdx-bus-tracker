@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.home
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -109,7 +110,7 @@ fun RecentStopsScreen(
                         enter = m3ContentExpand(),
                         exit = m3ContentShrink()
                     ) {
-                        val clearSource = remember { MutableInteractionSource() }
+                        val clearSource = rememberPressSource()
                         TextButton(
                             onClick = { showClearConfirm = true },
                             interactionSource = clearSource,
@@ -134,7 +135,7 @@ fun RecentStopsScreen(
                     },
                     onDismiss = { dismissTarget = it },
                     emptyActions = {
-                        val nearbySource = remember { MutableInteractionSource() }
+                        val nearbySource = rememberPressSource()
                         TextButton(
                             onClick = onFindNearby,
                             interactionSource = nearbySource,
@@ -155,7 +156,7 @@ fun RecentStopsScreen(
             title = { Text(stringResource(R.string.remove_recent_title)) },
             text = { Text(target.desc) },
             confirmButton = {
-                val confirmSource = remember { MutableInteractionSource() }
+                val confirmSource = rememberPressSource()
                 TextButton(
                     onClick = {
                         dismissTarget = null
@@ -168,7 +169,7 @@ fun RecentStopsScreen(
                 }
             },
             dismissButton = {
-                val cancelSource = remember { MutableInteractionSource() }
+                val cancelSource = rememberPressSource()
                 TextButton(
                     onClick = { dismissTarget = null },
                     interactionSource = cancelSource,
@@ -186,7 +187,7 @@ fun RecentStopsScreen(
             title = { Text(stringResource(R.string.clear_recents_title)) },
             text = { Text(stringResource(R.string.clear_recents_message)) },
             confirmButton = {
-                val clearConfirmSource = remember { MutableInteractionSource() }
+                val clearConfirmSource = rememberPressSource()
                 TextButton(
                     onClick = {
                         showClearConfirm = false
@@ -199,7 +200,7 @@ fun RecentStopsScreen(
                 }
             },
             dismissButton = {
-                val clearCancelSource = remember { MutableInteractionSource() }
+                val clearCancelSource = rememberPressSource()
                 TextButton(
                     onClick = { showClearConfirm = false },
                     interactionSource = clearCancelSource,

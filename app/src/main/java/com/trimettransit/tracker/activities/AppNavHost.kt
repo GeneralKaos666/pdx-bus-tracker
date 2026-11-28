@@ -248,6 +248,9 @@ fun AppNavHost(
             enterTransition = { navEnterArrivals }
         ) { backStackEntry ->
             val dest: ArrivalsDestination = backStackEntry.toRoute()
+            // pdxbus://arrivals/{stopId} is reachable by any app; a non-positive id would
+            // be sent straight to TriMet and recorded as a recent stop.
+            if (dest.stopId <= 0) return@composable
             LaunchedEffect(dest.stopId) { onResetArrivalsState(dest.stopId) }
             ArrivalsScreen(
                 transitRepository = transitRepository,

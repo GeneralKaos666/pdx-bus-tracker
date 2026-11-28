@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.trips
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -89,6 +90,8 @@ import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.ContentEntrance
+import com.trimettransit.tracker.ui.components.motionEnterFadeSlide
+import com.trimettransit.tracker.ui.components.motionExitFadeSlide
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.RememberOnResume
 import com.trimettransit.tracker.ui.theme.AppMotion
@@ -665,16 +668,8 @@ fun TripPlannerScreen(
             // "Location permission is off" chip (mirrors the other location screens).
             AnimatedVisibility(
                 visible = pageVisible && !locationPermissionGranted && hasAskedPermission,
-                enter = if (AppMotion.reduceMotion) {
-                    fadeIn(m3EffectsDefault())
-                } else {
-                    fadeIn(m3EffectsDefault()) + slideInVertically(m3SpatialDefault()) { -it }
-                },
-                exit = if (AppMotion.reduceMotion) {
-                    fadeOut(m3EffectsFast())
-                } else {
-                    fadeOut(m3EffectsFast()) + slideOutVertically(m3SpatialFast()) { -it / 3 }
-                }
+                enter = motionEnterFadeSlide(AppMotion.reduceMotion),
+                exit = motionExitFadeSlide(AppMotion.reduceMotion)
             ) {
                 Surface(
                     onClick = { showLocationExplainer = true },
@@ -720,7 +715,7 @@ fun TripPlannerScreen(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.weight(1f)
                             )
-                            val collapseSource = remember { MutableInteractionSource() }
+                            val collapseSource = rememberPressSource()
                             IconButton(
                                 onClick = { plannerExpanded = !plannerExpanded },
                                 interactionSource = collapseSource,
@@ -769,7 +764,7 @@ fun TripPlannerScreen(
                                         .padding(vertical = 2.dp),
                                     horizontalArrangement = Arrangement.End
                                 ) {
-                                    val swapSource = remember { MutableInteractionSource() }
+                                    val swapSource = rememberPressSource()
                                     IconButton(
                                         onClick = {
                                             val from = draft.origin
@@ -872,7 +867,7 @@ fun TripPlannerScreen(
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
-                                val optionsSource = remember { MutableInteractionSource() }
+                                val optionsSource = rememberPressSource()
                                 Surface(
                                     onClick = { showOptionsSheet = true },
                                     interactionSource = optionsSource,
@@ -907,7 +902,7 @@ fun TripPlannerScreen(
                         // Kept outside the collapsible, scrolling section so the main action
                         // never scrolls out of view.
                         Spacer(modifier = Modifier.height(8.dp))
-                        val planSource = remember { MutableInteractionSource() }
+                        val planSource = rememberPressSource()
                         FilledTonalButton(
                             onClick = { planIt() },
                             enabled = origin != null && dest != null && !isPlanning,
@@ -941,16 +936,8 @@ fun TripPlannerScreen(
                 // Map-pin hint when a slot is awaiting a map tap.
                 AnimatedVisibility(
                     visible = picking != PickSlot.NONE,
-                    enter = if (AppMotion.reduceMotion) {
-                        fadeIn(m3EffectsDefault())
-                    } else {
-                        fadeIn(m3EffectsDefault()) + slideInVertically(m3SpatialDefault()) { -it }
-                    },
-                    exit = if (AppMotion.reduceMotion) {
-                        fadeOut(m3EffectsFast())
-                    } else {
-                        fadeOut(m3EffectsFast()) + slideOutVertically(m3SpatialFast()) { -it / 3 }
-                    }
+                    enter = motionEnterFadeSlide(AppMotion.reduceMotion),
+                    exit = motionExitFadeSlide(AppMotion.reduceMotion)
                 ) {
                     Surface(
                         shape = appCardShape(),
@@ -971,7 +958,7 @@ fun TripPlannerScreen(
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
                             )
-                            val cancelPickSource = remember { MutableInteractionSource() }
+                            val cancelPickSource = rememberPressSource()
                             IconButton(
                                 onClick = { picking = PickSlot.NONE },
                                 interactionSource = cancelPickSource,
@@ -1145,41 +1132,3 @@ fun TripPlannerScreen(
 
 /** Step for the results' earlier/later controls. */
 private const val RESULT_BROWSE_STEP_MS = 30L * 60_000L
-
-/** Shares the selected option as plain text so a rider can forward a plan. */
-private fun shareTrip(
-    context: Context,
-    originLabel: String,
-    destinationLabel: String,
-    itinerary: TripItinerary
-) {
-    val dateLabel = itinerary.departure?.let { departure ->
-        DateFormat.getMediumDateFormat(context).format(Date(departure.millis))
-    }.orEmpty()
-    val send = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(
-            Intent.EXTRA_SUBJECT,
-            context.getString(R.string.share_trip_subject_fmt, originLabel, destinationLabel)
-        )
-        putExtra(
-            Intent.EXTRA_TEXT,
-            buildTripShareText(
-                originLabel = originLabel,
-                destinationLabel = destinationLabel,
-                dateLabel = dateLabel,
-                itinerary = itinerary,
-                separator = context.getString(R.string.trip_share_separator),
-                dash = context.getString(R.string.trip_share_dash),
-                hoursMinutesFmt = context.getString(R.string.duration_hours_minutes_fmt),
-                minutesOnlyFmt = context.getString(R.string.duration_minutes_fmt),
-                hoursOnlyFmt = context.getString(R.string.duration_hours_fmt)
-            )
-        )
-    }
-    context.startActivity(Intent.createChooser(send, context.getString(R.string.share_trip)))
-}
-
-/** Stable identity for a from→to pair, used to decide whether a restored plan is still relevant. */
-private fun endpointKey(from: TripPoint, to: TripPoint): String =
-    "${from.latitude},${from.longitude}->${to.latitude},${to.longitude}"

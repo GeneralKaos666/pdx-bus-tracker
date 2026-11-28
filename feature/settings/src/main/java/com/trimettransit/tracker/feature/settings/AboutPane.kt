@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.settings
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -112,7 +113,7 @@ internal fun AboutPane(apiKeyConfigured: Boolean)
 
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
-        val policyInteractionSource = remember { MutableInteractionSource() }
+        val policyInteractionSource = rememberPressSource()
         Row(
             modifier = Modifier
                 .fillMaxWidth()

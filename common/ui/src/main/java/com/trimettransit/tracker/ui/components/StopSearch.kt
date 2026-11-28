@@ -60,7 +60,7 @@ fun StopSearchItem(
     gridMode: Boolean = false,
     trailingContent: @Composable (() -> Unit)? = null
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     Row(
         modifier = modifier
             .fillMaxWidth()

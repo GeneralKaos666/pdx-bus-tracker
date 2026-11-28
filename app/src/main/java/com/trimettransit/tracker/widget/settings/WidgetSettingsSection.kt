@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.widget.settings
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -112,7 +113,7 @@ fun WidgetSettingsSection() {
         // Direct pin entry point; hidden on launchers without pin support.
         if (AppWidgetManager.getInstance(context).isRequestPinAppWidgetSupported) {
             val scope = rememberCoroutineScope()
-            val pinSource = remember { MutableInteractionSource() }
+            val pinSource = rememberPressSource()
             TextButton(
                 onClick = {
                     scope.launch {
@@ -189,7 +190,7 @@ private fun WidgetPlacedRow(widgetId: Int) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
-        val editSource = remember { MutableInteractionSource() }
+        val editSource = rememberPressSource()
         TextButton(
             onClick = { openWidgetConfig(context, widgetId) },
             interactionSource = editSource,

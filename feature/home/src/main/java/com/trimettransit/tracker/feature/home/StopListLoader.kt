@@ -19,7 +19,9 @@ class StopListState(
     val isLoading: Boolean,
     val isError: Boolean,
     /** Re-runs the read; wired to the error state's retry action. */
-    val reload: () -> Unit
+    val reload: () -> Unit,
+    /** Drops a stop locally after its removal was already written, avoiding a re-read. */
+    val removeLocally: (Int) -> Unit
 )
 
 /**
@@ -74,5 +76,9 @@ internal fun rememberStopListLoader(
         load()
     }
 
-    return StopListState(stops, isLoading, isError, ::load)
+    fun removeLocally(locId: Int) {
+        stops = stops.filterNot { it.locId == locId }
+    }
+
+    return StopListState(stops, isLoading, isError, ::load, ::removeLocally)
 }

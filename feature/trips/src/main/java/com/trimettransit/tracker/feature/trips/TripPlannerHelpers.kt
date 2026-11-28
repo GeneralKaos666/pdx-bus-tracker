@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.trips
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -61,7 +62,7 @@ internal fun EndpointRow(
     onClear: () -> Unit,
     onPickOnMap: () -> Unit
 ) {
-    val source = remember { MutableInteractionSource() }
+    val source = rememberPressSource()
     Surface(
         onClick = onClick,
         interactionSource = source,
@@ -110,7 +111,7 @@ internal fun EndpointRow(
                 )
             }
             // Available whether or not a point is set, unlike the clear button below.
-            val pickSource = remember { MutableInteractionSource() }
+            val pickSource = rememberPressSource()
             IconButton(onClick = onPickOnMap, interactionSource = pickSource, modifier = Modifier.size(48.dp).pressScale(pickSource)) {
                 Icon(
                     Icons.Default.LocationOn,
@@ -119,7 +120,7 @@ internal fun EndpointRow(
                     modifier = Modifier.size(20.dp)
                 )
             }
-            val clearSource = remember { MutableInteractionSource() }
+            val clearSource = rememberPressSource()
             AnimatedVisibility(
                 visible = point != null,
                 enter = fadeIn(m3EffectsDefault()),

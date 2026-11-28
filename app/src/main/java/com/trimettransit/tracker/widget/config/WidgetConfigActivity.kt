@@ -57,6 +57,16 @@ class WidgetConfigActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // The activity is exported for launchers, so any app can start it with a guessed
+        // widget id and rewrite that widget's stored config. Only configure an id the
+        // system says exists.
+        val requestedId = appWidgetId
+        if (requestedId != null &&
+            AppWidgetManager.getInstance(this).getAppWidgetInfo(requestedId) == null
+        ) {
+            finish()
+            return
+        }
         // WindowCompat's enableEdgeToEdge leaves system-bar icon appearance to the
         // caller (unlike the deprecated ComponentActivity helper), so mirror the
         // theme's light/dark choice here.

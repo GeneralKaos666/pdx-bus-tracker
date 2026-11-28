@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.trips
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -143,7 +144,7 @@ internal fun TripScheduleSheet(
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(modifier = Modifier.weight(1f))
-                val cancelSource = remember { MutableInteractionSource() }
+                val cancelSource = rememberPressSource()
                 TextButton(
                     onClick = onDismiss,
                     interactionSource = cancelSource,
@@ -151,7 +152,7 @@ internal fun TripScheduleSheet(
                 ) {
                     Text(stringResource(R.string.cancel))
                 }
-                val doneSource = remember { MutableInteractionSource() }
+                val doneSource = rememberPressSource()
                 TextButton(
                     // A time that has already passed cannot be planned for, so it cannot be
                     // confirmed either.

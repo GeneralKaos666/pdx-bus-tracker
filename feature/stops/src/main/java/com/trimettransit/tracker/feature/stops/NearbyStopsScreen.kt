@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.stops
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -97,14 +98,14 @@ fun NearbyStopsScreen(
 
     fun readPermissionState(): LocationPermissionState = locationPermissionState(
         fineGranted = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_FINE_LOCATION
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED,
         coarseGranted = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED,
         hasRequested = hasRequestedPermission,
         shouldShowRationale = activity != null && ActivityCompat.shouldShowRequestPermissionRationale(
-            activity, Manifest.permission.ACCESS_FINE_LOCATION
+            activity, Manifest.permission.ACCESS_COARSE_LOCATION
         )
     )
 
@@ -172,18 +173,18 @@ fun NearbyStopsScreen(
                 )
             },
             confirmButton = {
-                val continueSource = remember { MutableInteractionSource() }
+                val continueSource = rememberPressSource()
                 TextButton(
                     onClick = {
                         showLocationExplainer = false
-                        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                        permissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                     },
                     interactionSource = continueSource,
                     modifier = Modifier.pressScale(continueSource)
                 ) { Text(stringResource(R.string.continue_)) }
             },
             dismissButton = {
-                val notNowSource = remember { MutableInteractionSource() }
+                val notNowSource = rememberPressSource()
                 TextButton(
                     onClick = { showLocationExplainer = false },
                     interactionSource = notNowSource,
@@ -235,7 +236,7 @@ fun NearbyStopsScreen(
         // The TopAppBar already names this screen; a second identical heading directly under it
         // was pure duplication.
         // Refresh button
-        val refreshSource = remember { MutableInteractionSource() }
+        val refreshSource = rememberPressSource()
         FilledTonalButton(
             onClick = { promptForPermissionAndLoad() },
             enabled = !isLoading,
@@ -370,7 +371,7 @@ private suspend fun loadNearbyStops(
         }
 
         val hasFineLocation = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_FINE_LOCATION
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
         val hasCoarseLocation = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_COARSE_LOCATION

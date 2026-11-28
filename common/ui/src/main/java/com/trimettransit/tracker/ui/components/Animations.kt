@@ -5,9 +5,12 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.Composable
@@ -18,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
@@ -126,6 +130,50 @@ fun Modifier.staggeredFadeIn(
  * the clickable so the ripple scales too). Uses the M3 Expressive spatial-fast spring so the
  * release pops back through 1.0 with the characteristic slight overshoot.
  */
+/**
+ * The shared fade-plus-slide entrance/exit used by banners and overlays: a vertical nudge
+ * with a fade, or fade only when the rider asked for reduced motion.
+ */
+@Composable
+fun motionEnterFadeSlide(
+    reduceMotion: Boolean,
+    fromTop: Boolean = true,
+    effects: FiniteAnimationSpec<Float> = m3EffectsDefault(),
+    spatial: FiniteAnimationSpec<IntOffset> = m3SpatialDefault()
+): EnterTransition {
+    val slide = if (fromTop) {
+        slideInVertically(spatial) { -it }
+    } else {
+        slideInVertically(spatial) { it }
+    }
+    return if (reduceMotion) fadeIn(effects) else fadeIn(effects) + slide
+}
+
+@Composable
+fun motionExitFadeSlide(
+    reduceMotion: Boolean,
+    toTop: Boolean = true,
+    effects: FiniteAnimationSpec<Float> = m3EffectsFast(),
+    spatial: FiniteAnimationSpec<IntOffset> = m3SpatialFast(),
+    distanceDivisor: Int = 3
+): ExitTransition {
+    val slide = if (toTop) {
+        slideOutVertically(spatial) { -it / distanceDivisor }
+    } else {
+        slideOutVertically(spatial) { it / distanceDivisor }
+    }
+    return if (reduceMotion) fadeOut(effects) else fadeOut(effects) + slide
+}
+
+
+/**
+ * One press-feedback source per control. The caller still wires it into the element's
+ * clickable (the scale only animates when the same source emits), but the remember
+ * boilerplate lives here instead of at every call site.
+ */
+@Composable
+fun rememberPressSource(): MutableInteractionSource = remember { MutableInteractionSource() }
+
 @Composable
 fun Modifier.pressScale(
     interactionSource: MutableInteractionSource,

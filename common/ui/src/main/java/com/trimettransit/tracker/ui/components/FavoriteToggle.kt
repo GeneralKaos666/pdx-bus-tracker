@@ -43,7 +43,7 @@ fun FavoriteToggleButton(
 ) {
     // The press feedback the rest of the app's icon buttons have. In the arrivals bar this heart
     // sits next to press-scaled controls, so without it it was the only one that did not react.
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     IconButton(
         onClick = onClick,
         interactionSource = interactionSource,

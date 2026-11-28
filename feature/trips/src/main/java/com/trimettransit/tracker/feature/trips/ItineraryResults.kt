@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.trips
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -67,6 +69,7 @@ import androidx.compose.animation.animateColorAsState
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.components.TransitBadge
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.theme.appCardBorder
@@ -116,7 +119,7 @@ internal fun ItineraryResultsScreen(
                     .height(MAP_PREVIEW_HEIGHT)
             ) {
                 mapPreview()
-                val backSource = remember { MutableInteractionSource() }
+                val backSource = rememberPressSource()
                 Surface(
                     onClick = onBack,
                     interactionSource = backSource,
@@ -137,7 +140,7 @@ internal fun ItineraryResultsScreen(
                             .size(24.dp)
                     )
                 }
-                val shareSource = remember { MutableInteractionSource() }
+                val shareSource = rememberPressSource()
                 Surface(
                     onClick = onShare,
                     interactionSource = shareSource,
@@ -177,7 +180,7 @@ internal fun ItineraryResultsScreen(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                val swapSource = remember { MutableInteractionSource() }
+                val swapSource = rememberPressSource()
                 IconButton(
                     onClick = onSwapEndpoints,
                     enabled = !isRefreshing,
@@ -230,7 +233,7 @@ internal fun ItineraryResultsScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                val refreshSource = remember { MutableInteractionSource() }
+                val refreshSource = rememberPressSource()
                 TextButton(
                     onClick = onRefresh,
                     enabled = !isRefreshing,
@@ -269,57 +272,60 @@ internal fun ItineraryResultsScreen(
 
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
-            Crossfade(
-                targetState = selectedIndex,
-                animationSpec = m3EffectsDefault(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                label = "itinerarySelection"
-            ) { index ->
-                val itinerary = plan.itineraries.getOrNull(index) ?: plan.itineraries.firstOrNull()
-                if (itinerary == null) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = stringResource(R.string.no_trips_found),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+            // No Crossfade around the list: it disposed the LazyColumn on every selection
+            // change, resetting scroll and composing two leg lists during the transition.
+            val selectedItinerary = plan.itineraries.getOrNull(selectedIndex)
+                ?: plan.itineraries.firstOrNull()
+            if (selectedItinerary == null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.no_trips_found),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                val rows = remember(selectedItinerary) { itineraryRows(selectedItinerary.legs) }
+                val listState = remember(selectedIndex) { LazyListState() }
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentPadding = PaddingValues(bottom = listBottomInset)
+                ) {
+                    item(key = "summary") {
+                        TripSummaryHeader(
+                            itinerary = selectedItinerary,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
                         )
                     }
-                } else {
-                    val rows = remember(itinerary) { itineraryRows(itinerary.legs) }
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = listBottomInset)
-                    ) {
-                        item(key = "summary") {
-                            TripSummaryHeader(
-                                itinerary = itinerary,
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                            )
-                        }
-                        itemsIndexed(
-                            rows,
-                            key = { _, row -> row.key() },
-                            contentType = { _, row -> row::class.simpleName.orEmpty() }
-                        ) { _, row ->
-                            when (row) {
-                                is ItineraryRowItem.Leg -> {
-                                    val boardStop = row.leg.takeUnless { it.isWalk }
-                                        ?.from
-                                        ?.takeIf { !it.stopId.isNullOrBlank() }
-                                    LegRow(
-                                        leg = row.leg,
-                                        onClick = boardStop?.let {
-                                            { onLegClick(row.leg) }
-                                        },
-                                        clickLabel = boardStop?.let {
-                                            stringResource(R.string.open_stop_arrivals_fmt, it.description)
-                                        }
-                                    )
-                                }
-                                is ItineraryRowItem.Wait -> WaitRow(millis = row.millis)
+                    itemsIndexed(
+                        rows,
+                        key = { _, row -> row.key() },
+                        contentType = { _, row -> row::class.simpleName.orEmpty() }
+                    ) { _, row ->
+                        when (row) {
+                            is ItineraryRowItem.Leg -> {
+                                val boardStop = row.leg.takeUnless { it.isWalk }
+                                    ?.from
+                                    ?.takeIf { !it.stopId.isNullOrBlank() }
+                                LegRow(
+                                    leg = row.leg,
+                                    onClick = boardStop?.let {
+                                        { onLegClick(row.leg) }
+                                    },
+                                    clickLabel = boardStop?.let {
+                                        stringResource(R.string.open_stop_arrivals_fmt, it.description)
+                                    }
+                                )
                             }
+                            is ItineraryRowItem.Wait -> WaitRow(millis = row.millis)
                         }
                     }
                 }
@@ -352,7 +358,7 @@ private fun ItineraryOptionCard(
         animationSpec = m3EffectsDefault(),
         label = "itineraryOptionColor"
     )
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     Surface(
         onClick = onClick,
         interactionSource = interactionSource,
@@ -506,48 +512,23 @@ internal fun RouteBadge(
     contentDescription: String? = null,
     compact: Boolean = false
 ) {
-    val scheme = MaterialTheme.colorScheme
     val letter = leg.mode.transitTypeLetter()
-    val badgeDescription = contentDescription
-    val overrides = LocalAppearanceStyle.current.transitTypeColors
-    val badgeSize: Dp = if (compact) 22.dp else 28.dp
-    Surface(
-        shape = appCardShape(),
-        color = transitColor(letter, scheme, overrides),
-        modifier = if (badgeDescription != null) {
-            modifier.semantics { this.contentDescription = badgeDescription }
-        } else {
-            modifier
-        }
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(badgeSize)
-                .clearAndSetSemantics { }
-        ) {
-            Text(
-                text = (leg.routeNumber?.takeIf { it.isNotEmpty() && letter == "B" }) ?: letter,
-                style = if (compact) {
-                    MaterialTheme.typography.labelSmall
-                } else {
-                    MaterialTheme.typography.labelMedium
-                },
-                fontWeight = FontWeight.Bold,
-                color = transitOnColor(letter, scheme, overrides),
-                maxLines = 1
-            )
-        }
-    }
+    val label = (leg.routeNumber?.takeIf { it.isNotEmpty() && letter == "B" }) ?: letter
+    TransitBadge(
+        label = label,
+        transitLetter = letter,
+        modifier = modifier,
+        contentDescription = contentDescription,
+        compact = compact
+    )
 }
-
 @Composable
 internal fun LegRow(
     leg: TripLeg,
     onClick: (() -> Unit)? = null,
     clickLabel: String? = null
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     Row(
         modifier = Modifier
             .fillMaxWidth()

@@ -269,6 +269,25 @@ private class MapState {
     var countdownDue: String = ""
     var countdownMinFormat: String = ""
 
+    /**
+     * Feature objects for the current positions, rebuilt only when positions/arrivals change.
+     * The glide loop used to rebuild every Feature every frame (~36 full rebuilds per fix);
+     * it now mutates one geometry on the cached list.
+     */
+    private var cachedPositions: List<BlockPosition>? = null
+    private var cachedArrivals: List<Arrival>? = null
+    private var cachedFeatures: MutableList<Feature> = mutableListOf()
+    private var cachedMeta: MutableList<MarkerMeta> = mutableListOf()
+    private var trackedFeatureIndex: Int = -1
+    private var trackedFeatureBase: LatLng? = null
+
+    /** Per-marker properties kept beside the Feature so the glide can re-create one marker. */
+    private data class MarkerMeta(
+        val letter: String,
+        val bearing: Number,
+        val countdown: String
+    )
+
     /** Pushes the latest bus positions into the GeoJsonSource (no-op until style is ready). */
     fun applyPositions() {
         writeFeatures(null)
@@ -335,14 +354,34 @@ private class MapState {
      */
     private fun writeFeatures(trackedAt: LatLng?) {
         val source = busSource ?: return
-        val features = positions
-            .filter { it.lat != 0.0 || it.lng != 0.0 }
-            .map { bp ->
-            val at = if (bp.vehicleID == trackedVehicleId && trackedAt != null) {
-                trackedAt
-            } else {
-                LatLng(bp.lat, bp.lng)
+        if (cachedPositions !== positions || cachedArrivals !== arrivals) {
+            rebuildFeatures()
+        }
+        if (trackedFeatureIndex in cachedFeatures.indices) {
+            val at = trackedAt ?: trackedFeatureBase
+            if (at != null) {
+                // One new Feature per frame for the moving marker; every other marker is
+                // reused from the cache instead of being rebuilt.
+                val meta = cachedMeta[trackedFeatureIndex]
+                val moved = Feature.fromGeometry(Point.fromLngLat(at.longitude, at.latitude))
+                moved.addStringProperty("icon", "badge-${meta.letter}")
+                moved.addNumberProperty("bearing", meta.bearing)
+                moved.addStringProperty("countdown", meta.countdown)
+                cachedFeatures[trackedFeatureIndex] = moved
             }
+        }
+        source.setGeoJson(FeatureCollection.fromFeatures(cachedFeatures))
+    }
+
+    private fun rebuildFeatures() {
+        cachedPositions = positions
+        cachedArrivals = arrivals
+        cachedFeatures = mutableListOf()
+        cachedMeta = mutableListOf()
+        trackedFeatureIndex = -1
+        trackedFeatureBase = null
+        positions.filter { it.lat != 0.0 || it.lng != 0.0 }.forEach { bp ->
+            val at = LatLng(bp.lat, bp.lng)
             val letter = transitBadgeLetter(bp.routeNumber).ifBlank { "B" }
             val feature = Feature.fromGeometry(Point.fromLngLat(at.longitude, at.latitude))
             feature.addStringProperty("icon", "badge-$letter")
@@ -361,9 +400,13 @@ private class MapState {
                 } else ""
             }
             feature.addStringProperty("countdown", label)
-            feature
+            if (bp.vehicleID == trackedVehicleId) {
+                trackedFeatureIndex = cachedFeatures.size
+                trackedFeatureBase = at
+            }
+            cachedFeatures.add(feature)
+            cachedMeta.add(MarkerMeta(letter = letter, bearing = bp.bearing, countdown = label))
         }
-        source.setGeoJson(FeatureCollection.fromFeatures(features))
     }
 }
 

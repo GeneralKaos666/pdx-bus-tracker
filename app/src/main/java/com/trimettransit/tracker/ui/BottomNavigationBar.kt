@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.ui
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -47,6 +48,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -107,7 +110,7 @@ internal val bottomNavItems = listOf(
 @Composable
 internal fun MainBottomBar(
     topPage: Int,
-    pagePosition: Float,
+    pagePosition: () -> Float,
     onNavigate: (Int) -> Unit,
     onSettingsClick: () -> Unit,
     showBack: Boolean = false,
@@ -219,7 +222,7 @@ private fun PillActionButton(
         shadowElevation = 8.dp,
         tonalElevation = 4.dp
     ) {
-        val source = remember { MutableInteractionSource() }
+        val source = rememberPressSource()
         IconButton(
             onClick = onClick,
             interactionSource = source,
@@ -238,32 +241,34 @@ private fun MainTabRow(
     items: List<BottomNavItem>,
     itemHeight: Dp,
     onNavigate: (Int) -> Unit,
-    pagePosition: Float
+    pagePosition: () -> Float
 ) {
     val bounds = remember { mutableStateMapOf<Int, PillBounds>() }
     var boxLeft by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
 
-    // Continuous page position (currentPage + drag/fling offset fraction) drives the
-    // pill so it tracks finger swipes frame-by-frame instead of snapping on settle.
+    // Continuous page position (currentPage + drag/fling offset fraction) drives the pill so
+    // it tracks finger swipes frame-by-frame. Reading it through derivedState and applying it
+    // in graphicsLayer keeps that per-frame work out of composition.
     val maxIndex = items.lastIndex
-    val position = pagePosition.coerceIn(0f, maxIndex.toFloat())
-    val fromPage = floor(position).toInt().coerceIn(0, maxIndex)
-    val toPage = ceil(position).toInt().coerceIn(0, maxIndex)
-    val fraction = position - fromPage
-    val fromBounds = bounds[fromPage]
-    val toBounds = bounds[toPage]
-    val pillTarget = when {
-        fromBounds == null -> toBounds
-        toBounds == null -> fromBounds
-        else -> PillBounds(
-            x = fromBounds.x + ((toBounds.x - fromBounds.x) * fraction).roundToInt(),
-            width = fromBounds.width + ((toBounds.width - fromBounds.width) * fraction).roundToInt()
-        )
+    val pillTarget = remember(bounds) {
+        derivedStateOf {
+            val position = pagePosition().coerceIn(0f, maxIndex.toFloat())
+            val fromPage = floor(position).toInt().coerceIn(0, maxIndex)
+            val toPage = ceil(position).toInt().coerceIn(0, maxIndex)
+            val fraction = position - fromPage
+            val fromBounds = bounds[fromPage]
+            val toBounds = bounds[toPage]
+            when {
+                fromBounds == null -> toBounds
+                toBounds == null -> fromBounds
+                else -> PillBounds(
+                    x = fromBounds.x + ((toBounds.x - fromBounds.x) * fraction).roundToInt(),
+                    width = fromBounds.width + ((toBounds.width - fromBounds.width) * fraction).roundToInt()
+                )
+            }
+        }
     }
-
-    val indicatorOffset = with(density) { (pillTarget?.x ?: 0).toDp() }
-    val indicatorWidth = with(density) { (pillTarget?.width ?: 0).toDp() }
 
     Box(
         modifier = Modifier
@@ -280,20 +285,24 @@ private fun MainTabRow(
         } else {
             MaterialTheme.colorScheme.onSurface
         }
-        if (pillTarget != null) {
+        // Always composed; position and visibility arrive in the layer phase so a pager
+        // drag repaints the pill without recomposing the bar.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer {
+                    val target = pillTarget.value
+                    translationX = (target?.x ?: 0).toFloat()
+                    alpha = if (target != null) 1f else 0f
+                }
+        ) {
             Box(
                 modifier = Modifier
-                    .matchParentSize()
-                    .offset { IntOffset(indicatorOffset.roundToPx(), 0) }
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(indicatorWidth)
-                        .height(itemHeight)
-                        .clip(appCardShape())
-                        .background(pillContainer)
-                )
-            }
+                    .width(PillItemSize)
+                    .height(itemHeight)
+                    .clip(appCardShape())
+                    .background(pillContainer)
+            )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             items.forEachIndexed { index, item ->
@@ -301,7 +310,7 @@ private fun MainTabRow(
                 val icon = item.icon
                 val labelRes = item.labelRes
 
-                val itemSource = remember { MutableInteractionSource() }
+                val itemSource = rememberPressSource()
                 IconButton(
                     onClick = {
                         if (item.pageIndex != topPage) onNavigate(item.pageIndex)
@@ -397,7 +406,7 @@ private fun CompactContextPill(
         shadowElevation = 8.dp,
         tonalElevation = 4.dp
     ) {
-        val source = remember { MutableInteractionSource() }
+        val source = rememberPressSource()
         IconButton(
             onClick = onClick,
             interactionSource = source,

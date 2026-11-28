@@ -44,17 +44,31 @@ import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 
-/** Section heading shared by Settings and the widget screens. */
+/** Visual variant of [SectionHeader]; screens differ in weight and spacing only. */
+enum class SectionHeaderStyle { Settings, Group }
+
+/** Section heading shared by Settings, the widget screens, and the settings groups. */
 @Composable
-fun SectionHeader(title: String) {
+fun SectionHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    style: SectionHeaderStyle = SectionHeaderStyle.Settings
+) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleSmall,
+        style = when (style) {
+            SectionHeaderStyle.Settings -> MaterialTheme.typography.titleSmall
+            SectionHeaderStyle.Group -> MaterialTheme.typography.labelLarge
+        },
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
+        modifier = modifier
             .semantics { heading() }
-            .padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
+            .padding(
+                start = 16.dp,
+                top = if (style == SectionHeaderStyle.Settings) 24.dp else 12.dp,
+                bottom = if (style == SectionHeaderStyle.Settings) 8.dp else 4.dp
+            )
     )
 }
 
@@ -126,7 +140,7 @@ fun SettingsRowOption(
     toggleValue: Boolean? = null,
     selectedValue: Boolean? = null
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     val rowModifier = Modifier
         .fillMaxWidth()
         .pressScale(interactionSource)
@@ -205,7 +219,7 @@ fun SettingsCornerOption(
         animationSpec = m3EffectsDefault(),
         label = "cornerOptionBorder"
     )
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     Row(
         modifier = Modifier
             .fillMaxWidth()

@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.settings
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import android.graphics.Color as AndroidColor
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -142,7 +143,7 @@ internal fun AccentPresetRow(
                 rowSwatches.forEach { preset ->
                     val isSelected = preset.color == selected
                     val selectedLabel = stringResource(R.string.accent_preset_selected)
-                    val source = remember { MutableInteractionSource() }
+                    val source = rememberPressSource()
                     val ringColor by animateColorAsState(
                         targetValue = if (isSelected) MaterialTheme.colorScheme.onSurface
                         else MaterialTheme.colorScheme.outlineVariant,
@@ -277,7 +278,7 @@ fun ColourPickerDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 if (allowAuto) {
-                    val autoSource = remember { MutableInteractionSource() }
+                    val autoSource = rememberPressSource()
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -345,7 +346,7 @@ fun ColourPickerDialog(
             }
         },
         confirmButton = {
-            val doneSource = remember { MutableInteractionSource() }
+            val doneSource = rememberPressSource()
             TextButton(
                 onClick = {
                     if (isAuto) onAuto() else onConfirm(String.format(Locale.US, "#%08X", draft.toArgb()))
@@ -357,7 +358,7 @@ fun ColourPickerDialog(
             }
         },
         dismissButton = {
-            val cancelSource = remember { MutableInteractionSource() }
+            val cancelSource = rememberPressSource()
             TextButton(
                 onClick = onDismiss,
                 interactionSource = cancelSource,

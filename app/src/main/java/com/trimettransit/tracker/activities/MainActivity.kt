@@ -1,5 +1,8 @@
 package com.trimettransit.tracker.activities
 
+import com.trimettransit.tracker.ui.components.motionEnterFadeSlide
+import com.trimettransit.tracker.ui.components.motionExitFadeSlide
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import android.app.PictureInPictureParams
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -81,6 +84,7 @@ import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.SaveableStateHolder
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.animation.AnimatedVisibility
@@ -243,25 +247,14 @@ class MainActivity : ComponentActivity() {
                 else -> isSystemInDarkTheme()
             }
             AppMotion.intensity = appearance.motionIntensity
-            TriMetGoTheme(
-                darkTheme = isDark,
+            ThemeHost(
+                isDark = isDark,
                 appearance = appearance,
                 cardCornerRadius = cardCornerRadiusPref.dp,
                 cardCutCorners = cardCornerStylePref == "cut",
                 cardOutlinesEnabled = cardOutlinesPref,
                 cardOutlineColor = parseCardOutlineColor(cardOutlineColorPref)
             ) {
-                val activity = LocalActivity.current
-                SideEffect {
-                    if (activity != null) {
-                        WindowInsetsControllerCompat(
-                            activity.window, activity.window.decorView
-                        ).isAppearanceLightStatusBars = !isDark
-                        WindowInsetsControllerCompat(
-                            activity.window, activity.window.decorView
-                        ).isAppearanceLightNavigationBars = !isDark
-                    }
-                }
                 // In-app text-size override on top of the system font scale (sp-based only,
                 // so dp paddings stay put).
                 val fontScaleFactor = when (appearance.fontScale) {
@@ -391,8 +384,14 @@ private fun MainAppContent(
         if (arrivalsStateStopId == stopId) arrivalsStopName.ifBlank { fallback } else fallback
 
     val topPagerState = rememberPagerState(pageCount = { bottomNavItems.size })
-    var selectedStopsRoute by remember { mutableStateOf<Route?>(null) }
-    var selectedStopsDirection by remember { mutableStateOf<Direction?>(null) }
+    // Route/Direction are plain domain types, so they need explicit savers to survive
+    // rotation instead of collapsing the lines accordion.
+    var selectedStopsRoute by rememberSaveable(stateSaver = RouteSaver) {
+        mutableStateOf<Route?>(null)
+    }
+    var selectedStopsDirection by rememberSaveable(stateSaver = DirectionSaver) {
+        mutableStateOf<Direction?>(null)
+    }
     val saveableStateHolder = rememberSaveableStateHolder()
 
     fun navigateToArrivals(stop: Stop, routeId: Int) {
@@ -654,7 +653,7 @@ private fun MainAppContent(
                         contentPadding = PaddingValues(0.dp),
                         windowInsets = TopAppBarDefaults.windowInsets,
                         actions = {
-                            val pipSource = remember { MutableInteractionSource() }
+                            val pipSource = rememberPressSource()
                             var pipButtonRect by remember { mutableStateOf<android.graphics.Rect?>(null) }
                             IconButton(
                                 onClick = {
@@ -698,7 +697,7 @@ private fun MainAppContent(
                                     )
                                 }
                             )
-                            val refreshSource = remember { MutableInteractionSource() }
+                            val refreshSource = rememberPressSource()
                             IconButton(
                                 onClick = {
                                     scope.launch {
@@ -792,21 +791,14 @@ private fun MainAppContent(
         }
     AnimatedVisibility(
         visible = !inPip && !expandedPane,
-        enter = if (AppMotion.reduceMotion) {
-            fadeIn(m3EffectsDefault())
-        } else {
-            slideInVertically(m3SpatialDefault()) { it } + fadeIn(m3EffectsDefault())
-        },
-        exit = if (AppMotion.reduceMotion) {
-            fadeOut(m3EffectsFast())
-        } else {
-            slideOutVertically(m3SpatialFast()) { it } + fadeOut(m3EffectsFast())
-        },
+        enter = motionEnterFadeSlide(AppMotion.reduceMotion, fromTop = false),
+        exit = motionExitFadeSlide(AppMotion.reduceMotion, toTop = false),
         modifier = Modifier.align(Alignment.BottomCenter)
     ) {
         @SuppressLint("FrequentlyChangingValue")
-        val pagePosition = topPagerState.currentPage +
-            topPagerState.currentPageOffsetFraction
+        val pagePosition = {
+            topPagerState.currentPage + topPagerState.currentPageOffsetFraction
+        }
         MainBottomBar(
             topPage = topPagerState.currentPage,
             pagePosition = pagePosition,
@@ -828,3 +820,69 @@ private fun MainAppContent(
 
 }
 
+
+/** Saves a [Route]'s components; `null` saves as an empty list. */
+private val RouteSaver = listSaver<Route?, Any>(
+    save = { route ->
+        route?.let {
+            listOf(it.desc, it.routeId, it.isBus, it.isMax, it.isStreetcar, it.isWes)
+        } ?: emptyList()
+    },
+    restore = { values ->
+        if (values.isEmpty()) {
+            null
+        } else {
+            Route(
+                desc = values[0] as String,
+                routeId = values[1] as Int,
+                isBus = values[2] as Boolean,
+                isMax = values[3] as Boolean,
+                isStreetcar = values[4] as Boolean,
+                isWes = values[5] as Boolean
+            )
+        }
+    }
+)
+
+/** Saves a [Direction] flattened with its optional [Route]. */
+private val DirectionSaver = listSaver<Direction?, Any>(
+    save = { direction ->
+        direction?.let { d ->
+            val r = d.route
+            listOf(
+                d.dir,
+                d.desc,
+                r?.desc ?: "",
+                r?.routeId ?: -1,
+                r?.isBus ?: false,
+                r?.isMax ?: false,
+                r?.isStreetcar ?: false,
+                r?.isWes ?: false
+            )
+        } ?: emptyList()
+    },
+    restore = { values ->
+        if (values.isEmpty()) {
+            null
+        } else {
+            val routeId = values[3] as Int
+            val route = if (routeId >= 0) {
+                Route(
+                    desc = values[2] as String,
+                    routeId = routeId,
+                    isBus = values[4] as Boolean,
+                    isMax = values[5] as Boolean,
+                    isStreetcar = values[6] as Boolean,
+                    isWes = values[7] as Boolean
+                )
+            } else {
+                null
+            }
+            Direction(
+                dir = values[0] as Int,
+                desc = values[1] as String,
+                route = route
+            )
+        }
+    }
+)

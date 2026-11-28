@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.stops
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
@@ -242,7 +243,7 @@ private fun DirectionItem(
     isExpanded: Boolean,
     onClick: () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     // Same contract as the route row: announce the role and the section's state, keep the chevron
     // decorative. Card's clickable does not supply a button role on its own.
     val expandedLabel = stringResource(R.string.expanded)
@@ -398,7 +399,7 @@ private fun InlineRetry(message: String, onRetry: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
-        val retrySource = remember { MutableInteractionSource() }
+        val retrySource = rememberPressSource()
         OutlinedButton(
             onClick = onRetry,
             interactionSource = retrySource,
@@ -449,7 +450,7 @@ private fun LineContextChip(
                     modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
                 )
             }
-            val collapseSource = remember { MutableInteractionSource() }
+            val collapseSource = rememberPressSource()
             IconButton(
                 onClick = onCollapse,
                 interactionSource = collapseSource,
