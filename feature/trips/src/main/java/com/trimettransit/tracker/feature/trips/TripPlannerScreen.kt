@@ -101,7 +101,6 @@ import com.trimettransit.tracker.ui.theme.m3EffectsFast
 import com.trimettransit.tracker.ui.theme.m3SpatialDefault
 import com.trimettransit.tracker.ui.theme.m3SpatialFast
 import com.trimettransit.tracker.util.SingleJobRunner
-import com.trimettransit.tracker.util.nextMinuteBoundaryDelayMillis
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -247,15 +246,6 @@ fun TripPlannerScreen(
     var planResult by remember { mutableStateOf<TripPlanResult?>(null) }
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
     var isPlanning by remember { mutableStateOf(false) }
-    // Data-age tick: minute-aligned to the wall clock (same discipline as the arrival
-    // countdowns) so the sheet's "Updated X min ago" chip flips exactly on the minute.
-    var ageTick by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(nextMinuteBoundaryDelayMillis())
-            ageTick++
-        }
-    }
     val planRunner = remember { SingleJobRunner(coroutineScope) }
     var locationJob by remember { mutableStateOf<Job?>(null) }
     var legGeometries by remember { mutableStateOf<Map<Int, List<GeoPoint>>>(emptyMap()) }
@@ -599,12 +589,12 @@ fun TripPlannerScreen(
 
     val resultPlan = (planResult as? TripPlanResult.Success)?.plan
         ?.takeIf { it.itineraries.isNotEmpty() }
-    // ageTick is read so the age label recomputes on every minute boundary.
-    val resultsAgeText = draft.ageText(
-        System.currentTimeMillis(),
-        stringResource(R.string.trip_updated_minutes),
-        stringResource(R.string.trip_updated_now)
-    ).let { text -> ageTick; text }
+    // The minute tick is scoped to this label, and only while the page is visible.
+    val ageMinutesFmt = stringResource(R.string.trip_updated_minutes)
+    val ageJustNow = stringResource(R.string.trip_updated_now)
+    val resultsAgeText = rememberAgeLabel(active = pageVisible) { now ->
+        draft.ageText(now, ageMinutesFmt, ageJustNow)
+    }
     val originLabel = origin?.description?.takeIf { it.isNotBlank() }
         ?: stringResource(R.string.origin_field_hint)
     val destinationLabel = dest?.description?.takeIf { it.isNotBlank() }
