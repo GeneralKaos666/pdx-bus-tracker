@@ -95,18 +95,21 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
         if (pending.isEmpty()) return
         // One summary notification per stop: per-arrival notifies would all share
         // the stop-locId ID and overwrite each other so only the last bus is seen.
-        postSummary(app, stop, pending)
-        for (arrival in pending) {
-            fired.add(DepartureAlertRules.firedKey(stop.locId, arrival))
+        // Only mark them fired when a notification was actually posted: blocked
+        // POST_NOTIFICATIONS must not consume the alert for good.
+        if (postSummary(app, stop, pending)) {
+            for (arrival in pending) {
+                fired.add(DepartureAlertRules.firedKey(stop.locId, arrival))
+            }
         }
     }
 
-    private fun postSummary(app: Context, stop: Stop, pending: List<Arrival>) {
+    private fun postSummary(app: Context, stop: Stop, pending: List<Arrival>): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(app, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
         ) {
-            return
+            return false
         }
         DepartureNotifications.ensureChannel(app)
         val now = System.currentTimeMillis()
@@ -119,7 +122,7 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
                 app.getString(R.string.departure_alert_minutes, title, minutes)
             }
         }
-        if (lines.isEmpty()) return
+        if (lines.isEmpty()) return false
         val intent = Intent(app, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             .putExtra(WidgetLaunch.EXTRA_STOP_ID, stop.locId.toLong())
@@ -145,6 +148,7 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .build()
         NotificationManagerCompat.from(app).notify(stop.locId, notification)
+        return true
     }
 
     companion object {

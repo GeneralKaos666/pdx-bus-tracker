@@ -53,6 +53,8 @@ internal fun rememberStopListLoader(
             try {
                 stops = withContext(Dispatchers.IO) { read() }
                 isError = false
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load stop list")
                 isError = true

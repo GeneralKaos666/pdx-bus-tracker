@@ -120,8 +120,15 @@ object WidgetSnapshotCache {
             .toString()
     }
 
-    fun update(context: Context, favorites: List<Stop>, rows: List<Row>) {
-        prefs(context).edit { putString(KEY_JSON, snapshotToJson(favorites, rows)) }
+    fun update(
+        context: Context,
+        favorites: List<Stop>,
+        rows: List<Row>,
+        updatedAtMillis: Long = System.currentTimeMillis()
+    ) {
+        prefs(context).edit {
+            putString(KEY_JSON, snapshotToJson(favorites, rows, updatedAtMillis))
+        }
     }
 
     private fun rowToJson(row: Row) = JSONObject()

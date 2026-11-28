@@ -26,7 +26,9 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) :
             if (!transitRepository.isConfigured()) return@withContext Result.success()
             val favorites = favoritesRepository.getFavorites().take(MAX_STOPS)
             if (favorites.isEmpty()) {
-                WidgetSnapshotCache.update(app, emptyList(), emptyList())
+                // updatedAt = 0 keeps the widget's "No favorites yet" state; stamping
+                // "now" made it say "Refreshing…" forever after the last removal.
+                WidgetSnapshotCache.update(app, emptyList(), emptyList(), updatedAtMillis = 0L)
                 NextArrivalsWidget().updateAll(app)
                 return@withContext Result.success()
             }
