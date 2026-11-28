@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -61,6 +62,7 @@ import com.trimettransit.tracker.model.domain.dedupeArrivals
 import com.trimettransit.tracker.model.domain.detoursForLine
 import com.trimettransit.tracker.model.domain.alertsForLine
 import com.trimettransit.tracker.model.domain.alertsForStop
+import com.trimettransit.tracker.model.domain.trackedBlockPositions
 import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
@@ -166,7 +168,6 @@ fun ArrivalsScreen(
             isFavorite = withContext(Dispatchers.IO) {
                 favoritesRepository.isFavorite(stopId)
             }
-            onArrivalsStateChange(stopName.ifBlank { stopNumberLabel }, isFavorite, stopLat, stopLng)
         }
     }
 
@@ -251,14 +252,15 @@ fun ArrivalsScreen(
     val visibleCount = minOf(arrivals.size, TOP_ARRIVAL_ROWS)
     val showExpandButton = arrivals.size > TOP_ARRIVAL_ROWS || unfilteredArrivals.size > arrivals.size
     // Tracked positions: the tapped row's own vehicle when it reports a position,
-    // otherwise that line's other live vehicles so the map is never empty.
-    fun arrivalFor(bp: BlockPosition): Arrival? =
-        unfilteredArrivals.firstOrNull { it.vehicleID == bp.vehicleID }
-    val trackedPositions = if (trackingVehicleId > 0) {
-        blockPositions.filter { it.vehicleID == trackingVehicleId }
-            .ifEmpty { blockPositions.filter { arrivalFor(it)?.routeId == trackingRouteId } }
-    } else {
-        blockPositions.filter { arrivalFor(it)?.routeId == trackingRouteId }
+    // otherwise that line's other live vehicles so the map is never empty. Derived so a
+    // 15s position poll invalidates only the map card that reads it, not this screen.
+    val trackedPositions by remember(trackingVehicleId, trackingRouteId) {
+        derivedStateOf {
+            val routeOfVehicle: (Int) -> Int? = { vehicle ->
+                unfilteredArrivals.firstOrNull { it.vehicleID == vehicle }?.routeId
+            }
+            trackedBlockPositions(blockPositions, trackingVehicleId, trackingRouteId, routeOfVehicle)
+        }
     }
 
     // Live position polling: only while the tracking dropdown is open
