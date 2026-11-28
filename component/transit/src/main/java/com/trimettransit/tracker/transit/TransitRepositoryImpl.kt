@@ -11,8 +11,6 @@ import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
-import com.trimettransit.tracker.model.VehicleResult
-import com.trimettransit.tracker.model.BlockStatusResult
 import com.trimettransit.tracker.model.TripStatusResult
 import com.trimettransit.tracker.model.repository.TransitRepository
 import kotlinx.coroutines.CoroutineScope
@@ -123,18 +121,6 @@ class TransitRepositoryImpl(
         }
     }
 
-    override suspend fun getVehicles(
-        routes: List<Int>?,
-        blocks: List<Int>?,
-        ids: List<Int>?,
-        bbox: String?,
-        since: Long?,
-        showNonRevenue: Boolean,
-        onRouteOnly: Boolean,
-        showStale: Boolean
-    ): VehicleResult? =
-        TransitApi.fetchVehicles(context, routes, blocks, ids, bbox, since, showNonRevenue, onRouteOnly, showStale)
-
     override suspend fun getTripStatus(
         tripIds: List<String>?,
         blockIds: List<Int>?,
@@ -142,14 +128,6 @@ class TransitRepositoryImpl(
         showStops: Boolean
     ): TripStatusResult? =
         TransitApi.fetchTripStatus(context, tripIds, blockIds, showRoutes, showStops)
-
-    override suspend fun getBlockStatus(
-        blockId: Int?,
-        blockIds: List<Int>?,
-        showRoutes: Boolean,
-        showStops: Boolean
-    ): BlockStatusResult? =
-        TransitApi.fetchBlockStatus(context, blockId, blockIds, showRoutes, showStops)
 
     override suspend fun planTrip(
         from: TripPoint,

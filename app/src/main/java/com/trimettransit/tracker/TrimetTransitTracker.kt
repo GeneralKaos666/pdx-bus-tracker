@@ -1,7 +1,6 @@
 package com.trimettransit.tracker
 
 import android.app.Application
-import com.trimettransit.tracker.gtfs.GtfsScheduler
 import com.trimettransit.tracker.map.initializeMapRuntime
 import java.io.File
 import timber.log.Timber
@@ -20,7 +19,6 @@ class TrimetTransitTracker : Application() {
         // the user's dynamic-Color preference toggle. Applying it app-wide here too would
         // override the XML window theme unconditionally and fight the Compose side.
         initializeMapRuntime(this)
-        GtfsScheduler.schedulePeriodic(this)
     }
 
     private fun installCrashRecorder() {

@@ -8,10 +8,6 @@ import com.trimettransit.tracker.model.Route
 import com.trimettransit.tracker.model.Stop
 import com.trimettransit.tracker.model.StopsWithArrivals
 import com.trimettransit.tracker.model.TransitAlert
-import com.trimettransit.tracker.model.Vehicle
-import com.trimettransit.tracker.model.VehicleResult
-import com.trimettransit.tracker.model.BlockStatus
-import com.trimettransit.tracker.model.BlockStatusResult
 import com.trimettransit.tracker.model.TripStatus
 import com.trimettransit.tracker.model.TripStatusResult
 import com.trimettransit.tracker.model.TripStopStatus
@@ -124,34 +120,6 @@ internal object TransitJsonMapper {
         return TripStatusResult(
             queryTimeMillis = resultSet.optLong("queryTime", 0L),
             trips = trips
-        )
-    }
-
-    fun parseBlockStatus(resultSet: JSONObject): BlockStatusResult {
-        val locations = buildMap {
-            val array = resultSet.optJSONArray("location") ?: return@buildMap
-            for (index in 0 until array.length()) {
-                val location = array.optJSONObject(index) ?: continue
-                put(location.optInt("locid", 0), location)
-            }
-        }
-        val blocks = objectArray(resultSet, "blockStatus").map { obj ->
-            BlockStatus(
-                blockId = obj.optInt("blockID", 0),
-                currentTripId = obj.optString("currentTripID").takeIf { it.isNotEmpty() },
-                latitude = obj.optionalDouble("lat"),
-                longitude = obj.optionalDouble("lng"),
-                bearing = obj.optionalDouble("bearing")?.toFloat(),
-                positionTimestampMillis = obj.optionalLong("positionTimestamp"),
-                deviationSeconds = obj.optionalInt("deviation"),
-                vehicleId = obj.optionalInt("vehicleID"),
-                schedulePositionMillis = obj.optionalLong("schedulePosition"),
-                trips = tripArray(obj).map { parseTrip(it, locations) }
-            )
-        }
-        return BlockStatusResult(
-            queryTimeMillis = resultSet.optLong("queryTime", 0L),
-            blocks = blocks
         )
     }
 
@@ -529,45 +497,4 @@ internal object TransitJsonMapper {
         return alerts
     }
 
-    /**
-     * Parses `/ws/v2/vehicles` payloads. A per-element parse failure is skipped
-     * rather than voiding the whole fleet; an empty/missing "vehicle" array still
-     * yields a non-null [VehicleResult] with an empty list (as opposed to no
-     * response at all, which the caller surfaces as null).
-     */
-    fun parseVehicles(resultSet: JSONObject): VehicleResult {
-        val queryTime = resultSet.optLong("queryTime", 0)
-        val arr = resultSet.optJSONArray("vehicle")
-        if (arr == null) return VehicleResult(emptyList(), queryTime)
-        val vehicles = mutableListOf<Vehicle>()
-        for (i in 0 until arr.length()) {
-            val obj = arr.optJSONObject(i) ?: continue
-            vehicles.add(
-                Vehicle(
-                    vehicleID = obj.optInt("vehicleID", 0),
-                    type = obj.optString("type", ""),
-                    blockID = obj.optInt("blockID", 0),
-                    tripID = obj.optString("tripID", ""),
-                    routeNumber = obj.optInt("routeNumber", 0),
-                    direction = obj.optInt("direction", 0),
-                    newTrip = obj.optBoolean("newTrip", false),
-                    latitude = obj.optDouble("latitude", 0.0),
-                    longitude = obj.optDouble("longitude", 0.0),
-                    bearing = obj.optDouble("bearing", 0.0).toFloat(),
-                    time = obj.optLong("time", 0),
-                    expires = obj.optLong("expires", 0),
-                    serviceDate = obj.optLong("serviceDate", 0),
-                    locationInScheduleDay = obj.optInt("locationInScheduleDay", 0),
-                    delay = obj.optInt("delay", 0),
-                    signMessage = obj.optString("signMessage", ""),
-                    nextLocID = obj.optInt("nextLocID", 0),
-                    lastLocID = obj.optInt("lastLocID", 0),
-                    garage = obj.optString("garage", ""),
-                    inCongestion = obj.optBoolean("inCongestion", false),
-                    loadPercentage = obj.optInt("loadPercentage", -1)
-                )
-            )
-        }
-        return VehicleResult(vehicles, queryTime)
     }
-}

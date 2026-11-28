@@ -73,25 +73,3 @@ data class TripStatusResult(
     val queryTimeMillis: Long = 0L,
     val trips: List<TripStatus> = emptyList()
 )
-
-data class BlockStatus(
-    val blockId: Int = 0,
-    val currentTripId: String? = null,
-    val latitude: Double? = null,
-    val longitude: Double? = null,
-    val bearing: Float? = null,
-    val positionTimestampMillis: Long? = null,
-    val deviationSeconds: Int? = null,
-    val vehicleId: Int? = null,
-    val schedulePositionMillis: Long? = null,
-    val trips: List<TripStatus> = emptyList()
-) {
-    val currentTripID: String? get() = currentTripId
-    val vehicleID: Int? get() = vehicleId
-    val positionTimestamp: Long? get() = positionTimestampMillis
-}
-
-data class BlockStatusResult(
-    val queryTimeMillis: Long = 0L,
-    val blocks: List<BlockStatus> = emptyList()
-)

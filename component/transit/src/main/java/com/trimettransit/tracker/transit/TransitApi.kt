@@ -15,8 +15,6 @@ import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripPoint
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
-import com.trimettransit.tracker.model.VehicleResult
-import com.trimettransit.tracker.model.BlockStatusResult
 import com.trimettransit.tracker.model.TripStatusResult
 import com.trimettransit.tracker.model.computeTransitType
 import com.trimettransit.tracker.util.ConnectionUtils
@@ -309,34 +307,6 @@ internal object TransitApi {
             ) ?: return@guarded null
         }
 
-    suspend fun fetchVehicles(
-        context: Context,
-        routes: List<Int>? = null,
-        blocks: List<Int>? = null,
-        ids: List<Int>? = null,
-        bbox: String? = null,
-        since: Long? = null,
-        showNonRevenue: Boolean = false,
-        onRouteOnly: Boolean = true,
-        showStale: Boolean = false
-    ): VehicleResult? = guarded(context, "fetch vehicles") { apiKey ->
-        val baseUrl = context.getString(R.string.base_vehicle_url)
-        val url = buildVehiclesUrl(
-            baseUrl = baseUrl,
-            apiKey = apiKey,
-            routes = routes,
-            blocks = blocks,
-            ids = ids,
-            bbox = bbox?.let { Uri.encode(it) },
-            since = since,
-            showNonRevenue = showNonRevenue,
-            onRouteOnly = onRouteOnly,
-            showStale = showStale
-        )
-        val json = parser.fetch(url)
-        TransitJsonMapper.parseVehicles(json.getJSONObject("resultSet"))
-    }
-
     suspend fun fetchTripStatus(
         context: Context,
         tripIds: List<String>? = null,
@@ -353,24 +323,6 @@ internal object TransitApi {
             showStops = showStops
         )
         TransitJsonMapper.parseTripStatus(parser.fetch(url).getJSONObject("resultSet"))
-    }
-
-    suspend fun fetchBlockStatus(
-        context: Context,
-        blockId: Int? = null,
-        blockIds: List<Int>? = null,
-        showRoutes: Boolean = true,
-        showStops: Boolean = true
-    ): BlockStatusResult? = guarded(context, "fetch block status") { apiKey ->
-        val url = buildBlockStatusUrl(
-            baseUrl = context.getString(R.string.base_block_status_url),
-            apiKey = apiKey,
-            blockId = blockId,
-            blockIds = blockIds,
-            showRoutes = showRoutes,
-            showStops = showStops
-        )
-        TransitJsonMapper.parseBlockStatus(parser.fetch(url).getJSONObject("resultSet"))
     }
 
     suspend fun fetchTripPlan(
@@ -437,12 +389,6 @@ internal object TransitApi {
 }
 
 /**
- * Assembles the `/ws/v2/vehicles` request URL from already-rendered pieces. Pure so
- * the parameter layout (filters + `showNonRevenue`/`onRouteOnly`/`showStale` defaults)
- * is unit-testable without Android framework calls; `bbox` arrives Uri-encoded by the
- * caller, matching [buildTripPlannerRequestUrl]'s convention.
- */
-/**
  * True when at least one alert scope ([routes] or [locIds]) is non-empty. Pure so
  * the "refuse unscoped calls" rule is unit-testable without a Context/network stack.
  */
@@ -451,7 +397,7 @@ internal fun isAlertsScopeValid(routes: List<Int>?, locIds: List<Int>?): Boolean
 
 /**
  * Assembles the `/ws/v2/alerts` request URL. Pure and unit-testable, mirroring
- * [buildVehiclesUrl]'s convention of path-segment filters.
+ * the other URL builders' convention of path-segment filters.
  */
 internal fun buildAlertsUrl(
     baseUrl: String,
@@ -465,34 +411,10 @@ internal fun buildAlertsUrl(
     if (!locIds.isNullOrEmpty()) append("/locIDs/").append(locIds.joinToString(","))
 }
 
-internal fun buildVehiclesUrl(
-    baseUrl: String,
-    apiKey: String,
-    routes: List<Int>? = null,
-    blocks: List<Int>? = null,
-    ids: List<Int>? = null,
-    bbox: String? = null,
-    since: Long? = null,
-    showNonRevenue: Boolean = false,
-    onRouteOnly: Boolean = true,
-    showStale: Boolean = false
-): String = buildString {
-    append(baseUrl)
-    append("/appID/").append(apiKey)
-    if (!routes.isNullOrEmpty()) append("/routes/").append(routes.joinToString(","))
-    if (!blocks.isNullOrEmpty()) append("/blocks/").append(blocks.joinToString(","))
-    if (!ids.isNullOrEmpty()) append("/ids/").append(ids.joinToString(","))
-    if (!bbox.isNullOrEmpty()) append("/bbox/").append(bbox)
-    if (since != null) append("/since/").append(since)
-    if (showNonRevenue) append("/showNonRevenue/true")
-    if (!onRouteOnly) append("/onRouteOnly/false")
-    if (showStale) append("/showStale/true")
-}
-
 /**
  * Assembles the `/ws/v2/stops` request URL. Pure so the opt-in arrivals-embedding
  * layout is unit-testable without Android framework calls; `ll`/`bbox` arrive already
- * Uri-encoded by the caller, matching [buildVehiclesUrl]'s convention. `embedArrivals`,
+ * Uri-encoded by the caller, matching [buildAlertsUrl]'s convention. `embedArrivals`,
  * `maxStopArrivals`, `minutes`, and `maxArrivals` are only appended when `includeArrivals`
  * is true, so a non-combined caller's URL is byte-identical to before this parameter
  * existed.
@@ -563,17 +485,3 @@ internal fun buildTripStatusUrl(
     if (showStops) append("/showStops/true")
 }
 
-internal fun buildBlockStatusUrl(
-    baseUrl: String,
-    apiKey: String,
-    blockId: Int? = null,
-    blockIds: List<Int>? = null,
-    showRoutes: Boolean = true,
-    showStops: Boolean = true
-): String = buildString {
-    append(baseUrl).append("/appID/").append(apiKey)
-    if (blockId != null) append("/blockID/").append(blockId)
-    if (!blockIds.isNullOrEmpty()) append("/blockIDs/").append(blockIds.joinToString(","))
-    if (showRoutes) append("/showRoutes/true")
-    if (showStops) append("/showStops/true")
-}
