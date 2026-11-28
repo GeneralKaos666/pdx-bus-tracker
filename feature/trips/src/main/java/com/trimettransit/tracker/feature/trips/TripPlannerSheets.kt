@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -607,7 +608,7 @@ internal fun TripOptionsSheet(
                 Crossfade(
                     targetState = options.itineraryCount,
                     animationSpec = m3EffectsDefault(),
-                    modifier = Modifier.width(96.dp),
+                    modifier = Modifier.widthIn(min = 96.dp),
                     label = "itineraryCount"
                 ) { count ->
                     Text(

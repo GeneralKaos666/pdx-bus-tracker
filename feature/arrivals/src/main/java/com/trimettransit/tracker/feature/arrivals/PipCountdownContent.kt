@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.arrivals
 
+import com.trimettransit.tracker.ui.components.transitOnColor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,7 +94,11 @@ internal fun PipCountdownContent(
                             Icon(
                                 painter = painterResource(id = transitIconResource(type)),
                                 contentDescription = null,
-                                tint = scheme.surface,
+                                tint = transitOnColor(
+                                    type,
+                                    scheme,
+                                    LocalAppearanceStyle.current.transitTypeColors
+                                ),
                                 modifier = Modifier.size(16.dp)
                             )
                         }
