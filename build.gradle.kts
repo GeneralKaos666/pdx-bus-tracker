@@ -1,23 +1,18 @@
-// Pin build-classpath (Gradle plugin) transitive deps to versions that close open
-// Dependabot advisories. These come from AGP 9.5.0 / Kotlin plugin tooling and are
-// never shipped in the APK. Bump the whole org.bouncycastle group together so bcprov,
-// bcpkix and bcutil stay on one version and don't skew against each other.
+// Pin AGP/Kotlin build-classpath transitive deps to patched versions that close open
+// Dependabot advisories. Build tooling only, never shipped in the APK. Declared as
+// direct classpath deps (not resolutionStrategy.force) so the submitted dependency
+// graph records the patched versions instead of the vulnerable transitive ones.
+// Bouncycastle modules are pinned together to avoid version skew.
 buildscript {
-    configurations.classpath {
-        resolutionStrategy {
-            force(
-                "com.google.guava:guava:33.7.2-jre",
-                "org.bitbucket.b_c:jose4j:0.9.6",
-                "org.jdom:jdom2:2.0.6.1",
-                "org.apache.commons:commons-lang3:3.18.0",
-                "org.apache.httpcomponents:httpclient:4.5.14",
-            )
-            eachDependency {
-                if (requested.group == "org.bouncycastle") {
-                    useVersion("1.85")
-                }
-            }
-        }
+    dependencies {
+        classpath("com.google.guava:guava:33.7.2-jre")
+        classpath("org.bouncycastle:bcprov-jdk18on:1.85")
+        classpath("org.bouncycastle:bcpkix-jdk18on:1.85")
+        classpath("org.bouncycastle:bcutil-jdk18on:1.85")
+        classpath("org.bitbucket.b_c:jose4j:0.9.6")
+        classpath("org.jdom:jdom2:2.0.6.1")
+        classpath("org.apache.commons:commons-lang3:3.18.0")
+        classpath("org.apache.httpcomponents:httpclient:4.5.14")
     }
 }
 

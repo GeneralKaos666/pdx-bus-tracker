@@ -7,15 +7,12 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
 // Pin gradle-play-publisher's build-classpath transitive deps (guava, httpclient) to
-// versions that close open Dependabot advisories. Build tooling only, never in the APK.
+// patched versions that close open Dependabot advisories. Build tooling only, never in
+// the APK. Direct classpath deps so the submitted graph records patched versions.
 buildscript {
-    configurations.classpath {
-        resolutionStrategy {
-            force(
-                "com.google.guava:guava:33.7.2-jre",
-                "org.apache.httpcomponents:httpclient:4.5.14",
-            )
-        }
+    dependencies {
+        classpath("com.google.guava:guava:33.7.2-jre")
+        classpath("org.apache.httpcomponents:httpclient:4.5.14")
     }
 }
 
