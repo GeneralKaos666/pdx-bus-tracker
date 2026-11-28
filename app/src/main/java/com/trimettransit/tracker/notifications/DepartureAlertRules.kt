@@ -48,14 +48,29 @@ object DepartureAlertRules {
 
     /**
      * Bounds the persisted fired set so it can't grow unbounded across restarts.
-     * Keys carry no timestamps, so "oldest" is the in-memory insertion order of the
-     * [LinkedHashSet] read from prefs within a run; across restarts
-     * SharedPreferences does not preserve set order, making eviction arbitrary —
-     * accepted because a wrong eviction only risks one duplicate alert.
+     *
+     * Entries carry a `|timestamp` suffix ([stampedKey]). "Newest" is therefore the
+     * timestamp, not the iteration order of a `HashSet` read back from SharedPreferences,
+     * which is unspecified — the old `takeLast` pruned arbitrary entries and could re-alert
+     * a departure that had already fired. Legacy unsuffixed keys sort oldest and fall away
+     * first.
      */
     fun prune(fired: Set<String>, cap: Int = FIRED_CAP): Set<String> =
-        if (fired.size <= cap) fired
-        else fired.toList().takeLast(cap).toCollection(LinkedHashSet())
+        if (fired.size <= cap) {
+            fired
+        } else {
+            fired.sortedByDescending { stampMillis(it) }.take(cap).toCollection(LinkedHashSet())
+        }
+
+    /** Encodes [key] with the time it fired, so pruning can order entries. */
+    fun stampedKey(key: String, nowMillis: Long): String = "$key|$nowMillis"
+
+    /** The identity half of a stamped key; legacy unsuffixed keys pass through unchanged. */
+    fun unstamp(stamped: String): String = stamped.substringBeforeLast('|', stamped)
+
+    /** The timestamp half of a stamped key; legacy keys count as oldest. */
+    fun stampMillis(stamped: String): Long =
+        stamped.substringAfterLast('|', "").toLongOrNull() ?: 0L
 
     /**
      * One alert per departure — (stop, trip) identity key. Blank trip IDs (the API

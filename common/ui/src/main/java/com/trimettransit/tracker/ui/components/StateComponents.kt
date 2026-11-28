@@ -78,7 +78,7 @@ fun ErrorState(
                 )
                 if (onRetry != null) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    val retrySource = remember { MutableInteractionSource() }
+                    val retrySource = rememberPressSource()
                     androidx.compose.material3.OutlinedButton(
                         onClick = onRetry,
                         interactionSource = retrySource,

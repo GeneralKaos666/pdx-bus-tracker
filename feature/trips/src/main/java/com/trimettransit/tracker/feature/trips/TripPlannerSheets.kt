@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.trips
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -78,7 +79,9 @@ import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
 import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.searchStops
+import com.trimettransit.tracker.ui.components.SearchPanelState
 import com.trimettransit.tracker.ui.components.StopSearchItem
+import com.trimettransit.tracker.ui.components.rememberStopSearchResults
 import com.trimettransit.tracker.ui.theme.AppMotion
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
@@ -188,7 +191,7 @@ internal fun EndpointPickerSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    val pickOnMapSource = remember { MutableInteractionSource() }
+                    val pickOnMapSource = rememberPressSource()
                     FilledTonalButton(
                         onClick = onMapPinPicked,
                         interactionSource = pickOnMapSource,
@@ -202,7 +205,7 @@ internal fun EndpointPickerSheet(
 
         if (slot == PickSlot.ORIGIN) {
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
-            val myLocSource = remember { MutableInteractionSource() }
+            val myLocSource = rememberPressSource()
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -257,34 +260,11 @@ internal fun StopSearchPanel(
             // The sheet was dismissed inside the settle delay, so there is nothing to focus.
         }
     }
-    var allStops by remember { mutableStateOf<List<Stop>?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
-    var results by remember { mutableStateOf<List<Stop>>(emptyList()) }
+    val search = rememberStopSearchResults(
+        loadStops = { transitRepository.searchStops() },
+        query = query
+    )
     val searchHint = stringResource(R.string.search_stops_hint)
-
-    LaunchedEffect(allStops == null, query.isNotBlank()) {
-        if (allStops == null && query.isNotBlank()) {
-            isLoading = true
-            allStops = withContext(Dispatchers.IO) { transitRepository.searchStops() }
-            isLoading = false
-        }
-    }
-
-    // Debounced search (see HomeSearchBar): rapid keystrokes share one filter pass
-    // over the multi-MB list; collectLatest cancels superseded filters. Filtering
-    // runs on Default so typing never janks the sheet.
-    LaunchedEffect(allStops) {
-        snapshotFlow { query }
-            .debounce(200.milliseconds)
-            .collectLatest { q ->
-                val stops = allStops
-                results = if (q.isBlank() || stops == null) {
-                    emptyList()
-                } else {
-                    withContext(Dispatchers.Default) { searchStops(stops, q) }
-                }
-            }
-    }
 
     Column(modifier = modifier) {
         Surface(
@@ -334,11 +314,11 @@ internal fun StopSearchPanel(
         }
 
         val panelState = when {
-            isLoading && allStops == null && query.isNotBlank() -> 0
-            allStops == null && query.isNotBlank() -> 1
-            query.isBlank() -> 2
-            results.isEmpty() -> 3
-            else -> 4
+            search.isLoading && search.stops == null && query.isNotBlank() -> SearchPanelState.Loading
+            search.stops == null && query.isNotBlank() -> SearchPanelState.Error
+            query.isBlank() -> SearchPanelState.Prompt
+            search.results.isEmpty() -> SearchPanelState.NoResults
+            else -> SearchPanelState.Results
         }
         Crossfade(
             targetState = panelState,
@@ -346,12 +326,12 @@ internal fun StopSearchPanel(
             label = "endpointSearchPanel"
         ) { state ->
             when (state) {
-                0 -> {
+                SearchPanelState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(modifier = Modifier.size(28.dp))
                     }
                 }
-                1 -> {
+                SearchPanelState.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             text = stringResource(R.string.no_connection),
@@ -360,7 +340,7 @@ internal fun StopSearchPanel(
                         )
                     }
                 }
-                2 -> {
+                SearchPanelState.Prompt -> {
                     QuickPicksList(
                         favorites = favorites,
                         recentStops = recentStops,
@@ -370,7 +350,7 @@ internal fun StopSearchPanel(
                         onTripPointClick = onTripPointClick
                     )
                 }
-                3 -> {
+                SearchPanelState.NoResults -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             text = stringResource(R.string.no_stops_found),
@@ -386,7 +366,7 @@ internal fun StopSearchPanel(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp)
                     ) {
-                        items(results, key = { it.locId }, contentType = { "stopSearch" }) { stop ->
+                        items(search.results, key = { it.locId }, contentType = { "stopSearch" }) { stop ->
                             StopSearchItem(
                                 stop = stop,
                                 onClick = { onStopClick(stop) },
@@ -475,7 +455,7 @@ private fun QuickPickHeader(title: String) {
 
 @Composable
 private fun TripPointRow(trip: TripPoint, onClick: () -> Unit) {
-    val source = remember { MutableInteractionSource() }
+    val source = rememberPressSource()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -588,7 +568,7 @@ internal fun TripOptionsSheet(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                val minusSource = remember { MutableInteractionSource() }
+                val minusSource = rememberPressSource()
                 IconButton(
                     onClick = {
                         onOptionsChanged(options.copy(itineraryCount = options.itineraryCount - 1))
@@ -621,7 +601,7 @@ internal fun TripOptionsSheet(
                         maxLines = 1
                     )
                 }
-                val plusSource = remember { MutableInteractionSource() }
+                val plusSource = rememberPressSource()
                 IconButton(
                     onClick = {
                         onOptionsChanged(options.copy(itineraryCount = options.itineraryCount + 1))

@@ -48,7 +48,7 @@ fun StopListItem(
      */
     proximityLabel: String? = null
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     Card(
         onClick = onClick,
         interactionSource = interactionSource,

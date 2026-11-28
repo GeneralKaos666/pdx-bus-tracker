@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.home
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -52,7 +53,9 @@ import com.trimettransit.tracker.ui.components.pressScale
 import com.trimettransit.tracker.ui.components.rememberDenseGridEnabled
 import com.trimettransit.tracker.ui.components.rememberSmoothFlingBehavior
 import com.trimettransit.tracker.ui.components.searchStops
+import com.trimettransit.tracker.ui.components.SearchPanelState
 import com.trimettransit.tracker.ui.components.StopSearchItem
+import com.trimettransit.tracker.ui.components.rememberStopSearchResults
 import com.trimettransit.tracker.ui.components.staggeredFadeIn
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.AppMotion
@@ -86,42 +89,10 @@ fun HomeSearchBar(
 ) {
     val focusManager = LocalFocusManager.current
     var query by rememberSaveable { mutableStateOf("") }
-    var allStops by remember { mutableStateOf<List<Stop>?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
-    var hasError by remember { mutableStateOf(false) }
-    // Bumped by the error panel's retry action so the fetch effect re-runs.
-    var attempt by remember { mutableIntStateOf(0) }
-    var results by remember { mutableStateOf<List<Stop>>(emptyList()) }
-
-    // Lazy-load the full stop list once, on the first non-blank query. Keyed on
-    // (allStops == null, query.isNotBlank()) so typing never re-launches the
-    // network call while the list is still loading.
-    LaunchedEffect(allStops == null, query.isNotBlank(), attempt) {
-        if (allStops == null && query.isNotBlank()) {
-            isLoading = true
-            hasError = false
-            allStops = transitRepository.searchStops()
-            isLoading = false
-            if (allStops == null) hasError = true
-        }
-    }
-
-    // Debounced search: rapid keystrokes share one filter pass over the multi-MB
-    // list instead of re-filtering per character. snapshotFlow tracks the query;
-    // allStops is the effect key (loaded once, then stable). collectLatest cancels
-    // a superseded filter so only the latest query publishes.
-    LaunchedEffect(allStops) {
-        snapshotFlow { query }
-            .debounce(200.milliseconds)
-            .collectLatest { q ->
-                val stops = allStops
-                results = if (q.isBlank() || stops == null) {
-                    emptyList()
-                } else {
-                    withContext(Dispatchers.Default) { searchStops(stops, q) }
-                }
-            }
-    }
+    val search = rememberStopSearchResults(
+        loadStops = { transitRepository.searchStops() },
+        query = query
+    )
 
     Column(modifier = Modifier.fillMaxSize()) {
         Surface(
@@ -142,7 +113,7 @@ fun HomeSearchBar(
                 },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
-                        val clearSource = remember { MutableInteractionSource() }
+                        val clearSource = rememberPressSource()
                         IconButton(
                             onClick = {
                                 query = ""
@@ -182,16 +153,16 @@ fun HomeSearchBar(
 
                 SearchResultsDropdown(
                     query = query,
-                    isLoading = isLoading,
-                    hasError = hasError,
-                    allStops = allStops,
-                    results = results,
+                    isLoading = search.isLoading,
+                    hasError = search.hasError,
+                    allStops = search.stops,
+                    results = search.results,
                     onStopClick = { stop ->
                         query = ""
                         focusManager.clearFocus()
                         onStopSelected(stop)
                     },
-                    onRetry = { attempt++ },
+                    onRetry = search.retry,
                     favoriteIds = favoriteIds,
                     onToggleFavorite = onToggleFavorite,
                     modifier = Modifier
@@ -248,10 +219,10 @@ private fun SearchResultsDropdown(
             val panelState = when {
                 // The rest of the app shows shimmer placeholders while a list loads; a lone
                 // spinner here was the odd one out.
-                isLoading && allStops == null -> 0
-                hasError && allStops == null -> 1
-                results.isEmpty() -> 2
-                else -> 3
+                isLoading && allStops == null -> SearchPanelState.Loading
+                hasError && allStops == null -> SearchPanelState.Error
+                results.isEmpty() -> SearchPanelState.NoResults
+                else -> SearchPanelState.Results
             }
             Crossfade(
                 targetState = panelState,
@@ -259,12 +230,12 @@ private fun SearchResultsDropdown(
                 label = "searchPanelState"
             ) { state ->
                 when (state) {
-                    0 -> ListLoadingSkeleton(rows = 4)
-                    1 -> ErrorState(
+                    SearchPanelState.Loading -> ListLoadingSkeleton(rows = 4)
+                    SearchPanelState.Error -> ErrorState(
                         message = stringResource(R.string.no_connection),
                         onRetry = onRetry
                     )
-                    2 -> SearchPanelMessage(stringResource(R.string.no_stops_found))
+                    SearchPanelState.NoResults -> SearchPanelMessage(stringResource(R.string.no_stops_found))
                     else -> {
                         val dense = rememberDenseGridEnabled()
                         val listState = rememberLazyGridState()

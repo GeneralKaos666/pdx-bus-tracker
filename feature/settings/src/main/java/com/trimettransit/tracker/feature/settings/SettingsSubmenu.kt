@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.settings
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -60,7 +61,7 @@ internal fun MenuRow(
 @Composable
 internal fun SubmenuHeader(title: String, subtitle: String? = null, onBack: () -> Unit) {
     Column {
-        val interactionSource = remember { MutableInteractionSource() }
+        val interactionSource = rememberPressSource()
         Row(
             modifier = Modifier
                 .fillMaxWidth()

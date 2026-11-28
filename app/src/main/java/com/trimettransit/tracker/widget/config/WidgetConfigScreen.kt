@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.widget.config
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
@@ -63,6 +64,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import com.trimettransit.tracker.ui.components.SectionHeader
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -188,7 +190,7 @@ fun WidgetConfigScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    val cancelSource = remember { MutableInteractionSource() }
+                    val cancelSource = rememberPressSource()
                     OutlinedButton(
                         onClick = onCancel,
                         interactionSource = cancelSource,
@@ -198,7 +200,7 @@ fun WidgetConfigScreen(
                     ) {
                         Text(stringResource(R.string.widget_config_cancel))
                     }
-                    val doneSource = remember { MutableInteractionSource() }
+                    val doneSource = rememberPressSource()
                     Button(
                         onClick = { onDone(buildConfig()) },
                         interactionSource = doneSource,
@@ -227,7 +229,7 @@ fun WidgetConfigScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
     
-                SectionHeader(R.string.widget_config_stops)
+                WidgetSectionHeader(R.string.widget_config_stops)
                 Text(
                     text = stringResource(R.string.widget_config_stops_hint),
                     style = MaterialTheme.typography.bodySmall,
@@ -264,7 +266,7 @@ fun WidgetConfigScreen(
                     }
                 }
     
-                SectionHeader(R.string.widget_config_arrivals)
+                WidgetSectionHeader(R.string.widget_config_arrivals)
                 Text(
                     text = stringResource(R.string.widget_config_arrivals_per_stop),
                     style = MaterialTheme.typography.bodyLarge,
@@ -277,7 +279,7 @@ fun WidgetConfigScreen(
                     labelFor = { it.toString() }
                 )
     
-                SectionHeader(R.string.widget_config_time)
+                WidgetSectionHeader(R.string.widget_config_time)
                 ChoiceSegmentedRow(
                     selected = showClockTime.value,
                     onSelect = { showClockTime.value = it },
@@ -288,7 +290,7 @@ fun WidgetConfigScreen(
                     }
                 )
     
-                SectionHeader(R.string.widget_config_theme)
+                WidgetSectionHeader(R.string.widget_config_theme)
                 ChoiceSegmentedRow(
                     selected = theme.value,
                     onSelect = { theme.value = it },
@@ -302,7 +304,7 @@ fun WidgetConfigScreen(
                     }
                 )
     
-                SectionHeader(R.string.widget_config_rows)
+                WidgetSectionHeader(R.string.widget_config_rows)
                 ChoiceSegmentedRow(
                     selected = compactRows.value,
                     onSelect = { compactRows.value = it },
@@ -313,7 +315,7 @@ fun WidgetConfigScreen(
                     }
                 )
     
-                SectionHeader(R.string.widget_config_display)
+                WidgetSectionHeader(R.string.widget_config_display)
                 ToggleRow(
                     label = stringResource(R.string.widget_config_show_route_badge),
                     checked = showRouteBadge.value,
@@ -330,7 +332,7 @@ fun WidgetConfigScreen(
                     onCheckedChange = { showArrivalStatus.value = it }
                 )
     
-                SectionHeader(R.string.widget_config_limit)
+                WidgetSectionHeader(R.string.widget_config_limit)
                 Text(
                     text = pluralStringResource(
                         R.plurals.widget_config_max_stops,
@@ -354,7 +356,7 @@ fun WidgetConfigScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
-                SectionHeader(R.string.widget_config_background)
+                WidgetSectionHeader(R.string.widget_config_background)
                 ChoiceSegmentedRow(
                     selected = backgroundMode.value,
                     onSelect = { backgroundMode.value = it },
@@ -446,7 +448,7 @@ fun WidgetConfigScreen(
                     }
                 }
     
-                SectionHeader(R.string.widget_config_title_field)
+                WidgetSectionHeader(R.string.widget_config_title_field)
                 OutlinedTextField(
                     value = titleText.value,
                     onValueChange = { titleText.value = it },
@@ -466,13 +468,8 @@ fun WidgetConfigScreen(
 }
 
 @Composable
-private fun SectionHeader(@StringRes res: Int) {
-    Text(
-        text = stringResource(res),
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
-    )
+private fun WidgetSectionHeader(@StringRes res: Int) {
+    SectionHeader(title = stringResource(res))
 }
 
 /** Single-choice segmented control; [labelFor] renders each option's visible label. */
@@ -505,7 +502,7 @@ private fun FavoriteStopRow(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -721,7 +718,7 @@ private fun ColorSwatchRow(hex: String, onClick: () -> Unit) {
     val previewColor = hex
         .let { parseWidgetBackgroundArgb(it) }
         ?.let { Color(it) }
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -759,7 +756,7 @@ private fun ColorSwatchRow(hex: String, onClick: () -> Unit) {
 
 @Composable
 private fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     Row(
         modifier = Modifier
             .fillMaxWidth()

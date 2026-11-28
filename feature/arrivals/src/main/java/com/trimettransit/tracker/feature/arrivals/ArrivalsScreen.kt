@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.arrivals
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import timber.log.Timber
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -598,7 +599,7 @@ fun ArrivalsScreen(
             title = { Text(stringResource(R.string.tap_to_track_title)) },
             text = { Text(stringResource(R.string.tap_to_track_message)) },
             confirmButton = {
-                val gotItSource = remember { MutableInteractionSource() }
+                val gotItSource = rememberPressSource()
                 TextButton(
                     onClick = { dismissTapToTrackHint() },
                     interactionSource = gotItSource,
@@ -608,29 +609,5 @@ fun ArrivalsScreen(
                 }
             }
         )
-    }
-}
-
-/** One row summarising station-scoped alerts; taps through to the shared alert dialog. */
-@Composable
-private fun StopAlertBanner(count: Int, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = appCardShape(),
-        color = MaterialTheme.colorScheme.errorContainer
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = pluralStringResource(R.plurals.stop_alerts_count, count, count),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onErrorContainer
-            )
-        }
     }
 }

@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.trips
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -68,6 +69,7 @@ import androidx.compose.animation.animateColorAsState
 import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.components.navPillBottomPadding
 import com.trimettransit.tracker.ui.components.pressScale
+import com.trimettransit.tracker.ui.components.TransitBadge
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.theme.appCardBorder
@@ -117,7 +119,7 @@ internal fun ItineraryResultsScreen(
                     .height(MAP_PREVIEW_HEIGHT)
             ) {
                 mapPreview()
-                val backSource = remember { MutableInteractionSource() }
+                val backSource = rememberPressSource()
                 Surface(
                     onClick = onBack,
                     interactionSource = backSource,
@@ -138,7 +140,7 @@ internal fun ItineraryResultsScreen(
                             .size(24.dp)
                     )
                 }
-                val shareSource = remember { MutableInteractionSource() }
+                val shareSource = rememberPressSource()
                 Surface(
                     onClick = onShare,
                     interactionSource = shareSource,
@@ -178,7 +180,7 @@ internal fun ItineraryResultsScreen(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                val swapSource = remember { MutableInteractionSource() }
+                val swapSource = rememberPressSource()
                 IconButton(
                     onClick = onSwapEndpoints,
                     enabled = !isRefreshing,
@@ -231,7 +233,7 @@ internal fun ItineraryResultsScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                val refreshSource = remember { MutableInteractionSource() }
+                val refreshSource = rememberPressSource()
                 TextButton(
                     onClick = onRefresh,
                     enabled = !isRefreshing,
@@ -356,7 +358,7 @@ private fun ItineraryOptionCard(
         animationSpec = m3EffectsDefault(),
         label = "itineraryOptionColor"
     )
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     Surface(
         onClick = onClick,
         interactionSource = interactionSource,
@@ -510,48 +512,23 @@ internal fun RouteBadge(
     contentDescription: String? = null,
     compact: Boolean = false
 ) {
-    val scheme = MaterialTheme.colorScheme
     val letter = leg.mode.transitTypeLetter()
-    val badgeDescription = contentDescription
-    val overrides = LocalAppearanceStyle.current.transitTypeColors
-    val badgeSize: Dp = if (compact) 22.dp else 28.dp
-    Surface(
-        shape = appCardShape(),
-        color = transitColor(letter, scheme, overrides),
-        modifier = if (badgeDescription != null) {
-            modifier.semantics { this.contentDescription = badgeDescription }
-        } else {
-            modifier
-        }
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(badgeSize)
-                .clearAndSetSemantics { }
-        ) {
-            Text(
-                text = (leg.routeNumber?.takeIf { it.isNotEmpty() && letter == "B" }) ?: letter,
-                style = if (compact) {
-                    MaterialTheme.typography.labelSmall
-                } else {
-                    MaterialTheme.typography.labelMedium
-                },
-                fontWeight = FontWeight.Bold,
-                color = transitOnColor(letter, scheme, overrides),
-                maxLines = 1
-            )
-        }
-    }
+    val label = (leg.routeNumber?.takeIf { it.isNotEmpty() && letter == "B" }) ?: letter
+    TransitBadge(
+        label = label,
+        transitLetter = letter,
+        modifier = modifier,
+        contentDescription = contentDescription,
+        compact = compact
+    )
 }
-
 @Composable
 internal fun LegRow(
     leg: TripLeg,
     onClick: (() -> Unit)? = null,
     clickLabel: String? = null
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     Row(
         modifier = Modifier
             .fillMaxWidth()

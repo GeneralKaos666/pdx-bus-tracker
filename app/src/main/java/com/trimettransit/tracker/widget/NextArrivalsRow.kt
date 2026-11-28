@@ -137,8 +137,9 @@ private fun RouteBadge(routeNum: Int, transitType: String, showBadge: Boolean) {
         }
     }
     Box(
+        // A fixed 26dp box clipped the label at large font scales; let the badge grow.
         modifier = GlanceModifier
-            .size(26.dp)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
             .background(background),
         contentAlignment = Alignment.Center
     ) {

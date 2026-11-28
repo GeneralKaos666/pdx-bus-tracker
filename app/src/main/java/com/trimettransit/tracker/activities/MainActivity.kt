@@ -1,5 +1,8 @@
 package com.trimettransit.tracker.activities
 
+import com.trimettransit.tracker.ui.components.motionEnterFadeSlide
+import com.trimettransit.tracker.ui.components.motionExitFadeSlide
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import android.app.PictureInPictureParams
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -244,25 +247,14 @@ class MainActivity : ComponentActivity() {
                 else -> isSystemInDarkTheme()
             }
             AppMotion.intensity = appearance.motionIntensity
-            TriMetGoTheme(
-                darkTheme = isDark,
+            ThemeHost(
+                isDark = isDark,
                 appearance = appearance,
                 cardCornerRadius = cardCornerRadiusPref.dp,
                 cardCutCorners = cardCornerStylePref == "cut",
                 cardOutlinesEnabled = cardOutlinesPref,
                 cardOutlineColor = parseCardOutlineColor(cardOutlineColorPref)
             ) {
-                val activity = LocalActivity.current
-                SideEffect {
-                    if (activity != null) {
-                        WindowInsetsControllerCompat(
-                            activity.window, activity.window.decorView
-                        ).isAppearanceLightStatusBars = !isDark
-                        WindowInsetsControllerCompat(
-                            activity.window, activity.window.decorView
-                        ).isAppearanceLightNavigationBars = !isDark
-                    }
-                }
                 // In-app text-size override on top of the system font scale (sp-based only,
                 // so dp paddings stay put).
                 val fontScaleFactor = when (appearance.fontScale) {
@@ -661,7 +653,7 @@ private fun MainAppContent(
                         contentPadding = PaddingValues(0.dp),
                         windowInsets = TopAppBarDefaults.windowInsets,
                         actions = {
-                            val pipSource = remember { MutableInteractionSource() }
+                            val pipSource = rememberPressSource()
                             var pipButtonRect by remember { mutableStateOf<android.graphics.Rect?>(null) }
                             IconButton(
                                 onClick = {
@@ -705,7 +697,7 @@ private fun MainAppContent(
                                     )
                                 }
                             )
-                            val refreshSource = remember { MutableInteractionSource() }
+                            val refreshSource = rememberPressSource()
                             IconButton(
                                 onClick = {
                                     scope.launch {
@@ -799,21 +791,14 @@ private fun MainAppContent(
         }
     AnimatedVisibility(
         visible = !inPip && !expandedPane,
-        enter = if (AppMotion.reduceMotion) {
-            fadeIn(m3EffectsDefault())
-        } else {
-            slideInVertically(m3SpatialDefault()) { it } + fadeIn(m3EffectsDefault())
-        },
-        exit = if (AppMotion.reduceMotion) {
-            fadeOut(m3EffectsFast())
-        } else {
-            slideOutVertically(m3SpatialFast()) { it } + fadeOut(m3EffectsFast())
-        },
+        enter = motionEnterFadeSlide(AppMotion.reduceMotion, fromTop = false),
+        exit = motionExitFadeSlide(AppMotion.reduceMotion, toTop = false),
         modifier = Modifier.align(Alignment.BottomCenter)
     ) {
         @SuppressLint("FrequentlyChangingValue")
-        val pagePosition = topPagerState.currentPage +
-            topPagerState.currentPageOffsetFraction
+        val pagePosition = {
+            topPagerState.currentPage + topPagerState.currentPageOffsetFraction
+        }
         MainBottomBar(
             topPage = topPagerState.currentPage,
             pagePosition = pagePosition,

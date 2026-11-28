@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.arrivals
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import android.content.Intent
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -103,7 +104,7 @@ internal fun AlertsDialog(
                             }
                             val link = alert.infoLinkUrl
                             if (isHttpAlertLink(link)) {
-                                val linkInteractionSource = remember { MutableInteractionSource() }
+                                val linkInteractionSource = rememberPressSource()
                                 Text(
                                     text = stringResource(R.string.alert_learn_more),
                                     style = MaterialTheme.typography.bodyMedium,
@@ -134,7 +135,7 @@ internal fun AlertsDialog(
             }
         },
         confirmButton = {
-            val closeSource = remember { MutableInteractionSource() }
+            val closeSource = rememberPressSource()
             TextButton(onClick = onDismiss, interactionSource = closeSource, modifier = Modifier.pressScale(closeSource)) {
                 Text(stringResource(R.string.close))
             }

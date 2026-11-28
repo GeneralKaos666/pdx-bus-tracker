@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.stops
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -149,7 +150,7 @@ private fun RouteListItem(
     modifier: Modifier = Modifier,
     gridMode: Boolean = false
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     // This row toggles a section, so it reports both its role and the section's state. Card's
     // clickable does NOT supply a button role, so it is set here explicitly. The chevron below is
     // decorative for the same reason: otherwise TalkBack announces it a second time.

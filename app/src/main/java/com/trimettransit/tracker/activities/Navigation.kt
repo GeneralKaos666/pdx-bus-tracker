@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.activities
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -145,7 +146,7 @@ internal const val ARRIVALS_DEEP_LINK_BASE = "pdxbus://arrivals"
 /** Back arrow used by every non-top-level top app bar. */
 @Composable
 internal fun BackNavigationIcon(onClick: () -> Unit) {
-    val backSource = remember { MutableInteractionSource() }
+    val backSource = rememberPressSource()
     IconButton(
         onClick = onClick,
         interactionSource = backSource,

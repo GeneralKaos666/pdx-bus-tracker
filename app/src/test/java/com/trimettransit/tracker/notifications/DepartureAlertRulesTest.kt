@@ -113,14 +113,25 @@ class DepartureAlertRulesTest {
     }
 
     @Test
-    fun `prune caps the fired set and leaves small sets untouched`() {
+    fun `prune keeps the newest timestamps and leaves small sets untouched`() {
         val small = setOf("a", "b")
         assertEquals(small, DepartureAlertRules.prune(small))
 
-        val big = (0 until 150).mapIndexed { i, _ -> "key-$i" }.toSet()
+        val big = (0 until 150).map { i ->
+            DepartureAlertRules.stampedKey("key-$i", i.toLong())
+        }.toSet()
         val pruned = DepartureAlertRules.prune(big)
         assertEquals(100, pruned.size)
-        assertTrue(pruned.contains("key-149"))
+        assertTrue(pruned.contains(DepartureAlertRules.stampedKey("key-149", 149L)))
+        assertFalse(pruned.contains(DepartureAlertRules.stampedKey("key-0", 0L)))
+    }
+
+    @Test
+    fun `stamped keys expose their identity and survive an unordered set`() {
+        val stamped = DepartureAlertRules.stampedKey("7783:trip", 1_700_000_000_000L)
+        assertEquals("7783:trip", DepartureAlertRules.unstamp(stamped))
+        assertEquals(1_700_000_000_000L, DepartureAlertRules.stampMillis(stamped))
+        assertEquals("legacy-key", DepartureAlertRules.unstamp("legacy-key"))
     }
 
     @Test

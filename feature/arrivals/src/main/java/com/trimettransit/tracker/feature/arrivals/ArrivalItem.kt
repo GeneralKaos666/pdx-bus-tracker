@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.arrivals
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import android.content.Context
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -102,7 +103,7 @@ internal fun ArrivalItem(
         if (displayTime > 0L) minutesUntil(displayTime) else 0L
     }
 
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = rememberPressSource()
     Card(
         onClick = onClick,
         interactionSource = interactionSource,
@@ -172,7 +173,7 @@ internal fun ArrivalItem(
             ) {
                 Row {
                     Spacer(modifier = Modifier.width(8.dp))
-                    val alertInteractionSource = remember { MutableInteractionSource() }
+                    val alertInteractionSource = rememberPressSource()
                     Surface(
                         shape = appCardShape(),
                         color = MaterialTheme.colorScheme.errorContainer,
@@ -202,7 +203,7 @@ internal fun ArrivalItem(
             Spacer(modifier = Modifier.width(8.dp))
 
             if (arrival.tripID.isNotBlank()) {
-                val infoSource = remember { MutableInteractionSource() }
+                val infoSource = rememberPressSource()
                 IconButton(
                     onClick = onShowTripStatus,
                     interactionSource = infoSource,

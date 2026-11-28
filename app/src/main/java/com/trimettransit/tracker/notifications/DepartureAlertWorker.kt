@@ -87,9 +87,10 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
         // the backend omits locid so a missing field never silences every alert,
         // while a genuinely empty stop stays silent instead of inheriting buses.
         val mine = selectMine(result.arrivals, stop.locId, requestedIds)
+        val firedIdentities = fired.mapTo(mutableSetOf()) { DepartureAlertRules.unstamp(it) }
         val pending = DepartureAlertRules.filterNew(
             DepartureAlertRules.actionableArrivals(mine, now, windowMinutes),
-            fired,
+            firedIdentities,
             stop.locId
         )
         if (pending.isEmpty()) return
@@ -99,7 +100,12 @@ class DepartureAlertWorker(context: Context, params: WorkerParameters) :
         // POST_NOTIFICATIONS must not consume the alert for good.
         if (postSummary(app, stop, pending)) {
             for (arrival in pending) {
-                fired.add(DepartureAlertRules.firedKey(stop.locId, arrival))
+                fired.add(
+                    DepartureAlertRules.stampedKey(
+                        DepartureAlertRules.firedKey(stop.locId, arrival),
+                        now
+                    )
+                )
             }
         }
     }

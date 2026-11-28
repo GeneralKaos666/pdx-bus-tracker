@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.feature.home
 
+import com.trimettransit.tracker.ui.components.rememberPressSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -121,7 +122,7 @@ private fun RecentStopsList(
                             isFavorite = favoriteIds.contains(stop.locId),
                             onClick = { onToggleFavorite(stop) }
                         )
-                        val deleteSource = remember { MutableInteractionSource() }
+                        val deleteSource = rememberPressSource()
                         IconButton(
                             onClick = { onDismiss(stop) },
                             interactionSource = deleteSource,
