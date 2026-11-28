@@ -32,7 +32,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -102,7 +102,7 @@ internal data class BottomNavItem(
 internal val bottomNavItems = listOf(
     BottomNavItem(0, R.string.nav_home, Icons.Filled.Favorite),
     BottomNavItem(1, R.string.nav_recents, Icons.Filled.History),
-    BottomNavItem(2, R.string.nav_lines, Icons.Filled.Map),
+    BottomNavItem(2, R.string.nav_lines, Icons.Filled.Route),
     BottomNavItem(3, R.string.nav_trips, Icons.Filled.Directions)
 )
 
