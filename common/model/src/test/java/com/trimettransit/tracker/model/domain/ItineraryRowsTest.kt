@@ -71,4 +71,25 @@ class ItineraryRowsTest {
     fun `missing previous leg has no wait`() {
         assertNull(waitBefore(null, leg(departure = 0L, arrival = 1L)))
     }
+
+    @Test
+    fun `leg keys ignore the row position so replans keep identity`() {
+        val leg = TripLeg(
+            mode = TripLegMode.BUS,
+            routeNumber = "12",
+            from = TripPoint(45.5, -122.6, "A", stopId = "8337"),
+            to = TripPoint(45.6, -122.7, "B", stopId = "8340"),
+            departure = DateTime(2026, 11, 27, 9, 0),
+            arrival = DateTime(2026, 11, 27, 9, 20)
+        )
+        assertEquals(
+            ItineraryRowItem.Leg(0, leg).key(),
+            ItineraryRowItem.Leg(3, leg).key()
+        )
+    }
+
+    @Test
+    fun `wait keys include the duration`() {
+        assertEquals("wait:120000", ItineraryRowItem.Wait(120_000).key())
+    }
 }

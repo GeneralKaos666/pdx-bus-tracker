@@ -9,6 +9,24 @@ const val MIN_WAIT_DISPLAY_MILLIS = 60_000L
 sealed interface ItineraryRowItem {
     data class Leg(val index: Int, val leg: TripLeg) : ItineraryRowItem
     data class Wait(val millis: Long) : ItineraryRowItem
+
+    /**
+     * Stable list key. Identity must survive a re-plan that reorders options, so a leg is
+     * keyed by what it is (line, boarding stop, scheduled departure), not by the row it
+     * happens to occupy. [Leg.index] is deliberately excluded.
+     */
+    fun key(): String = when (this) {
+        is Leg -> {
+            val stop = leg.from.stopId.orEmpty()
+            val departure = leg.departure?.millis
+            if (departure == null && stop.isEmpty()) {
+                "leg:${leg.routeNumber.orEmpty()}:$index"
+            } else {
+                "leg:${leg.routeNumber.orEmpty()}:${departure ?: 0L}:$stop"
+            }
+        }
+        is Wait -> "wait:$millis"
+    }
 }
 
 /**

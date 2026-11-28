@@ -298,7 +298,7 @@ internal fun ItineraryResultsScreen(
                         }
                         itemsIndexed(
                             rows,
-                            key = { rowIndex, _ -> rowIndex },
+                            key = { _, row -> row.key() },
                             contentType = { _, row -> row::class.simpleName.orEmpty() }
                         ) { _, row ->
                             when (row) {
