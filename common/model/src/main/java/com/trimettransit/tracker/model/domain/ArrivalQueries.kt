@@ -57,7 +57,9 @@ fun alertsForLine(alerts: List<TransitAlert>?, routeId: Int): List<TransitAlert>
  * arrivals screen renders these for the stop it is showing.
  */
 fun alertsForStop(alerts: List<TransitAlert>?, stopId: Int): List<TransitAlert> =
-    alerts.orEmpty().filter { it.stopIds.contains(stopId) }
+    alerts.orEmpty().filter { alert ->
+        alert.stopIds.contains(stopId) && alert.routeIds.isEmpty()
+    }
 
 /**
  * True when [url] is safe to open as an alert "learn more" link: `http`/`https`

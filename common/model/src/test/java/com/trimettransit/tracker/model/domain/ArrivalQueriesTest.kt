@@ -230,4 +230,11 @@ class ArrivalQueriesTest {
         val alert = TransitAlert(id = 8, header = "Detour", routeIds = listOf(12))
         assertTrue(alertsForStop(listOf(alert), 8337).isEmpty())
     }
+
+    @Test
+    fun `an alert scoped to both a route and a stop is not duplicated in the stop banner`() {
+        val both = TransitAlert(id = 9, header = "Detour", routeIds = listOf(12), stopIds = listOf(8337))
+        assertTrue(alertsForStop(listOf(both), 8337).isEmpty())
+        assertEquals(listOf(both), alertsForLine(listOf(both), 12))
+    }
 }

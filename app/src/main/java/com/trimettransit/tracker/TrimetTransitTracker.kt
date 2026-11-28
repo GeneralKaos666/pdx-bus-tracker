@@ -1,6 +1,7 @@
 package com.trimettransit.tracker
 
 import android.app.Application
+import androidx.work.WorkManager
 import com.trimettransit.tracker.map.initializeMapRuntime
 import java.io.File
 import timber.log.Timber
@@ -19,6 +20,11 @@ class TrimetTransitTracker : Application() {
         // the user's dynamic-Color preference toggle. Applying it app-wide here too would
         // override the XML window theme unconditionally and fight the Compose side.
         initializeMapRuntime(this)
+        // The GTFS-static pipeline was deleted. Devices that ran an older build still have
+        // its periodic work enqueued, and WorkManager can no longer instantiate the worker,
+        // so it would fail (and log) weekly forever. Cancel it once.
+        WorkManager.getInstance(this).cancelUniqueWork("pdxbus_gtfs_static_refresh")
+        WorkManager.getInstance(this).cancelUniqueWork("pdxbus_gtfs_static_refresh_now")
     }
 
     private fun installCrashRecorder() {

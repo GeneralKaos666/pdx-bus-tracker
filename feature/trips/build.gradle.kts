@@ -20,10 +20,6 @@ android {
         abortOnError = true
         baseline = file("lint-baseline.xml")
     }
-
-    testOptions {
-        unitTests.isReturnDefaultValues = true
-    }
 }
 
 dependencies {

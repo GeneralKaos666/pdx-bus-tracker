@@ -4,5 +4,5 @@ title = "PDX Bus Tracker gitleaks config"
 useDefault = true
 
 [allowlist]
-description = "Legacy secrets hardcoded in the pre-rewrite import commit (083053cf, Jul 2026) of the old 'trimet-go' app. All rotated: TriMet key on 2026-09-07, Google/Parse keys on 2026-11-27. Values survive only in git history, so the allowlist is scoped to that commit instead of to the values."
+description = "Legacy secrets hardcoded in the pre-rewrite import commit (083053cf, Jul 2026) of the old 'trimet-go' app. TriMet key rotated 2026-09-07; Google/Parse key rotation is pending. Values survive only in git history, so the allowlist is scoped to that commit instead of to the values."
 commits = ["083053cf054234030f43b2f16bf54c1398ecf5c0"]

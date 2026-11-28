@@ -91,7 +91,14 @@ fun MapLibreMapHost(
                 // before the posted callback runs, and calling onStart() on an already
                 // torn-down MapView races the render thread against native teardown,
                 // producing a native SIGSEGV in libhwui's position-update callback.
-                post { if (isAttachedToWindow) onStart() }
+                // The lifecycle observer is registered before this factory runs, so its
+                // replayed ON_START/ON_RESUME hit a null view. Resume here as well.
+                post {
+                    if (isAttachedToWindow) {
+                        onStart()
+                        onResume()
+                    }
+                }
             }
         },
         update = { view ->

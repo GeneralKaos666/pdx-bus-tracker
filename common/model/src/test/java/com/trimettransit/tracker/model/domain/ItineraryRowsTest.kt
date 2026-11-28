@@ -38,7 +38,7 @@ class ItineraryRowsTest {
         assertEquals(
             listOf(
                 ItineraryRowItem.Leg(0, boarding),
-                ItineraryRowItem.Wait(600_000L),
+                ItineraryRowItem.Wait(600_000L, afterLegIndex = 1),
                 ItineraryRowItem.Leg(1, transfer)
             ),
             rows
@@ -90,6 +90,18 @@ class ItineraryRowsTest {
 
     @Test
     fun `wait keys include the duration`() {
-        assertEquals("wait:120000", ItineraryRowItem.Wait(120_000).key())
+        assertEquals("wait:0:120000", ItineraryRowItem.Wait(120_000).key())
+    }
+
+    @Test
+    fun `two equal waits in one itinerary get distinct keys`() {
+        val legs = listOf(
+            leg(departure = 0L, arrival = 600_000L),
+            leg(departure = 1_200_000L, arrival = 1_800_000L),
+            leg(departure = 2_400_000L, arrival = 3_000_000L)
+        )
+        val keys = itineraryRows(legs).filterIsInstance<ItineraryRowItem.Wait>().map { it.key() }
+        assertEquals(2, keys.size)
+        assertEquals(keys.size, keys.distinct().size)
     }
 }

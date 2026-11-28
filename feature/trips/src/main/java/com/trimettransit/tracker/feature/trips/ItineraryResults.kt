@@ -170,7 +170,7 @@ internal fun ItineraryResultsScreen(
                     .semantics { liveRegion = LiveRegionMode.Polite }
             ) {
                 Text(
-                    text = stringResource(R.string.trip_from_to_fmt, originLabel, destinationLabel),
+                    text = stringResource(R.string.trip_depart_arrive_fmt, originLabel, destinationLabel),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
@@ -682,60 +682,7 @@ private fun WaitRow(millis: Long) {
 private fun durationText(ms: Long): String = formatDuration(
     ms,
     stringResource(R.string.duration_hours_minutes_fmt),
-    stringResource(R.string.duration_minutes_fmt)
+    stringResource(R.string.duration_minutes_fmt),
+    hoursOnlyFmt = stringResource(R.string.duration_hours_fmt)
 )
 
-internal fun formatDurationMillis(ms: Long): String {
-    val totalMin = (ms / 60_000L).coerceAtLeast(0)
-    val h = totalMin / 60
-    val m = totalMin % 60
-    return when {
-        h > 0 && m > 0 -> "${h}h ${m}m"
-        h > 0 -> "${h}h"
-        else -> "${m}m"
-    }
-}
-
-/** Formats a scheduled time, or an em dash when the WS returned none (walk legs/itineraries). */
-internal fun DateTime?.clockTimeText(): String =
-    this?.let { t ->
-        val time = clockTime(t)
-        if (time.period.isEmpty()) time.text else "${time.text} ${time.period}"
-    } ?: "—"
-
-/**
- * Plain-text version of one itinerary for the share sheet. Kept free of Android types so the
- * format is directly testable: endpoints, date, times with duration, then the route numbers
- * in boarding order.
- */
-internal fun buildTripShareText(
-    originLabel: String,
-    destinationLabel: String,
-    dateLabel: String,
-    itinerary: TripItinerary
-): String {
-    val times = "${itinerary.departure.clockTimeText()} – ${itinerary.arrival.clockTimeText()}"
-    val routes = itinerary.legs
-        .filterNot { it.isWalk }
-        .mapNotNull { leg -> leg.routeNumber?.takeIf { it.isNotBlank() } }
-        .distinct()
-        .joinToString(" → ")
-    return buildString {
-        append(originLabel)
-        append(" → ")
-        append(destinationLabel)
-        append('\n')
-        if (dateLabel.isNotBlank()) {
-            append(dateLabel)
-            append('\n')
-        }
-        append(times)
-        append(" (")
-        append(formatDurationMillis(itinerary.durationMillis))
-        append(')')
-        if (routes.isNotBlank()) {
-            append('\n')
-            append(routes)
-        }
-    }
-}

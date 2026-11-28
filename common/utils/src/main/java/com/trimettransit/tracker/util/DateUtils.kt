@@ -15,8 +15,10 @@ data class ClockTime(val text: String, val period: String)
 /**
  * Formats [dateTime] with the user's locale and 12/24-hour convention.
  *
- * A hardcoded 12-hour clock showed English `AM`/`PM` to Spanish riders and ignored the
- * system "use 24-hour format" setting. The time zone comes from the [DateTime] itself so
+ * A hardcoded 12-hour clock showed English `AM`/`PM` to Spanish riders. The time now
+ * follows the locale's 12/24-hour convention; a user who overrides 24-hour format on an
+ * English device is still served by the locale convention (wiring the platform toggle
+ * needs a Context at every call site). The time zone comes from the [DateTime] itself so
  * tests and callers keep their pinned zone.
  */
 fun clockTime(dateTime: DateTime, locale: Locale = Locale.getDefault()): ClockTime {
@@ -30,7 +32,7 @@ fun clockTime(dateTime: DateTime, locale: Locale = Locale.getDefault()): ClockTi
         .trim()
     val tokens = rendered.split(" ").filter { it.isNotBlank() }
     val marker = tokens.lastOrNull()?.takeIf { token -> token.any { it.isLetter() } }
-    return if (marker == null) {
+    return if (marker == null || tokens.size < 2) {
         ClockTime(text = rendered, period = "")
     } else {
         ClockTime(text = tokens.dropLast(1).joinToString(" "), period = marker)
@@ -62,12 +64,17 @@ fun formatDuration(
     millis: Long,
     hoursMinutesFmt: String,
     minutesOnlyFmt: String,
-    locale: Locale = Locale.getDefault()
+    locale: Locale = Locale.getDefault(),
+    hoursOnlyFmt: String? = null
 ): String {
     val totalMinutes = (millis.coerceAtLeast(0L) / 60_000L)
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
-    val template = if (hours > 0) hoursMinutesFmt else minutesOnlyFmt
+    val template = when {
+        hours > 0 && minutes == 0L && hoursOnlyFmt != null -> hoursOnlyFmt
+        hours > 0 -> hoursMinutesFmt
+        else -> minutesOnlyFmt
+    }
     return String.format(locale, template, hours, minutes)
 }
 

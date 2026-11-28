@@ -42,6 +42,9 @@ import com.trimettransit.tracker.ui.theme.appCardShape
 @Composable
 fun rememberShimmerProgress(): () -> Float {
     val reduceMotion = AppMotion.reduceMotion
+    // Return before rememberInfiniteTransition: keeping one alive under reduced motion
+    // still drives a per-frame choreographer loop for no visible effect.
+    if (reduceMotion) return { 0f }
     val transition = rememberInfiniteTransition(label = "shimmer")
     val progress = transition.animateFloat(
         initialValue = 0f,
@@ -52,11 +55,7 @@ fun rememberShimmerProgress(): () -> Float {
         ),
         label = "shimmerProgress"
     )
-    return if (reduceMotion) {
-        { 0f }
-    } else {
-        { progress.value }
-    }
+    return { progress.value }
 }
 
 /**

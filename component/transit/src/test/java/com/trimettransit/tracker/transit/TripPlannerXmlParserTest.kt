@@ -427,5 +427,7 @@ class TripPlannerXmlParserTest {
         assertEquals(laMillis(11, 28, 0, 15), legs[1].arrival?.millis)
         // Contiguous transfer: no wait row, and certainly not a negative gap.
         assertNull(waitBefore(legs[0], legs[1]))
+        // The itinerary itself must also land on the 28th, not a day early.
+        assertEquals(laMillis(11, 28, 0, 15), result.plan!!.itineraries.single().arrival?.millis)
     }
 }

@@ -44,7 +44,6 @@
     <string name="recent_stops_label">Recent stops</string>
     <string name="wait_minutes_fmt">Wait %1$d min</string>
     <string name="trip_depart_arrive_fmt">%1$s → %2$s</string>
-    <string name="trip_from_to_fmt">%1$s → %2$s</string>
     <string name="find_trips">Find trips</string>
     <string name="planning_trips">Planning…</string>
     <string name="no_trips_found">No trips found</string>
@@ -116,4 +115,7 @@
     <string name="trip_updated_now">Updated just now</string>
     <string name="duration_hours_minutes_fmt">%1$d h %2$d min</string>
     <string name="duration_minutes_fmt">%2$d min</string>
+    <string name="duration_hours_fmt">%1$d h</string>
+    <string name="trip_share_separator"> → </string>
+    <string name="trip_share_dash"> – </string>
 </resources>

@@ -271,7 +271,8 @@ fun SettingsRadioOption(
         icon = icon,
         highlighted = selected,
         onClick = onClick,
-        trailing = { RadioButton(selected = selected, onClick = null) }
+        trailing = { RadioButton(selected = selected, onClick = null) },
+        selectedValue = selected
     )
 }
 

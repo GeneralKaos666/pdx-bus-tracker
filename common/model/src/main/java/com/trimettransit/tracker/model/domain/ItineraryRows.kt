@@ -8,7 +8,7 @@ const val MIN_WAIT_DISPLAY_MILLIS = 60_000L
 /** One row of the itinerary leg list: either a leg or the wait before the next leg. */
 sealed interface ItineraryRowItem {
     data class Leg(val index: Int, val leg: TripLeg) : ItineraryRowItem
-    data class Wait(val millis: Long) : ItineraryRowItem
+    data class Wait(val millis: Long, val afterLegIndex: Int = 0) : ItineraryRowItem
 
     /**
      * Stable list key. Identity must survive a re-plan that reorders options, so a leg is
@@ -25,7 +25,7 @@ sealed interface ItineraryRowItem {
                 "leg:${leg.routeNumber.orEmpty()}:${departure ?: 0L}:$stop"
             }
         }
-        is Wait -> "wait:$millis"
+        is Wait -> "wait:$afterLegIndex:$millis"
     }
 }
 
@@ -36,7 +36,7 @@ sealed interface ItineraryRowItem {
  */
 fun itineraryRows(legs: List<TripLeg>): List<ItineraryRowItem> = buildList {
     legs.forEachIndexed { index, leg ->
-        waitBefore(legs.getOrNull(index - 1), leg)?.let { add(ItineraryRowItem.Wait(it)) }
+        waitBefore(legs.getOrNull(index - 1), leg)?.let { add(ItineraryRowItem.Wait(it, index)) }
         add(ItineraryRowItem.Leg(index, leg))
     }
 }

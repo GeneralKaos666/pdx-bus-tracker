@@ -319,10 +319,6 @@ fun ArrivalsScreen(
         if (trackingKey != null) refreshPositions()
     }
 
-    // Report the resolved stop name to the outer scaffold's top bar
-    LaunchedEffect(Unit) {
-        onArrivalsStateChange(stopName.ifBlank { stopNumberLabel }, isFavorite, stopLat, stopLng)
-    }
 
     val smoothFling = rememberSmoothFlingBehavior()
     val listState = rememberLazyListState()

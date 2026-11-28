@@ -489,7 +489,7 @@ fun TripPlannerScreen(
     /** Opens arrivals for the stop a transit leg boards at. */
     fun openLegArrivals(leg: TripLeg) {
         val stopId = leg.from.stopId?.toIntOrNull() ?: return
-        val routeNum = leg.routeNumber?.toIntOrNull() ?: -1
+        val routeNum = leg.routeNumber?.toIntOrNull()
         onNavigateToArrivals(
             Stop(
                 desc = leg.from.description,
@@ -497,9 +497,10 @@ fun TripPlannerScreen(
                 longitude = leg.from.longitude,
                 transitType = leg.mode.transitTypeLetter(),
                 locId = stopId,
-                routeNum = routeNum
+                // "No route" is 0 for persisted stops; the arrivals highlight uses -1.
+                routeNum = routeNum ?: 0
             ),
-            routeNum
+            routeNum ?: -1
         )
     }
 
@@ -592,7 +593,7 @@ fun TripPlannerScreen(
     // The minute tick is scoped to this label, and only while the page is visible.
     val ageMinutesFmt = stringResource(R.string.trip_updated_minutes)
     val ageJustNow = stringResource(R.string.trip_updated_now)
-    val resultsAgeText = rememberAgeLabel(active = pageVisible) { now ->
+    val resultsAgeText by rememberAgeLabel(active = pageVisible) { now ->
         draft.ageText(now, ageMinutesFmt, ageJustNow)
     }
     val originLabel = origin?.description?.takeIf { it.isNotBlank() }
@@ -1167,7 +1168,12 @@ private fun shareTrip(
                 originLabel = originLabel,
                 destinationLabel = destinationLabel,
                 dateLabel = dateLabel,
-                itinerary = itinerary
+                itinerary = itinerary,
+                separator = context.getString(R.string.trip_share_separator),
+                dash = context.getString(R.string.trip_share_dash),
+                hoursMinutesFmt = context.getString(R.string.duration_hours_minutes_fmt),
+                minutesOnlyFmt = context.getString(R.string.duration_minutes_fmt),
+                hoursOnlyFmt = context.getString(R.string.duration_hours_fmt)
             )
         )
     }

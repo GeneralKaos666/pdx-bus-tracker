@@ -134,6 +134,10 @@ internal object TripPlannerXmlParser {
         val date = timeDistance.textOf("date")
         val start = parseMillis(date, timeDistance.textOf("startTime"))
         val end = parseMillis(date, timeDistance.textOf("endTime"))
+            ?.let { endMillis ->
+                // Same rule as legs: an itinerary crossing midnight ends the next day.
+                if (start != null && endMillis < start) plusOneDay(endMillis) else endMillis
+            }
         val legs = obj.directChildren("leg").mapNotNull { parseLeg(it, date) }
         if (legs.isEmpty()) return null
         val fare = obj.directChild("fare")?.textOf("regular")?.takeIf { it.isNotBlank() }
