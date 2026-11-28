@@ -22,7 +22,7 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     permissions:
       security-events: write
       packages: read
@@ -34,13 +34,8 @@ jobs:
         include:
           - language: actions
             build-mode: none
-          # Java/Kotlin runs without a build. The alternative, build-mode: manual,
-          # currently fails on this repo: the CodeQL Kotlin extractor rejects
-          # Kotlin >= 2.4.30 ("Kotlin version 2.5.0-Beta2 is too recent") and the
-          # build must also pass --no-build-cache, or cached compile tasks give the
-          # tracer nothing to extract. Revisit manual mode once CodeQL supports 2.5.
           - language: java-kotlin
-            build-mode: none
+            build-mode: manual
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -52,6 +47,46 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
+
+      - name: Set up JDK 21
+        if: matrix.build-mode == 'manual'
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        if: matrix.build-mode == 'manual'
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+
+      - name: Ensure Android SDK packages
+        if: matrix.build-mode == 'manual'
+        run: |
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install "platform-tools" "platforms;android-37.0" "build-tools;37.0.0"
+
+      - name: Create throwaway CI keystore
+        if: matrix.build-mode == 'manual'
+        run: |
+          keytool -genkeypair -v -keystore app/release.keystore -alias release \
+            -keyalg RSA -keysize 2048 -validity 30 \
+            -storepass android -keypass android \
+            -dname "CN=CI, OU=CI, O=CI, L=Portland, S=OR, C=US"
+
+      - name: Build for CodeQL
+        if: matrix.build-mode == 'manual'
+        env:
+          # CodeQL's Kotlin extractor refuses compilers newer than the cap it ships
+          # (v4.39.5 supports < 2.4.30; this repo builds with 2.5.0-Beta2). Raise the
+          # cap so extraction is attempted anyway. Unsupported by GitHub: if a future
+          # Kotlin bump breaks the extractor's compiler-plugin API, drop java-kotlin
+          # here and re-enable it once CodeQL ships support.
+          CODEQL_EXTRACTOR_KOTLIN_OVERRIDE_MAXIMUM_VERSION_LIMIT: "2.6.0"
+        # --no-build-cache is required: cached Kotlin/Java compile tasks replay their
+        # outputs without running the compilers, and the tracer then extracts nothing.
+        run: ./gradlew assembleDebug -PreleaseSigningFallback=true --no-daemon --no-build-cache --stacktrace
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@915412ff23e8b7659517e607487dbeae018f2934 # v4.39.5
