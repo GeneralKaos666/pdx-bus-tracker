@@ -6,6 +6,19 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
+// Pin gradle-play-publisher's build-classpath transitive deps (guava, httpclient) to
+// versions that close open Dependabot advisories. Build tooling only, never in the APK.
+buildscript {
+    configurations.classpath {
+        resolutionStrategy {
+            force(
+                "com.google.guava:guava:33.7.2-jre",
+                "org.apache.httpcomponents:httpclient:4.5.14",
+            )
+        }
+    }
+}
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
