@@ -483,6 +483,22 @@ internal object TransitJsonMapper {
             } else {
                 emptyList()
             }
+            // Stop-scoped alerts (station closures, lift outages) carry the same shape under
+            // "stop"/"stops" and no route at all. Dropping them meant the stop that needed
+            // the alert never showed it.
+            val stopsArr = obj.optJSONArray("stop")
+                ?.takeIf { it.length() > 0 }
+                ?: obj.optJSONArray("stops")
+            val stopIds = if (stopsArr != null) {
+                MutableList(stopsArr.length()) { k ->
+                    when (val el = stopsArr.opt(k)) {
+                        is JSONObject -> el.optInt("stop", 0)
+                        else -> stopsArr.optInt(k, 0)
+                    }
+                }
+            } else {
+                emptyList()
+            }
             alerts.add(
                 TransitAlert(
                     id = obj.optInt("id", 0),
@@ -490,7 +506,8 @@ internal object TransitJsonMapper {
                     desc = obj.optString("desc", ""),
                     infoLinkUrl = obj.optString("info_link_url", "").takeIf { it.isNotBlank() },
                     systemWide = obj.optBoolean("system_wide_flag", false),
-                    routeIds = routeIds
+                    routeIds = routeIds,
+                    stopIds = stopIds
                 )
             )
         }

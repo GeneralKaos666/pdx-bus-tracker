@@ -60,6 +60,7 @@ import com.trimettransit.tracker.model.domain.arrivalKey
 import com.trimettransit.tracker.model.domain.dedupeArrivals
 import com.trimettransit.tracker.model.domain.detoursForLine
 import com.trimettransit.tracker.model.domain.alertsForLine
+import com.trimettransit.tracker.model.domain.alertsForStop
 import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
@@ -120,6 +121,9 @@ fun ArrivalsScreen(
     var isError by remember { mutableStateOf(false) }
     var selectedDetours by remember { mutableStateOf<List<Detour>?>(null) }
     var alerts by remember { mutableStateOf<List<TransitAlert>>(emptyList()) }
+    // Station-scoped alerts (lift outages, stop closures) carry stopIds and no route, so
+    // they never appear in a line's alert pill. Render them once for the stop instead.
+    val stopScopedAlerts = remember(alerts, stopId) { alertsForStop(alerts, stopId) }
     var selectedAlerts by remember { mutableStateOf<List<TransitAlert>?>(null) }
     var selectedTripId by remember { mutableStateOf<String?>(null) }
     var selectedTripStatus by remember { mutableStateOf<com.trimettransit.tracker.model.TripStatus?>(null) }
@@ -438,6 +442,17 @@ fun ArrivalsScreen(
                         // open first. A list shorter than the viewport simply ends early.
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        if (stopScopedAlerts.isNotEmpty()) {
+                            item(key = "stopAlerts", contentType = "stopAlert") {
+                                StopAlertBanner(
+                                    count = stopScopedAlerts.size,
+                                    onClick = {
+                                        selectedDetours = null
+                                        selectedAlerts = stopScopedAlerts
+                                    }
+                                )
+                            }
+                        }
                         val visibleArrivals =
                             if (showAllArrivals) unfilteredArrivals else arrivals.take(TOP_ARRIVAL_ROWS)
                         itemsIndexed(
@@ -594,5 +609,29 @@ fun ArrivalsScreen(
                 }
             }
         )
+    }
+}
+
+/** One row summarising station-scoped alerts; taps through to the shared alert dialog. */
+@Composable
+private fun StopAlertBanner(count: Int, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = appCardShape(),
+        color = MaterialTheme.colorScheme.errorContainer
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = pluralStringResource(R.plurals.stop_alerts_count, count, count),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+        }
     }
 }

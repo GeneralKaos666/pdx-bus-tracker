@@ -52,6 +52,14 @@ fun alertsForLine(alerts: List<TransitAlert>?, routeId: Int): List<TransitAlert>
     alerts.orEmpty().filter { it.routeIds.contains(routeId) }
 
 /**
+ * Alerts scoped to a stop rather than a line — station closures, lift outages — which carry
+ * [TransitAlert.stopIds] and usually no route at all. [alertsForLine] cannot see them, so the
+ * arrivals screen renders these for the stop it is showing.
+ */
+fun alertsForStop(alerts: List<TransitAlert>?, stopId: Int): List<TransitAlert> =
+    alerts.orEmpty().filter { it.stopIds.contains(stopId) }
+
+/**
  * True when [url] is safe to open as an alert "learn more" link: `http`/`https`
  * only, hierarchical (`://`) with a host. Rejects `javascript:`, `intent:`,
  * `file:`, custom schemes (`pdxbus:`), and blank/null. Pure so it is unit-testable

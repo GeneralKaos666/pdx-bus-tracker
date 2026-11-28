@@ -15,7 +15,9 @@ data class TransitAlert(
     val desc: String = "",
     val infoLinkUrl: String? = null,
     val systemWide: Boolean = false,
-    val routeIds: List<Int> = emptyList()
+    val routeIds: List<Int> = emptyList(),
+    /** Stops this alert applies to. Non-empty means it is a station/stop alert with no line. */
+    val stopIds: List<Int> = emptyList()
 ) {
     val displayTitle: String
         get() = header.ifBlank { desc }
