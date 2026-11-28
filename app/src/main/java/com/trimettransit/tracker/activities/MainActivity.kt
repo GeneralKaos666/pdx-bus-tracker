@@ -81,6 +81,7 @@ import com.trimettransit.tracker.ui.components.rememberIsInPipMode
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.SaveableStateHolder
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.animation.AnimatedVisibility
@@ -391,8 +392,14 @@ private fun MainAppContent(
         if (arrivalsStateStopId == stopId) arrivalsStopName.ifBlank { fallback } else fallback
 
     val topPagerState = rememberPagerState(pageCount = { bottomNavItems.size })
-    var selectedStopsRoute by remember { mutableStateOf<Route?>(null) }
-    var selectedStopsDirection by remember { mutableStateOf<Direction?>(null) }
+    // Route/Direction are plain domain types, so they need explicit savers to survive
+    // rotation instead of collapsing the lines accordion.
+    var selectedStopsRoute by rememberSaveable(stateSaver = RouteSaver) {
+        mutableStateOf<Route?>(null)
+    }
+    var selectedStopsDirection by rememberSaveable(stateSaver = DirectionSaver) {
+        mutableStateOf<Direction?>(null)
+    }
     val saveableStateHolder = rememberSaveableStateHolder()
 
     fun navigateToArrivals(stop: Stop, routeId: Int) {
@@ -828,3 +835,69 @@ private fun MainAppContent(
 
 }
 
+
+/** Saves a [Route]'s components; `null` saves as an empty list. */
+private val RouteSaver = listSaver<Route?, Any>(
+    save = { route ->
+        route?.let {
+            listOf(it.desc, it.routeId, it.isBus, it.isMax, it.isStreetcar, it.isWes)
+        } ?: emptyList()
+    },
+    restore = { values ->
+        if (values.isEmpty()) {
+            null
+        } else {
+            Route(
+                desc = values[0] as String,
+                routeId = values[1] as Int,
+                isBus = values[2] as Boolean,
+                isMax = values[3] as Boolean,
+                isStreetcar = values[4] as Boolean,
+                isWes = values[5] as Boolean
+            )
+        }
+    }
+)
+
+/** Saves a [Direction] flattened with its optional [Route]. */
+private val DirectionSaver = listSaver<Direction?, Any>(
+    save = { direction ->
+        direction?.let { d ->
+            val r = d.route
+            listOf(
+                d.dir,
+                d.desc,
+                r?.desc ?: "",
+                r?.routeId ?: -1,
+                r?.isBus ?: false,
+                r?.isMax ?: false,
+                r?.isStreetcar ?: false,
+                r?.isWes ?: false
+            )
+        } ?: emptyList()
+    },
+    restore = { values ->
+        if (values.isEmpty()) {
+            null
+        } else {
+            val routeId = values[3] as Int
+            val route = if (routeId >= 0) {
+                Route(
+                    desc = values[2] as String,
+                    routeId = routeId,
+                    isBus = values[4] as Boolean,
+                    isMax = values[5] as Boolean,
+                    isStreetcar = values[6] as Boolean,
+                    isWes = values[7] as Boolean
+                )
+            } else {
+                null
+            }
+            Direction(
+                dir = values[0] as Int,
+                desc = values[1] as String,
+                route = route
+            )
+        }
+    }
+)

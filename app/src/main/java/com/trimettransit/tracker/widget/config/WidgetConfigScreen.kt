@@ -8,6 +8,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -508,10 +510,13 @@ private fun FavoriteStopRow(
         modifier = modifier
             .fillMaxWidth()
             .pressScale(interactionSource)
-            .clickable(
+            // Checkbox rows must announce checked state, not "button".
+            .toggleable(
+                value = selected,
+                role = Role.Checkbox,
                 interactionSource = interactionSource,
                 indication = LocalIndication.current,
-                onClick = onToggle
+                onValueChange = { onToggle() }
             )
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -759,10 +764,12 @@ private fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean
         modifier = Modifier
             .fillMaxWidth()
             .pressScale(interactionSource)
-            .clickable(
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
                 interactionSource = interactionSource,
                 indication = LocalIndication.current,
-                onClick = { onCheckedChange(!checked) }
+                onValueChange = { onCheckedChange(it) }
             )
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -269,57 +270,60 @@ internal fun ItineraryResultsScreen(
 
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
-            Crossfade(
-                targetState = selectedIndex,
-                animationSpec = m3EffectsDefault(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                label = "itinerarySelection"
-            ) { index ->
-                val itinerary = plan.itineraries.getOrNull(index) ?: plan.itineraries.firstOrNull()
-                if (itinerary == null) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = stringResource(R.string.no_trips_found),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+            // No Crossfade around the list: it disposed the LazyColumn on every selection
+            // change, resetting scroll and composing two leg lists during the transition.
+            val selectedItinerary = plan.itineraries.getOrNull(selectedIndex)
+                ?: plan.itineraries.firstOrNull()
+            if (selectedItinerary == null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.no_trips_found),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                val rows = remember(selectedItinerary) { itineraryRows(selectedItinerary.legs) }
+                val listState = remember(selectedIndex) { LazyListState() }
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentPadding = PaddingValues(bottom = listBottomInset)
+                ) {
+                    item(key = "summary") {
+                        TripSummaryHeader(
+                            itinerary = selectedItinerary,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
                         )
                     }
-                } else {
-                    val rows = remember(itinerary) { itineraryRows(itinerary.legs) }
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = listBottomInset)
-                    ) {
-                        item(key = "summary") {
-                            TripSummaryHeader(
-                                itinerary = itinerary,
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                            )
-                        }
-                        itemsIndexed(
-                            rows,
-                            key = { _, row -> row.key() },
-                            contentType = { _, row -> row::class.simpleName.orEmpty() }
-                        ) { _, row ->
-                            when (row) {
-                                is ItineraryRowItem.Leg -> {
-                                    val boardStop = row.leg.takeUnless { it.isWalk }
-                                        ?.from
-                                        ?.takeIf { !it.stopId.isNullOrBlank() }
-                                    LegRow(
-                                        leg = row.leg,
-                                        onClick = boardStop?.let {
-                                            { onLegClick(row.leg) }
-                                        },
-                                        clickLabel = boardStop?.let {
-                                            stringResource(R.string.open_stop_arrivals_fmt, it.description)
-                                        }
-                                    )
-                                }
-                                is ItineraryRowItem.Wait -> WaitRow(millis = row.millis)
+                    itemsIndexed(
+                        rows,
+                        key = { _, row -> row.key() },
+                        contentType = { _, row -> row::class.simpleName.orEmpty() }
+                    ) { _, row ->
+                        when (row) {
+                            is ItineraryRowItem.Leg -> {
+                                val boardStop = row.leg.takeUnless { it.isWalk }
+                                    ?.from
+                                    ?.takeIf { !it.stopId.isNullOrBlank() }
+                                LegRow(
+                                    leg = row.leg,
+                                    onClick = boardStop?.let {
+                                        { onLegClick(row.leg) }
+                                    },
+                                    clickLabel = boardStop?.let {
+                                        stringResource(R.string.open_stop_arrivals_fmt, it.description)
+                                    }
+                                )
                             }
+                            is ItineraryRowItem.Wait -> WaitRow(millis = row.millis)
                         }
                     }
                 }
