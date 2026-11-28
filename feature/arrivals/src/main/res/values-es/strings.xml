@@ -51,4 +51,9 @@
         <item quantity="many">Adelantado %1$d s</item>
         <item quantity="other">Adelantado %1$d s</item>
     </plurals>
+    <plurals name="stop_alerts_count">
+        <item quantity="one">%1$d alerta para esta parada</item>
+        <item quantity="many">%1$d alertas para esta parada</item>
+        <item quantity="other">%1$d alertas para esta parada</item>
+    </plurals>
 </resources>

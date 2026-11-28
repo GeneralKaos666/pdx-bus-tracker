@@ -3,6 +3,7 @@ package com.trimettransit.tracker.transit
 import com.trimettransit.tracker.model.TripLegMode
 import com.trimettransit.tracker.model.TripPlannerError
 import com.trimettransit.tracker.model.TripPlanResult
+import com.trimettransit.tracker.model.domain.waitBefore
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.junit.After
@@ -390,5 +391,43 @@ class TripPlannerXmlParserTest {
         val plain = "<response><from/><to/><itineraries/></response>"
         val result = TripPlannerXmlParser.parseTripPlanResponse(plain)
         assertTrue(result is TripPlanResult.Success)
+    }
+
+    @Test
+    fun `parseTripPlanResponse keeps each leg's own date across midnight`() {
+        val xml = """
+            <response>
+              <from><pos><lat>45.5</lat><lon>-122.6</lon></pos><description>A</description></from>
+              <to><pos><lat>45.6</lat><lon>-122.7</lon></pos><description>B</description></to>
+              <itineraries>
+                <itinerary id="i1">
+                  <time-distance><date>11/27/26</date><startTime>11:50 PM</startTime><endTime>12:15 AM</endTime></time-distance>
+                  <leg mode="3" order="1">
+                    <from><pos><lat>45.5</lat><lon>-122.6</lon></pos></from>
+                    <to><pos><lat>45.51</lat><lon>-122.61</lon></pos></to>
+                    <time-distance><date>11/27/26</date><startTime>11:50 PM</startTime><endTime>12:05 AM</endTime></time-distance>
+                  </leg>
+                  <leg mode="8" order="2">
+                    <from><pos><lat>45.51</lat><lon>-122.61</lon></pos></from>
+                    <to><pos><lat>45.6</lat><lon>-122.7</lon></pos></to>
+                    <time-distance><date>11/28/26</date><startTime>12:05 AM</startTime><endTime>12:15 AM</endTime></time-distance>
+                  </leg>
+                </itinerary>
+              </itineraries>
+            </response>
+        """.trimIndent()
+
+        val result = TripPlannerXmlParser.parseTripPlanResponse(xml) as TripPlanResult.Success
+        val legs = result.plan!!.itineraries.single().legs
+
+        // A 11:50 PM departure that ends at 12:05 AM belongs to the next day.
+        assertEquals(laMillis(11, 28, 0, 5), legs[0].arrival?.millis)
+        // The walk leg's own date is 11/28, not the itinerary's 11/27.
+        assertEquals(laMillis(11, 28, 0, 5), legs[1].departure?.millis)
+        assertEquals(laMillis(11, 28, 0, 15), legs[1].arrival?.millis)
+        // Contiguous transfer: no wait row, and certainly not a negative gap.
+        assertNull(waitBefore(legs[0], legs[1]))
+        // The itinerary itself must also land on the 28th, not a day early.
+        assertEquals(laMillis(11, 28, 0, 15), result.plan!!.itineraries.single().arrival?.millis)
     }
 }

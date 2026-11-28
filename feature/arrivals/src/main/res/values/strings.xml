@@ -48,4 +48,9 @@
         <item quantity="one">Early %1$d sec</item>
         <item quantity="other">Early %1$d sec</item>
     </plurals>
+    <plurals name="stop_alerts_count">
+        <item quantity="one">%1$d alert for this stop</item>
+        <item quantity="many">%1$d alerts for this stop</item>
+        <item quantity="other">%1$d alerts for this stop</item>
+    </plurals>
 </resources>

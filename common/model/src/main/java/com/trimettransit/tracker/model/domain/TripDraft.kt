@@ -71,9 +71,6 @@ data class TripDraft(
      * Sub-minute ages read as [justNow]; older ages format [minutesFmt] with the whole
      * minutes elapsed. Future timestamps (clock skew) clamp to [justNow].
      */
-    fun ageText(nowMillis: Long, minutesFmt: String, justNow: String): String? {
-        val planned = plannedAtMillis ?: return null
-        val mins = ((nowMillis - planned) / 60_000L).coerceAtLeast(0)
-        return if (mins < 1) justNow else minutesFmt.format(mins)
-    }
+    fun ageText(nowMillis: Long, minutesFmt: String, justNow: String): String? =
+        plannedAtMillis?.let { ageText(it, nowMillis, minutesFmt, justNow) }
 }

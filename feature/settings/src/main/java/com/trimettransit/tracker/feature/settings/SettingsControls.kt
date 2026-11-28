@@ -10,6 +10,8 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -147,19 +149,22 @@ internal fun AccentPresetRow(
                         animationSpec = m3EffectsDefault(),
                         label = "accentPresetRing"
                     )
+                    val presetLabel = stringResource(preset.labelRes)
+                    val presetDescription =
+                        if (isSelected) "$presetLabel, $selectedLabel" else presetLabel
                     Surface(
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp)
                             .pressScale(source, 0.96f)
-                            .semantics {
-                                contentDescription =
-                                    if (isSelected) "${preset.name}, $selectedLabel" else preset.name
-                            }
-                            .clickable(
+                            .semantics { contentDescription = presetDescription }
+                            .selectable(
+                                selected = isSelected,
+                                role = Role.RadioButton,
                                 interactionSource = source,
-                                indication = LocalIndication.current
-                            ) { onSelect(preset.color) },
+                                indication = LocalIndication.current,
+                                onClick = { onSelect(preset.color) }
+                            ),
                         shape = CircleShape,
                         color = preset.color,
                         border = BorderStroke(

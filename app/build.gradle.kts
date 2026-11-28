@@ -136,6 +136,9 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {
+            // Deliberate: debug shares the release key so a debug build can be installed as an
+            // upgrade over the Play-signed app on the single test device. Debug APKs stay local;
+            // never distribute them (debuggable + Play signature).
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -241,7 +244,6 @@ dependencies {
 
     // AndroidX Core
     implementation("androidx.core:core:1.19.1")
-    implementation("androidx.appcompat:appcompat:1.8.0")
     // Compose
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.ui:ui")

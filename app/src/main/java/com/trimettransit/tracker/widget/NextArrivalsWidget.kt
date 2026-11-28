@@ -157,7 +157,7 @@ private fun Content(
             }
             when {
                 snapshot.rows.isNotEmpty() -> StopList(snapshot, config, layout)
-                !snapshot.hasFavorites && snapshot.updatedAtMillis == 0L -> EmptyState(
+                !snapshot.hasFavorites -> EmptyState(
                     hint = context.getString(R.string.widget_empty_no_favorites),
                     ctx = context
                 )

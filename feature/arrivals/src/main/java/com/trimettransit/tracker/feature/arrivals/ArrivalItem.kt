@@ -53,6 +53,7 @@ import com.trimettransit.tracker.ui.appearance.LocalAppearanceStyle
 import com.trimettransit.tracker.ui.appearance.rowContentPadding
 import com.trimettransit.tracker.ui.components.transitColor
 import com.trimettransit.tracker.ui.components.transitIconResource
+import com.trimettransit.tracker.ui.components.transitOnColor
 import com.trimettransit.tracker.ui.components.transitTypeLabel
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.appCardBorder
@@ -135,7 +136,13 @@ internal fun ArrivalItem(
                         Icon(
                             painter = painterResource(id = transitIconResource(type)),
                             contentDescription = stringResource(transitTypeLabel(type)),
-                            tint = MaterialTheme.colorScheme.surface,
+                            // Paired ink, not surface: a user accent override (Amber) drops
+                            // white-on-fill to ~2:1.
+                            tint = transitOnColor(
+                                type,
+                                MaterialTheme.colorScheme,
+                                LocalAppearanceStyle.current.transitTypeColors
+                            ),
                             modifier = Modifier.size(24.dp)
                         )
                     }

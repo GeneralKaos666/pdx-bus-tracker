@@ -41,7 +41,7 @@ class TripShareTextTest {
         assertEquals(
             "SE 82nd & Schiller → SE Division & 12th\n" +
                 "Sat, Nov 28\n" +
-                "4:30 PM – 5:02 PM (32m)\n" +
+                "4:30 PM – 5:02 PM (32 min)\n" +
                 "72 → 2",
             text
         )
@@ -68,7 +68,7 @@ class TripShareTextTest {
             itinerary = itinerary
         )
 
-        assertEquals("A → B\n— – — (8m)", text)
+        assertEquals("A → B\n— – — (8 min)", text)
     }
 
     private fun walkLeg() = TripLeg(

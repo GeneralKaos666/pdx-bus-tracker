@@ -4,6 +4,8 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +31,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -47,7 +52,9 @@ fun SectionHeader(title: String) {
         style = MaterialTheme.typography.titleSmall,
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
+        modifier = Modifier
+            .semantics { heading() }
+            .padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
     )
 }
 
@@ -115,18 +122,41 @@ fun SettingsRowOption(
     icon: ImageVector,
     highlighted: Boolean,
     onClick: () -> Unit,
-    trailing: @Composable () -> Unit
+    trailing: @Composable () -> Unit,
+    toggleValue: Boolean? = null,
+    selectedValue: Boolean? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val rowModifier = Modifier
+        .fillMaxWidth()
+        .pressScale(interactionSource)
+        .then(
+            when {
+                // A switch/radio row that is only "clickable" announces itself as a button
+                // with no on/off or selected state to TalkBack.
+                toggleValue != null -> Modifier.toggleable(
+                    value = toggleValue,
+                    role = Role.Switch,
+                    interactionSource = interactionSource,
+                    indication = LocalIndication.current,
+                    onValueChange = { onClick() }
+                )
+                selectedValue != null -> Modifier.selectable(
+                    selected = selectedValue,
+                    role = Role.RadioButton,
+                    interactionSource = interactionSource,
+                    indication = LocalIndication.current,
+                    onClick = onClick
+                )
+                else -> Modifier.clickable(
+                    interactionSource = interactionSource,
+                    indication = LocalIndication.current,
+                    onClick = onClick
+                )
+            }
+        )
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pressScale(interactionSource)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = LocalIndication.current,
-                onClick = onClick
-            )
+        modifier = rowModifier
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -241,7 +271,8 @@ fun SettingsRadioOption(
         icon = icon,
         highlighted = selected,
         onClick = onClick,
-        trailing = { RadioButton(selected = selected, onClick = null) }
+        trailing = { RadioButton(selected = selected, onClick = null) },
+        selectedValue = selected
     )
 }
 
@@ -260,6 +291,7 @@ fun SettingsSwitchOption(
         icon = icon,
         highlighted = false,
         onClick = { onCheckedChange(!checked) },
-        trailing = { Switch(checked = checked, onCheckedChange = null) }
+        trailing = { Switch(checked = checked, onCheckedChange = null) },
+        toggleValue = checked
     )
 }

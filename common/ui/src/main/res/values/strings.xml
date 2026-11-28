@@ -11,4 +11,12 @@
     <string name="transit_type_streetcar">Streetcar</string>
     <string name="transit_type_wes_commuter_rail">WES Commuter Rail</string>
     <string name="transit_type_transit">Transit</string>
+    <string name="accent_trimet_blue">TriMet blue</string>
+    <string name="accent_transit_orange">Transit orange</string>
+    <string name="accent_emerald">Emerald</string>
+    <string name="accent_violet">Violet</string>
+    <string name="accent_crimson">Crimson</string>
+    <string name="accent_amber">Amber</string>
+    <string name="accent_teal">Teal</string>
+    <string name="accent_slate">Slate</string>
 </resources>

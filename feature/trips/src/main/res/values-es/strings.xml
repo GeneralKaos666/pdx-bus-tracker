@@ -44,7 +44,6 @@
     <string name="recent_stops_label">Paradas recientes</string>
     <string name="wait_minutes_fmt">Espera %1$d min</string>
     <string name="trip_depart_arrive_fmt">%1$s → %2$s</string>
-    <string name="trip_from_to_fmt">%1$s → %2$s</string>
     <string name="find_trips">Buscar viajes</string>
     <string name="planning_trips">Planificando…</string>
     <string name="no_trips_found">No se encontraron viajes</string>
@@ -116,4 +115,9 @@
     <string name="trip_planner_error_unknown">El Planificador de viajes no pudo planificar ese viaje</string>
     <string name="trip_updated_minutes">Actualizado hace %d min</string>
     <string name="trip_updated_now">Actualizado ahora mismo</string>
+    <string name="duration_hours_minutes_fmt">%1$d h %2$d min</string>
+    <string name="duration_minutes_fmt">%2$d min</string>
+    <string name="duration_hours_fmt">%1$d h</string>
+    <string name="trip_share_separator"> → </string>
+    <string name="trip_share_dash"> – </string>
 </resources>

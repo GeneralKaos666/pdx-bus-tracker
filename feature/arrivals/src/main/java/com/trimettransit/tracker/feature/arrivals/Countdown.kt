@@ -64,7 +64,11 @@ internal fun CountdownLabel(
     var flipProgress by remember { mutableFloatStateOf(1f) }
     val flip = remember { Animatable(1f) }
     val context = LocalContext.current
-    val reduceMotion = AppMotion.reduceMotion || systemReduceMotion(context)
+    // Remembered so a row re-rendering on each minute tick does not repeat the three
+    // binder-backed Settings.Global reads behind systemReduceMotion().
+    val reduceMotion = remember(context) {
+        AppMotion.reduceMotion || systemReduceMotion(context)
+    }
 
     LaunchedEffect(targetText, reduceMotion) {
         if (targetText != displayedText) {

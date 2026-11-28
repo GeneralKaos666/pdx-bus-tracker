@@ -11,7 +11,7 @@ itself is licensed under the MIT License (see `LICENSE`).
 ### AndroidX / Jetpack Compose
 - **Artifacts:** `androidx.compose:compose-bom` 2026.09.00 (`compose-ui`, `compose-foundation`,
   `material3` 1.5.0-beta02, `material-icons-extended`), `androidx.activity:activity-compose` 1.14.0-alpha03,
-  `androidx.navigation:navigation-compose` 2.10.2, `androidx.appcompat:appcompat` 1.8.0,
+  `androidx.navigation:navigation-compose` 2.10.2,
   `androidx.core:core` / `core-ktx` 1.19.1, `androidx.preference:preference` 1.2.1
 - **License:** Apache License 2.0
 - **Copyright:** Copyright The Android Open Source Project
@@ -69,12 +69,6 @@ itself is licensed under the MIT License (see `LICENSE`).
 - **License:** Apache License 2.0
 - **Copyright:** Copyright The Android Open Source Project
 - **Project:** https://developer.android.com/jetpack/libraries/work
-
-### GTFS Realtime bindings
-- **Artifact:** `com.google.transit:gtfs-realtime-bindings` 0.0.4
-- **License:** Apache License 2.0
-- **Copyright:** Copyright MobilityData
-- **Project:** https://github.com/MobilityData/gtfs-realtime-bindings
 
 ### material-kolor
 - **Artifact:** `com.materialkolor:material-kolor` 5.0.1

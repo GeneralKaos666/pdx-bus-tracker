@@ -10,8 +10,6 @@ import com.trimettransit.tracker.model.TripPlanResult
 import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.model.TripRequestTime
 import com.trimettransit.tracker.model.TransitAlert
-import com.trimettransit.tracker.model.VehicleResult
-import com.trimettransit.tracker.model.BlockStatusResult
 import com.trimettransit.tracker.model.TripStatusResult
 
 /**
@@ -80,34 +78,10 @@ interface TransitRepository {
         options: TripRequestOptions = TripRequestOptions()
     ): TripPlanResult
 
-    /**
-     * Fetches live vehicle positions from the TriMet Vehicle location WS, optionally
-     * filtered by route/block/vehicle id, bounding box, or update recency. Offline or
-     * a blank API key returns null; an empty fleet (no matching vehicles) returns a
-     * non-null [VehicleResult] with an empty list.
-     */
-    suspend fun getVehicles(
-        routes: List<Int>? = null,
-        blocks: List<Int>? = null,
-        ids: List<Int>? = null,
-        bbox: String? = null,
-        since: Long? = null,
-        showNonRevenue: Boolean = false,
-        onRouteOnly: Boolean = true,
-        showStale: Boolean = false
-    ): VehicleResult?
-
     suspend fun getTripStatus(
         tripIds: List<String>? = null,
         blockIds: List<Int>? = null,
         showRoutes: Boolean = true,
         showStops: Boolean = true
     ): TripStatusResult?
-
-    suspend fun getBlockStatus(
-        blockId: Int? = null,
-        blockIds: List<Int>? = null,
-        showRoutes: Boolean = true,
-        showStops: Boolean = true
-    ): BlockStatusResult?
 }

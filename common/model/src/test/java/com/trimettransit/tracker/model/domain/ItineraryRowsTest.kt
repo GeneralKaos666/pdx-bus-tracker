@@ -38,7 +38,7 @@ class ItineraryRowsTest {
         assertEquals(
             listOf(
                 ItineraryRowItem.Leg(0, boarding),
-                ItineraryRowItem.Wait(600_000L),
+                ItineraryRowItem.Wait(600_000L, afterLegIndex = 1),
                 ItineraryRowItem.Leg(1, transfer)
             ),
             rows
@@ -70,5 +70,38 @@ class ItineraryRowsTest {
     @Test
     fun `missing previous leg has no wait`() {
         assertNull(waitBefore(null, leg(departure = 0L, arrival = 1L)))
+    }
+
+    @Test
+    fun `leg keys ignore the row position so replans keep identity`() {
+        val leg = TripLeg(
+            mode = TripLegMode.BUS,
+            routeNumber = "12",
+            from = TripPoint(45.5, -122.6, "A", stopId = "8337"),
+            to = TripPoint(45.6, -122.7, "B", stopId = "8340"),
+            departure = DateTime(2026, 11, 27, 9, 0),
+            arrival = DateTime(2026, 11, 27, 9, 20)
+        )
+        assertEquals(
+            ItineraryRowItem.Leg(0, leg).key(),
+            ItineraryRowItem.Leg(3, leg).key()
+        )
+    }
+
+    @Test
+    fun `wait keys include the duration`() {
+        assertEquals("wait:0:120000", ItineraryRowItem.Wait(120_000).key())
+    }
+
+    @Test
+    fun `two equal waits in one itinerary get distinct keys`() {
+        val legs = listOf(
+            leg(departure = 0L, arrival = 600_000L),
+            leg(departure = 1_200_000L, arrival = 1_800_000L),
+            leg(departure = 2_400_000L, arrival = 3_000_000L)
+        )
+        val keys = itineraryRows(legs).filterIsInstance<ItineraryRowItem.Wait>().map { it.key() }
+        assertEquals(2, keys.size)
+        assertEquals(keys.size, keys.distinct().size)
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -72,6 +73,7 @@ import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.util.clockTime
+import com.trimettransit.tracker.util.formatDuration
 import org.joda.time.DateTime
 
 /** Map strip height above the itinerary list; keeps the route visible without pushing legs offscreen. */
@@ -168,7 +170,7 @@ internal fun ItineraryResultsScreen(
                     .semantics { liveRegion = LiveRegionMode.Polite }
             ) {
                 Text(
-                    text = stringResource(R.string.trip_from_to_fmt, originLabel, destinationLabel),
+                    text = stringResource(R.string.trip_depart_arrive_fmt, originLabel, destinationLabel),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
@@ -298,7 +300,7 @@ internal fun ItineraryResultsScreen(
                         }
                         itemsIndexed(
                             rows,
-                            key = { rowIndex, _ -> rowIndex },
+                            key = { _, row -> row.key() },
                             contentType = { _, row -> row::class.simpleName.orEmpty() }
                         ) { _, row ->
                             when (row) {
@@ -358,7 +360,7 @@ private fun ItineraryOptionCard(
         color = containerColor,
         border = appCardBorder(),
         modifier = Modifier
-            .width(176.dp)
+            .widthIn(min = 176.dp)
             .semantics {
                 this.selected = selected
                 role = Role.Tab
@@ -385,7 +387,7 @@ private fun ItineraryOptionCard(
                 maxLines = 1
             )
             Text(
-                text = formatDurationMillis(itinerary.durationMillis),
+                text = durationText(itinerary.durationMillis),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -436,7 +438,7 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = formatDurationMillis(itinerary.durationMillis),
+                text = durationText(itinerary.durationMillis),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -470,15 +472,15 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
                 text = if (itinerary.waitingTimeMillis > 0) {
                     stringResource(
                         R.string.walk_ride_wait_fmt,
-                        formatDurationMillis(itinerary.walkTimeMillis),
-                        formatDurationMillis(itinerary.transitTimeMillis),
-                        formatDurationMillis(itinerary.waitingTimeMillis)
+                        durationText(itinerary.walkTimeMillis),
+                        durationText(itinerary.transitTimeMillis),
+                        durationText(itinerary.waitingTimeMillis)
                     )
                 } else {
                     stringResource(
                         R.string.walk_transit_fmt,
-                        formatDurationMillis(itinerary.walkTimeMillis),
-                        formatDurationMillis(itinerary.transitTimeMillis)
+                        durationText(itinerary.walkTimeMillis),
+                        durationText(itinerary.transitTimeMillis)
                     )
                 },
                 style = MaterialTheme.typography.bodySmall,
@@ -674,54 +676,13 @@ private fun WaitRow(millis: Long) {
     }
 }
 
-internal fun formatDurationMillis(ms: Long): String {
-    val totalMin = (ms / 60_000L).coerceAtLeast(0)
-    val h = totalMin / 60
-    val m = totalMin % 60
-    return when {
-        h > 0 && m > 0 -> "${h}h ${m}m"
-        h > 0 -> "${h}h"
-        else -> "${m}m"
-    }
-}
 
-/** Formats a scheduled time, or an em dash when the WS returned none (walk legs/itineraries). */
-internal fun DateTime?.clockTimeText(): String =
-    this?.let { val t = clockTime(it); "${t.text} ${t.period}" } ?: "—"
+/** Trip duration in the user's language; 24-hour locales get their own templates. */
+@Composable
+private fun durationText(ms: Long): String = formatDuration(
+    ms,
+    stringResource(R.string.duration_hours_minutes_fmt),
+    stringResource(R.string.duration_minutes_fmt),
+    hoursOnlyFmt = stringResource(R.string.duration_hours_fmt)
+)
 
-/**
- * Plain-text version of one itinerary for the share sheet. Kept free of Android types so the
- * format is directly testable: endpoints, date, times with duration, then the route numbers
- * in boarding order.
- */
-internal fun buildTripShareText(
-    originLabel: String,
-    destinationLabel: String,
-    dateLabel: String,
-    itinerary: TripItinerary
-): String {
-    val times = "${itinerary.departure.clockTimeText()} – ${itinerary.arrival.clockTimeText()}"
-    val routes = itinerary.legs
-        .filterNot { it.isWalk }
-        .mapNotNull { leg -> leg.routeNumber?.takeIf { it.isNotBlank() } }
-        .distinct()
-        .joinToString(" → ")
-    return buildString {
-        append(originLabel)
-        append(" → ")
-        append(destinationLabel)
-        append('\n')
-        if (dateLabel.isNotBlank()) {
-            append(dateLabel)
-            append('\n')
-        }
-        append(times)
-        append(" (")
-        append(formatDurationMillis(itinerary.durationMillis))
-        append(')')
-        if (routes.isNotBlank()) {
-            append('\n')
-            append(routes)
-        }
-    }
-}

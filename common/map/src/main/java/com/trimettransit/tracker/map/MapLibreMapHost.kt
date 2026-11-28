@@ -2,12 +2,16 @@ package com.trimettransit.tracker.map
 
 import android.view.MotionEvent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 
@@ -27,7 +31,27 @@ fun MapLibreMapHost(
     onUpdate: (viewport: MapViewport, map: MapController?) -> Unit
 ) {
     var mapRef by remember { mutableStateOf<MapLibreMap?>(null) }
+    var mapViewRef by remember { mutableStateOf<MapView?>(null) }
     var appliedStyleUrl by remember { mutableStateOf<String?>(null) }
+
+    // MapView lifecycle follows the host lifecycle, not recomposition. `update` used to
+    // call onStart()/onResume() on every pass, which re-ran native resume work each time
+    // the caller pushed new data.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            val view = mapViewRef ?: return@LifecycleEventObserver
+            when (event) {
+                Lifecycle.Event.ON_START -> view.onStart()
+                Lifecycle.Event.ON_RESUME -> view.onResume()
+                Lifecycle.Event.ON_PAUSE -> view.onPause()
+                Lifecycle.Event.ON_STOP -> view.onStop()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     fun applyStyle(map: MapLibreMap, isReapply: Boolean) {
         map.setStyle(styleUrl) { style ->
@@ -38,6 +62,7 @@ fun MapLibreMapHost(
     AndroidView(
         factory = { ctx ->
             MapView(ctx).apply {
+                mapViewRef = this
                 getMapAsync { map ->
                     mapRef = map
                     map.uiSettings.isCompassEnabled = false
@@ -66,12 +91,17 @@ fun MapLibreMapHost(
                 // before the posted callback runs, and calling onStart() on an already
                 // torn-down MapView races the render thread against native teardown,
                 // producing a native SIGSEGV in libhwui's position-update callback.
-                post { if (isAttachedToWindow) onStart() }
+                // The lifecycle observer is registered before this factory runs, so its
+                // replayed ON_START/ON_RESUME hit a null view. Resume here as well.
+                post {
+                    if (isAttachedToWindow) {
+                        onStart()
+                        onResume()
+                    }
+                }
             }
         },
         update = { view ->
-            view.onStart()   // idempotent; also covers the factory's post() ordering
-            view.onResume()
             // If the resolved basemap (light/dark) changed since it was last applied,
             // reload the style and re-invoke the caller's style setup before pushing data.
             val map = mapRef
@@ -91,6 +121,7 @@ fun MapLibreMapHost(
             view.onPause()
             view.onDestroy()
             mapRef = null
+            mapViewRef = null
         },
         modifier = modifier
     )

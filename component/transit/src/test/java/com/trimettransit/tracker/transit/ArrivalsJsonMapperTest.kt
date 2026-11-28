@@ -279,4 +279,24 @@ class ArrivalsJsonMapperTest {
         )
         assertEquals(listOf(12), result.detours.single().routes)
     }
+
+    @Test
+    fun `stop scoped alert keeps its stop ids`() {
+        val alerts = TransitJsonMapper.parseAlerts(
+            JSONObject(
+                """
+                {
+                  "alert": [
+                    {
+                      "id": 7,
+                      "header_text": "Lift out of service",
+                      "stop": [{"stop": 8337}, {"stop": 8340}]
+                    }
+                  ]
+                }
+                """
+            )
+        )
+        assertEquals(listOf(8337, 8340), alerts.single().stopIds)
+    }
 }

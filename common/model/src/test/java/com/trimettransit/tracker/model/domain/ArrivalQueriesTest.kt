@@ -216,4 +216,25 @@ class ArrivalQueriesTest {
         assertFalse(isHttpAlertLink(null))
         assertFalse(isHttpAlertLink("  "))
     }
+
+    @Test
+    fun `stop scoped alert matches its stop and only its stop`() {
+        val alert = TransitAlert(id = 7, header = "Lift out of service", stopIds = listOf(8337))
+        assertEquals(listOf(alert), alertsForStop(listOf(alert), 8337))
+        assertTrue(alertsForStop(listOf(alert), 8338).isEmpty())
+        assertTrue(alertsForLine(listOf(alert), 12).isEmpty())
+    }
+
+    @Test
+    fun `line scoped alert is not a stop alert`() {
+        val alert = TransitAlert(id = 8, header = "Detour", routeIds = listOf(12))
+        assertTrue(alertsForStop(listOf(alert), 8337).isEmpty())
+    }
+
+    @Test
+    fun `an alert scoped to both a route and a stop is not duplicated in the stop banner`() {
+        val both = TransitAlert(id = 9, header = "Detour", routeIds = listOf(12), stopIds = listOf(8337))
+        assertTrue(alertsForStop(listOf(both), 8337).isEmpty())
+        assertEquals(listOf(both), alertsForLine(listOf(both), 12))
+    }
 }

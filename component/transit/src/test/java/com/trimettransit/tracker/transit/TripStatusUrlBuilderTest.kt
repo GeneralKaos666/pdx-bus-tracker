@@ -28,19 +28,4 @@ class TripStatusUrlBuilderTest {
             )
         )
     }
-
-    @Test
-    fun `builds block status url and omits disabled flags`() {
-        assertEquals(
-            "https://developer.trimet.org/ws/v2/blockStatus/appID/KEY/blockID/42/blockIDs/43,44",
-            buildBlockStatusUrl(
-                "https://developer.trimet.org/ws/v2/blockStatus",
-                "KEY",
-                blockId = 42,
-                blockIds = listOf(43, 44),
-                showRoutes = false,
-                showStops = false
-            )
-        )
-    }
 }

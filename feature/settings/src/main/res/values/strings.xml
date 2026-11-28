@@ -136,7 +136,7 @@
     <string name="refresh_cadence_120">Every 2 minutes</string>
     <string name="refresh_cadence_subtitle">Silently re-fetch arrival times on the arrivals screen</string>
     <string name="section_about">About</string>
-    <string name="license_androidx">AndroidX / Jetpack Compose (UI, Foundation, Material 3, Navigation, Activity, AppCompat, Preference)</string>
+    <string name="license_androidx">AndroidX / Jetpack Compose (UI, Foundation, Material 3, Navigation, Activity, Preference)</string>
     <string name="license_apache_2">Apache License 2.0</string>
     <string name="license_kotlin">Kotlin Standard Library &amp; Coroutines</string>
     <string name="license_okhttp">OkHttp</string>

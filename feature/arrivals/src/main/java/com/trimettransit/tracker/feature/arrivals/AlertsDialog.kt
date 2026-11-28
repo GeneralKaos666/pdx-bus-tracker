@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -108,10 +109,13 @@ internal fun AlertsDialog(
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier
+                                        .heightIn(min = 48.dp)
                                         .padding(top = 2.dp)
                                         .clickable(
                                             interactionSource = linkInteractionSource,
-                                            indication = LocalIndication.current
+                                            indication = LocalIndication.current,
+                                            role = Role.Button,
+                                            onClickLabel = stringResource(R.string.alert_learn_more)
                                         ) {
                                             try {
                                                 val intent = Intent(Intent.ACTION_VIEW, link!!.trim().toUri())

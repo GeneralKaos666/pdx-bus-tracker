@@ -37,7 +37,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -60,6 +62,8 @@ import com.trimettransit.tracker.model.domain.arrivalKey
 import com.trimettransit.tracker.model.domain.dedupeArrivals
 import com.trimettransit.tracker.model.domain.detoursForLine
 import com.trimettransit.tracker.model.domain.alertsForLine
+import com.trimettransit.tracker.model.domain.alertsForStop
+import com.trimettransit.tracker.model.domain.trackedBlockPositions
 import com.trimettransit.tracker.model.domain.filterArrivalsByRoute
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
@@ -120,12 +124,15 @@ fun ArrivalsScreen(
     var isError by remember { mutableStateOf(false) }
     var selectedDetours by remember { mutableStateOf<List<Detour>?>(null) }
     var alerts by remember { mutableStateOf<List<TransitAlert>>(emptyList()) }
+    // Station-scoped alerts (lift outages, stop closures) carry stopIds and no route, so
+    // they never appear in a line's alert pill. Render them once for the stop instead.
+    val stopScopedAlerts = remember(alerts, stopId) { alertsForStop(alerts, stopId) }
     var selectedAlerts by remember { mutableStateOf<List<TransitAlert>?>(null) }
-    var selectedTripId by remember { mutableStateOf<String?>(null) }
+    var selectedTripId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedTripStatus by remember { mutableStateOf<com.trimettransit.tracker.model.TripStatus?>(null) }
     var isTripStatusLoading by remember { mutableStateOf(false) }
-    var showAllArrivals by remember { mutableStateOf(false) }
-    var trackingKey by remember { mutableStateOf<String?>(null) }
+    var showAllArrivals by rememberSaveable { mutableStateOf(false) }
+    var trackingKey by rememberSaveable { mutableStateOf<String?>(null) }
     var trackingRouteId by remember { mutableIntStateOf(-1) }
     var trackingVehicleId by remember { mutableIntStateOf(0) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
@@ -162,7 +169,6 @@ fun ArrivalsScreen(
             isFavorite = withContext(Dispatchers.IO) {
                 favoritesRepository.isFavorite(stopId)
             }
-            onArrivalsStateChange(stopName.ifBlank { stopNumberLabel }, isFavorite, stopLat, stopLng)
         }
     }
 
@@ -247,14 +253,15 @@ fun ArrivalsScreen(
     val visibleCount = minOf(arrivals.size, TOP_ARRIVAL_ROWS)
     val showExpandButton = arrivals.size > TOP_ARRIVAL_ROWS || unfilteredArrivals.size > arrivals.size
     // Tracked positions: the tapped row's own vehicle when it reports a position,
-    // otherwise that line's other live vehicles so the map is never empty.
-    fun arrivalFor(bp: BlockPosition): Arrival? =
-        unfilteredArrivals.firstOrNull { it.vehicleID == bp.vehicleID }
-    val trackedPositions = if (trackingVehicleId > 0) {
-        blockPositions.filter { it.vehicleID == trackingVehicleId }
-            .ifEmpty { blockPositions.filter { arrivalFor(it)?.routeId == trackingRouteId } }
-    } else {
-        blockPositions.filter { arrivalFor(it)?.routeId == trackingRouteId }
+    // otherwise that line's other live vehicles so the map is never empty. Derived so a
+    // 15s position poll invalidates only the map card that reads it, not this screen.
+    val trackedPositions by remember(trackingVehicleId, trackingRouteId) {
+        derivedStateOf {
+            val routeOfVehicle: (Int) -> Int? = { vehicle ->
+                unfilteredArrivals.firstOrNull { it.vehicleID == vehicle }?.routeId
+            }
+            trackedBlockPositions(blockPositions, trackingVehicleId, trackingRouteId, routeOfVehicle)
+        }
     }
 
     // Live position polling: only while the tracking dropdown is open
@@ -312,10 +319,6 @@ fun ArrivalsScreen(
         if (trackingKey != null) refreshPositions()
     }
 
-    // Report the resolved stop name to the outer scaffold's top bar
-    LaunchedEffect(Unit) {
-        onArrivalsStateChange(stopName.ifBlank { stopNumberLabel }, isFavorite, stopLat, stopLng)
-    }
 
     val smoothFling = rememberSmoothFlingBehavior()
     val listState = rememberLazyListState()
@@ -438,6 +441,17 @@ fun ArrivalsScreen(
                         // open first. A list shorter than the viewport simply ends early.
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        if (stopScopedAlerts.isNotEmpty()) {
+                            item(key = "stopAlerts", contentType = "stopAlert") {
+                                StopAlertBanner(
+                                    count = stopScopedAlerts.size,
+                                    onClick = {
+                                        selectedDetours = null
+                                        selectedAlerts = stopScopedAlerts
+                                    }
+                                )
+                            }
+                        }
                         val visibleArrivals =
                             if (showAllArrivals) unfilteredArrivals else arrivals.take(TOP_ARRIVAL_ROWS)
                         itemsIndexed(
@@ -594,5 +608,29 @@ fun ArrivalsScreen(
                 }
             }
         )
+    }
+}
+
+/** One row summarising station-scoped alerts; taps through to the shared alert dialog. */
+@Composable
+private fun StopAlertBanner(count: Int, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = appCardShape(),
+        color = MaterialTheme.colorScheme.errorContainer
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = pluralStringResource(R.plurals.stop_alerts_count, count, count),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+        }
     }
 }
