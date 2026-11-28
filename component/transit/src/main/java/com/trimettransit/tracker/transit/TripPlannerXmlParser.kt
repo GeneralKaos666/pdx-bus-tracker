@@ -48,8 +48,15 @@ internal object TripPlannerXmlParser {
         return null
     }
 
-    internal fun parseTripPlanResponse(xml: String): TripPlanResult? {
-        // Fail closed on inline DTDs: entity-expansion (billion-laughs/XXE) payloads are
+    /** Adds exactly one Portland calendar day, so a midnight crossing survives DST. */
+    private fun plusOneDay(epochMillis: Long): Long =
+        java.time.Instant.ofEpochMilli(epochMillis)
+            .atZone(TRIP_PLANNER_ZONE)
+            .plusDays(1)
+            .toInstant()
+            .toEpochMilli()
+
+    internal fun parseTripPlanResponse(xml: String): TripPlanResult? {        // Fail closed on inline DTDs: entity-expansion (billion-laughs/XXE) payloads are
         // rejected before parsing, independent of whether this runtime's DOM honors the
         // disallow-doctype feature below (ART rejects some Apache/SAX flags, and those
         // stay best-effort so benign responses keep parsing on every device).
@@ -156,8 +163,16 @@ internal object TripPlannerXmlParser {
 
     private fun parseLeg(obj: Element, date: String): TripLeg? {
         val timeDistance = obj.directChild("time-distance")
-        val start = parseMillis(date, timeDistance?.textOf("startTime").orEmpty())
-        val end = parseMillis(date, timeDistance?.textOf("endTime").orEmpty())
+        // Each leg carries its own <date>. A trip that starts before midnight and ends
+        // after it (or a walk leg dated the next day) must use that date, not the
+        // itinerary's, or the leg lands a day early and transfer waits go negative.
+        val legDate = timeDistance?.textOf("date").orEmpty().ifEmpty { date }
+        val start = parseMillis(legDate, timeDistance?.textOf("startTime").orEmpty())
+        val end = parseMillis(legDate, timeDistance?.textOf("endTime").orEmpty())
+            ?.let { endMillis ->
+                // Same-date end earlier than start means the leg crossed midnight.
+                if (start != null && endMillis < start) plusOneDay(endMillis) else endMillis
+            }
         val from = parsePoint(obj.directChild("from"))
         val to = parsePoint(obj.directChild("to"))
         var routeNumber: String? = null
