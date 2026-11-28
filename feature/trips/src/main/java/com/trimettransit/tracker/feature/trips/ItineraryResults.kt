@@ -72,6 +72,7 @@ import com.trimettransit.tracker.ui.theme.appCardBorder
 import com.trimettransit.tracker.ui.theme.appCardShape
 import com.trimettransit.tracker.ui.theme.m3EffectsDefault
 import com.trimettransit.tracker.util.clockTime
+import com.trimettransit.tracker.util.formatDuration
 import org.joda.time.DateTime
 
 /** Map strip height above the itinerary list; keeps the route visible without pushing legs offscreen. */
@@ -385,7 +386,7 @@ private fun ItineraryOptionCard(
                 maxLines = 1
             )
             Text(
-                text = formatDurationMillis(itinerary.durationMillis),
+                text = durationText(itinerary.durationMillis),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -436,7 +437,7 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = formatDurationMillis(itinerary.durationMillis),
+                text = durationText(itinerary.durationMillis),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -470,15 +471,15 @@ internal fun TripSummaryHeader(itinerary: TripItinerary, modifier: Modifier = Mo
                 text = if (itinerary.waitingTimeMillis > 0) {
                     stringResource(
                         R.string.walk_ride_wait_fmt,
-                        formatDurationMillis(itinerary.walkTimeMillis),
-                        formatDurationMillis(itinerary.transitTimeMillis),
-                        formatDurationMillis(itinerary.waitingTimeMillis)
+                        durationText(itinerary.walkTimeMillis),
+                        durationText(itinerary.transitTimeMillis),
+                        durationText(itinerary.waitingTimeMillis)
                     )
                 } else {
                     stringResource(
                         R.string.walk_transit_fmt,
-                        formatDurationMillis(itinerary.walkTimeMillis),
-                        formatDurationMillis(itinerary.transitTimeMillis)
+                        durationText(itinerary.walkTimeMillis),
+                        durationText(itinerary.transitTimeMillis)
                     )
                 },
                 style = MaterialTheme.typography.bodySmall,
@@ -674,6 +675,15 @@ private fun WaitRow(millis: Long) {
     }
 }
 
+
+/** Trip duration in the user's language; 24-hour locales get their own templates. */
+@Composable
+private fun durationText(ms: Long): String = formatDuration(
+    ms,
+    stringResource(R.string.duration_hours_minutes_fmt),
+    stringResource(R.string.duration_minutes_fmt)
+)
+
 internal fun formatDurationMillis(ms: Long): String {
     val totalMin = (ms / 60_000L).coerceAtLeast(0)
     val h = totalMin / 60
@@ -687,7 +697,10 @@ internal fun formatDurationMillis(ms: Long): String {
 
 /** Formats a scheduled time, or an em dash when the WS returned none (walk legs/itineraries). */
 internal fun DateTime?.clockTimeText(): String =
-    this?.let { val t = clockTime(it); "${t.text} ${t.period}" } ?: "—"
+    this?.let { t ->
+        val time = clockTime(t)
+        if (time.period.isEmpty()) time.text else "${time.text} ${time.period}"
+    } ?: "—"
 
 /**
  * Plain-text version of one itinerary for the share sheet. Kept free of Android types so the

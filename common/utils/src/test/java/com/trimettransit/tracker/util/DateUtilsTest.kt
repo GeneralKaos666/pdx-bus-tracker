@@ -1,5 +1,6 @@
 package com.trimettransit.tracker.util
 
+import java.util.Locale
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 import org.junit.After
@@ -78,18 +79,39 @@ class DateUtilsTest {
 
     @Test
     fun `clockTime formats midnight morning`() {
-        assertEquals(ClockTime("12:30", "AM"), clockTime(DateTime(2026, 9, 11, 0, 30)))
-        assertEquals(ClockTime("9:05", "AM"), clockTime(DateTime(2026, 9, 11, 9, 5)))
+        assertEquals(ClockTime("12:30", "AM"), clockTime(DateTime(2026, 9, 11, 0, 30), Locale.US))
+        assertEquals(ClockTime("9:05", "AM"), clockTime(DateTime(2026, 9, 11, 9, 5), Locale.US))
     }
 
     @Test
     fun `clockTime formats noon as 12 PM`() {
-        assertEquals(ClockTime("12:00", "PM"), clockTime(DateTime(2026, 9, 11, 12, 0)))
+        assertEquals(ClockTime("12:00", "PM"), clockTime(DateTime(2026, 9, 11, 12, 0), Locale.US))
     }
 
     @Test
     fun `clockTime formats afternoon and evening`() {
-        assertEquals(ClockTime("1:05", "PM"), clockTime(DateTime(2026, 9, 11, 13, 5)))
-        assertEquals(ClockTime("11:59", "PM"), clockTime(DateTime(2026, 9, 11, 23, 59)))
+        assertEquals(ClockTime("1:05", "PM"), clockTime(DateTime(2026, 9, 11, 13, 5), Locale.US))
+        assertEquals(ClockTime("11:59", "PM"), clockTime(DateTime(2026, 9, 11, 23, 59), Locale.US))
+    }
+
+    @Test
+    fun `clockTime follows the locale's 24 hour clock`() {
+        val spanish = clockTime(DateTime(2026, 9, 11, 21, 5), Locale.forLanguageTag("es"))
+        assertEquals("21:05", spanish.text)
+        assertEquals("", spanish.period)
+    }
+
+    @Test
+    fun `clockTime keeps the US 12 hour split`() {
+        val us = clockTime(DateTime(2026, 9, 11, 21, 5), Locale.US)
+        assertEquals("9:05", us.text)
+        assertEquals("PM", us.period)
+    }
+
+    @Test
+    fun `formatDuration uses the caller's hour and minute templates`() {
+        assertEquals("3 h 20 min", formatDuration(12_000_000L, "%1\$d h %2\$d min", "%2\$d min", Locale.US))
+        assertEquals("20 min", formatDuration(1_200_000L, "%1\$d h %2\$d min", "%2\$d min", Locale.US))
+        assertEquals("0 min", formatDuration(0L, "%1\$d h %2\$d min", "%2\$d min", Locale.US))
     }
 }
