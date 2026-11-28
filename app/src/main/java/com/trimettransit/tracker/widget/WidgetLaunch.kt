@@ -24,8 +24,11 @@ fun stopFromLaunchExtras(
     lng: Double
 ): Stop? {
     if (stopId <= 0L || stopId > Int.MAX_VALUE.toLong()) return null
+    // Extras come from any app that can start MainActivity: NaN/Inf coordinates or an
+    // unbounded name would land in SQLite and the map.
+    if (!lat.isFinite() || !lng.isFinite()) return null
     return Stop(
-        desc = name.orEmpty(),
+        desc = name.orEmpty().take(MAX_STOP_NAME_CHARS),
         latitude = lat,
         longitude = lng,
         transitType = "bus",
@@ -33,3 +36,6 @@ fun stopFromLaunchExtras(
         routeNum = routeId
     )
 }
+
+/** Longest widget-supplied stop name accepted; longer strings are truncated. */
+private const val MAX_STOP_NAME_CHARS = 64

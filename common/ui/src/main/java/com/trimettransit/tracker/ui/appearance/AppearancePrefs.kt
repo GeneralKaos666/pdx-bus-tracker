@@ -41,12 +41,6 @@ object AppearancePrefs {
     const val ARRIVALS_SHOW_VEHICLE_INFO = "pref_key_arrivals_show_vehicle_info" // Boolean
     const val MAP_STYLE = "pref_key_map_style" // String: "streets" | "bright" | "positron" | "dark"
 
-    const val SETTINGS_CARD_OUTLINES = CARDS_OUTLINES
-    const val SETTINGS_CARD_OUTLINE_COLOR = CARDS_OUTLINE_COLOR
-    const val SETTINGS_CARD_CORNER_STYLE = CARDS_CORNER_STYLE
-    const val SETTINGS_CARD_CORNER_RADIUS = CARDS_CORNER_RADIUS
-    const val SETTINGS_ONLY_SHOW_SELECTED_ROUTE = ARRIVALS_ONLY_SELECTED_ROUTE
-
     object Values {
         const val THEME_SYSTEM = "system"
         const val THEME_LIGHT = "light"
