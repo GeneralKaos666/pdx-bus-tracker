@@ -136,6 +136,9 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {
+            // Deliberate: debug shares the release key so a debug build can be installed as an
+            // upgrade over the Play-signed app on the single test device. Debug APKs stay local;
+            // never distribute them (debuggable + Play signature).
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
