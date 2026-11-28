@@ -135,7 +135,7 @@ fun ArrivalsScreen(
     var showAllArrivals by rememberSaveable { mutableStateOf(false) }
     var trackingKey by rememberSaveable { mutableStateOf<String?>(null) }
     var trackingRouteId by remember { mutableIntStateOf(-1) }
-    var trackingVehicleId by remember { mutableIntStateOf(0) }
+    var trackingVehicleId by rememberSaveable { mutableIntStateOf(0) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
     var onlySelectedRoute by remember { mutableStateOf(true) }
     // Minute-aligned tick forcing the arrival rows' countdowns to recompute in the
