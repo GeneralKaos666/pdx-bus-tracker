@@ -244,7 +244,6 @@ dependencies {
 
     // AndroidX Core
     implementation("androidx.core:core:1.19.1")
-    implementation("androidx.appcompat:appcompat:1.8.0")
     // Compose
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.ui:ui")
