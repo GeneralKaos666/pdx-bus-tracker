@@ -84,6 +84,7 @@ import com.trimettransit.tracker.model.TripRequestOptions
 import com.trimettransit.tracker.map.MapCoordinate
 import com.trimettransit.tracker.model.domain.itinerarySelectionAfterPlan
 import com.trimettransit.tracker.model.domain.TripDraft
+import com.trimettransit.tracker.model.domain.keepPlanVisible
 import com.trimettransit.tracker.model.repository.FavoritesRepository
 import com.trimettransit.tracker.model.repository.RecentStopsRepository
 import com.trimettransit.tracker.model.repository.TransitRepository
@@ -209,7 +210,7 @@ fun TripPlannerScreen(
     var showResults by rememberSaveable { mutableStateOf(false) }
     // Tall screens can afford the expanded card; compact phones start collapsed so the map
     // keeps a usable area. Remembered once the rider decides either way.
-    val startsExpanded = LocalConfiguration.current.screenHeightDp >= 700
+    val startsExpanded = !plannerStartsCollapsed(LocalConfiguration.current.screenHeightDp)
     var plannerExpanded by rememberSaveable { mutableStateOf(startsExpanded) }
     // Endpoints of the last *requested* plan, as a saveable key. The result itself is not
     // saveable (DateTime-heavy), so restore re-requests it when this matches the current
@@ -396,7 +397,7 @@ fun TripPlannerScreen(
         // results. A different endpoint pairing still clears, so stale results are never
         // mistaken for the new ones.
         val currentPlan = (current as? TripPlanResult.Success)?.plan
-        val keepVisible = currentPlan != null && currentPlan.from == start && currentPlan.to == end
+        val keepVisible = keepPlanVisible(currentPlan, start, end)
         planRunner.current.value?.cancel()
         planRunner.current.value = null
         if (!keepVisible) {
@@ -498,7 +499,7 @@ fun TripPlannerScreen(
     /** Opens arrivals for the stop a transit leg boards at. */
     fun openLegArrivals(leg: TripLeg) {
         val stopId = leg.from.stopId?.toIntOrNull() ?: return
-        val routeId = leg.routeNumber?.toIntOrNull() ?: -1
+        val routeNum = leg.routeNumber?.toIntOrNull() ?: -1
         onNavigateToArrivals(
             Stop(
                 desc = leg.from.description,
@@ -506,9 +507,9 @@ fun TripPlannerScreen(
                 longitude = leg.from.longitude,
                 transitType = leg.mode.transitTypeLetter(),
                 locId = stopId,
-                routeNum = leg.routeNumber?.toIntOrNull() ?: 0
+                routeNum = routeNum
             ),
-            routeId
+            routeNum
         )
     }
 

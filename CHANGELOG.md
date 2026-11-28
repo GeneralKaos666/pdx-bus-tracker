@@ -1,5 +1,6 @@
 ## Unreleased
 
+- **The return trip keeps its place:** swapping origin and destination re-plans in the opposite direction without blanking the map or closing the results while the new plan loads.
 - **Trip results now say where they go:** the results view names the origin and destination above the options, and the swap control re-plans the trip in the opposite direction so it becomes the return trip in one tap.
 - **Steps lead somewhere:** tapping a bus or train leg opens the arrivals board for the stop you board at, instead of leaving the leg as a dead end.
 - **Browsing trips is one tap:** earlier and later controls step the plan half an hour at a time from the results view, a share control sends the selected option as text, and changing an option or refreshing no longer blanks the map and closes the results while the new request runs.
