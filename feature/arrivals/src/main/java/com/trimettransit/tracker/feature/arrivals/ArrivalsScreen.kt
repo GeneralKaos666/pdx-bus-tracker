@@ -39,6 +39,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -127,11 +128,11 @@ fun ArrivalsScreen(
     // they never appear in a line's alert pill. Render them once for the stop instead.
     val stopScopedAlerts = remember(alerts, stopId) { alertsForStop(alerts, stopId) }
     var selectedAlerts by remember { mutableStateOf<List<TransitAlert>?>(null) }
-    var selectedTripId by remember { mutableStateOf<String?>(null) }
+    var selectedTripId by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedTripStatus by remember { mutableStateOf<com.trimettransit.tracker.model.TripStatus?>(null) }
     var isTripStatusLoading by remember { mutableStateOf(false) }
-    var showAllArrivals by remember { mutableStateOf(false) }
-    var trackingKey by remember { mutableStateOf<String?>(null) }
+    var showAllArrivals by rememberSaveable { mutableStateOf(false) }
+    var trackingKey by rememberSaveable { mutableStateOf<String?>(null) }
     var trackingRouteId by remember { mutableIntStateOf(-1) }
     var trackingVehicleId by remember { mutableIntStateOf(0) }
     var unfilteredArrivals by remember { mutableStateOf<List<Arrival>>(emptyList()) }
